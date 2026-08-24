@@ -49,3 +49,14 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
             archive.writestr("aasx/_rels/aasx-origin.rels", marker + rels(pairs))
         archive.writestr(payload_name, payload)
     return path
+
+
+def env_json(semantic_value: str = "0173-1#01-AHF578#003") -> bytes:
+    """A minimal, metamodel-valid AAS environment with one submodel."""
+    import json
+    return json.dumps({"submodels": [{
+        "id": "urn:test:submodel",
+        "modelType": "Submodel",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference", "value": semantic_value}]},
+    }]}).encode("utf-8")
