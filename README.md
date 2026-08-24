@@ -1,0 +1,50 @@
+# aas-submodel-validate
+
+**Template-conformance checking for AAS submodels — offline.**
+
+An [Asset Administration Shell](https://industrialdigitaltwin.org/) file
+can be perfectly valid against the AAS metamodel and still not be the
+submodel it claims to be: the wrong cardinalities, the wrong semantic
+identifiers, a mandatory VDI 2770 classification missing. This tool
+checks a submodel instance against its IDTA template — starting with
+[IDTA 02004 *Handover Documentation* 2.0](https://industrialdigitaltwin.org/en/content-hub/submodels)
+— from the command line, on a machine with no internet connection, as a
+step in a build.
+
+```sh
+pip install aas-submodel-validate
+smtv machine-docs.aasx
+```
+
+Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
+`.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 clean, 1
+findings, 2 could not run. One dependency
+([aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)),
+pure Python, no C extensions — installable from a USB stick.
+
+## Where this sits
+
+[aas-test-engines](https://github.com/admin-shell-io/aas-test-engines)
+is the official conformance tooling for the AAS metamodel,
+serialisation, AASX packaging and APIs; as of v1.0.3 its
+submodel-template layer covers two templates (Contact Information,
+Digital Nameplate). This project is the complementary layer for the
+templates it supports, starting with IDTA 02004: does a given submodel
+instance conform to the template — cardinality, semantic identifiers,
+the VDI 2770 classification rules — with a remedy sentence for every
+finding, offline. Metamodel checking is deliberately delegated to
+aas-core3.0's verification and reported in a separate channel, never
+re-invented here.
+
+What it refuses to do is written down in [docs/scope.md](docs/scope.md);
+every chosen reading of the template, with evidence, in
+[docs/divergences.md](docs/divergences.md).
+
+## Licence
+
+Apache-2.0, © 2026 Wooyong Lee. Contributions need a `Signed-off-by`
+line (DCO); see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+This is an unofficial project, not affiliated with or endorsed by IDTA
+or the Eclipse BaSyx project. "AAS", "Asset Administration Shell" and
+template identifiers are used descriptively.

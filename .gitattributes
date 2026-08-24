@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.rdf text eol=lf
+*.iirds binary
+
+# The reference corpus is claimed to be upstream's bytes and is verified by
+# SHA-256 on every test run, including on Windows. Any end-of-line conversion
+# would break that claim on checkout rather than in the file, which is the
+# confusing way for it to break. No conversion, ever.
+tests/corpus/plusmeta/files/** -text

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.DS_Store
+/scratch/
+/out/
+fixtures/
+.crossvalidate-cache/
+.rule-coverage.json
+.spec-cache/
+docs/consortium/
+docs/private/

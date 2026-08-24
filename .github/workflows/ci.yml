@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.16.3
+      - run: ruff check .
+
+  test:
+    name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, python: "3.9" }
+          - { os: ubuntu-latest, python: "3.10" }
+          - { os: ubuntu-latest, python: "3.11" }
+          - { os: ubuntu-latest, python: "3.12" }
+          # aas-core3.0's own CI matrix stops at 3.12, so this row is the
+          # floor dependency's first verdict on 3.13 -- a failure here is
+          # information, not noise.
+          - { os: ubuntu-latest, python: "3.13" }
+          # pyproject declares aas-core3.0>=1.1.4, so 1.1.4 exactly is what
+          # this row runs: a floor test that floats stops testing the floor.
+          - { os: ubuntu-latest, python: "3.11", pin: "aas-core3.0==1.1.4", label: "floor" }
+          # Windows is where an unclosed ZIP handle keeps files locked and
+          # where the .gitattributes eol=lf setting gets tested.
+          - { os: windows-latest, python: "3.11" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e ".[dev]"
+      - if: matrix.pin
+        run: pip install "${{ matrix.pin }}"
+      - run: pytest -q
