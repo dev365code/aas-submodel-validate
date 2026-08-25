@@ -6,16 +6,28 @@ RUFF_VERSION := 0.16.3
 PYTHON       ?= python3
 export PYTHONPATH := $(CURDIR)/src:$(CURDIR)/tests
 
-.PHONY: help check test lint fix dev
+.PHONY: help check test lint fix dev generated vendored exercised
 
 help:
-	@echo "make check   everything CI runs: lint and the test suite"
+	@echo "make check   everything CI runs: lint, gates, the test suite"
 	@echo "make test    the test suite alone"
 	@echo "make lint    ruff, pinned to the version CI uses"
+	@echo "make generated  the generated rule table still matches its generator"
+	@echo "make vendored   the vendored official material matches its hashes"
+	@echo "make exercised  every rule id fired somewhere in the suite"
 	@echo "make fix     ruff --fix, for what it can correct itself"
 	@echo "make dev     install the pinned dev tools"
 
-check: lint test
+check: lint generated vendored test exercised
+
+generated:
+	$(PYTHON) tools/extract_smt_rules.py --check
+
+vendored:
+	$(PYTHON) tools/vendor_template.py --check
+
+exercised:
+	$(PYTHON) tools/rule_coverage.py --check
 
 lint:
 	@$(PYTHON) -m ruff --version | grep -q "$(RUFF_VERSION)" \

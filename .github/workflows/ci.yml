@@ -22,6 +22,11 @@ jobs:
           python-version: "3.12"
       - run: pip install ruff==0.16.3
       - run: ruff check .
+      - run: pip install -e .
+      - name: the generated rule table matches its generator
+        run: python tools/extract_smt_rules.py --check
+      - name: the vendored official material matches its recorded hashes
+        run: python tools/vendor_template.py --check
 
   test:
     name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}
@@ -53,3 +58,43 @@ jobs:
       - if: matrix.pin
         run: pip install "${{ matrix.pin }}"
       - run: pytest -q
+      - name: every rule id fired somewhere
+        run: python tools/rule_coverage.py --check
+
+  wheel:
+    # The failure this exists for: a wheel that installs but is missing the
+    # vendored template, so the tool works from a checkout and its NOTICE
+    # lies about what it ships. Nothing in the test suite (editable install)
+    # would notice.
+    name: installed wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build --wheel --outdir dist/
+      - name: the wheel must carry the vendored template and not the corpus
+        run: |
+          python - <<'PY'
+          import glob, sys, zipfile
+          names = set(zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist())
+          required = [
+              "aas_submodel_validate/data/smt/02004/2.0.1/template.json",
+              "aas_submodel_validate/data/smt/02004/2.0.1/sha256sums.txt",
+          ]
+          missing = [n for n in required if n not in names]
+          if missing:
+              sys.exit("missing from the wheel: %s" % missing)
+          strays = sorted(n for n in names if "corpus" in n or n.startswith("tests/"))
+          if strays:
+              sys.exit("the wheel carries test material it should not: %s" % strays[:5])
+          print("wheel carries the template, and no corpus")
+          PY
+      - name: install into a clean environment and smoke-test
+        run: |
+          python -m venv /tmp/v
+          /tmp/v/bin/pip install --quiet dist/*.whl
+          /tmp/v/bin/smtv --version
+          /tmp/v/bin/aas-submodel-validate --rules > /dev/null

@@ -15,8 +15,22 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+_WORKFLOW_PATH = ROOT / ".github" / "workflows" / "ci.yml"
+if not _WORKFLOW_PATH.exists() or not (ROOT / "Makefile").exists():
+    pytest.skip("no CI workflow / Makefile here (installed package, not a checkout)",
+                allow_module_level=True)
 MAKEFILE = (ROOT / "Makefile").read_text("utf-8")
-WORKFLOW = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
+
+
+def _without_comments(text: str) -> str:
+    """The workflow with YAML comments removed. A gate that is only a
+    commented-out step is not a gate, and a substring search over the raw
+    file would be fooled by the comment text -- so the comparison runs
+    against the executable part only."""
+    return "\n".join(re.sub(r"#.*$", "", line) for line in text.splitlines())
+
+
+WORKFLOW = _without_comments(_WORKFLOW_PATH.read_text("utf-8"))
 
 #: Commands `make check` runs that CI is not expected to, with the reason.
 #: Empty today. An entry here is a deliberate exemption and needs justifying.
@@ -58,3 +72,16 @@ def test_ci_runs_everything_make_check_runs(target, command):
         pytest.skip(LOCAL_ONLY[command])
     assert command in _normalise(WORKFLOW), \
         "`make %s` runs %r and no CI job does" % (target, command)
+
+
+def test_the_ruff_version_is_pinned_the_same_everywhere():
+    """Makefile, ci.yml and pyproject must install one ruff. A local
+    `make lint` and a CI `ruff check` that run different linters are two
+    gates wearing one name -- the drift test_ci_parity's command match
+    cannot see, because the version guard line is not a check recipe."""
+    makefile = (ROOT / "Makefile").read_text("utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
+    pyproject = (ROOT / "pyproject.toml").read_text("utf-8")
+    version = re.search(r"RUFF_VERSION\s*:=\s*(\S+)", makefile).group(1)
+    assert "ruff==%s" % version in workflow, "ci.yml ruff pin != Makefile RUFF_VERSION"
+    assert '"ruff==%s"' % version in pyproject, "pyproject dev ruff pin != Makefile RUFF_VERSION"
