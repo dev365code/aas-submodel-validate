@@ -83,6 +83,8 @@ def corrupt_part(path, entry: str, how: str):
       the read stops early and the checksum no longer matches.
     - "method": a compression method no reader implements.
     - "encrypted": the encryption flag, with no password to be had.
+    - "stream": the compressed bytes themselves, which fail inside the
+      decompressor rather than in any check zipfile makes first.
 
     Nothing is written to the repository -- callers pass a tmp_path.
     """
@@ -110,6 +112,13 @@ def corrupt_part(path, entry: str, how: str):
         flags = struct.unpack_from("<H", raw, central + 8)[0]
         struct.pack_into("<H", raw, central + 8, flags | 0x1)
         struct.pack_into("<H", raw, local + 6, flags | 0x1)
+    elif how == "stream":
+        name_length = struct.unpack_from("<H", raw, local + 26)[0]
+        extra_length = struct.unpack_from("<H", raw, local + 28)[0]
+        start = local + 30 + name_length + extra_length
+        compressed = struct.unpack_from("<I", raw, central + 20)[0]
+        for i in range(start, start + max(1, compressed // 2)):
+            raw[i] ^= 0xFF
     else:
         raise ValueError("unknown corruption: %s" % how)
     path.write_bytes(bytes(raw))

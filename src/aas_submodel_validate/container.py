@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import posixpath
 import zipfile
+import zlib
 from pathlib import Path
 from typing import List, Tuple
 from xml.etree import ElementTree
@@ -88,11 +89,14 @@ class AasxPackage:
         # method no reader implements, an encryption flag, a checksum
         # that does not match what came out. Those are defects in the
         # file, and this reader's promise is that a defect in the file
-        # is a finding.
+        # is a finding. zlib.error is in the list because the failure
+        # can also happen a layer below zipfile, in the decompressor,
+        # where nothing wraps it -- which the first version of this
+        # tuple missed.
         try:
             return self._zip.read(name)
         except (zipfile.BadZipFile, NotImplementedError, RuntimeError,
-                EOFError, OSError) as exc:
+                EOFError, OSError, zlib.error) as exc:
             raise UnreadablePart(
                 "%s: %s cannot be read: %s: %s"
                 % (self.path, name, type(exc).__name__, exc)) from exc

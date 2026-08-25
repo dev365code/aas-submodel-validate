@@ -81,7 +81,7 @@ def test_control_characters_do_not_reach_the_terminal_raw(tmp_path, capsys):
     assert "\x1b" not in out
 
 
-@pytest.mark.parametrize("how", ("declared_size", "method", "encrypted"))
+@pytest.mark.parametrize("how", ("declared_size", "method", "encrypted", "stream"))
 def test_a_part_that_cannot_be_decompressed_is_a_finding(tmp_path, how):
     """An archive may describe a part wrongly. Reading it then fails
     inside zipfile, with an exception this reader never declared -- and
@@ -92,5 +92,8 @@ def test_a_part_that_cannot_be_decompressed_is_a_finding(tmp_path, how):
     path = build_aasx(tmp_path / "p.aasx", payload=env_json())
     corrupt_part(path, "aasx/env.json", how)
     report = runner.run(path)
-    assert {f.id for f in report.findings} & {"X1", "X2", "X3"}
+    # X1 specifically, not "one of the container rules": the finding has
+    # to be the one whose remedy is true. X2 says repair the chain, and
+    # the chain here is perfect.
+    assert "X1" in {f.id for f in report.findings}
     assert not report.ok
