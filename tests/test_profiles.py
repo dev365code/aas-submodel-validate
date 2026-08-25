@@ -427,3 +427,24 @@ def test_a_profile_pair_never_silences_a_pack_outside_it(tmp_path):
         {"type": "Submodel", "value": hd_tables.TEMPLATE_SEMANTIC_ID})
     assert "TD-E01" in _ids(_report(tmp_path, stacked, "stacked.json")), \
         "a profile pair silenced a pack it has nothing to do with"
+
+
+def test_one_pair_today_and_what_a_second_one_has_to_change():
+    """`Selection.chosen` returns on the first pair a submodel belongs to.
+
+    With one pair that is the only pair, so the shortcut is invisible.
+    IDTA 02023 and IDTA 02035-3 publish the same collision -- one
+    CarbonFootprint identifier, two templates (`PROFILES`' own comment
+    says so) -- and the slice that adds them steps here: a submodel
+    declaring both pairs' default anchors would have the second pair
+    decided for it by the first, `--profile` for the second silently
+    ignored, and nothing said. That is the shape of the defect this
+    module was already fixed for once, at `answers`.
+
+    So this counts. When it goes red, `chosen` has to answer per pair
+    rather than per submodel, and `SMT-D2` has to be able to speak twice
+    about one submodel.
+    """
+    assert len(profiles.PROFILES) == 1, (
+        "a second profile pair arrived; `chosen` still returns on the first "
+        "match and `SMT-D2` still yields once per submodel")
