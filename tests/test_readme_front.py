@@ -1,4 +1,4 @@
-"""Every claim on the README's front is re-derivable, or it rots.
+"""Every claim on the front of a document here is re-derivable, or it rots.
 
 The console sample is regenerated here and compared byte-for-byte; the
 rule counts are counted, not trusted. A README that says 56 while the
@@ -17,7 +17,9 @@ from aas_submodel_validate.report import render
 from aas_submodel_validate.rules import hd_tables, td_tables
 from builders import env_json
 
-README = (Path(__file__).resolve().parents[1] / "README.md").read_text("utf-8")
+ROOT = Path(__file__).resolve().parents[1]
+README = (ROOT / "README.md").read_text("utf-8")
+CHANGELOG = (ROOT / "CHANGELOG.md").read_text("utf-8")
 
 
 def test_the_rule_counts_are_the_registrys():
@@ -39,3 +41,16 @@ def test_the_console_sample_is_what_the_tool_prints(tmp_path, monkeypatch):
     sample = render(runner.run("machine-docs.json"))
     assert "```text\n%s\n```" % sample in README, \
         "the README's console sample went stale; regenerate it"
+
+
+def test_the_changelog_counts_what_it_would_ship():
+    """The entry is still unreleased, so its numbers describe the present
+    and have to move with it. Once a version is tagged its entry is
+    history and must not be edited -- which is why this looks only at the
+    unreleased one."""
+    _, _, entries = CHANGELOG.partition("\n## ")     # past the file's title
+    unreleased, _, _ = entries.partition("\n## ")     # the newest entry alone
+    assert "unreleased" in unreleased.lower(), "the first entry is no longer a draft"
+    generated = len(hd_tables.ROWS) + len(td_tables.ROWS)
+    assert "%d rules" % len(all_rules()) in unreleased
+    assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased

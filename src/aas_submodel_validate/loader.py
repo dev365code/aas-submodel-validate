@@ -81,6 +81,12 @@ def load(path) -> Loaded:
     path = Path(path)
     if not path.exists():
         raise UnreadablePath("no such file: %s" % path)
+    # Whether there is a file to read at all is one question, asked once,
+    # before the extension decides anything. Asking it inside each branch
+    # is how a directory came to exit 2 when it was called .xml and 1 --
+    # a defect in a file nobody had opened -- when it was called .json.
+    if not path.is_file():
+        raise UnreadablePath("not a file: %s" % path)
 
     suffix = path.suffix.lower()
     if suffix == ".aasx":
@@ -100,8 +106,16 @@ def load(path) -> Loaded:
 
 def _load_json(path: Path) -> Loaded:
     loaded = Loaded(path=str(path), form="environment-json")
+    # Read once. The branch below decides what the document is, and the
+    # environment case used to go back to disk for bytes it already had
+    # -- a second read, and the only one in this module with nothing
+    # guarding it.
     try:
-        document = json.loads(_decode(path.read_bytes()))
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise UnreadablePath("cannot read %s: %s" % (path, exc)) from exc
+    try:
+        document = json.loads(_decode(raw))
     except Exception as exc:
         loaded.errors.append(LoadError("payload", "the file is not JSON",
                                        subject=str(path),
@@ -118,7 +132,7 @@ def _load_json(path: Path) -> Loaded:
                                            detail="%s: %s" % (type(exc).__name__, exc)))
         return loaded
 
-    _parse_environment(loaded, path.read_bytes(), part=None, form="environment-json")
+    _parse_environment(loaded, raw, part=None, form="environment-json")
     return loaded
 
 

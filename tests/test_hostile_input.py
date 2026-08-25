@@ -85,10 +85,15 @@ def test_a_rels_entity_bomb_is_refused_not_expanded(tmp_path):
         _ = package.origin
 
 
-def test_a_directory_named_dot_xml_exits_two_not_crash(tmp_path):
-    directory = tmp_path / "package.xml"
-    directory.mkdir()
-    assert main([str(directory)]) == EXIT_ERROR
+@pytest.mark.parametrize("suffix", (".xml", ".json", ".aasx"))
+def test_a_directory_exits_two_whatever_it_is_named(tmp_path, suffix):
+    """Exit 2 means the tool could not run, and a directory is a
+    directory whatever it is called. The contract held for one extension
+    because that branch guarded its read; the other two reported a defect
+    in a file they had not managed to open."""
+    target = tmp_path / ("d" + suffix)
+    target.mkdir()
+    assert main([str(target), "-q"]) == EXIT_ERROR
 
 
 def test_a_clean_container_still_reads(tmp_path):
