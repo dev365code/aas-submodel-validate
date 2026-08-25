@@ -1,0 +1,12 @@
+# A downstream packager who unpacks the sdist and runs pytest must find a
+# runnable suite -- so conftest, the builders, the vendored corpus and the
+# tools the tests import all ship, not just the test_*.py files setuptools
+# would include on its own.
+graft tests
+graft tools
+graft docs
+graft .github
+include Makefile MANIFEST.in
+include the working notes CONTRIBUTING.md SECURITY.md NOTICE THIRD_PARTY.md CHANGELOG.md
+global-exclude __pycache__/* *.pyc
+recursive-exclude tests .rule-coverage.json

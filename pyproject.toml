@@ -37,6 +37,12 @@ smtv = "aas_submodel_validate.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# The vendored IDTA template (CC BY 4.0) travels in the wheel: the offline
+# story is that what you install carries its own provenance. NOTICE says the
+# distribution contains it, so it must.
+[tool.setuptools.package-data]
+aas_submodel_validate = ["data/smt/**/*.json", "data/smt/**/*.txt"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py39"

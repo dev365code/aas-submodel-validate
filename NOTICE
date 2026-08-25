@@ -1,0 +1,14 @@
+aas-submodel-validate
+Copyright 2026 Wooyong Lee
+
+This distribution contains material from the IDTA submodel-templates
+repository (https://github.com/admin-shell-io/submodel-templates),
+licensed under the Creative Commons Attribution 4.0 International
+License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
+
+  - src/aas_submodel_validate/data/smt/02004/2.0.1/template.json
+    (IDTA 02004-2-0-1 Handover Documentation template, unmodified)
+
+Copyright for that material: Industrial Digital Twin Association (IDTA)
+and the template's contributors. See THIRD_PARTY.md for the pinned
+revision and verification hashes.
