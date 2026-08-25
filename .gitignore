@@ -9,7 +9,6 @@ dist/
 .DS_Store
 /scratch/
 /out/
-fixtures/
 .crossvalidate-cache/
 .rule-coverage.json
 .spec-cache/
