@@ -115,3 +115,25 @@ def test_the_guard_on_foreign_references_is_what_keeps_them_silent(tmp_path):
     reference["value"]["keys"][0]["value"] = "urn:somewhere:else"
     reference["value"]["keys"][-1]["value"] = "41"      # resolves nowhere
     assert "TD-D3" not in _env_ids(tmp_path, env)
+
+
+def test_an_element_identified_only_by_a_supplemental_still_matches(tmp_path):
+    """The other half of divergence #14. A supplier's own semanticId on an
+    element, with the template's identifier carried beside it, is a shape
+    the ledger says must match -- "an instance that declares its identity
+    only through a supplemental should match too".
+
+    Only the refusing half was pinned: that an element wearing a
+    *sibling's* identifier cannot satisfy the sibling's cardinality.
+    Deleting the fold entirely satisfied that test too, because the
+    element then matched nothing at all -- and turned a conformant file
+    into a failing one, with the suite green.
+    """
+    env = copy.deepcopy(hd_env())
+    document = env["submodels"][0]["submodelElements"][0]["value"][0]
+    ids_list = document["value"][0]
+    assert ids_list["idShort"] == "DocumentIds"
+    ids_list["supplementalSemanticIds"] = [ids_list["semanticId"]]
+    ids_list["semanticId"] = {"type": "ExternalReference", "keys": [
+        {"type": "GlobalReference", "value": "urn:somesupplier:their-own-id"}]}
+    assert _env_ids(tmp_path, env) == set()

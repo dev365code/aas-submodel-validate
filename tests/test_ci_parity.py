@@ -66,6 +66,15 @@ def test_the_check_target_has_recipes_to_compare():
     assert len(CHECKS) >= 2, CHECKS
 
 
+def test_no_gate_can_leave_make_check_quietly():
+    """The comparison above is parametrised over `check:`'s own dependency
+    list, so removing a target does not fail a test -- it deletes one.
+    Measured: dropping `vendored` left `make check` green and this file at
+    six passing tests instead of seven. The list of gates is therefore
+    named here, where losing one is a diff somebody has to justify."""
+    assert _check_targets() == ["lint", "generated", "vendored", "test", "exercised"]
+
+
 @pytest.mark.parametrize("target,command", CHECKS, ids=[c for _t, c in CHECKS])
 def test_ci_runs_everything_make_check_runs(target, command):
     if command in LOCAL_ONLY:

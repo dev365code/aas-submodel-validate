@@ -104,17 +104,31 @@ def test_a_clean_container_still_reads(tmp_path):
 
 def test_control_characters_do_not_reach_the_terminal_raw(tmp_path, capsys):
     """An attacker-chosen idShort with an ESC byte must be escaped in the
-    text report, not written raw where it drives the terminal."""
-    env = env_json("urn:not:handover")
-    path = tmp_path / "env.json"
-    path.write_bytes(env)
-    # a submodel idShort carrying an escape sequence surfaces in the report
+    text report, not written raw where it drives the terminal.
+
+    The byte has to reach the report before the escaping can be tested,
+    and the first version of this did not get it there: an unrecognised
+    submodel draws SMT-D1, whose detail is the semanticId it saw, and the
+    idShort appears nowhere. Reverting the escaping left this green. So
+    the fixture is a Handover file with a broken row, whose finding names
+    the path the attacker chose -- and the escaped spelling is asserted
+    too, because "no ESC in the output" is also what an empty report
+    looks like.
+    """
+    import copy
     import json
-    doc = json.loads(env)
-    doc["submodels"][0]["idShort"] = "root\x1b[31mHACK"
-    path.write_bytes(json.dumps(doc).encode("utf-8"))
+
+    from aas_submodel_validate.rules import hd_tables
+    from builders import break_row, hd_env
+
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"][0]["value"][0]["idShort"] = "Doc\x1b[31mHACK"
+    env = break_row(env, hd_tables.BY_LABEL["Title"], hd_tables)
+    path = tmp_path / "env.json"
+    path.write_bytes(json.dumps(env).encode("utf-8"))
     main([str(path)])
     out = capsys.readouterr().out
+    assert "\\x1b" in out, "the attacker's idShort never reached the report"
     assert "\x1b" not in out
 
 

@@ -21,6 +21,14 @@ def test_errors_lead_and_meta_trails(tmp_path):
     # (idShort on a list child), one lint info (reference type)
     documents = submodel["submodelElements"][0]
     documents["value"][0]["idShort"] = "Datasheet"
+    # a lint warning of our own, so the kind order below has two kinds to
+    # order: the template's own §2.3 spelling draws HDL5. Without it every
+    # warning in this fixture came from the metamodel channel, and any
+    # kind order at all -- including none -- satisfied the assertion.
+    for classification in documents["value"][0]["value"][1]["value"]:
+        for leaf in classification["value"]:
+            if leaf.get("idShort") == "ClassificationSystem":
+                leaf["value"] = "VDI2770:2020"
     version = documents["value"][0]["value"][2]["value"][0]
     for child in version["value"]:
         if child.get("idShort") == "StatusSetDate":
@@ -34,5 +42,7 @@ def test_errors_lead_and_meta_trails(tmp_path):
     severities = [str(f.severity) for f in report.findings]
     assert severities == sorted(severities, key=("error", "warning", "info").index)
     kinds = [f.rule.kind for f in report.findings if str(f.severity) == "warning"]
+    assert "meta" in kinds and set(kinds) != {"meta"}, \
+        "this fixture has only one kind of warning, so it orders nothing"
     assert kinds == sorted(kinds, key=("container", "template", "lint", "meta").index)
     assert report.findings[0].id == "HD-D8"

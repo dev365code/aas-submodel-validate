@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from aas_submodel_validate.container import AasxPackage, ContainerError
+from aas_submodel_validate.container import AasxPackage, ContainerError, PartTooLarge
 from builders import build_aasx, env_json
 
 
@@ -97,3 +97,28 @@ def test_both_spellings_of_a_relationship_reach_the_same_parts(tmp_path):
     with AasxPackage(absolute) as a, AasxPackage(relative) as b:
         assert a.spec_parts == b.spec_parts
         assert a.relationships("aasx/env.json") == b.relationships("aasx/env.json")
+
+
+def test_a_part_read_twice_counts_once(tmp_path, monkeypatch):
+    """The total the container refuses on is distinct bytes handed out,
+    not reads. X4 re-walks the chain a second rule already walked, and
+    counting those bytes twice made the refusal depend on which rule
+    happened to cross the line first -- a container passing or failing by
+    rule registration order.
+
+    the defect register records that repair; nothing tested it. Removing the
+    `_counted` guard left the whole suite green, so the cap is lowered
+    here instead of the archive being made enormous: the same part read
+    twice must not refuse, and a *different* part of the same size must.
+    """
+    from aas_submodel_validate import container as container_module
+
+    blob = b"x" * 40_000
+    packed = build_aasx(tmp_path / "p.aasx",
+                        files=[("aasx/a.bin", blob), ("aasx/b.bin", blob)])
+    monkeypatch.setattr(container_module, "MAX_TOTAL_PART_BYTES", 60_000)
+    with AasxPackage(packed) as package:
+        assert package.read("aasx/a.bin") == blob
+        assert package.read("aasx/a.bin") == blob
+        with pytest.raises(PartTooLarge, match="together"):
+            package.read("aasx/b.bin")
