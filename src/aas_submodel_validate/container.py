@@ -25,6 +25,13 @@ ORIGIN_REL = "http://admin-shell.io/aasx/relationships/aasx-origin"
 SPEC_REL = "http://admin-shell.io/aasx/relationships/aas-spec"
 SUPPL_REL = "http://admin-shell.io/aasx/relationships/aas-suppl"
 
+#: A package arrives from a supplier, so what it decompresses to is
+#: untrusted. 64 MiB is far above any real AAS metadata document and far
+#: below what exhausts an air-gapped machine; the check runs off the ZIP
+#: directory, so an oversized part is refused without being read.
+MAX_PART_BYTES = 64 * 1024 * 1024
+_DOCTYPE = __import__("re").compile(rb"<!DOCTYPE", __import__("re").IGNORECASE)
+
 _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
 
 
@@ -62,6 +69,11 @@ class AasxPackage:
     def read(self, name: str) -> bytes:
         if name not in self._names:
             raise ContainerError("%s names no part %s" % (self.path, name))
+        info = self._zip.getinfo(name)
+        if info.file_size > MAX_PART_BYTES:
+            raise ContainerError(
+                "%s refuses %s: %d bytes uncompressed, above the %d byte limit"
+                % (self.path, name, info.file_size, MAX_PART_BYTES))
         return self._zip.read(name)
 
     # -- the OPC chain -------------------------------------------------------
@@ -77,12 +89,32 @@ class AasxPackage:
         if rels not in self._names:
             raise ContainerError("%s has no %s, so the chain from %r goes nowhere"
                                  % (self.path, rels, source or "the package root"))
+        raw = self.read(rels)
+        # A relationships part has no legitimate use for a DTD, and a
+        # nested-entity DTD is a decompression-free way to exhaust memory
+        # (billion laughs; expat expands it before any handler runs). Refuse
+        # the declaration rather than try to bound the expansion.
+        if _DOCTYPE.search(raw):
+            raise ContainerError("%s: %s declares a DOCTYPE, which is refused"
+                                 % (self.path, rels))
         try:
-            root = ElementTree.fromstring(self.read(rels))
+            root = ElementTree.fromstring(raw)
         except ElementTree.ParseError as exc:
             raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc)) from exc
-        return [(el.get("Type", ""), el.get("Target", "").lstrip("/"))
-                for el in root.iter(_RELATIONSHIP)]
+        # OPC resolves a target that begins with "/" against the package
+        # root and any other target against the source part's own directory
+        # (ECMA-376 Part 2). Treating every target as root-relative rejected
+        # conformant packages that use relative targets.
+        base_dir = posixpath.dirname(source)
+        resolved = []
+        for el in root.iter(_RELATIONSHIP):
+            target = el.get("Target", "")
+            if target.startswith("/"):
+                name = target[1:]
+            else:
+                name = posixpath.normpath(posixpath.join(base_dir, target))
+            resolved.append((el.get("Type", ""), name))
+        return resolved
 
     @property
     def origin(self) -> str:

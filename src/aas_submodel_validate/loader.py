@@ -11,6 +11,7 @@ the caller's mistake rather than the file's, and a different exit code.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
@@ -18,6 +19,8 @@ from typing import List, Optional
 from aas_core3 import jsonization, types, xmlization
 
 from .container import AasxPackage, ContainerError
+
+_DOCTYPE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
 
 
 class UnreadablePath(Exception):
@@ -55,6 +58,11 @@ def _decode(raw: bytes) -> str:
 
 def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form: str) -> None:
     """One environment document (JSON or XML) into loaded.submodels."""
+    if not form.endswith("json") and _DOCTYPE.search(raw):
+        loaded.errors.append(LoadError(
+            "payload", "the XML declares a DOCTYPE, which is refused",
+            subject=part or loaded.path))
+        return
     try:
         if form.endswith("json"):
             environment = jsonization.environment_from_jsonable(json.loads(_decode(raw)))
@@ -81,7 +89,11 @@ def load(path) -> Loaded:
         return _load_json(path)
     if suffix == ".xml":
         loaded = Loaded(path=str(path), form="environment-xml")
-        _parse_environment(loaded, path.read_bytes(), part=None, form="environment-xml")
+        try:
+            raw = path.read_bytes()
+        except OSError as exc:
+            raise UnreadablePath("cannot read %s: %s" % (path, exc)) from exc
+        _parse_environment(loaded, raw, part=None, form="environment-xml")
         return loaded
     raise UnreadablePath("cannot tell what %s is: expected .aasx, .json or .xml" % path)
 
