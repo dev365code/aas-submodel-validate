@@ -29,9 +29,9 @@ TEMPLATE_SEMANTIC_ID = hd_tables.TEMPLATE_SEMANTIC_ID
 
 def _row_check(row_id: str):
     def check(ctx):
-        if not matched_submodels(ctx):
+        if not matched_submodels(ctx, hd_tables):
             return  # SMT-D1's finding; empty scopes would double-report it
-        yield from analyze(ctx)["violations"].get(row_id, ())
+        yield from analyze(ctx, hd_tables)["violations"].get(row_id, ())
     return check
 
 
@@ -68,10 +68,10 @@ VDI2770_CLASS_IDS = frozenset((
 
 
 def _vdi_classifications(document):
-    classifications = children_of(child_of(document, "DocumentClassifications")
-                                  or document, "DocumentClassification")
+    classifications = children_of(child_of(document, "DocumentClassifications", hd_tables)
+                                  or document, "DocumentClassification", hd_tables)
     return [c for c in classifications
-            if property_value(c, "ClassificationSystem") in VDI2770_SPELLINGS]
+            if property_value(c, "ClassificationSystem", hd_tables) in VDI2770_SPELLINGS]
 
 
 @rule("HD-D2", kind="template", prio="MUST",
@@ -84,7 +84,7 @@ def hd_d2_vdi_classification(ctx):
     """§2.3: "The classification according to VDI 2770 Blatt 1:2020 is
     mandatory in the Submodel Handover Documentation," identified by
     exactly that ClassificationSystem value."""
-    for subject, document in instances_of(ctx, "Document"):
+    for subject, document in instances_of(ctx, "Document", hd_tables):
         if not _vdi_classifications(document):
             yield Violation("no DocumentClassification declares the mandatory "
                             "VDI 2770 classification system", subject=subject)
@@ -96,9 +96,9 @@ def hd_d2_vdi_classification(ctx):
       fix="Replace the ClassId with one of the twelve VDI 2770 Blatt 1:2020 "
           "ids: 01-01, 02-01..02-04, 03-01..03-06 or 04-01.")
 def hd_d3_class_id(ctx):
-    for subject, document in instances_of(ctx, "Document"):
+    for subject, document in instances_of(ctx, "Document", hd_tables):
         for classification in _vdi_classifications(document):
-            class_id = property_value(classification, "ClassId")
+            class_id = property_value(classification, "ClassId", hd_tables)
             if class_id is not None and class_id not in VDI2770_CLASS_IDS:
                 yield Violation("ClassId is not a VDI 2770 Blatt 1:2020 class",
                                 subject=subject, detail="saw %r" % class_id)
@@ -110,9 +110,9 @@ def hd_d3_class_id(ctx):
       fix="Add an 'en' entry to ClassName; Table 1 names each class in "
           "English (for 03-02 it is 'Operation').")
 def hd_d4_class_name_english(ctx):
-    for subject, document in instances_of(ctx, "Document"):
+    for subject, document in instances_of(ctx, "Document", hd_tables):
         for classification in _vdi_classifications(document):
-            name = child_of(classification, "ClassName")
+            name = child_of(classification, "ClassName", hd_tables)
             if name is None:
                 continue  # absence is the generated cardinality rule's finding
             languages = {entry.language for entry in (name.value or [])}
@@ -134,10 +134,10 @@ def hd_d5_primary_id(ctx):
     """§2.6 defines the flag against "a collection of at least two
     DocumentId's" -- so only the several-ids-none-primary case is a
     finding; a lone id needs no flag."""
-    for subject, document in instances_of(ctx, "Document"):
-        ids = children_of(child_of(document, "DocumentIds") or document, "DocumentId")
+    for subject, document in instances_of(ctx, "Document", hd_tables):
+        ids = children_of(child_of(document, "DocumentIds", hd_tables) or document, "DocumentId", hd_tables)
         primaries = [d for d in ids
-                     if (property_value(d, "DocumentIsPrimary") or "").strip().lower()
+                     if (property_value(d, "DocumentIsPrimary", hd_tables) or "").strip().lower()
                      in ("true", "1")]
         if len(ids) >= 2 and not primaries:
             yield Violation("%d DocumentIds and none is marked primary" % len(ids),
@@ -150,8 +150,8 @@ def hd_d5_primary_id(ctx):
       fix="Set StatusValue to 'InReview' or 'Released' (exact casing) -- "
           "the two values VDI 2770 names.")
 def hd_d6_status_value(ctx):
-    for subject, version in instances_of(ctx, "DocumentVersion"):
-        status = property_value(version, "StatusValue")
+    for subject, version in instances_of(ctx, "DocumentVersion", hd_tables):
+        status = property_value(version, "StatusValue", hd_tables)
         if status is not None and status not in ("InReview", "Released"):
             yield Violation("StatusValue is outside the vocabulary",
                             subject=subject, detail="saw %r" % status)
@@ -171,7 +171,7 @@ def hd_d7_files_exist(ctx):
     if container is None:
         return
     for label in ("DigitalFile", "PreviewFile"):
-        for subject, element in instances_of(ctx, label):
+        for subject, element in instances_of(ctx, label, hd_tables):
             value = getattr(element, "value", None)
             if not isinstance(value, str) or not value.strip() or "://" in value:
                 continue  # an empty value names nothing -- a different defect
@@ -193,8 +193,8 @@ def hd_d8_status_date(ctx):
     """The generated rule checks the *declared* valueType; this one checks
     the value itself, because 'xs:date' declared over '06.02.2020' is the
     commoner mistake."""
-    for subject, version in instances_of(ctx, "DocumentVersion"):
-        value = property_value(version, "StatusSetDate")
+    for subject, version in instances_of(ctx, "DocumentVersion", hd_tables):
+        value = property_value(version, "StatusSetDate", hd_tables)
         if value is not None and not valid_xs_date(value):
             yield Violation("StatusSetDate is not a valid xs:date",
                             subject=subject, detail="saw %r" % value)
@@ -207,7 +207,7 @@ def hd_d8_status_date(ctx):
           "optional 2-3 digit suffix). Any unique idShort is legal; this "
           "is tidiness, not conformance.")
 def hdl1_idshort_pattern(ctx):
-    for subject, id_short, pattern in analyze(ctx)["idshort_drift"]:
+    for subject, id_short, pattern in analyze(ctx, hd_tables)["idshort_drift"]:
         yield Violation("idShort does not follow the template's suggestion",
                         subject=subject,
                         detail="%r does not match %s" % (id_short, pattern))
@@ -220,7 +220,7 @@ def hdl1_idshort_pattern(ctx):
           "matches nothing, and every rule that would have applied to the "
           "element silently stops applying.")
 def hdl2_near_miss(ctx):
-    for subject, seen, expected in analyze(ctx)["near_misses"]:
+    for subject, seen, expected in analyze(ctx, hd_tables)["near_misses"]:
         yield Violation("semanticId almost matches the template",
                         subject=subject,
                         detail="saw %s, the template says %s" % (seen, expected))
@@ -232,7 +232,7 @@ def hdl2_near_miss(ctx):
       fix="Use the reference type the template declares here; the value "
           "matched, so this is interoperability polish, not a failure.")
 def hdl3_reference_type(ctx):
-    for subject, seen, expected in analyze(ctx)["reftype_drift"]:
+    for subject, seen, expected in analyze(ctx, hd_tables)["reftype_drift"]:
         yield Violation(
             "the reference type differs from the template's",
             subject=subject, detail="saw %s, template uses %s" % (seen, expected),
@@ -248,11 +248,11 @@ def hdl3_reference_type(ctx):
           "merge the entries if they describe one document.")
 def hdl4_duplicate_ids(ctx):
     seen = {}
-    for subject, document in instances_of(ctx, "Document"):
-        for document_id in children_of(child_of(document, "DocumentIds") or document,
-                                       "DocumentId"):
-            pair = (property_value(document_id, "DocumentDomainId"),
-                    property_value(document_id, "DocumentIdentifier"))
+    for subject, document in instances_of(ctx, "Document", hd_tables):
+        for document_id in children_of(child_of(document, "DocumentIds", hd_tables) or document,
+                                       "DocumentId", hd_tables):
+            pair = (property_value(document_id, "DocumentDomainId", hd_tables),
+                    property_value(document_id, "DocumentIdentifier", hd_tables))
             if None in pair:
                 continue
             if pair in seen and seen[pair] != subject:
@@ -276,9 +276,9 @@ def hd_d9_entity_references_resolve(ctx):
     submodel: a reference into another AAS is a promise this tool cannot
     check offline, and §2.2 says such references "can span multiple AAS",
     so silence there is honesty, not a miss."""
-    for submodel in matched_submodels(ctx):
+    for submodel in matched_submodels(ctx, hd_tables):
         for label in ("DocumentedEntity", "RefersTo", "BasedOn", "TranslationOf"):
-            for subject, element in instances_of(ctx, label):
+            for subject, element in instances_of(ctx, label, hd_tables):
                 reference = getattr(element, "value", None)
                 keys = getattr(reference, "keys", None) or []
                 if not keys or reference.type.value != "ModelReference":
@@ -301,9 +301,9 @@ def hd_d9_entity_references_resolve(ctx):
           "'VDI2770:2020' is the template's example artefact and other tools "
           "matching on the specified string will not recognise it.")
 def hdl5_vdi_spelling(ctx):
-    for subject, document in instances_of(ctx, "Document"):
+    for subject, document in instances_of(ctx, "Document", hd_tables):
         for classification in _vdi_classifications(document):
-            spelling = property_value(classification, "ClassificationSystem")
+            spelling = property_value(classification, "ClassificationSystem", hd_tables)
             if spelling != VDI2770_SYSTEM:
                 yield Violation("ClassificationSystem spells the VDI system "
                                 "non-canonically",
@@ -324,8 +324,8 @@ PDF_CONTENT_TYPES = frozenset(("application/pdf",))
           "per VDI 2770) to this DocumentVersion. A content type cannot prove "
           "PDF/A conformance, so this is a warning, not an error.")
 def hd_d10_pdfa_rendition(ctx):
-    for subject, version in instances_of(ctx, "DocumentVersion"):
-        files = children_of(child_of(version, "DigitalFiles") or version, "DigitalFile")
+    for subject, version in instances_of(ctx, "DocumentVersion", hd_tables):
+        files = children_of(child_of(version, "DigitalFiles", hd_tables) or version, "DigitalFile", hd_tables)
         if not files:
             continue                          # absence is HD-E33's cardinality finding
         content_types = {(getattr(f, "content_type", "") or "").lower() for f in files}

@@ -7,9 +7,11 @@ a pack reads from the same walk, because walking the tree once per rule
 is how a validator gets quadratic, and walking it differently per rule
 is how two rules disagree about what they saw.
 
-The table is an argument. It defaults to hd_tables, the first one, so
-that the 02004 rules and their regression suite say exactly what they
-said before a second template existed.
+The table is an argument, and never an optional one. It had a default,
+which is a way of guessing: a rule that forgot the argument read the
+first template's table. `KeyError` would have made that loud, but the
+tables share a label, so forgetting is silent and the rule reports on an
+element the author never wrote.
 
 Matching policy (docs/divergences.md #1--#5, #8): an instance element
 belongs to a template row when its semanticId candidate spellings
@@ -29,12 +31,11 @@ from typing import Dict, List
 
 from ..model import Violation
 from ..semantics import candidate_values, edit_distance, element_candidate_values, version_stem
-from . import hd_tables
 
 _KIND_WORDS = {(1, 1): "exactly one", (0, 1): "at most one", (1, None): "one or more"}
 
 
-def analyze(ctx, tables=hd_tables) -> Dict:
+def analyze(ctx, tables) -> Dict:
     """The walk for one template, computed once per input.
 
     Cached per table rather than per context: an environment may carry a
@@ -47,7 +48,7 @@ def analyze(ctx, tables=hd_tables) -> Dict:
     return cached
 
 
-def matched_submodels(ctx, tables=hd_tables) -> List:
+def matched_submodels(ctx, tables) -> List:
     return [submodel for submodel in ctx.loaded.submodels
             if tables.TEMPLATE_SEMANTIC_ID in candidate_values(submodel.semantic_id)]
 
@@ -221,7 +222,7 @@ def resolve_in_submodel(submodel, keys) -> bool:
 
 
 
-def instances_of(ctx, label: str, tables=hd_tables):
+def instances_of(ctx, label: str, tables):
     """(subject path, element) pairs the walk matched to the row named
     `label` (template idShort, or the PDF's item name for unnamed rows)."""
     return analyze(ctx, tables)["instances"].get(tables.BY_LABEL[label]["id"], [])
@@ -233,7 +234,7 @@ def _child_matches(child, row, parent_is_list: bool) -> bool:
                         type(child).__name__, row, parent_is_list)
 
 
-def child_of(element, label: str, tables=hd_tables):
+def child_of(element, label: str, tables):
     """The first direct child of `element` matching the row `label`, or
     None. Uses the same matching as the walk -- including the in-list
     kind fallback -- so a hand rule and the generated layer never
@@ -246,7 +247,7 @@ def child_of(element, label: str, tables=hd_tables):
     return None
 
 
-def children_of(element, label: str, tables=hd_tables):
+def children_of(element, label: str, tables):
     row = tables.BY_LABEL[label]
     parent_is_list = type(element).__name__ == "SubmodelElementList"
     value = getattr(element, "value", None)
@@ -255,7 +256,7 @@ def children_of(element, label: str, tables=hd_tables):
     return [child for child in value if _child_matches(child, row, parent_is_list)]
 
 
-def property_value(element, label: str, tables=hd_tables):
+def property_value(element, label: str, tables):
     """The string value of `element`'s child property matching `label`,
     or None when absent (cardinality is the generated rules' finding,
     not the hand rules')."""
