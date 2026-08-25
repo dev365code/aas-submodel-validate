@@ -1,11 +1,15 @@
 """One walk over the instance, every structural answer collected.
 
-The generated table (hd_tables.py) says what the template expects; this
-engine says what one instance actually holds. It runs once per
-validation and caches on the context -- 38 generated rules and a dozen
-hand rules all read from the same walk, because walking the tree once
-per rule is how a validator gets quadratic, and walking it differently
-per rule is how two rules disagree about what they saw.
+A generated table says what its template expects; this engine says what
+one instance actually holds. It runs once per template per validation
+and caches on the context -- every generated rule and every hand rule of
+a pack reads from the same walk, because walking the tree once per rule
+is how a validator gets quadratic, and walking it differently per rule
+is how two rules disagree about what they saw.
+
+The table is an argument. It defaults to hd_tables, the first one, so
+that the 02004 rules and their regression suite say exactly what they
+said before a second template existed.
 
 Matching policy (docs/divergences.md #1--#5, #8): an instance element
 belongs to a template row when its semanticId candidate spellings
@@ -30,19 +34,25 @@ from . import hd_tables
 _KIND_WORDS = {(1, 1): "exactly one", (0, 1): "at most one", (1, None): "one or more"}
 
 
-def analyze(ctx) -> Dict:
-    cached = ctx.__dict__.get("_hd_analysis")
+def analyze(ctx, tables=hd_tables) -> Dict:
+    """The walk for one template, computed once per input.
+
+    Cached per table rather than per context: an environment may carry a
+    Handover submodel and a Technical Data submodel at once, and one
+    cache slot would hand the second pack the first pack's answers."""
+    cache = ctx.__dict__.setdefault("_smt_analysis", {})
+    cached = cache.get(tables.__name__)
     if cached is None:
-        cached = ctx.__dict__["_hd_analysis"] = _analyze(ctx)
+        cached = cache[tables.__name__] = _analyze(ctx, tables)
     return cached
 
 
-def matched_submodels(ctx) -> List:
+def matched_submodels(ctx, tables=hd_tables) -> List:
     return [submodel for submodel in ctx.loaded.submodels
-            if hd_tables.TEMPLATE_SEMANTIC_ID in candidate_values(submodel.semantic_id)]
+            if tables.TEMPLATE_SEMANTIC_ID in candidate_values(submodel.semantic_id)]
 
 
-def _analyze(ctx) -> Dict:
+def _analyze(ctx, tables) -> Dict:
     result = {
         "violations": {},      # row id -> [Violation]
         "instances": {},       # row id -> [(subject path, element)]
@@ -50,14 +60,14 @@ def _analyze(ctx) -> Dict:
         "idshort_drift": [],   # (subject path, id_short, intended pattern)
         "reftype_drift": [],   # (subject path, seen type, template type)
     }
-    for submodel in matched_submodels(ctx):
+    for submodel in matched_submodels(ctx, tables):
         root = submodel.id_short or "submodel"
         reference = submodel.semantic_id
-        expected = hd_tables.TEMPLATE_SUBMODEL_SID_TYPE
+        expected = tables.TEMPLATE_SUBMODEL_SID_TYPE
         if reference is not None and expected and reference.type.value != expected:
             result["reftype_drift"].append(
                 (root, reference.type.value, expected))
-        _scope(hd_tables.TREE, submodel.submodel_elements or [], root, result,
+        _scope(tables.TREE, submodel.submodel_elements or [], root, result,
                in_list=False)
     return result
 
@@ -181,10 +191,10 @@ def _near_miss(candidates, match_values):
 
 # -- navigation for the hand rules ------------------------------------------
 
-def instances_of(ctx, label: str):
+def instances_of(ctx, label: str, tables=hd_tables):
     """(subject path, element) pairs the walk matched to the row named
     `label` (template idShort, or the PDF's item name for unnamed rows)."""
-    return analyze(ctx)["instances"].get(hd_tables.BY_LABEL[label]["id"], [])
+    return analyze(ctx, tables)["instances"].get(tables.BY_LABEL[label]["id"], [])
 
 
 def _child_matches(child, row, parent_is_list: bool) -> bool:
@@ -193,12 +203,12 @@ def _child_matches(child, row, parent_is_list: bool) -> bool:
                         type(child).__name__, row, parent_is_list)
 
 
-def child_of(element, label: str):
+def child_of(element, label: str, tables=hd_tables):
     """The first direct child of `element` matching the row `label`, or
     None. Uses the same matching as the walk -- including the in-list
     kind fallback -- so a hand rule and the generated layer never
     disagree about which child is which (docs/divergences.md #11)."""
-    row = hd_tables.BY_LABEL[label]
+    row = tables.BY_LABEL[label]
     parent_is_list = type(element).__name__ == "SubmodelElementList"
     for child in getattr(element, "value", None) or []:
         if _child_matches(child, row, parent_is_list):
@@ -206,8 +216,8 @@ def child_of(element, label: str):
     return None
 
 
-def children_of(element, label: str):
-    row = hd_tables.BY_LABEL[label]
+def children_of(element, label: str, tables=hd_tables):
+    row = tables.BY_LABEL[label]
     parent_is_list = type(element).__name__ == "SubmodelElementList"
     value = getattr(element, "value", None)
     if not isinstance(value, list):
@@ -215,10 +225,10 @@ def children_of(element, label: str):
     return [child for child in value if _child_matches(child, row, parent_is_list)]
 
 
-def property_value(element, label: str):
+def property_value(element, label: str, tables=hd_tables):
     """The string value of `element`'s child property matching `label`,
     or None when absent (cardinality is the generated rules' finding,
     not the hand rules')."""
-    child = child_of(element, label)
+    child = child_of(element, label, tables)
     value = getattr(child, "value", None) if child is not None else None
     return value if isinstance(value, str) else None

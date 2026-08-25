@@ -109,10 +109,19 @@ def _sml(id_short, sid, list_type, children, value_type=None):
     return out
 
 
-def _smc(sid, children):
-    # list children carry no idShort -- the metamodel forbids it (AASd-120)
-    return {"modelType": "SubmodelElementCollection", "semanticId": _sid(sid),
-            "value": children}
+def _smc(sid, children, id_short=None):
+    # A list child carries no idShort -- the metamodel forbids it
+    # (AASd-120) -- but anything that is not a list child must have one
+    # (AASd-117), so the caller says which case this is.
+    out = {"modelType": "SubmodelElementCollection", "semanticId": _sid(sid)}
+    if children:
+        # AASd-...: a collection's value is either unset or non-empty. An
+        # empty list is not "no children", it is a declared emptiness the
+        # metamodel refuses.
+        out["value"] = children
+    if id_short:
+        out["idShort"] = id_short
+    return out
 
 
 def hd_env() -> dict:
@@ -168,6 +177,90 @@ def hd_env() -> dict:
     }]}
 
 
+# --- a fully conformant Technical Data instance ------------------------------
+
+def _ref(keys):
+    return {"type": "ModelReference",
+            "keys": [{"type": kind, "value": value} for kind, value in keys]}
+
+
+TD_SUBMODEL_ID = "urn:example:technicaldata"
+
+
+def td_env() -> dict:
+    """The golden fixture for IDTA 02003, written by hand for the same
+    reason hd_env is: a fixture generated from the table would agree with
+    the table however wrong the table was.
+
+    It carries every optional container as well as every required
+    element, so each row has a scope it can be stripped from. The
+    submodel's own id is deliberately *not* the template's -- the
+    official sample reuses the template's identifier, and a fixture that
+    copied that would stop being evidence about instances.
+    """
+    product_image = _smc("0173-1#02-ABM220#001/0173-1#01-AHY911#001", [
+        {"idShort": "ImageFile", "modelType": "File",
+         "semanticId": _sid("0173-1#02-ABK291#002"),
+         "contentType": "image/png", "value": "/aasx/files/front.png"},
+        _mlp("ImageNote", "0173-1#02-ABL423#001", "Front view"),
+    ])
+    classification = _smc("0173-1#02-ABK162#002/0173-1#01-AHX839#002", [
+        _prop("ClassificationSystem", "0173-1#02-ABL424#001", "ECLASS"),
+        _prop("ClassificationSystemVersion", "0173-1#02-AAR710#003", "15.0"),
+        # The template spells this identifier "ProduktClassification" -- a
+        # German/English mix that is nonetheless the published identifier,
+        # so a faithful instance carries it verbatim (divergences).
+        _prop("ClassificationSystemUrl",
+              "https://admin-shell.io/IDTA/TechnicalData/ProductClassifications"
+              "/ProduktClassification/ClassificationSystemUrl/2/0",
+              "https://eclass.eu/"),
+        _prop("ProductClassId", "0173-1#02-ABG776#003", "27-01-01-01"),
+        _prop("ProductClassCodedName", "0173-1#02-ABK128#002", "27-01-01-01"),
+        _mlp("ProductClassName", "0173-1#02-ABK273#002", "Low voltage switchgear"),
+        {"idShort": "ReferenceToTechnicalPropertyArea",
+         "modelType": "ReferenceElement",
+         "semanticId": _sid("0173-1#02-ABL358#002"),
+         # Resolves: the list is addressed by idShort, its child by index.
+         "value": _ref((("Submodel", TD_SUBMODEL_ID),
+                        ("SubmodelElementList", "TechnicalPropertyAreas"),
+                        ("SubmodelElementCollection", "0")))},
+    ])
+    general = _smc("0173-1#02-ABK161#002/0173-1#01-AHX838#002", [
+        _prop("ManufacturerName", "0173-1#02-AAO677#004", "Example company Ltd."),
+        {"idShort": "CompanyLogo", "modelType": "File",
+         "semanticId": _sid("0173-1#02-ABI776#002"),
+         "contentType": "image/png", "value": "/aasx/files/logo.png"},
+        _mlp("ManufacturerProductDesignation", "0173-1#02-AAW338#003",
+             "Switchgear type A"),
+        _prop("ManufacturerArticleNumber", "0173-1#02-AAO676#005", "A-1000"),
+        _prop("ManufacturerOrderCode", "0173-1#02-AAO227#004", "A-1000-24V"),
+        _sml("ProductImages", "0173-1#02-ABM220#001",
+             "SubmodelElementCollection", [product_image]),
+    ], id_short="GeneralInformation")
+    return {"submodels": [{
+        "id": TD_SUBMODEL_ID, "idShort": "TechnicalData",
+        "modelType": "Submodel",
+        "semanticId": {"type": "ModelReference",
+                       "keys": [{"type": "Submodel",
+                                 "value": "0173-1#01-AHX837#002"}]},
+        "submodelElements": [
+            general,
+            _sml("ProductClassifications", "0173-1#02-ABK162#002",
+                 "SubmodelElementCollection", [classification]),
+            _sml("TechnicalPropertyAreas", "0173-1#02-ABK163#002",
+                 "SubmodelElementCollection",
+                 [_smc("0173-1#02-ABL358#002/0173-1#01-AHX773#002", [])]),
+            _smc("0173-1#02-ABK164#002", [
+                _mlp("TextStatement", "0173-1#02-ABK134#002", "Indoor use only."),
+                _prop("ValidDate", "0173-1#02-ABL775#001", "2025-03-15", "xs:date"),
+            ], id_short="FurtherInformation"),
+            _sml("SpecificDescriptions", "0173-1#02-ABM221#001",
+                 "SubmodelElementCollection",
+                 [_smc("0173-1#02-ABM221#001/0173-1#01-AHY912#001", [])]),
+        ],
+    }]}
+
+
 # --- mutations, for firing every generated rule -----------------------------
 
 def _element_matches(element: dict, match_values) -> bool:
@@ -190,7 +283,7 @@ def _scopes(env: dict):
         yield from walk(submodel.get("submodelElements", []))
 
 
-def strip_row(env: dict, row) -> dict:
+def strip_row(env: dict, row, tables=None) -> dict:
     """Remove the row's elements *from the row's own scope*.
 
     Global removal would overshoot: component decomposition means a list
@@ -198,8 +291,9 @@ def strip_row(env: dict, row) -> dict:
     "anywhere" deletes the parent too and the child rule loses the very
     scope it should have fired in.
     """
-    from aas_submodel_validate.rules import hd_tables
-    parent = hd_tables.BY_ID.get(row["parent"])
+    if tables is None:
+        from aas_submodel_validate.rules import hd_tables as tables
+    parent = tables.BY_ID.get(row["parent"])
     if parent is None:
         containers = [env["submodels"][0]["submodelElements"]]
     else:
@@ -233,9 +327,11 @@ def stub_of(row) -> dict:
     return out
 
 
-def inject(env: dict, parent_row, stubs) -> dict:
+def inject(env: dict, parent_row, stubs, tables=None) -> dict:
     """Append stubs into every scope the parent row matches (or the
-    submodel root when the row has no parent)."""
+    submodel root when the row has no parent). `tables` is accepted for
+    symmetry with strip_row; the scopes are found by match value, which
+    is table-independent."""
     if parent_row is None:
         env["submodels"][0]["submodelElements"].extend(stubs)
         return env
