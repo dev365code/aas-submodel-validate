@@ -38,25 +38,36 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
                content_types: bool = True, root_rels: bool = True,
                origin_rel: bool = True, origin_rels: bool = True,
                spec_rel: bool = True, bom: bool = False,
-               files=(), suppl_targets=None):
+               files=(), suppl_targets=None, relative_targets: bool = False):
     """Write an .aasx; every keyword exists so a test can break one link.
 
     `files` are (name, data) parts to store; `suppl_targets` declares the
     aas-suppl relationships on the spec part (defaults to every name in
     `files`, the honest container; pass a list to declare something the
     archive does not hold).
+
+    `relative_targets` writes each Target without a leading slash, which
+    OPC resolves against the directory of the part whose relationships
+    they are. Conformant, and the shape this builder could not make.
     """
     marker = b"\xef\xbb\xbf" if bom else b""
     suppl = [name for name, _ in files] if suppl_targets is None else suppl_targets
+
+    def target(name, source_dir):
+        if not relative_targets:
+            return "/" + name
+        prefix = source_dir + "/" if source_dir else ""
+        return name[len(prefix):] if name.startswith(prefix) else "/" + name
+
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
         if content_types:
             archive.writestr("[Content_Types].xml", CONTENT_TYPES)
         if root_rels:
-            pairs = [(ORIGIN_REL, "/aasx/aasx-origin")] if origin_rel else []
+            pairs = [(ORIGIN_REL, target("aasx/aasx-origin", ""))] if origin_rel else []
             archive.writestr("_rels/.rels", marker + rels(pairs))
         archive.writestr("aasx/aasx-origin", b"")
         if origin_rels:
-            pairs = [(SPEC_REL, "/" + payload_name)] if spec_rel else []
+            pairs = [(SPEC_REL, target(payload_name, "aasx"))] if spec_rel else []
             archive.writestr("aasx/_rels/aasx-origin.rels", marker + rels(pairs))
         archive.writestr(payload_name, payload)
         for name, data in files:
@@ -64,7 +75,8 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
         if suppl:
             directory, _, base = payload_name.rpartition("/")
             archive.writestr("%s/_rels/%s.rels" % (directory, base),
-                             marker + rels([(SUPPL_REL, "/" + name) for name in suppl]))
+                             marker + rels([(SUPPL_REL, target(name, directory))
+                                            for name in suppl]))
     return path
 
 

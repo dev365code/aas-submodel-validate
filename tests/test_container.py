@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from aas_submodel_validate.container import AasxPackage, ContainerError
-from builders import build_aasx
+from builders import build_aasx, env_json
 
 
 def test_a_wellformed_container_resolves_its_chain(tmp_path):
@@ -65,3 +65,35 @@ def test_a_spec_target_that_does_not_exist_is_reported(tmp_path):
                 dst.writestr(name, src.read(name))
     with AasxPackage(rewritten) as package, pytest.raises(ContainerError, match="env.json"):
         package.read(package.spec_parts[0])
+
+
+def test_a_relationship_target_without_a_slash_resolves_against_its_part(tmp_path):
+    """OPC resolves a target that begins with "/" against the package
+    root and any other target against the directory of the part whose
+    relationships it is (docs/divergences.md #13). That reading is why
+    this reader accepts conformant packages other tools reject -- and
+    until now no test had ever exercised the branch that does it.
+
+    Written before touching that code, not after: a branch nothing
+    watches is a branch a refactor may quietly change.
+    """
+    path = build_aasx(tmp_path / "rel.aasx", payload=env_json(),
+                      files=[("aasx/files/manual.pdf", b"%PDF-1.4 ")],
+                      relative_targets=True)
+    with AasxPackage(path) as package:
+        assert package.origin == "aasx/aasx-origin"
+        assert package.spec_parts == ["aasx/env.json"]
+        suppl = [target for _type, target in package.relationships("aasx/env.json")]
+        assert suppl == ["aasx/files/manual.pdf"]
+
+
+def test_both_spellings_of_a_relationship_reach_the_same_parts(tmp_path):
+    """Absolute and relative are two ways of writing one package, so they
+    have to produce one answer."""
+    payload, parts = env_json(), [("aasx/files/manual.pdf", b"%PDF-1.4 ")]
+    absolute = build_aasx(tmp_path / "abs.aasx", payload=payload, files=parts)
+    relative = build_aasx(tmp_path / "rel.aasx", payload=payload, files=parts,
+                          relative_targets=True)
+    with AasxPackage(absolute) as a, AasxPackage(relative) as b:
+        assert a.spec_parts == b.spec_parts
+        assert a.relationships("aasx/env.json") == b.relationships("aasx/env.json")
