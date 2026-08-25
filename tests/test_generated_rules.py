@@ -40,27 +40,27 @@ def test_every_generated_rule_fires(tmp_path, row):
     low, _high = row["card"]
     if low >= 1:
         if _matched_in_golden(row):
-            strip_row(env, row)
+            strip_row(env, row, hd_tables)
         else:
             # required child of an optional list: an empty list violates it
             parent = hd_tables.BY_ID[row["parent"]]
             grandparent = hd_tables.BY_ID.get(parent["parent"])
-            inject(env, grandparent, [stub_of(parent)])
+            inject(env, grandparent, [stub_of(parent)], hd_tables)
     else:
         parent = hd_tables.BY_ID.get(row["parent"])
-        inject(env, parent, [stub_of(row), stub_of(row)])
+        inject(env, parent, [stub_of(row), stub_of(row)], hd_tables)
     assert row["id"] in _ids(tmp_path, env)
 
 
 def test_a_kind_mismatch_names_both_kinds(tmp_path):
     env = copy.deepcopy(hd_env())
     row = hd_tables.BY_LABEL["Version"]
-    strip_row(env, row)
+    strip_row(env, row, hd_tables)
     wrong = {"idShort": "Version", "modelType": "MultiLanguageProperty",
              "semanticId": {"type": "ExternalReference",
                             "keys": [{"type": "GlobalReference", "value": row["sid"]}]},
              "value": [{"language": "en", "text": "V1.2"}]}
-    inject(env, hd_tables.BY_ID[row["parent"]], [wrong])
+    inject(env, hd_tables.BY_ID[row["parent"]], [wrong], hd_tables)
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
     findings = {f.id: f for f in runner.run(path).findings}
@@ -70,11 +70,11 @@ def test_a_kind_mismatch_names_both_kinds(tmp_path):
 def test_a_value_type_mismatch_is_reported(tmp_path):
     env = copy.deepcopy(hd_env())
     row = hd_tables.BY_LABEL["StatusSetDate"]
-    strip_row(env, row)
+    strip_row(env, row, hd_tables)
     wrong = stub_of(row)
     wrong["valueType"] = "xs:string"
     wrong["value"] = "2020-02-06"
-    inject(env, hd_tables.BY_ID[row["parent"]], [wrong])
+    inject(env, hd_tables.BY_ID[row["parent"]], [wrong], hd_tables)
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
     findings = {f.id: f for f in runner.run(path).findings}

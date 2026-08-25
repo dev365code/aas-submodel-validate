@@ -38,3 +38,16 @@ def test_the_two_tables_share_a_label_that_means_different_things():
     assert "ClassificationSystem" in shared
     assert (hd_tables.BY_LABEL["ClassificationSystem"]["sid"]
             != td_tables.BY_LABEL["ClassificationSystem"]["sid"])
+
+
+def test_the_builders_require_their_table_too():
+    """The fixtures decide which rows to strip and where to inject, so a
+    builder that guesses a table cuts the wrong elements out of the wrong
+    template -- and the test that called it still reads as though it
+    exercised the row it named."""
+    import builders
+    for name in ("strip_row", "inject"):
+        signature = inspect.signature(getattr(builders, name))
+        tables = signature.parameters["tables"]
+        assert tables.default is inspect.Parameter.empty, \
+            "builders.%s would guess a table when a caller forgets one" % name

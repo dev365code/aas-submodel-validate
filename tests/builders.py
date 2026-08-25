@@ -352,7 +352,7 @@ def _scopes(env: dict):
         yield from walk(submodel.get("submodelElements", []))
 
 
-def strip_row(env: dict, row, tables=None) -> dict:
+def strip_row(env: dict, row, tables) -> dict:
     """Remove the row's elements *from the row's own scope*.
 
     Global removal would overshoot: component decomposition means a list
@@ -360,8 +360,6 @@ def strip_row(env: dict, row, tables=None) -> dict:
     "anywhere" deletes the parent too and the child rule loses the very
     scope it should have fired in.
     """
-    if tables is None:
-        from aas_submodel_validate.rules import hd_tables as tables
     parent = tables.BY_ID.get(row["parent"])
     if parent is None:
         containers = [env["submodels"][0]["submodelElements"]]
@@ -396,11 +394,12 @@ def stub_of(row) -> dict:
     return out
 
 
-def inject(env: dict, parent_row, stubs, tables=None) -> dict:
+def inject(env: dict, parent_row, stubs, tables) -> dict:
     """Append stubs into every scope the parent row matches (or the
-    submodel root when the row has no parent). `tables` is accepted for
-    symmetry with strip_row; the scopes are found by match value, which
-    is table-independent."""
+    submodel root when the row has no parent). `tables` is required for
+    symmetry with strip_row rather than used: the scopes are found by
+    match value, which is table-independent. A caller that has to name
+    the table cannot pass rows from one and mean another."""
     if parent_row is None:
         env["submodels"][0]["submodelElements"].extend(stubs)
         return env
