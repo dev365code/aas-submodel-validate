@@ -16,6 +16,23 @@ from aas_submodel_validate import runner
 JSON_EXAMPLE = "tests/corpus/idta/02004/example.json"
 AASX_EXAMPLE = "tests/corpus/idta/02004/example.aasx"
 
+#: The remedy sentences, written out rather than read from the registry.
+#: Read from the registry they would agree with any rewording, and a
+#: reworded remedy is exactly what promoting a rule body to a factory can
+#: do without moving an id or a subject.
+_D6_FIX = ("Set StatusValue to 'InReview' or 'Released' (exact casing) -- "
+           "the two values VDI 2770 names.")
+_L2_FIX = ("Correct the semanticId to the template's spelling; a near-miss "
+           "matches nothing, and every rule that would have applied to the "
+           "element silently stops applying.")
+_L5_FIX = ("Write ClassificationSystem exactly as 'VDI 2770 Blatt 1:2020' -- "
+           "the value \u00a72.3 says identifies the mandatory system. "
+           "'VDI2770:2020' is the template's example artefact and other tools "
+           "matching on the specified string will not recognise it.")
+_D10_FIX = ("Add a DigitalFile with contentType application/pdf (a PDF/A file, "
+            "per VDI 2770) to this DocumentVersion. A content type cannot "
+            "prove PDF/A conformance, so this is a warning, not an error.")
+
 
 def _named(report):
     return sorted((f.id, f.violation.subject or "") for f in report.findings
@@ -41,6 +58,60 @@ def test_the_official_example_by_name():
         ("HD-D10", "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file"),
         ("HD-D10", "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL"),
     ])
+
+
+def test_every_word_of_the_official_verdict():
+    """The same ten findings, whole: severity, message, detail and the
+    remedy sentence, not only the id and the subject.
+
+    The pair above is what a reader of the *set* needs; this is what a
+    reader of one *finding* gets. Rules are about to be shared between
+    two packs by promoting their bodies to factories, and the promotion
+    that keeps every id and subject in place while rewording a message is
+    the one nothing above would notice. Read as a set because the report
+    is ordered elsewhere (tests/test_report_order.py) and this is not a
+    test about order.
+    """
+    report = runner.run(JSON_EXAMPLE)
+    whole = {(f.id, str(f.severity), f.violation.subject, f.violation.message,
+              f.violation.detail, f.fix)
+             for f in report.findings if f.id != "META"}
+    assert whole == {
+        ("HD-D6", "warning",
+         "HandoverDocumentation/Documents/Datasheet/DocumentVersions/DocumentVersion_en",
+         "StatusValue is outside the vocabulary", "saw 'released'", _D6_FIX),
+        ("HD-D6", "warning",
+         "HandoverDocumentation/Documents/Datasheet/DocumentVersions/DocumentVersion_de",
+         "StatusValue is outside the vocabulary", "saw 'released'", _D6_FIX),
+        ("HD-D6", "warning",
+         "HandoverDocumentation/Documents/Datasheet/DocumentVersions/DocumentVersion_en_de_fr",
+         "StatusValue is outside the vocabulary", "saw 'released'", _D6_FIX),
+        ("HD-D6", "warning",
+         "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file",
+         "StatusValue is outside the vocabulary", "saw 'released'", _D6_FIX),
+        ("HD-D6", "warning",
+         "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL",
+         "StatusValue is outside the vocabulary", "saw 'released'", _D6_FIX),
+        ("HDL2", "warning", "HandoverDocumentation/Entites",
+         "semanticId almost matches the template",
+         "saw https://admin-shell.io/vdi/2770/1/0/EntityForDocumentation, the "
+         "template says https://admin-shell.io/vdi/2770/1/0/EntitiesForDocumentation",
+         _L2_FIX),
+        ("HDL5", "warning", "HandoverDocumentation/Documents/Datasheet",
+         "ClassificationSystem spells the VDI system non-canonically",
+         "saw 'VDI2770:2020'", _L5_FIX),
+        ("HDL5", "warning", "HandoverDocumentation/Documents/CADmodel",
+         "ClassificationSystem spells the VDI system non-canonically",
+         "saw 'VDI2770:2020'", _L5_FIX),
+        ("HD-D10", "warning",
+         "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file",
+         "no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition",
+         "content types present: application/step", _D10_FIX),
+        ("HD-D10", "warning",
+         "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL",
+         "no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition",
+         "content types present: application/step", _D10_FIX),
+    }
 
 
 def test_the_metamodel_channel_reports_the_known_seventy_seven():
