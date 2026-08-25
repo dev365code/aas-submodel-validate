@@ -61,8 +61,9 @@ class Profile:
         because it dropped the element or because it made it optional.
 
         All of them, not only the ones a file is asked for unconditionally.
-        Six of the eleven sit under containers the template always requires
-        and so appear in every report; the other five are required children
+        Six of the eleven sit under containers the template always requires,
+        so a file that has any Document at all is asked for those six; the
+        other five are required children
         of an optional container (`RefersToEntities`, `BasedOnReferences`,
         `TranslationOfEntities`, `DocumentedEntities`, `Entities`, each
         `0..1`). It is tempting to drop those five, because a file that

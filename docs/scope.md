@@ -17,10 +17,12 @@ finding.
   templates; it never writes one.
 - **Not a converter.** AASX, XML and JSON are read; nothing is
   transformed, migrated or re-serialised as a product feature.
-- **Not a Digital Product Passport platform.** When IDTA 02035-2 support
-  arrives it will be validated as what it is measured to be — a profile
-  of the Handover Documentation template — and nothing more. This
-  project is the submodel-conformance layer.
+- **Not a Digital Product Passport platform.** IDTA 02035-2 is measured
+  against the Handover Documentation template it is a profile of, and a
+  submodel declaring that profile is told which template answered
+  (`SMT-D2`); judging by 02035-2's own rules is not here yet, and when it
+  is it will be that and nothing more. This project is the
+  submodel-conformance layer.
 - **Not a certifier, and not a fixer.** It reports findings and names
   the remedy for each; deciding what a file was meant to say is the
   author's job. No `--fix`, no conformance certificates.

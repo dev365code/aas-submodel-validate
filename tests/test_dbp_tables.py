@@ -166,8 +166,10 @@ def test_the_submodel_says_one_thing_about_itself_that_02004_does_not():
 
     It is generated rather than written into a rule because a string
     copied out of a template by hand is how the sixty-four rows would
-    have gone stale, and this one would go stale silently: nothing fires
-    on it yet.
+    have gone stale, and this one would go stale in the quietest way
+    available: `SMT-D2` is the only rule that reads it, it is `info`, and
+    a note that stops appearing looks like a file that stopped needing
+    one.
     """
     theirs = set(hd_tables.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS)
     ours = set(dbp_tables.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS)
@@ -179,10 +181,12 @@ def test_the_submodel_says_one_thing_about_itself_that_02004_does_not():
 
 
 def test_no_rule_is_registered_from_this_table_yet():
-    """The boundary of this slice. Which of the two tables answers for a
-    given file is a decision taken where the walk is handed a table, and
-    it has not been taken; until it is, a DBP rule would fire on every
-    02004 file in the world. Delete this test in the slice that decides."""
+    """The boundary of this slice. Which table answers has been *reported*
+    -- `SMT-D2` names the profile a submodel declares -- and not acted
+    on: the walk is still handed 02004's table, so registering a DBP rule
+    now would fire it on every 02004 file in the world. Delete this test
+    in the slice that hands the walk the other table, which is also the
+    slice that must bring the hand rules with it."""
     registered = {rule.id for rule in all_rules()}
     assert registered, "nothing registered at all -- this test proves nothing"
     assert not [rule_id for rule_id in registered if rule_id.startswith("DBP-")]

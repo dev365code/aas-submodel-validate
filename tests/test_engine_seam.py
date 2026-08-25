@@ -46,9 +46,11 @@ def test_the_third_table_shares_every_label_and_every_identifier():
     """The hazard the test above describes, one degree worse. 02003 at
     least disagreed with 02004 about what a shared label *identified*;
     02035-2 agrees about all 22 of them -- same label, same semanticId,
-    same kind -- and differs only in what it obliges. Nothing an
-    instance carries distinguishes the rows, so the table argument is
-    the whole of the distinction."""
+    same kind -- and differs only in what it obliges. No *identifier* a
+    row is matched by distinguishes them, so the table argument is the
+    whole of the distinction at the row level. (An instance can still say
+    which template it means, one level up, in the submodel's
+    supplementals -- that is what `SMT-D2` reads.)"""
     shared = set(hd_tables.BY_LABEL) & set(dbp_tables.BY_LABEL)
     assert len(shared) == len(dbp_tables.BY_LABEL) == 22
     assert all(hd_tables.BY_LABEL[label]["sid"] == dbp_tables.BY_LABEL[label]["sid"]

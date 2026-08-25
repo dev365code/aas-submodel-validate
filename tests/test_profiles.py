@@ -79,9 +79,13 @@ def test_the_mark_is_derived_from_the_tables_and_never_written_down():
     template. A copy in this module would be a second place for it to be
     right, and the copy is the one nobody regenerates.
 
-    Read through the AST rather than the source text: Python joins
-    adjacent string literals at parse time, so a copy split across two
-    lines is invisible to a substring search of the file.
+    Read through the AST rather than the source text, which catches one
+    spelling a substring search misses: Python joins adjacent string
+    literals at parse time, so a copy wrapped across two lines is
+    invisible in the file. It catches no other spelling -- `+` between
+    the halves, an f-string, `bytes`, or the value living in a different
+    module all pass -- and it is a tripwire on the obvious mistake, not a
+    proof.
     """
     assert DBP.marks == frozenset([_mark()])
     source = Path(inspect.getfile(profiles)).read_text("utf-8")
@@ -119,7 +123,7 @@ def test_a_marked_submodel_is_told_which_template_answered(tmp_path):
     assert "IDTA 02035-2" in finding.violation.detail
 
 
-def test_the_notice_names_every_requirement_the_two_templates_differ_on(tmp_path):
+def test_the_notice_names_every_cardinality_the_two_templates_differ_on(tmp_path):
     report = _report(tmp_path, declaring_profile(hd_env(), _mark()))
     (finding,) = [f for f in report.findings if f.id == "SMT-D2"]
     for row_id in RELIEVED:

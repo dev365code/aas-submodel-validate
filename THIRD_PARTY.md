@@ -26,10 +26,11 @@ tables (`rules/hd_tables.py`, `rules/td_tables.py`, `rules/dbp_tables.py`
 — one table per template, one generator); the examples are test corpus — including their
 defects, which are pinned by name in the suite rather than repaired.
 
-02035-2 is vendored and tabulated ahead of the rules that will read it:
-it is here to be measured against 02004, whose submodel identifier it
-shares. No rule is registered from its table, and the tool reports no
-finding about it.
+02035-2 is vendored and tabulated ahead of the rules that will judge by
+it: it is here to be measured against 02004, whose submodel identifier it
+shares. No rule is generated from its rows; one rule reads the table to
+compare the two (`SMT-D2`, which names 02035-2 when a submodel declares
+its profile), and 02004 is still what answers for such a file.
 
 ## Runtime dependency
 
