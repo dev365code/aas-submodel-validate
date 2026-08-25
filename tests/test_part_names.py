@@ -119,3 +119,27 @@ def test_the_container_answers_for_a_name_it_holds(tmp_path):
     with AasxPackage(path) as package:
         assert package.part("/aasx/./files/manual.pdf") == PART
         assert package.part("/aasx/files/absent.pdf") is None
+
+
+def test_the_literal_spelling_really_does_win(tmp_path):
+    """An archive holding both `a b.pdf` and `a%20b.pdf` has to answer
+    for each of them separately, or the reader has silently merged two
+    files. The claim was that an exact match is tried first -- but a File
+    value conventionally starts with "/" and an entry name never does, so
+    the exact match almost never fired and the decoded reading always
+    won.
+    """
+    path = build_aasx(tmp_path / "p.aasx",
+                      files=[("aasx/files/a b.pdf", b"1"),
+                             ("aasx/files/a%20b.pdf", b"2")])
+    with AasxPackage(path) as package:
+        assert package.part("/aasx/files/a%20b.pdf") == "aasx/files/a%20b.pdf"
+        assert package.part("/aasx/files/a b.pdf") == "aasx/files/a b.pdf"
+
+
+def test_a_name_that_ends_in_a_separator_is_not_a_part_name():
+    """OPC part names do not end in "/": that is a directory, and no
+    part is named by it."""
+    assert canonical_part_name("/aasx/files/") is None
+    assert canonical_part_name("/aasx/") is None
+    assert canonical_part_name("aasx/files/manual.pdf") == "aasx/files/manual.pdf"

@@ -59,12 +59,15 @@ def canonical_part_name(value: str):
     conformant package broken.
 
     None means the value is not a part name -- it climbs out of the
-    package, or there is nothing left of it. That is a different defect
-    from a part being absent, and the rules say so separately.
+    package, ends in a separator (which names a directory, not a part),
+    or has nothing left of it. That is a different defect from a part
+    being absent, and the rules say so separately.
     """
     if not value or not value.strip():
         return None
     text = value.replace("\\", "/")
+    if text.endswith("/"):
+        return None          # a directory is not named by any part
     text = urllib.parse.unquote(text)
     segments = []
     for segment in text.split("/"):
@@ -145,6 +148,15 @@ class AasxPackage:
         """
         if value in self._names:
             return value
+        # And the same name written the way File values conventionally
+        # are: with the leading slash OPC part names carry and archive
+        # entry names do not. Without this the exact match almost never
+        # fired, and an entry whose name really holds a percent escape
+        # was reachable only by the decoded reading -- which is to say
+        # the literal never won anything.
+        literal = value.lstrip("/")
+        if literal in self._names:
+            return literal
         canonical = canonical_part_name(value)
         if canonical is None:
             return None
