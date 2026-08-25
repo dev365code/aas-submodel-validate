@@ -13,8 +13,8 @@ import json
 
 from aas_submodel_validate import runner
 
-JSON_EXAMPLE = "tests/corpus/idta/example.json"
-AASX_EXAMPLE = "tests/corpus/idta/example.aasx"
+JSON_EXAMPLE = "tests/corpus/idta/02004/example.json"
+AASX_EXAMPLE = "tests/corpus/idta/02004/example.aasx"
 
 
 def _named(report):

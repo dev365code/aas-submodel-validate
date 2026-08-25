@@ -37,12 +37,21 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02003/2.0.1/template.json":
         "published/Technical_Data/2/0/1/"
         "IDTA 02003_2-0-1_Template_TechnicalData.json",
-    "tests/corpus/idta/example.json":
+    "tests/corpus/idta/02004/example.json":
         "published/Handover Documentation/2/0/"
         "IDTA 02004-2-0_Example_HandoverDocumentation.json",
-    "tests/corpus/idta/example.aasx":
+    "tests/corpus/idta/02004/example.aasx":
         "published/Handover Documentation/2/0/"
         "IDTA 02004-2-0_Example_HandoverDocumentation.aasx",
+    # 02003 publishes its sample twice: once beside the 2.0 template and
+    # again, repaired, beside the 2.0.1 one. Both are kept -- the pair is
+    # the evidence for what upstream itself considered wrong.
+    "tests/corpus/idta/02003/sample-2.0.json":
+        "published/Technical_Data/2/0/IDTA 02003_Sample_TechnicalData.json",
+    "tests/corpus/idta/02003/sample-2.0.aasx":
+        "published/Technical_Data/2/0/IDTA 02003_Sample_TechnicalData.aasx",
+    "tests/corpus/idta/02003/sample-2.0.1.aasx":
+        "published/Technical_Data/2/0/1/IDTA 02003_Sample_TechnicalData.aasx",
 }
 
 

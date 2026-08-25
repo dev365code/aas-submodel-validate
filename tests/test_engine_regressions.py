@@ -134,7 +134,7 @@ def test_the_golden_is_still_clean(tmp_path):
 
 
 def test_the_official_example_verdict_is_unchanged():
-    report = runner.run("tests/corpus/idta/example.json")
+    report = runner.run("tests/corpus/idta/02004/example.json")
     non_meta = sorted((f.id, f.violation.subject or "")
                       for f in report.findings if f.id != "META")
     assert report.ok

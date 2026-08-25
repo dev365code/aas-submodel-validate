@@ -101,7 +101,7 @@ def test_the_official_example_no_longer_gets_a_false_hdl3():
     the template's. Once the expected type is read from the template
     instead of hardcoded to ExternalReference, the drift lint stops firing
     a finding that was never real."""
-    report = runner.run("tests/corpus/idta/example.json")
+    report = runner.run("tests/corpus/idta/02004/example.json")
     assert [f for f in report.findings if f.id == "HDL3"] == []
 
 
@@ -215,7 +215,7 @@ def test_the_official_examples_cad_model_draws_the_pdfa_warning():
     """The ammunition: the published example's CAD-model versions ship STEP
     only, so §2.1's PDF/A expectation is unmet -- a finding no other tool
     currently reports about the reference material."""
-    report = runner.run("tests/corpus/idta/example.json")
+    report = runner.run("tests/corpus/idta/02004/example.json")
     d10 = [f for f in report.findings if f.id == "HD-D10"]
     assert d10
     assert all("CADmodel" in (f.violation.subject or "") for f in d10)
