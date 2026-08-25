@@ -55,6 +55,9 @@ NAMESPACES = {
     "TD-E": "IDTA 02003, generated from the template's rows",
     "TD-D": "IDTA 02003, what the template file cannot say",
     "TDL": "IDTA 02003, informational lints",
+    "DBP2-E": "IDTA 02035-2, generated from the template's rows",
+    "DBP2-D": "IDTA 02035-2, 02004's hand rules over 02035-2's table",
+    "DBP2L": "IDTA 02035-2, informational lints",
 }
 
 

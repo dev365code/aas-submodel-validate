@@ -148,6 +148,36 @@ def env_json(semantic_value: str = "0173-1#01-AHF578#003") -> bytes:
     }]}).encode("utf-8")
 
 
+#: What IDTA 02035-2 stops asking a DocumentVersion for. Named here, by
+#: hand, and not read from `dbp_tables`: a fixture that asked the table
+#: which elements to drop would agree with the table however wrong the
+#: table was, which is why `td_env` is hand-written too. A test checks
+#: this list against the table from the other side.
+DROPPED_BY_02035_2 = ("Version", "Description", "StatusSetDate", "StatusValue",
+                      "OrganizationShortName", "OrganizationOfficialName")
+
+
+def dbp_env() -> dict:
+    """A minimal instance IDTA 02035-2 accepts and IDTA 02004 does not.
+
+    `hd_env()` already satisfies 02035-2 -- 02035-2 asks for a subset and
+    relaxes two rows, so a conformant 02004 file is conformant to it as
+    well -- which makes `hd_env` useless as evidence that the two
+    templates differ. This is the file that shows they do: six elements
+    lighter, clean under one template and six errors under the other.
+    """
+    import copy
+    env = copy.deepcopy(hd_env())
+    for document in env["submodels"][0]["submodelElements"][0]["value"]:
+        for child in document["value"]:
+            if child.get("idShort") != "DocumentVersions":
+                continue
+            for version in child["value"]:
+                version["value"] = [element for element in version["value"]
+                                    if element.get("idShort") not in DROPPED_BY_02035_2]
+    return env
+
+
 def declaring_profile(env: dict, mark: str, template_id: str = None) -> dict:
     """A copy of `env` whose first submodel says it means a second
     template's profile, the way IDTA 02035-2 says it: a supplemental

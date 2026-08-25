@@ -56,7 +56,8 @@ def analyze(ctx, tables) -> Dict:
 
 def matched_submodels(ctx, tables) -> List:
     return [submodel for submodel in ctx.loaded.submodels
-            if submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)]
+            if submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)
+            and ctx.selection.answers(submodel, tables)]
 
 
 def _analyze(ctx, tables) -> Dict:

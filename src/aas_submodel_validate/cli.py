@@ -30,6 +30,10 @@ def main(argv: Optional[list] = None) -> int:
                         help="metamodel findings become errors instead of warnings")
     parser.add_argument("--allow-unmatched", action="store_true",
                         help="an input with no known submodel becomes a note, not an error")
+    from .rules.profiles import KEYS as _PROFILE_KEYS
+    parser.add_argument("--profile", choices=_PROFILE_KEYS, metavar="IDTA",
+                        help="which template answers where two publish one "
+                             "submodel identifier (%s)" % ", ".join(_PROFILE_KEYS))
     parser.add_argument("--rules", action="store_true",
                         help="list every rule and exit")
     parser.add_argument("--version", action="version",
@@ -48,7 +52,8 @@ def main(argv: Optional[list] = None) -> int:
 
     try:
         report = runner.run(args.path, strict_meta=args.strict_meta,
-                            allow_unmatched=args.allow_unmatched)
+                            allow_unmatched=args.allow_unmatched,
+                            profile=args.profile)
     except UnreadablePath as exc:
         print("smtv: %s" % exc, file=sys.stderr)
         return EXIT_ERROR

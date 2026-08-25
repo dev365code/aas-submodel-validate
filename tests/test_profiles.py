@@ -331,3 +331,38 @@ def test_the_walk_and_the_presence_rule_never_import_profiles():
                 imported = [alias.name for alias in node.names] + [node.module or ""]
             assert not [name for name in imported if "profiles" in name], \
                 "%s imports profiles; matching must not depend on it" % module.__name__
+
+
+# -- what the notice says once a template can be chosen ----------------------
+
+def _notice(tmp_path, env, profile=None):
+    path = tmp_path / "n.json"
+    path.write_bytes(json.dumps(env).encode("utf-8"))
+    found = [f for f in runner.run(path, profile=profile).findings if f.id == "SMT-D2"]
+    return found[0] if found else None
+
+
+def test_choosing_the_other_template_is_reported(tmp_path):
+    """A switch nobody reports is the failure this pack is arranged
+    around. The flag moves 52 rules out of the way and 33 into it; the
+    report has to carry which."""
+    finding = _notice(tmp_path, hd_env(), profile="02035-2")
+    assert finding is not None
+    assert "IDTA 02035-2" in finding.violation.message
+    assert "--profile 02035-2" in finding.violation.message
+
+
+def test_choosing_the_template_that_would_have_answered_anyway_is_not(tmp_path):
+    """`--profile 02004` on a file nothing else claimed changes nothing,
+    and a note about nothing is a note nobody reads by the third one."""
+    assert _notice(tmp_path, hd_env(), profile="02004") is None
+
+
+def test_a_declaration_the_run_did_not_follow_is_reported(tmp_path):
+    """The file said one thing and the tool judged by another. Without
+    this the stored report cannot be told from a run where the file said
+    nothing."""
+    marked = declaring_profile(hd_env(), _mark())
+    finding = _notice(tmp_path, marked, profile="02004")
+    assert finding is not None
+    assert "declares" in (finding.violation.detail or "")

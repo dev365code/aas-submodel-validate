@@ -36,11 +36,24 @@ class Profile:
     """A second published template answering to the first one's submodel
     identifier, and what an instance carries to say it means that one."""
 
-    def __init__(self, default, default_name, alternative, name):
+    def __init__(self, default, default_key, default_name, alternative, key, name):
         self.default = default
+        #: What `--profile` is spelled with: the IDTA document number of
+        #: the template that answers, not a word for the profile. The
+        #: same collision is published a second time (IDTA 02023 and
+        #: IDTA 02035-3 share one CarbonFootprint identifier), and
+        #: document numbers extend to it without inventing a vocabulary.
+        self.default_key = default_key
         self.default_name = default_name
         self.alternative = alternative
+        self.key = key
         self.name = name
+
+    def side(self, key):
+        """(tables, name) for one of this profile's two document numbers."""
+        if key == self.key:
+            return self.alternative, self.name
+        return self.default, self.default_name
 
     @property
     def marks(self) -> frozenset:
@@ -85,40 +98,96 @@ def _relieved_by(tables, row) -> bool:
 #: (one CarbonFootprint identifier, two templates) and would be the second;
 #: neither is supported yet, so neither is here.
 PROFILES = (
-    Profile(hd_tables, "Handover Documentation (IDTA 02004)",
-            dbp_tables, "Digital Battery Passport part 2 (IDTA 02035-2)"),
+    Profile(hd_tables, "02004", "Handover Documentation (IDTA 02004)",
+            dbp_tables, "02035-2", "Digital Battery Passport part 2 (IDTA 02035-2)"),
 )
+
+#: Every document number `--profile` accepts, derived rather than typed
+#: into the parser, so `--help` cannot name a template this tool does not
+#: have a table for.
+KEYS = tuple(key for profile in PROFILES
+             for key in (profile.default_key, profile.key))
+
+
+class Selection:
+    """Which of two templates answers, for every submodel in one run.
+
+    One object, two readers: the walk asks it which table answers, and
+    `SMT-D2` asks it what to say. That is deliberate. When the walk read
+    the mark for itself and the rule read it again, a change to one of
+    the two readings could switch the verdict without moving the sentence
+    that explains it -- and a switch nobody reports is the failure this
+    whole pack has been arranged around.
+    """
+
+    def __init__(self, forced: str = None):
+        self.forced = forced
+
+    def chosen(self, submodel):
+        """(profile, tables, name, why) for a submodel in a profile pair,
+        or None for a submodel that is not in one. `why` is None when
+        nothing overrode the default."""
+        for profile in PROFILES:
+            if not submodel_declares(submodel, profile.default.TEMPLATE_SEMANTIC_ID):
+                continue
+            if self.forced in (profile.default_key, profile.key):
+                tables, name = profile.side(self.forced)
+                return profile, tables, name, "--profile %s" % self.forced
+            return profile, profile.default, profile.default_name, None
+        return None
+
+    def answers(self, submodel, tables) -> bool:
+        picked = self.chosen(submodel)
+        return True if picked is None else picked[1] is tables
+
+
+def _marks_of(submodel) -> frozenset:
+    """Everything this submodel says about itself besides its identifier."""
+    said = set()
+    for supplemental in getattr(submodel, "supplemental_semantic_ids", None) or []:
+        said |= candidate_values(supplemental)
+    return frozenset(said)
 
 
 def declared(submodel):
     """Every profile this submodel positively declares."""
-    said = set()
-    for supplemental in getattr(submodel, "supplemental_semantic_ids", None) or []:
-        said |= candidate_values(supplemental)
+    said = _marks_of(submodel)
     return [profile for profile in PROFILES
             if submodel_declares(submodel, profile.default.TEMPLATE_SEMANTIC_ID)
             and said & profile.marks]
 
 
 @rule(RULE_ID, kind="template", prio="MAY",
-      title="a submodel declaring a second template's profile is told which one answered",
+      title="the report names which of two templates sharing one identifier answered",
       spec="IDTA 02035-2 1.0 template, submodel supplementalSemanticIds; "
            "docs/divergences.md #26, #28",
-      fix="The finding names which template's requirements were applied and "
-          "which requirements the two templates disagree about. If this "
-          "submodel does not mean the profile it declares, remove the "
-          "supplementalSemanticId that declares it.")
+      fix="Check that the template named here is the one this submodel "
+          "means. `--profile` chooses the other one without editing the "
+          "file; a submodel that does not mean the profile it declares "
+          "should drop the supplementalSemanticId that declares it.")
 def smt_d2_the_report_names_the_profile(ctx):
-    """Silent on the default profile, and that silence is load-bearing:
-    the golden fixture and the official example must keep drawing nothing
-    at all, and they carry no mark. A note on every Handover file would
-    also be a note nobody reads by the third one."""
+    """Silent when the default answered and nothing said otherwise, which
+    is load-bearing: the golden fixtures and the official example must
+    keep drawing nothing at all.
+
+    It reads the same `Selection` the walk reads. Two readings of one
+    question is how a verdict changes without the sentence that explains
+    it changing with it -- and a switch nobody reports is the failure
+    this whole pack has been arranged around.
+    """
     for submodel in ctx.loaded.submodels:
-        for profile in declared(submodel):
-            yield Violation(
-                "this submodel also declares the %s profile" % profile.name,
-                subject=submodel.id_short or "submodel",
-                detail="judged as %s; %s does not require %s"
-                       % (profile.default_name, profile.name,
-                          ", ".join("%s %s" % (row["id"], row["label"])
-                                    for row in profile.relieved)))
+        picked = ctx.selection.chosen(submodel)
+        if picked is None:
+            continue
+        profile, tables, name, why = picked
+        declared = bool(_marks_of(submodel) & profile.marks)
+        if tables is profile.default and not declared:
+            continue
+        said = ("; this submodel declares %s" % profile.name) if declared else ""
+        yield Violation(
+            "judged as %s%s" % (name, " (%s)" % why if why else ""),
+            subject=submodel.id_short or "submodel",
+            detail="%s and %s disagree about %s%s"
+                   % (profile.default_name, profile.name,
+                      ", ".join("%s %s" % (row["id"], row["label"])
+                                for row in profile.relieved), said))

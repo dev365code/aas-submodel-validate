@@ -14,7 +14,7 @@ from aas_submodel_validate import (
 )
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.report import render
-from aas_submodel_validate.rules import hd_tables, td_tables
+from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
 from builders import env_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,16 +23,17 @@ CHANGELOG = (ROOT / "CHANGELOG.md").read_text("utf-8")
 
 
 def test_the_rule_counts_are_the_registrys():
-    generated = len(hd_tables.ROWS) + len(td_tables.ROWS)
-    assert len(all_rules()) == 90
-    assert (len(hd_tables.ROWS), len(td_tables.ROWS)) == (38, 26)
-    assert "90 rules" in README
+    generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
+    assert len(all_rules()) == 123
+    assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS)) == (38, 26, 22)
+    assert "123 rules" in README
     assert "%d generated" % generated in README
     # Each template's own row count is on the front page too, in the
     # table: a total alone would let one template's rows vanish into
     # another's without the number moving.
     assert "| 38 |" in README
     assert "| 26 |" in README
+    assert "| 22 |" in README
 
 
 def test_the_console_sample_is_what_the_tool_prints(tmp_path, monkeypatch):
@@ -51,6 +52,6 @@ def test_the_changelog_counts_what_it_would_ship():
     _, _, entries = CHANGELOG.partition("\n## ")     # past the file's title
     unreleased, _, _ = entries.partition("\n## ")     # the newest entry alone
     assert "unreleased" in unreleased.lower(), "the first entry is no longer a draft"
-    generated = len(hd_tables.ROWS) + len(td_tables.ROWS)
+    generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased

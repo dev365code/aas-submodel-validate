@@ -4,6 +4,8 @@ from __future__ import annotations
 import copy
 import json
 
+import pytest
+
 from aas_submodel_validate.cli import main
 from builders import env_json, hd_env
 
@@ -47,3 +49,39 @@ def test_rules_lists_every_rule_without_an_input(capsys):
     out = capsys.readouterr().out
     assert "SMT-D1" in out and "HD-E38" in out and "META" in out
     assert out.count("\n") >= 57
+
+
+def test_profile_chooses_which_template_answers(tmp_path, capsys):
+    """The flag's whole contract, both ways. A battery passport judged as
+    02004 is told it is missing six elements it is not required to have;
+    the same file judged as 02035-2 is clean. And a file that declares
+    the profile can still be held to 02004 -- the override runs in both
+    directions, because the mark's recall is unmeasurable (no published
+    02035-2 instance exists) and an operator needs a way back."""
+    import json
+
+    from builders import dbp_env
+    path = tmp_path / "battery.json"
+    path.write_bytes(json.dumps(dbp_env()).encode("utf-8"))
+    assert main([str(path), "-q", "--profile", "02035-2"]) == 0
+    assert main([str(path), "-q", "--profile", "02004"]) == 1
+    assert main([str(path), "-q"]) == 1
+
+
+def test_an_unknown_profile_is_the_callers_mistake_not_a_finding(capsys):
+    """Exit 2, the code that means the tool could not run. A misspelled
+    template number is not a defect in anybody's file."""
+    with pytest.raises(SystemExit) as raised:
+        main(["x.json", "--profile", "02023"])
+    assert raised.value.code == 2
+    assert "02035-2" in capsys.readouterr().err
+
+
+def test_the_profiles_on_offer_come_from_the_tables(capsys):
+    """`--help` cannot name a template this tool has no table for."""
+    from aas_submodel_validate.rules.profiles import KEYS
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    helped = capsys.readouterr().out
+    for key in KEYS:
+        assert key in helped

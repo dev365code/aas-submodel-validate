@@ -37,6 +37,11 @@ class Context:
     """Everything a rule is handed."""
 
     loaded: Loaded
+    #: Which of two templates answers, where two publish one submodel
+    #: identifier. No default: a context that guessed would hand the walk
+    #: a table nobody chose, which is the mistake `rules/engine.py`'s
+    #: table argument was stripped of its own default to prevent.
+    selection: object
 
 
 def _meta_rule(strict: bool) -> Rule:
@@ -82,13 +87,15 @@ def _reading_order(finding: Finding):
             finding.violation.message)
 
 
-def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False) -> Report:
+def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
+        profile: str = None) -> Report:
     """Validate one input. UnreadablePath propagates: that is the caller's
     mistake and the CLI's exit-2, not a finding about the file."""
     loaded = load(path)
     rules_to_run = all_rules()
     report = Report(path=str(path))
-    report.findings = execute(rules_to_run, Context(loaded))
+    report.findings = execute(rules_to_run,
+                              Context(loaded, rules.profiles.Selection(profile)))
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
         unmatched = [f for f in report.findings if f.id == detect.RULE_ID]
