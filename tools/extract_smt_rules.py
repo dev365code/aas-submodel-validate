@@ -145,7 +145,7 @@ PACKS = (
     {
         "template": ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.0/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/dbp_tables.py",
-        "prefix": "DBP-E",
+        "prefix": "DBP2-E",
         "source": "IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json",
         "item_names": DBP_ITEM_NAMES,
         "example_types": ("ExampleValue",),

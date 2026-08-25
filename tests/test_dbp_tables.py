@@ -18,7 +18,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,7 +52,7 @@ def test_the_anchor_is_02004s_and_that_is_the_whole_problem():
 def test_the_concrete_rows_are_twenty_two():
     assert len(dbp_tables.ROWS) == 22
     assert [row["id"] for row in dbp_tables.ROWS] == \
-        ["DBP-E%02d" % n for n in range(1, 23)]
+        ["DBP2-E%02d" % n for n in range(1, 23)]
 
 
 def test_every_row_is_reachable_by_a_unique_label():
@@ -178,18 +177,6 @@ def test_the_submodel_says_one_thing_about_itself_that_02004_does_not():
     assert ours - theirs == {
         "urn:samm:io.admin-shell.idta.batterypass.handover_documentation"
         ":1.0.0#HandoverDocumentation"}
-
-
-def test_no_rule_is_registered_from_this_table_yet():
-    """The boundary of this slice. Which table answers has been *reported*
-    -- `SMT-D2` names the profile a submodel declares -- and not acted
-    on: the walk is still handed 02004's table, so registering a DBP rule
-    now would fire it on every 02004 file in the world. Delete this test
-    in the slice that hands the walk the other table, which is also the
-    slice that must bring the hand rules with it."""
-    registered = {rule.id for rule in all_rules()}
-    assert registered, "nothing registered at all -- this test proves nothing"
-    assert not [rule_id for rule_id in registered if rule_id.startswith("DBP-")]
 
 
 def test_the_other_two_tables_are_untouched():

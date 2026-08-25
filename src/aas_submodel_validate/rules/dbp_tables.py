@@ -10,7 +10,7 @@ TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('0173-1#01-AHF578#003', 'urn:samm:io.admin
 
 TREE = (
     {
-        'id': 'DBP-E01',
+        'id': 'DBP2-E01',
         'label': 'Documents',
         'parent': None,
         'kind': 'SubmodelElementList',
@@ -25,9 +25,9 @@ TREE = (
         'fix': "Provide exactly one 'Documents' element(s) with semanticId 0173-1#02-ABI500#003.",
         'children': (
             {
-                'id': 'DBP-E02',
+                'id': 'DBP2-E02',
                 'label': 'Document',
-                'parent': 'DBP-E01',
+                'parent': 'DBP2-E01',
                 'kind': 'SubmodelElementCollection',
                 'match': ('0173-1#02-ABI500#003/0173-1#01-AHF579#003', '0173-1#02-ABI500#003/0173-1#01-AHF579#003/https://api.eclass-cdp.com/0173-1-02-ABI500-003/0173-1-01-AHF579-003', '0173-1#02-ABI500#003~0/0173-1#01-AHF579#003', '0173-1#02-ABI500#003~0/0173-1#01-AHF579#003/https://api.eclass-cdp.com/0173-1-02-ABI500-003/0173-1-01-AHF579-003', 'https://api.eclass-cdp.com/0173-1-02-ABI500-003/0173-1-01-AHF579-003', 'urn:samm:io.admin-shell.idta.batterypass.handover_documentation:1.0.0#Document'),
                 'sid': '0173-1#02-ABI500#003/0173-1#01-AHF579#003',
@@ -40,9 +40,9 @@ TREE = (
                 'fix': "Provide one or more 'Document' element(s) under Documents with semanticId 0173-1#02-ABI500#003/0173-1#01-AHF579#003.",
                 'children': (
                     {
-                        'id': 'DBP-E03',
+                        'id': 'DBP2-E03',
                         'label': 'DocumentClassifications',
-                        'parent': 'DBP-E02',
+                        'parent': 'DBP2-E02',
                         'kind': 'SubmodelElementList',
                         'match': ('0173-1#02-ABI502#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#documentClassifications'),
                         'sid': '0173-1#02-ABI502#003',
@@ -55,9 +55,9 @@ TREE = (
                         'fix': "Provide exactly one 'DocumentClassifications' element(s) under Document with semanticId 0173-1#02-ABI502#003.",
                         'children': (
                             {
-                                'id': 'DBP-E04',
+                                'id': 'DBP2-E04',
                                 'label': 'DocumentClassification',
-                                'parent': 'DBP-E03',
+                                'parent': 'DBP2-E03',
                                 'kind': 'SubmodelElementCollection',
                                 'match': ('0173-1#02-ABI502#003/0173-1#01-AHF581#003', '0173-1#02-ABI502#003/0173-1#01-AHF581#003/https://api.eclass-cdp.com/0173-1-02-ABI502-003/0173-1-01-AHF581-003', '0173-1#02-ABI502#003~0/0173-1#01-AHF581#003', '0173-1#02-ABI502#003~0/0173-1#01-AHF581#003/https://api.eclass-cdp.com/0173-1-02-ABI502-003/0173-1-01-AHF581-003', 'https://api.eclass-cdp.com/0173-1-02-ABI502-003/0173-1-01-AHF581-003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentClassification'),
                                 'sid': '0173-1#02-ABI502#003/0173-1#01-AHF581#003',
@@ -70,9 +70,9 @@ TREE = (
                                 'fix': "Provide one or more 'DocumentClassification' element(s) under DocumentClassifications with semanticId 0173-1#02-ABI502#003/0173-1#01-AHF581#003.",
                                 'children': (
                                     {
-                                        'id': 'DBP-E05',
+                                        'id': 'DBP2-E05',
                                         'label': 'ClassName',
-                                        'parent': 'DBP-E04',
+                                        'parent': 'DBP2-E04',
                                         'kind': 'MultiLanguageProperty',
                                         'match': ('0173-1#02-ABJ219#002', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#className'),
                                         'sid': '0173-1#02-ABJ219#002',
@@ -86,9 +86,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E06',
+                                        'id': 'DBP2-E06',
                                         'label': 'ClassId',
-                                        'parent': 'DBP-E04',
+                                        'parent': 'DBP2-E04',
                                         'kind': 'Property',
                                         'match': ('0173-1#02-ABH996#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#classId'),
                                         'sid': '0173-1#02-ABH996#003',
@@ -102,9 +102,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E07',
+                                        'id': 'DBP2-E07',
                                         'label': 'ClassificationSystem',
-                                        'parent': 'DBP-E04',
+                                        'parent': 'DBP2-E04',
                                         'kind': 'Property',
                                         'match': ('0173-1#02-ABH997#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#classificationSystem'),
                                         'sid': '0173-1#02-ABH997#003',
@@ -122,9 +122,9 @@ TREE = (
                         ),
                     },
                     {
-                        'id': 'DBP-E08',
+                        'id': 'DBP2-E08',
                         'label': 'DocumentIds',
-                        'parent': 'DBP-E02',
+                        'parent': 'DBP2-E02',
                         'kind': 'SubmodelElementList',
                         'match': ('0173-1#02-ABI501#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#documentIds'),
                         'sid': '0173-1#02-ABI501#003',
@@ -137,9 +137,9 @@ TREE = (
                         'fix': "Provide exactly one 'DocumentIds' element(s) under Document with semanticId 0173-1#02-ABI501#003.",
                         'children': (
                             {
-                                'id': 'DBP-E09',
+                                'id': 'DBP2-E09',
                                 'label': 'DocumentId',
-                                'parent': 'DBP-E08',
+                                'parent': 'DBP2-E08',
                                 'kind': 'SubmodelElementCollection',
                                 'match': ('0173-1#02-ABI501#003/0173-1#01-AHF580#003', '0173-1#02-ABI501#003/0173-1#01-AHF580#003/https://api.eclass-cdp.com/0173-1-02-ABI501-003/0173-1-01-AHF580-003', '0173-1#02-ABI501#003~0/0173-1#01-AHF580#003', '0173-1#02-ABI501#003~0/0173-1#01-AHF580#003/https://api.eclass-cdp.com/0173-1-02-ABI501-003/0173-1-01-AHF580-003', 'https://api.eclass-cdp.com/0173-1-02-ABI501-003/0173-1-01-AHF580-003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentId'),
                                 'sid': '0173-1#02-ABI501#003/0173-1#01-AHF580#003',
@@ -152,9 +152,9 @@ TREE = (
                                 'fix': "Provide one or more 'DocumentId' element(s) under DocumentIds with semanticId 0173-1#02-ABI501#003/0173-1#01-AHF580#003.",
                                 'children': (
                                     {
-                                        'id': 'DBP-E10',
+                                        'id': 'DBP2-E10',
                                         'label': 'DocumentDomainId',
-                                        'parent': 'DBP-E09',
+                                        'parent': 'DBP2-E09',
                                         'kind': 'Property',
                                         'match': ('0173-1#02-ABH994#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#documentDomainId'),
                                         'sid': '0173-1#02-ABH994#003',
@@ -168,9 +168,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E11',
+                                        'id': 'DBP2-E11',
                                         'label': 'DocumentIdentifier',
-                                        'parent': 'DBP-E09',
+                                        'parent': 'DBP2-E09',
                                         'kind': 'Property',
                                         'match': ('0173-1#02-AAO099#004', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#documentIdentifier'),
                                         'sid': '0173-1#02-AAO099#004',
@@ -184,9 +184,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E12',
+                                        'id': 'DBP2-E12',
                                         'label': 'DocumentIsPrimary',
-                                        'parent': 'DBP-E09',
+                                        'parent': 'DBP2-E09',
                                         'kind': 'Property',
                                         'match': ('0173-1#02-ABH995#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#documentIsPrimary'),
                                         'sid': '0173-1#02-ABH995#003',
@@ -204,9 +204,9 @@ TREE = (
                         ),
                     },
                     {
-                        'id': 'DBP-E13',
+                        'id': 'DBP2-E13',
                         'label': 'DocumentVersions',
-                        'parent': 'DBP-E02',
+                        'parent': 'DBP2-E02',
                         'kind': 'SubmodelElementList',
                         'match': ('0173-1#02-ABI503#003', 'urn:samm:io.admin-shell.idta.batterypass.handover_documentation:1.0.0#documentVersions'),
                         'sid': '0173-1#02-ABI503#003',
@@ -219,9 +219,9 @@ TREE = (
                         'fix': "Provide exactly one 'DocumentVersions' element(s) under Document with semanticId 0173-1#02-ABI503#003.",
                         'children': (
                             {
-                                'id': 'DBP-E14',
+                                'id': 'DBP2-E14',
                                 'label': 'DocumentVersion',
-                                'parent': 'DBP-E13',
+                                'parent': 'DBP2-E13',
                                 'kind': 'SubmodelElementCollection',
                                 'match': ('0173-1#02-ABI503#003/0173-1#01-AHF582#003', '0173-1#02-ABI503#003/0173-1#01-AHF582#003/https://api.eclass-cdp.com/0173-1-02-ABI503-003/0173-1-01-AHF582-003', '0173-1#02-ABI503#003~0/0173-1#01-AHF582#003', '0173-1#02-ABI503#003~0/0173-1#01-AHF582#003/https://api.eclass-cdp.com/0173-1-02-ABI503-003/0173-1-01-AHF582-003', 'https://api.eclass-cdp.com/0173-1-02-ABI503-003/0173-1-01-AHF582-003', 'urn:samm:io.admin-shell.idta.batterypass.handover_documentation:1.0.0#DocumentVersion'),
                                 'sid': '0173-1#02-ABI503#003/0173-1#01-AHF582#003',
@@ -234,9 +234,9 @@ TREE = (
                                 'fix': "Provide one or more 'DocumentVersion' element(s) under DocumentVersions with semanticId 0173-1#02-ABI503#003/0173-1#01-AHF582#003.",
                                 'children': (
                                     {
-                                        'id': 'DBP-E15',
+                                        'id': 'DBP2-E15',
                                         'label': 'Language',
-                                        'parent': 'DBP-E14',
+                                        'parent': 'DBP2-E14',
                                         'kind': 'SubmodelElementList',
                                         'match': ('0173-1#02-AAN468#008', 'urn:samm:io.admin-shell.idta.shared:3.1.0#languages'),
                                         'sid': '0173-1#02-AAN468#008',
@@ -249,9 +249,9 @@ TREE = (
                                         'fix': "Provide exactly one 'Language' element(s) under DocumentVersion with semanticId 0173-1#02-AAN468#008.",
                                         'children': (
                                             {
-                                                'id': 'DBP-E16',
+                                                'id': 'DBP2-E16',
                                                 'label': 'LanguageCode',
-                                                'parent': 'DBP-E15',
+                                                'parent': 'DBP2-E15',
                                                 'kind': 'Property',
                                                 'match': ('0173-1#02-AAN468#008', 'urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#Locale'),
                                                 'sid': '0173-1#02-AAN468#008',
@@ -267,9 +267,9 @@ TREE = (
                                         ),
                                     },
                                     {
-                                        'id': 'DBP-E17',
+                                        'id': 'DBP2-E17',
                                         'label': 'Version',
-                                        'parent': 'DBP-E14',
+                                        'parent': 'DBP2-E14',
                                         'kind': 'Property',
                                         'match': ('0173-1#02-AAP003#005', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#version'),
                                         'sid': '0173-1#02-AAP003#005',
@@ -283,9 +283,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E18',
+                                        'id': 'DBP2-E18',
                                         'label': 'Title',
-                                        'parent': 'DBP-E14',
+                                        'parent': 'DBP2-E14',
                                         'kind': 'MultiLanguageProperty',
                                         'match': ('0173-1#02-ABG940#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#title'),
                                         'sid': '0173-1#02-ABG940#003',
@@ -299,9 +299,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E19',
+                                        'id': 'DBP2-E19',
                                         'label': 'Subtitle',
-                                        'parent': 'DBP-E14',
+                                        'parent': 'DBP2-E14',
                                         'kind': 'MultiLanguageProperty',
                                         'match': ('0173-1#02-ABH998#003', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#subtitle'),
                                         'sid': '0173-1#02-ABH998#003',
@@ -315,9 +315,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E20',
+                                        'id': 'DBP2-E20',
                                         'label': 'Description',
-                                        'parent': 'DBP-E14',
+                                        'parent': 'DBP2-E14',
                                         'kind': 'MultiLanguageProperty',
                                         'match': ('0173-1#02-AAN466#004', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#description'),
                                         'sid': '0173-1#02-AAN466#004',
@@ -331,9 +331,9 @@ TREE = (
                                         'children': (),
                                     },
                                     {
-                                        'id': 'DBP-E21',
+                                        'id': 'DBP2-E21',
                                         'label': 'DigitalFiles',
-                                        'parent': 'DBP-E14',
+                                        'parent': 'DBP2-E14',
                                         'kind': 'SubmodelElementList',
                                         'match': ('0173-1#02-ABK126#002', 'urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#digtialFiles'),
                                         'sid': '0173-1#02-ABK126#002',
@@ -346,9 +346,9 @@ TREE = (
                                         'fix': "Provide exactly one 'DigitalFiles' element(s) under DocumentVersion with semanticId 0173-1#02-ABK126#002.",
                                         'children': (
                                             {
-                                                'id': 'DBP-E22',
+                                                'id': 'DBP2-E22',
                                                 'label': 'DigitalFile',
-                                                'parent': 'DBP-E21',
+                                                'parent': 'DBP2-E21',
                                                 'kind': 'File',
                                                 'match': ('0173-1#02-ABK126#002', 'urn:samm:io.admin-shell.idta.shared:3.1.0#ResourceWithContentType'),
                                                 'sid': '0173-1#02-ABK126#002',

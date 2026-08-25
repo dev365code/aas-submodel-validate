@@ -54,7 +54,7 @@ a separate `meta` channel — warnings by default, `--strict-meta` to
 promote — and never re-implemented here.
 
 ```text
-error   SMT-D1 no submodel declares a semanticId this tool recognises
+error   SMT-D1   no submodel declares a semanticId this tool recognises
         saw  semanticId value(s): urn:somecompany:docs
         fix: Give the submodel the semanticId of the template it means to be: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003).
 1 error(s), 0 warning(s), 0 note(s) — machine-docs.json

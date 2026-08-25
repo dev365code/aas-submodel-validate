@@ -19,7 +19,7 @@ def _safe(text) -> str:
 def render(report: Report) -> str:
     lines = []
     for finding in report.findings:
-        head = "%-7s %-6s %s" % (finding.severity, finding.id, _safe(finding.violation.message))
+        head = "%-7s %-8s %s" % (finding.severity, finding.id, _safe(finding.violation.message))
         lines.append(head)
         if finding.violation.subject:
             lines.append("        at   %s" % _safe(finding.violation.subject))
