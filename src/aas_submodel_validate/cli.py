@@ -20,15 +20,35 @@ def main(argv: Optional[list] = None) -> int:
     parser = argparse.ArgumentParser(
         prog="smtv",
         description="Validate an AAS submodel against its IDTA template, offline.")
-    parser.add_argument("path", help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")
+    parser.add_argument("path", nargs="?",
+                        help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")
     parser.add_argument("-f", "--format", choices=("text", "json"), default="text")
     parser.add_argument("-q", "--quiet", action="store_true", help="exit code only")
+    parser.add_argument("-W", "--warnings-as-errors", action="store_true",
+                        help="exit 1 on warnings too")
+    parser.add_argument("--strict-meta", action="store_true",
+                        help="metamodel findings become errors instead of warnings")
+    parser.add_argument("--allow-unmatched", action="store_true",
+                        help="an input with no Handover submodel becomes a note, not an error")
+    parser.add_argument("--rules", action="store_true",
+                        help="list every rule and exit")
     parser.add_argument("--version", action="version",
                         version="aas-submodel-validate %s" % __version__)
     args = parser.parse_args(argv)
 
+    if args.rules:
+        from . import rules  # noqa: F401 - importing registers
+        from .registry import all_rules
+        from .runner import _meta_rule
+        for rule in list(all_rules()) + [_meta_rule(args.strict_meta)]:
+            print("%-8s %-9s %-10s %s" % (rule.id, rule.kind, rule.severity, rule.title))
+        return EXIT_OK
+    if not args.path:
+        parser.error("a path is required (or --rules)")
+
     try:
-        report = runner.run(args.path)
+        report = runner.run(args.path, strict_meta=args.strict_meta,
+                            allow_unmatched=args.allow_unmatched)
     except UnreadablePath as exc:
         print("smtv: %s" % exc, file=sys.stderr)
         return EXIT_ERROR
@@ -38,4 +58,7 @@ def main(argv: Optional[list] = None) -> int:
             print(json.dumps(report.as_dict(), indent=2))
         else:
             print(render(report))
-    return EXIT_OK if report.ok else EXIT_FINDINGS
+    from .model import Severity
+    failed = not report.ok or (args.warnings_as_errors
+                               and report.count(Severity.WARNING) > 0)
+    return EXIT_FINDINGS if failed else EXIT_OK
