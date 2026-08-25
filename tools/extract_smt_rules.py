@@ -41,6 +41,14 @@ What is deliberately interpreted rather than copied:
   ExampleValue qualifiers, one per classification system. Keeping the
   first would tell a reader ECLASS is the answer when the template offers
   four, so they are joined in template order.
+- **A list child that carries an idShort.** AASd-120 forbids one on a
+  direct child of a SubmodelElementList, which is the whole reason
+  `item_names` exists. 02035-2 breaks it on four of its six list
+  children, so those four rows are labelled with the name the artefact
+  itself carries. Each pack names all of its list items anyway, using
+  02004's word where the element is 02004's, so an upstream repair of
+  that defect would rename nothing -- a row suddenly called
+  "DocumentsItem" would announce a divergence where none had appeared.
 """
 from __future__ import annotations
 
@@ -55,8 +63,9 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from aas_submodel_validate.semantics import normalize  # noqa: E402
 
-#: Item labels for elements a template leaves unnamed (list children carry
-#: no idShort -- the metamodel forbids it). These labels are chosen to be
+#: Item labels for elements a template leaves unnamed (AASd-120 forbids a
+#: list child an idShort; 02004 obeys it, 02035-2 does not -- see the
+#: module docstring). These labels are chosen to be
 #: readable in a finding; most match the PDF's element names, a few
 #: (LanguageCode, EntityForDocumentation) are our own where the PDF uses a
 #: different word. Without one, a row would be called "DocumentsItem".
@@ -86,6 +95,20 @@ TD_ITEM_NAMES = {
     "SpecificDescriptions": "SpecificDescription",
 }
 
+#: 02035-2's six list items, in 02004's words -- it is a profile of that
+#: template and every one of its elements is one of 02004's. Only two are
+#: read today: the published file gives the other four an idShort, which
+#: AASd-120 forbids and which therefore wins. They are named anyway so
+#: that repairing that defect upstream renames nothing here.
+DBP_ITEM_NAMES = {
+    "Documents": "Document",
+    "DocumentClassifications": "DocumentClassification",
+    "DocumentIds": "DocumentId",
+    "DocumentVersions": "DocumentVersion",
+    "Language": "LanguageCode",
+    "DigitalFiles": "DigitalFile",
+}
+
 #: The open-content placeholders of 02003 §3.5 -- see the module docstring.
 ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
 
@@ -111,6 +134,22 @@ PACKS = (
         "example_types": ("SMT/ExampleValue/ECLASS", "SMT/ExampleValue/CDD",
                           "SMT/ExampleValue/UNSPSC", "SMT/ExampleValue/CustomerSpecific"),
         "skip_sids": frozenset((ARBITRARY,)),
+    },
+    # The Digital Battery Passport's part 2 is a second Handover
+    # Documentation template and declares 02004's submodel semanticId
+    # exactly, so its rows need their own id namespace and their own
+    # table: one row cannot carry two remedy sentences. Its qualifier
+    # vocabulary is 02004's -- bare `ExampleValue`, `SMT/Cardinality` on
+    # every element, no open content -- so none of the readings 02003
+    # forced apply here.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.0/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/dbp_tables.py",
+        "prefix": "DBP-E",
+        "source": "IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json",
+        "item_names": DBP_ITEM_NAMES,
+        "example_types": ("ExampleValue",),
+        "skip_sids": frozenset(),
     },
 )
 

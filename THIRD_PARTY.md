@@ -22,13 +22,14 @@ digests live beside the files. `--refresh` is the only operation that
 touches the network.
 
 The template files are the *generator input* for the structural rule
-tables (`rules/hd_tables.py`, `rules/td_tables.py` — one table per
-template, one generator); the examples are test corpus — including their
+tables (`rules/hd_tables.py`, `rules/td_tables.py`, `rules/dbp_tables.py`
+— one table per template, one generator); the examples are test corpus — including their
 defects, which are pinned by name in the suite rather than repaired.
 
-02035-2 is vendored ahead of the rules that will read it: it is here to
-be measured against 02004, whose submodel identifier it shares, and
-nothing is generated from it yet. The tool reports no finding about it.
+02035-2 is vendored and tabulated ahead of the rules that will read it:
+it is here to be measured against 02004, whose submodel identifier it
+shares. No rule is registered from its table, and the tool reports no
+finding about it.
 
 ## Runtime dependency
 
