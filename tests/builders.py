@@ -148,6 +148,27 @@ def env_json(semantic_value: str = "0173-1#01-AHF578#003") -> bytes:
     }]}).encode("utf-8")
 
 
+def declaring_profile(env: dict, mark: str, template_id: str = None) -> dict:
+    """A copy of `env` whose first submodel says it means a second
+    template's profile, the way IDTA 02035-2 says it: a supplemental
+    semanticId beside the main one, which is left alone.
+
+    `template_id` writes `administration.templateId` as well, because the
+    two published 02035-2 serialisations disagree about that field and a
+    test needs to build both shapes.
+    """
+    import copy
+    env = copy.deepcopy(env)
+    submodel = env["submodels"][0]
+    submodel.setdefault("supplementalSemanticIds", []).append(
+        {"type": "ExternalReference",
+         "keys": [{"type": "GlobalReference", "value": mark}]})
+    if template_id is not None:
+        submodel["administration"] = {"version": "1", "revision": "0",
+                                      "templateId": template_id}
+    return env
+
+
 def wearing_our_anchor_as_a_supplemental(anchor: str, id_short: str) -> bytes:
     """An environment shaped like IDTA 02035-4: it declares an identity of
     its own and carries one of ours in a *supplemental*.

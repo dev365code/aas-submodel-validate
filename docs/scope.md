@@ -28,6 +28,12 @@ finding.
   a loose directory are ambiguous; refused until a real need defines
   them.
 
+**Deferred, not rejected**: a `--profile` flag. Which template answers
+for a submodel declaring IDTA 02035-2's profile is reported (`SMT-D2`)
+and never acted on, because there is one set of rules to act with; a flag
+selecting between one thing would be an API promising a second. It
+arrives with the rules it selects.
+
 **Deferred, not rejected**: IIFU composition — detecting an iiRDS
 Information for Use submodel and handing its iiRDS payload to
 iirds-validate, so the two standards' validators compose.
