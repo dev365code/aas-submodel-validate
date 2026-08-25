@@ -125,9 +125,11 @@ class AasxPackage:
             raise ContainerError("cannot open %s as a ZIP container: %s"
                                  % (self.path, exc)) from exc
         self._names = frozenset(self._zip.namelist())
-        #: Bytes handed out so far, for MAX_TOTAL_PART_BYTES. One
-        #: package object is one validation, so this is that run's total.
+        #: Distinct bytes handed out so far, for MAX_TOTAL_PART_BYTES.
+        #: One package object is one validation, so this is that run's
+        #: total -- and each part counts once however often it is read.
         self._read_total = 0
+        self._counted = set()
         #: Entry names by their normalised spelling, built on first need.
         self._canonical = None
 
@@ -201,7 +203,13 @@ class AasxPackage:
             raise PartTooLarge(
                 "%s: %s holds more than %d bytes, whatever the archive says"
                 % (self.path, name, MAX_PART_BYTES))
-        self._read_total += len(data)
+        if name not in self._counted:
+            # Once per part. A rule may re-walk the chain -- X4 does --
+            # and reading the same bytes a second time is not the
+            # container growing. Counting it twice made the refusal
+            # depend on which rule happened to cross the line.
+            self._counted.add(name)
+            self._read_total += len(data)
         if self._read_total > MAX_TOTAL_PART_BYTES:
             raise PartTooLarge(
                 "%s: its parts come to more than %d bytes together"
@@ -242,15 +250,16 @@ class AasxPackage:
         for el in root.iter(_RELATIONSHIP):
             target = el.get("Target", "")
             # Where the name starts from is the difference between the two
-            # kinds of string; how it is spelled is not, so both branches
-            # end in the same normaliser. The absolute branch used to skip
-            # it, which left "/a/./b" resolving differently from "a/./b".
-            if target.startswith("/"):
-                name = canonical_part_name(target)
-            else:
-                name = canonical_part_name(posixpath.join(base_dir, target))
-            if name is None:
-                continue    # not a part name; X2 reports the chain it breaks
+            # kinds of string; how it is spelled is not. The absolute
+            # branch used to skip normalisation entirely, which left
+            # "/a/./b" resolving differently from "a/./b".
+            candidate = target[1:] if target.startswith("/") \
+                else posixpath.join(base_dir, target)
+            # Land on the entry the archive actually holds, so that a
+            # payload whose name really contains an escape is readable:
+            # `part` tries the literal before the normalised reading, and
+            # the loader looks parts up by exact name.
+            name = self.part(candidate) or canonical_part_name(candidate) or target
             resolved.append((el.get("Type", ""), name))
         return resolved
 

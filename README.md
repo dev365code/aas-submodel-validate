@@ -27,9 +27,9 @@ pure Python, no C extensions — installable from a USB stick.
 89 rules across two IDTA templates — 64 generated from the vendored
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), the rest hand-written
-where a template file cannot speak. Five more, X1–X5, are about the
-AASX/OPC package the submodel arrives in, and one, SMT-D1, asks whether
-the input brought a submodel this tool knows at all.
+where a template file cannot speak. Five of the 89, X1–X5, are about
+the AASX/OPC package the submodel arrives in, and one, SMT-D1, asks
+whether the input brought a submodel this tool knows at all.
 
 | template | generated | hand-written |
 |---|---|---|

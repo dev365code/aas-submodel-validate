@@ -19,12 +19,20 @@ from __future__ import annotations
 
 import copy
 import json
+import zipfile
 
 import pytest
 
 from aas_submodel_validate import runner
 from aas_submodel_validate.container import AasxPackage, canonical_part_name
-from builders import build_aasx, hd_env
+from builders import (
+    CONTENT_TYPES,
+    ORIGIN_REL,
+    SPEC_REL,
+    build_aasx,
+    hd_env,
+    rels,
+)
 
 PART = "aasx/files/manual.pdf"
 
@@ -143,3 +151,36 @@ def test_a_name_that_ends_in_a_separator_is_not_a_part_name():
     assert canonical_part_name("/aasx/files/") is None
     assert canonical_part_name("/aasx/") is None
     assert canonical_part_name("aasx/files/manual.pdf") == "aasx/files/manual.pdf"
+
+
+def test_a_declared_supplementary_part_outside_the_package_is_still_reported(tmp_path):
+    """X4 asks whether every declared aas-suppl part exists. Dropping a
+    relationship whose target does not normalise took that question away
+    with it -- and the comment justifying the drop said X2 would report
+    it, which it cannot: an aas-suppl relationship is not on the chain,
+    so nothing loads an error and X2 reads only chain errors."""
+    path = build_aasx(tmp_path / "p.aasx", payload=_container_with("/" + PART),
+                      files=[(PART, b"%PDF-1.4 ")],
+                      suppl_targets=["../outside.pdf"])
+    assert "X4" in {f.id for f in runner.run(path).findings}
+
+
+def test_a_payload_whose_entry_name_holds_an_escape_is_still_read(tmp_path):
+    """The claim was that a literal match comes first. It did in
+    `part()`, and the chain never went through `part()`: the target was
+    normalised, the decoded name was handed to a reader that looks up
+    exact entry names, and an archive that spelled its payload with a
+    percent escape drew X2 -- whose remedy is to repair a chain that is
+    intact."""
+    entry = "aasx/env%20a.json"
+    path = tmp_path / "esc.aasx"
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/" + entry)]))
+        archive.writestr(entry, _container_with("/" + PART))
+        archive.writestr(PART, b"%PDF-1.4 ")
+    ids = {f.id for f in runner.run(path).findings}
+    assert "X2" not in ids
+    assert "SMT-D1" not in ids, "the payload was never read, so no template ran"
