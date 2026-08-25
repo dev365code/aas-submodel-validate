@@ -190,6 +190,36 @@ def _near_miss(candidates, match_values):
 
 
 # -- navigation for the hand rules ------------------------------------------
+def resolve_in_submodel(submodel, keys) -> bool:
+    """Can a ModelReference's key path be walked inside `submodel`?
+
+    Children are found by idShort -- or by position when the containing
+    element is a SubmodelElementList, whose children the metamodel
+    addresses by index. Index resolution must work even when a list child
+    carries an (illegal) idShort: the official example does exactly that,
+    and the idShort is its AASd-120 violation, not the reference's.
+    """
+    scope = submodel.submodel_elements or []
+    in_list = False
+    steps = keys[1:]
+    for position_in_path, key in enumerate(steps):
+        found = None
+        for position, element in enumerate(scope):
+            if element.id_short == key.value or (in_list and str(position) == key.value):
+                found = element
+                break
+        if found is None:
+            return False
+        if position_in_path == len(steps) - 1:
+            return True                        # the last key resolved to an element
+        value = getattr(found, "value", None)
+        if not isinstance(value, list):
+            return False                       # more keys, but this element is a leaf
+        in_list = type(found).__name__ == "SubmodelElementList"
+        scope = value
+    return True
+
+
 
 def instances_of(ctx, label: str, tables=hd_tables):
     """(subject path, element) pairs the walk matched to the row named

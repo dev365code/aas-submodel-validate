@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from ..registry import rule
 from . import td_tables
-from .hd_engine import analyze, matched_submodels
+from .engine import analyze, matched_submodels
 
 
 def _row_check(row_id: str):

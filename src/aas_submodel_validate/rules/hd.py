@@ -11,12 +11,11 @@ asked once for every template in `rules/detect.py`.
 """
 from __future__ import annotations
 
-import re
-
 from ..model import Violation
 from ..registry import rule
 from . import hd_tables
-from .hd_engine import analyze, matched_submodels
+from .engine import analyze, matched_submodels
+from .values import valid_xs_date
 
 #: The template's own identity — one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = hd_tables.TEMPLATE_SEMANTIC_ID
@@ -26,7 +25,7 @@ TEMPLATE_SEMANTIC_ID = hd_tables.TEMPLATE_SEMANTIC_ID
 #
 # One registered rule per template row, each reading its slice of the
 # single cached walk. The table is generated from the vendored official
-# template (tools/extract_smt_rules.py); the walk lives in hd_engine.
+# template (tools/extract_smt_rules.py); the walk lives in engine.
 
 def _row_check(row_id: str):
     def check(ctx):
@@ -46,7 +45,13 @@ for _row in hd_tables.ROWS:
 
 # -- the hand rules: what a template file cannot express ---------------------
 
-from .hd_engine import child_of, children_of, instances_of, property_value  # noqa: E402
+from .engine import (  # noqa: E402
+    child_of,
+    children_of,
+    instances_of,
+    property_value,
+    resolve_in_submodel,
+)
 
 #: VDI 2770 Blatt 1:2020, Table 1 -- the exact spelling the specification
 #: says identifies the mandatory classification system, and its twelve
@@ -180,32 +185,6 @@ def hd_d7_files_exist(ctx):
                                 subject=subject, detail=value)
 
 
-_XS_DATE = re.compile(r"^(-?\d{4,})-(\d{2})-(\d{2})(Z|[+-]\d{2}:\d{2})?$")
-
-
-def _valid_xs_date(value: str) -> bool:
-    """xs:date lexical space -- which is wider than datetime.date: the year
-    may be negative or run past 9999, so it is checked lexically rather
-    than by constructing a date (which would reject `-0001-01-01`, a value
-    aas-core3 accepts). The timezone offset is bounded to +/-14:00."""
-    matched = _XS_DATE.match(value)
-    if not matched:
-        return False
-    year, month, day = int(matched.group(1)), int(matched.group(2)), int(matched.group(3))
-    if not 1 <= month <= 12:
-        return False
-    leap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
-    days_in = (31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)[month - 1]
-    if not 1 <= day <= days_in:
-        return False
-    offset = matched.group(4)
-    if offset and offset != "Z":
-        hours, minutes = int(offset[1:3]), int(offset[4:6])
-        if minutes > 59 or hours * 60 + minutes > 14 * 60:
-            return False
-    return True
-
-
 @rule("HD-D8", kind="template", prio="MUST",
       title="StatusSetDate is a calendar date",
       spec="IDTA 02004-2-0 §2.8 (xs:date)",
@@ -216,7 +195,7 @@ def hd_d8_status_date(ctx):
     commoner mistake."""
     for subject, version in instances_of(ctx, "DocumentVersion"):
         value = property_value(version, "StatusSetDate")
-        if value is not None and not _valid_xs_date(value):
+        if value is not None and not valid_xs_date(value):
             yield Violation("StatusSetDate is not a valid xs:date",
                             subject=subject, detail="saw %r" % value)
 
@@ -282,36 +261,6 @@ def hdl4_duplicate_ids(ctx):
             seen.setdefault(pair, subject)
 
 
-def _resolve_in_submodel(submodel, keys) -> bool:
-    """Can a ModelReference's key path be walked inside `submodel`?
-
-    Children are found by idShort -- or by position when the containing
-    element is a SubmodelElementList, whose children the metamodel
-    addresses by index. Index resolution must work even when a list child
-    carries an (illegal) idShort: the official example does exactly that,
-    and the idShort is its AASd-120 violation, not the reference's.
-    """
-    scope = submodel.submodel_elements or []
-    in_list = False
-    steps = keys[1:]
-    for position_in_path, key in enumerate(steps):
-        found = None
-        for position, element in enumerate(scope):
-            if element.id_short == key.value or (in_list and str(position) == key.value):
-                found = element
-                break
-        if found is None:
-            return False
-        if position_in_path == len(steps) - 1:
-            return True                        # the last key resolved to an element
-        value = getattr(found, "value", None)
-        if not isinstance(value, list):
-            return False                       # more keys, but this element is a leaf
-        in_list = type(found).__name__ == "SubmodelElementList"
-        scope = value
-    return True
-
-
 @rule("HD-D9", kind="template", prio="SHOULD",
       title="document/entity references resolve to an element that exists",
       spec="IDTA 02004-2-0 §2.2 (\"the creation of an Entity element is required\")",
@@ -336,7 +285,7 @@ def hd_d9_entity_references_resolve(ctx):
                     continue
                 if keys[0].type.value != "Submodel" or keys[0].value != submodel.id:
                     continue
-                if not _resolve_in_submodel(submodel, keys):
+                if not resolve_in_submodel(submodel, keys):
                     yield Violation(
                         "the reference walks to nothing in this submodel",
                         subject=subject,
