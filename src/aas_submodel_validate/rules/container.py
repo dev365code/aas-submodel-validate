@@ -11,9 +11,11 @@ from ..registry import rule
 
 
 @rule("X1", kind="container", prio="MUST",
-      title="the file must be a ZIP (OPC) container",
+      title="the file must be a ZIP (OPC) container this reader can open",
       spec="ECMA-376 Part 2",
-      fix="Re-create the .aasx with an AAS packaging tool; what is on disk is not a ZIP archive at all.")
+      fix="Re-create the .aasx with an AAS packaging tool: either what is on "
+          "disk is not a ZIP archive at all, or the archive describes one of "
+          "its parts in a way that makes the part unreadable.")
 def x1_is_a_zip(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "zip":

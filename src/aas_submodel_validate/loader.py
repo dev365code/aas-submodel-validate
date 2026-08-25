@@ -18,7 +18,7 @@ from typing import List, Optional
 
 from aas_core3 import jsonization, types, xmlization
 
-from .container import AasxPackage, ContainerError
+from .container import AasxPackage, ContainerError, UnreadablePart
 
 _DOCTYPE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
 
@@ -131,8 +131,15 @@ def _load_aasx(path: Path) -> Loaded:
         return loaded
     loaded.container = package
 
+    # An unreadable part is staged as "zip", not "chain": the chain may
+    # be perfect and the archive's account of one part wrong, and
+    # "repair the chain" would then be a remedy for a defect that is not
+    # there. Every finding this project makes carries a true remedy.
     try:
         parts = package.spec_parts
+    except UnreadablePart as exc:
+        loaded.errors.append(LoadError("zip", str(exc)))
+        return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("chain", str(exc)))
         return loaded
@@ -140,6 +147,9 @@ def _load_aasx(path: Path) -> Loaded:
     for part in parts:
         try:
             raw = package.read(part)
+        except UnreadablePart as exc:
+            loaded.errors.append(LoadError("zip", str(exc), subject=part))
+            continue
         except ContainerError as exc:
             loaded.errors.append(LoadError("chain", str(exc), subject=part))
             continue

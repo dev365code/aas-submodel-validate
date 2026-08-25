@@ -11,7 +11,7 @@ import pytest
 from aas_submodel_validate import runner
 from aas_submodel_validate.cli import EXIT_ERROR, main
 from aas_submodel_validate.container import AasxPackage, ContainerError
-from builders import build_aasx, env_json
+from builders import build_aasx, corrupt_part, env_json
 
 
 def test_an_oversized_spec_part_is_refused_before_it_is_read(tmp_path):
@@ -79,3 +79,18 @@ def test_control_characters_do_not_reach_the_terminal_raw(tmp_path, capsys):
     main([str(path)])
     out = capsys.readouterr().out
     assert "\x1b" not in out
+
+
+@pytest.mark.parametrize("how", ("declared_size", "method", "encrypted"))
+def test_a_part_that_cannot_be_decompressed_is_a_finding(tmp_path, how):
+    """An archive may describe a part wrongly. Reading it then fails
+    inside zipfile, with an exception this reader never declared -- and
+    the promise is that a container defect is a finding, not a crash.
+
+    Exit 1 alone does not prove it: a crash and a finding leave the same
+    code. So the report has to come back."""
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json())
+    corrupt_part(path, "aasx/env.json", how)
+    report = runner.run(path)
+    assert {f.id for f in report.findings} & {"X1", "X2", "X3"}
+    assert not report.ok

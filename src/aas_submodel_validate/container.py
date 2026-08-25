@@ -39,6 +39,16 @@ class ContainerError(Exception):
     """The file is not something this reader can follow as an AASX."""
 
 
+class UnreadablePart(ContainerError):
+    """The archive names a part but cannot yield its bytes.
+
+    Kept apart from its parent because the remedy differs: a chain that
+    does not reach a payload is repaired by fixing the relationships,
+    while this archive's relationships may be perfect and its own
+    description of a part wrong. The loader routes the two differently.
+    """
+
+
 def _rels_name(source: str) -> str:
     """Where OPC keeps the relationships of `source` ("" = the package)."""
     if not source:
@@ -74,7 +84,18 @@ class AasxPackage:
             raise ContainerError(
                 "%s refuses %s: %d bytes uncompressed, above the %d byte limit"
                 % (self.path, name, info.file_size, MAX_PART_BYTES))
-        return self._zip.read(name)
+        # zipfile raises for a part the archive describes wrongly: a
+        # method no reader implements, an encryption flag, a checksum
+        # that does not match what came out. Those are defects in the
+        # file, and this reader's promise is that a defect in the file
+        # is a finding.
+        try:
+            return self._zip.read(name)
+        except (zipfile.BadZipFile, NotImplementedError, RuntimeError,
+                EOFError, OSError) as exc:
+            raise UnreadablePart(
+                "%s: %s cannot be read: %s: %s"
+                % (self.path, name, type(exc).__name__, exc)) from exc
 
     # -- the OPC chain -------------------------------------------------------
     def relationships(self, source: str = "") -> List[Tuple[str, str]]:

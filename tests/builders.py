@@ -68,6 +68,54 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
     return path
 
 
+def corrupt_part(path, entry: str, how: str):
+    """Rewrite an archive so one entry cannot be decompressed.
+
+    `build_aasx` can cut any structural link, but every archive it writes
+    describes itself truthfully -- `writestr` computes the sizes and the
+    checksum from the data. A supplier's file need not, and what the
+    reader does when the description is wrong is exactly the question
+    this repository says it answers. So the fields are edited afterwards,
+    in both the local header and the central directory (a reader may
+    consult either):
+
+    - "declared_size": the entry claims to be far smaller than it is, so
+      the read stops early and the checksum no longer matches.
+    - "method": a compression method no reader implements.
+    - "encrypted": the encryption flag, with no password to be had.
+
+    Nothing is written to the repository -- callers pass a tmp_path.
+    """
+    import struct
+    raw = bytearray(path.read_bytes())
+    name = entry.encode("utf-8")
+    central = raw.find(b"PK\x01\x02")
+    while central != -1:
+        length = struct.unpack_from("<H", raw, central + 28)[0]
+        if raw[central + 46:central + 46 + length] == name:
+            break
+        central = raw.find(b"PK\x01\x02", central + 4)
+    if central == -1:
+        raise LookupError("no central directory entry for %s" % entry)
+    local = struct.unpack_from("<I", raw, central + 42)[0]
+    assert raw[local:local + 4] == b"PK\x03\x04", "not a local header at %d" % local
+
+    if how == "declared_size":
+        struct.pack_into("<I", raw, central + 24, 100)   # uncompressed size
+        struct.pack_into("<I", raw, local + 22, 100)
+    elif how == "method":
+        struct.pack_into("<H", raw, central + 10, 99)    # compression method
+        struct.pack_into("<H", raw, local + 8, 99)
+    elif how == "encrypted":
+        flags = struct.unpack_from("<H", raw, central + 8)[0]
+        struct.pack_into("<H", raw, central + 8, flags | 0x1)
+        struct.pack_into("<H", raw, local + 6, flags | 0x1)
+    else:
+        raise ValueError("unknown corruption: %s" % how)
+    path.write_bytes(bytes(raw))
+    return path
+
+
 def env_json(semantic_value: str = "0173-1#01-AHF578#003") -> bytes:
     """A minimal, metamodel-valid AAS environment with one submodel."""
     import json
