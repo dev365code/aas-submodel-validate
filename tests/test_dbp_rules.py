@@ -41,7 +41,7 @@ def test_the_golden_is_clean_under_02035_2_and_faulted_under_02004(tmp_path):
     produced it.
     """
     assert _ids(tmp_path, dbp_env(), profile="02035-2") == {"SMT-D2"}
-    assert _ids(tmp_path, dbp_env(), profile="02004") == THE_DISAGREEMENT
+    assert _ids(tmp_path, dbp_env(), profile="02004") == THE_DISAGREEMENT | {"SMT-D2"}
     assert _ids(tmp_path, dbp_env()) == THE_DISAGREEMENT, "02004 answers by default"
 
 

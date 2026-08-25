@@ -20,8 +20,8 @@ finding.
 - **Not a Digital Product Passport platform.** IDTA 02035-2 is judged as
   what it is measured to be — a profile of the Handover Documentation
   template, twenty-two of its thirty-eight rows with two relaxed — and
-  nothing more. `--profile` says which of the two answers; the report
-  says which answered. No DPP registry, no passport identifier
+  nothing more. `--profile` says which of the two answers, and the
+  report says which answered whenever there was a choice to make. No DPP registry, no passport identifier
   resolution, no battery regulation compliance claim. This project is
   the submodel-conformance layer.
 - **Not a certifier, and not a fixer.** It reports findings and names

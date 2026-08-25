@@ -29,10 +29,17 @@ def render(report: Report) -> str:
             lines.append("        fix: %s" % _safe(finding.fix))
     for note in report.notes:
         lines.append("note    %s" % _safe(note))
-    if report.ok and not report.findings:
-        lines.append("ok — %s (%d rules)" % (report.path, report.checked))
+    if report.ok and not report.findings and not report.notes:
+        # "rules registered", not "rules checked": a Technical Data file
+        # is not judged by 02004's fifty-two, and a run that says it
+        # checked them has told the reader something it did not do.
+        lines.append("ok — %s (%d rules registered)" % (report.path, report.checked))
     else:
-        lines.append("%d error(s), %d warning(s), %d note(s) — %s"
+        # The third count is INFO findings. It said "note(s)" and the
+        # report has notes of its own, printed above and not counted
+        # here -- one word for two things, with a run that printed a note
+        # and summarised "0 note(s)" as the proof.
+        lines.append("%d error(s), %d warning(s), %d info — %s"
                      % (report.count(Severity.ERROR), report.count(Severity.WARNING),
                         report.count(Severity.INFO), report.path))
     return "\n".join(lines)

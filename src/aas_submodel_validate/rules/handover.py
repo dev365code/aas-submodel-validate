@@ -102,7 +102,7 @@ def _d3(tables):
                 class_id = property_value(classification, "ClassId", tables)
                 if class_id is not None and class_id not in VDI2770_CLASS_IDS:
                     yield Violation("ClassId is not a VDI 2770 Blatt 1:2020 class",
-                                    subject=subject, detail="saw %r" % class_id)
+                                    subject=subject, detail="%r" % class_id)
     return check
 
 
@@ -147,7 +147,7 @@ def _d6(tables):
             status = property_value(version, "StatusValue", tables)
             if status is not None and status not in ("InReview", "Released"):
                 yield Violation("StatusValue is outside the vocabulary",
-                                subject=subject, detail="saw %r" % status)
+                                subject=subject, detail="%r" % status)
     return check
 
 
@@ -187,7 +187,7 @@ def _d8(tables):
             value = property_value(version, "StatusSetDate", tables)
             if value is not None and not valid_xs_date(value):
                 yield Violation("StatusSetDate is not a valid xs:date",
-                                subject=subject, detail="saw %r" % value)
+                                subject=subject, detail="%r" % value)
     return check
 
 
@@ -250,7 +250,7 @@ def _l2(tables):
         for subject, seen, expected in analyze(ctx, tables)["near_misses"]:
             yield Violation("semanticId almost matches the template",
                             subject=subject,
-                            detail="saw %s, the template says %s" % (seen, expected))
+                            detail="%s, where the template says %s" % (seen, expected))
     return check
 
 
@@ -259,7 +259,7 @@ def _l3(tables):
         for subject, seen, expected in analyze(ctx, tables)["reftype_drift"]:
             yield Violation(
                 "the reference type differs from the template's",
-                subject=subject, detail="saw %s, template uses %s" % (seen, expected),
+                subject=subject, detail="%s, where the template uses %s" % (seen, expected),
                 fix="Use %s %s here, as the template does; the value matched, "
                     "so this is interoperability polish, not a failure."
                     % ("an" if expected[:1] in "AEIOU" else "a", expected))
@@ -291,7 +291,7 @@ def _l5(tables):
                 if spelling != VDI2770_SYSTEM:
                     yield Violation("ClassificationSystem spells the VDI system "
                                     "non-canonically",
-                                    subject=subject, detail="saw %r" % spelling)
+                                    subject=subject, detail="%r" % spelling)
     return check
 
 

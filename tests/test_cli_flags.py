@@ -85,3 +85,23 @@ def test_the_profiles_on_offer_come_from_the_tables(capsys):
     helped = capsys.readouterr().out
     for key in KEYS:
         assert key in helped
+
+
+def test_a_run_with_a_note_does_not_call_itself_ok(tmp_path, capsys):
+    """`--allow-unmatched` moves the presence finding to a note, leaving
+    the findings empty -- and the headline used to read `ok — file (123
+    rules)` over an input this tool recognised nothing in. A run that had
+    to be told to allow something is not the plain "ok" case, and the
+    parenthetical says `registered` because a Technical Data file is not
+    judged by 02004's fifty-two."""
+    path = tmp_path / "unknown.json"
+    path.write_bytes(env_json("urn:acme:private"))
+    assert main([str(path), "--allow-unmatched"]) == 0
+    out = capsys.readouterr().out
+    assert "ok —" not in out
+    assert "note    SMT-D1 (allowed)" in out
+
+    clean = tmp_path / "clean.json"
+    clean.write_bytes(json.dumps(hd_env()).encode("utf-8"))
+    assert main([str(clean)]) == 0
+    assert "rules registered)" in capsys.readouterr().out

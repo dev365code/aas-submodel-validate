@@ -119,22 +119,29 @@ def test_a_marked_submodel_is_told_which_template_answered(tmp_path):
     (finding,) = [f for f in report.findings if f.id == "SMT-D2"]
     assert finding.severity is Severity.INFO
     assert finding.violation.subject == "HandoverDocumentation"
-    assert "IDTA 02004" in finding.violation.detail
     assert "IDTA 02035-2" in finding.violation.detail
+    assert "--profile 02035-2" in finding.fix, "the remedy names the flag first"
 
 
-def test_the_notice_names_every_cardinality_the_two_templates_differ_on(tmp_path):
+def test_the_notice_counts_everything_the_other_template_would_not_ask(tmp_path):
+    """Twenty-one, not eleven. The first version of this notice named the
+    rows 02004 requires and 02035-2 does not -- and said nothing about the
+    sixteen elements 02035-2 has no row for at all, or the three hand
+    rules whose elements it dropped. Those three leave no other trace: a
+    StatusSetDate rule that was never installed is not a row anybody can
+    look up. Measured against the tables and the roster."""
+    absent, relaxed, hand = DBP.not_asked
+    assert (len(absent), len(relaxed), len(hand)) == (16, 2, 3)
     report = _report(tmp_path, declaring_profile(hd_env(), _mark()))
     (finding,) = [f for f in report.findings if f.id == "SMT-D2"]
-    for row_id in RELIEVED:
-        assert row_id in finding.violation.detail
+    assert "21" in finding.violation.detail
 
 
-def test_the_notice_names_the_findings_a_conformant_battery_passport_gets(tmp_path):
-    """The list is not decoration. A file that is exactly what 02035-2
-    asks for draws six errors under 02004, and the notice names each of
-    them -- so a reader can tell which of the findings above are the
-    profile's disagreement rather than their own mistake."""
+def test_the_notice_names_the_elements_a_conformant_battery_passport_is_faulted_for(tmp_path):
+    """A file that is exactly what 02035-2 asks for draws six errors under
+    02004, and the notice names the elements each of them is about -- so a
+    reader can tell which of the findings above are the profile's
+    disagreement rather than their own mistake."""
     env = hd_env()
     for row_id in UNCONDITIONAL:
         env = break_row(env, hd_tables.BY_ID[row_id], hd_tables)
@@ -142,7 +149,8 @@ def test_the_notice_names_the_findings_a_conformant_battery_passport_gets(tmp_pa
     errors = {f.id for f in report.findings if f.severity is Severity.ERROR}
     assert errors == set(UNCONDITIONAL)
     (finding,) = [f for f in report.findings if f.id == "SMT-D2"]
-    assert all(row_id in finding.violation.detail for row_id in errors)
+    for row_id in errors:
+        assert hd_tables.BY_ID[row_id]["label"] in finding.violation.detail
 
 
 # -- what it must not do -----------------------------------------------------
@@ -359,10 +367,16 @@ def test_choosing_the_other_template_is_reported(tmp_path):
     assert "--profile 02035-2" in finding.violation.message
 
 
-def test_choosing_the_template_that_would_have_answered_anyway_is_not(tmp_path):
-    """`--profile 02004` on a file nothing else claimed changes nothing,
-    and a note about nothing is a note nobody reads by the third one."""
-    assert _notice(tmp_path, hd_env(), profile="02004") is None
+def test_choosing_the_template_that_would_have_answered_anyway_is_still_reported(tmp_path):
+    """An explicit `--profile 02004` picks the template that would have
+    answered anyway, so nothing about the verdict changes -- and the
+    report still records that somebody chose. A stored report cannot say
+    which requirements produced it otherwise, and the README promises it
+    says. Silence is for the run where there was no choice to make."""
+    finding = _notice(tmp_path, hd_env(), profile="02004")
+    assert finding is not None
+    assert "--profile 02004" in finding.violation.message
+    assert _notice(tmp_path, hd_env()) is None, "no flag, no mark, no choice"
 
 
 def test_a_declaration_the_run_did_not_follow_is_reported(tmp_path):
@@ -373,3 +387,17 @@ def test_a_declaration_the_run_did_not_follow_is_reported(tmp_path):
     finding = _notice(tmp_path, marked, profile="02004")
     assert finding is not None
     assert "declares" in (finding.violation.detail or "")
+
+
+def test_a_profile_that_chose_nothing_says_so(tmp_path):
+    """`--profile` names a template. Pointed at a file no submodel of
+    which answers to that template's identifier, it chooses nothing and
+    the verdict is the one the run would have had anyway -- and somebody
+    who passed the flag believes they validated by it. A run-level note,
+    where `--allow-unmatched` already puts one."""
+    path = tmp_path / "td.json"
+    path.write_bytes(json.dumps(td_env()).encode("utf-8"))
+    report = runner.run(path, profile="02035-2")
+    assert any("chose nothing" in note for note in report.notes), report.notes
+    assert not [f for f in report.findings if f.id == "SMT-D2"]
+    assert runner.run(path).notes == [], "no flag, no note"

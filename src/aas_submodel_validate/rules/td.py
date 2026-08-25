@@ -65,7 +65,7 @@ def td_d1_valid_date(ctx):
         value = property_value(further, "ValidDate", td_tables)
         if value is not None and not valid_xs_date(value):
             yield Violation("ValidDate is not a valid xs:date",
-                            subject=subject, detail="saw %r" % value)
+                            subject=subject, detail="%r" % value)
 
 
 @rule("TD-D2", kind="template", prio="MUST",
@@ -133,7 +133,7 @@ def tdl1_near_miss(ctx):
     for subject, seen, expected in analyze(ctx, td_tables)["near_misses"]:
         yield Violation("semanticId almost matches the template",
                         subject=subject,
-                        detail="saw %s, the template says %s" % (seen, expected))
+                        detail="%s, where the template says %s" % (seen, expected))
 
 
 @rule("TDL2", kind="lint", prio="MAY",
@@ -145,7 +145,7 @@ def tdl2_reference_type(ctx):
     for subject, seen, expected in analyze(ctx, td_tables)["reftype_drift"]:
         yield Violation(
             "the reference type differs from the template's",
-            subject=subject, detail="saw %s, template uses %s" % (seen, expected),
+            subject=subject, detail="%s, where the template uses %s" % (seen, expected),
             fix="Use %s %s here, as the template does; the value matched, "
                 "so this is interoperability polish, not a failure."
                 % ("an" if expected[:1] in "AEIOU" else "a", expected))

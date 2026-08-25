@@ -69,6 +69,29 @@ class Profile:
                 - frozenset(self.default.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS))
 
     @property
+    def not_asked(self) -> tuple:
+        """Every check the default makes that the alternative does not.
+
+        Three kinds, and the report names all three because each one is a
+        question that stops being asked: rows the alternative has no
+        entry for at all, rows it keeps but no longer requires, and hand
+        rules whose elements it dropped entirely. The last kind leaves no
+        other trace -- a missing StatusSetDate rule is not a row anybody
+        can look up -- so naming it is the only way a reader learns it
+        went. Measured rather than listed: 16 + 2 + 3.
+        """
+        from . import handover
+        absent = tuple(row for row in self.default.ROWS
+                       if row["label"] not in self.alternative.BY_LABEL)
+        relaxed = tuple(row for row in self.default.ROWS
+                        if row["label"] in self.alternative.BY_LABEL
+                        and row["card"][0] >= 1
+                        and self.alternative.BY_LABEL[row["label"]]["card"][0] == 0)
+        hand = tuple(sorted(handover.answerable(self.default)
+                            - handover.answerable(self.alternative)))
+        return absent, relaxed, hand
+
+    @property
     def relieved(self) -> tuple:
         """Rows the default requires and the alternative does not -- either
         because it dropped the element or because it made it optional.
@@ -166,14 +189,16 @@ def declared(submodel):
           "file; a submodel that does not mean the profile it declares "
           "should drop the supplementalSemanticId that declares it.")
 def smt_d2_the_report_names_the_profile(ctx):
-    """Silent when the default answered and nothing said otherwise, which
-    is load-bearing: the golden fixtures and the official example must
-    keep drawing nothing at all.
+    """Silent only when nothing was chosen and nothing was declared: no
+    flag, no mark, the default answering as it always would. That silence
+    is load-bearing -- the golden fixtures and the official example must
+    keep drawing nothing at all -- and it is the only silence there is.
+    An explicit `--profile`, even one that picks the template that would
+    have answered anyway, is a choice a stored report has to carry.
 
     It reads the same `Selection` the walk reads. Two readings of one
     question is how a verdict changes without the sentence that explains
-    it changing with it -- and a switch nobody reports is the failure
-    this whole pack has been arranged around.
+    it changing with it.
     """
     for submodel in ctx.loaded.submodels:
         picked = ctx.selection.chosen(submodel)
@@ -181,13 +206,51 @@ def smt_d2_the_report_names_the_profile(ctx):
             continue
         profile, tables, name, why = picked
         declared = bool(_marks_of(submodel) & profile.marks)
-        if tables is profile.default and not declared:
+        if tables is profile.default and not declared and why is None:
             continue
-        said = ("; this submodel declares %s" % profile.name) if declared else ""
         yield Violation(
             "judged as %s%s" % (name, " (%s)" % why if why else ""),
             subject=submodel.id_short or "submodel",
-            detail="%s and %s disagree about %s%s"
-                   % (profile.default_name, profile.name,
-                      ", ".join("%s %s" % (row["id"], row["label"])
-                                for row in profile.relieved), said))
+            detail=_what_the_choice_cost(profile, tables)
+                   + ("; this submodel declares %s" % profile.name
+                      if declared and tables is profile.default else ""),
+            fix=_remedy(profile, tables))
+
+
+def _what_the_choice_cost(profile, tables) -> str:
+    absent, relaxed, hand = profile.not_asked
+    total = len(absent) + len(relaxed) + len(hand)
+    if tables is profile.default:
+        # Named, not counted, in this direction. This is the run where the
+        # reader has findings in front of them and needs to know which of
+        # them the other template would not have asked for -- the count
+        # alone leaves them to work that out from two specifications.
+        return ("%s also answers to this identifier and asks %d fewer things; "
+                "this run asked all of them, including %s"
+                % (profile.name, total,
+                   ", ".join(row["label"] for row in profile.relieved)))
+    return ("%d checks %s makes are not made here: %d elements this template "
+            "does not have (%s), %d it no longer requires (%s), and %d rules "
+            "whose elements it dropped (%s)"
+            % (total, profile.default_name,
+               len(absent), ", ".join(row["label"] for row in absent),
+               len(relaxed), ", ".join(row["label"] for row in relaxed),
+               len(hand), ", ".join(suffix.lstrip("-") for suffix in hand)))
+
+
+def _remedy(profile, tables) -> str:
+    """What to do about it, and what each choice costs.
+
+    The first version of this sentence offered dropping the
+    supplementalSemanticId as a remedy, which a reader under six errors
+    would reasonably reach for -- and which removes the only line in the
+    report that explains them while changing no finding. So the flag
+    comes first and the deletion is described with its price.
+    """
+    if tables is profile.default:
+        return ("If this submodel means %s, run --profile %s; nothing in the "
+                "file has to change for that." % (profile.name, profile.key))
+    return ("If this submodel means %s instead, run --profile %s. Removing "
+            "the supplementalSemanticId that declares the profile changes no "
+            "finding and removes this explanation of them."
+            % (profile.default_name, profile.default_key))
