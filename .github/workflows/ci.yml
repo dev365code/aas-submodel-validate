@@ -46,8 +46,9 @@ jobs:
           # pyproject declares aas-core3.0>=1.1.4, so 1.1.4 exactly is what
           # this row runs: a floor test that floats stops testing the floor.
           - { os: ubuntu-latest, python: "3.11", pin: "aas-core3.0==1.1.4", label: "floor" }
-          # Windows is where an unclosed ZIP handle keeps files locked and
-          # where the .gitattributes eol=lf setting gets tested.
+          # Windows is where an unclosed ZIP handle keeps files locked, and
+          # where a checkout could hand the suite different bytes than the
+          # ones whose hashes were recorded.
           - { os: windows-latest, python: "3.11" }
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +61,12 @@ jobs:
       - run: pytest -q
       - name: every rule id fired somewhere
         run: python tools/rule_coverage.py --check
+      # Also in the lint job, deliberately: this one runs on every OS in
+      # the matrix, and end-of-line damage is a property of the checkout,
+      # not of the commit. A hash verified only where the file was written
+      # verifies nothing about the machine that unpacks it.
+      - name: the vendored bytes survived this checkout
+        run: python tools/vendor_template.py --check
 
   wheel:
     # The failure this exists for: a wheel that installs but is missing the

@@ -1,9 +1,11 @@
 * text=auto eol=lf
-*.rdf text eol=lf
-*.iirds binary
 
-# The reference corpus is claimed to be upstream's bytes and is verified by
-# SHA-256 on every test run, including on Windows. Any end-of-line conversion
-# would break that claim on checkout rather than in the file, which is the
-# confusing way for it to break. No conversion, ever.
-tests/corpus/plusmeta/files/** -text
+# The vendored material is claimed to be upstream's bytes, and the SHA-256
+# recorded beside each file is that claim. End-of-line conversion would
+# break it on checkout rather than in the file, which is the confusing way
+# for it to break -- the checkout is green in the place the bytes were
+# written and red on somebody else's machine. So these two trees are stored
+# and checked out verbatim. Every file in them is LF today; the point is
+# that the next one need not be, and nobody would have to notice.
+src/aas_submodel_validate/data/** -text
+tests/corpus/** -text
