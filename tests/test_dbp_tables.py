@@ -157,6 +157,27 @@ def _every(element):
             yield from _every(child)
 
 
+def test_the_submodel_says_one_thing_about_itself_that_02004_does_not():
+    """The only thing in either published file that could tell an instance
+    of one from an instance of the other. Both submodels carry an
+    ECLASS-CDP supplemental, which normalises to the IRDI they already
+    share and so says nothing; 02035-2 carries a second, and that is the
+    whole signal.
+
+    It is generated rather than written into a rule because a string
+    copied out of a template by hand is how the sixty-four rows would
+    have gone stale, and this one would go stale silently: nothing fires
+    on it yet.
+    """
+    theirs = set(hd_tables.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS)
+    ours = set(dbp_tables.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS)
+    assert theirs == {hd_tables.TEMPLATE_SEMANTIC_ID}
+    assert theirs < ours
+    assert ours - theirs == {
+        "urn:samm:io.admin-shell.idta.batterypass.handover_documentation"
+        ":1.0.0#HandoverDocumentation"}
+
+
 def test_no_rule_is_registered_from_this_table_yet():
     """The boundary of this slice. Which of the two tables answers for a
     given file is a decision taken where the walk is handed a table, and

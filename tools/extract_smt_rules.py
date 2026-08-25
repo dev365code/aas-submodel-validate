@@ -281,6 +281,15 @@ def generate(pack) -> str:
                  if row is not None)
     submodel_sid = "/".join(k["value"] for k in submodel["semanticId"]["keys"])
     submodel_sid_type = submodel["semanticId"].get("type")
+    # What the submodel says about itself *besides* its identifier. Two
+    # templates can declare the same semanticId -- 02004 and 02035-2 do --
+    # and then this is the only thing in either published file that tells
+    # an instance of one from an instance of the other. Normalised like
+    # every other match value, so the ECLASS-CDP spelling folds onto the
+    # IRDI it means and contributes nothing where that is all there is.
+    supplemental = set()
+    for reference in submodel.get("supplementalSemanticIds", []):
+        supplemental |= _values_of(reference)
 
     # The hand rules navigate by label, and BY_LABEL is a dict: two rows
     # sharing a label would make one of them silently unreachable. Fail
@@ -301,6 +310,7 @@ def generate(pack) -> str:
         "",
         "TEMPLATE_SEMANTIC_ID = %r" % submodel_sid,
         "TEMPLATE_SUBMODEL_SID_TYPE = %r" % submodel_sid_type,
+        "TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = %r" % (tuple(sorted(supplemental)),),
         "",
         "TREE = %s" % _fmt(tree, 0),
         "",
