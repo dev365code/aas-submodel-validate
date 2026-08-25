@@ -30,7 +30,13 @@ import re
 from typing import Dict, List
 
 from ..model import Violation
-from ..semantics import candidate_values, edit_distance, element_candidate_values, version_stem
+from ..semantics import (
+    candidate_values,
+    edit_distance,
+    element_candidate_values,
+    submodel_declares,
+    version_stem,
+)
 
 _KIND_WORDS = {(1, 1): "exactly one", (0, 1): "at most one", (1, None): "one or more"}
 
@@ -50,7 +56,7 @@ def analyze(ctx, tables) -> Dict:
 
 def matched_submodels(ctx, tables) -> List:
     return [submodel for submodel in ctx.loaded.submodels
-            if tables.TEMPLATE_SEMANTIC_ID in candidate_values(submodel.semantic_id)]
+            if submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)]
 
 
 def _analyze(ctx, tables) -> Dict:

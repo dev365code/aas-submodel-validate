@@ -169,7 +169,8 @@ def declaring_profile(env: dict, mark: str, template_id: str = None) -> dict:
     return env
 
 
-def wearing_our_anchor_as_a_supplemental(anchor: str, id_short: str) -> bytes:
+def wearing_our_anchor_as_a_supplemental(anchor: str, id_short: str,
+                                         also: str = None) -> bytes:
     """An environment shaped like IDTA 02035-4: it declares an identity of
     its own and carries one of ours in a *supplemental*.
 
@@ -201,7 +202,9 @@ def wearing_our_anchor_as_a_supplemental(anchor: str, id_short: str) -> bytes:
              "keys": [{"type": "GlobalReference",
                        "value": "urn:samm:io.admin-shell.idta.batterypass"
                                 ".technical_data:1.0.0#TechnicalData"}]},
-        ],
+        ] + ([{"type": "ExternalReference",
+               "keys": [{"type": "GlobalReference", "value": also}]}]
+             if also else []),
     }]}).encode("utf-8")
 
 

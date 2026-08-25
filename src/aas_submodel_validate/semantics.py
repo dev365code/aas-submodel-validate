@@ -69,6 +69,27 @@ def candidate_values(reference) -> frozenset:
     return frozenset(out)
 
 
+def submodel_declares(submodel, anchor: str) -> bool:
+    """Does this submodel say it is the template `anchor` identifies?
+
+    A submodel's identity is its *main* semanticId and nothing else. Its
+    supplementals are not folded in, although element matching folds
+    theirs one level down (docs/divergences.md #14), and the reason is a
+    published file: IDTA 02035-4 is a template of its own and carries this
+    project's Technical Data anchor in a supplemental. Fold them here and
+    that file becomes Technical Data, every way it differs becomes a
+    defect it is reported for, and the report contradicts itself -- the
+    presence rule, reading the main identifier, says it knows no submodel
+    while findings from a template it knows print underneath.
+
+    Three places asked this question with the same line of code, which
+    agreed by being one line each. They ask it here now, because the next
+    slice makes the answer depend on more than the identifier and three
+    copies of that would be three chances to disagree.
+    """
+    return anchor in candidate_values(submodel.semantic_id)
+
+
 def candidate_values_from_dict(reference: Optional[dict]) -> frozenset:
     """candidate_values for a JSON-shaped reference (test builders and
     tools work on plain dicts before jsonization)."""

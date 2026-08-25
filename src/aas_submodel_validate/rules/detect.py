@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from ..model import Violation
 from ..registry import rule
-from ..semantics import candidate_values, key_values
+from ..semantics import key_values, submodel_declares
 from . import hd_tables, td_tables
 
 #: The rule id. Referenced by the runner, which can demote this one
@@ -53,7 +53,7 @@ def matched(ctx):
     return [(pack, submodel)
             for submodel in ctx.loaded.submodels
             for pack in PACKS
-            if pack.semantic_id in candidate_values(submodel.semantic_id)]
+            if submodel_declares(submodel, pack.semantic_id)]
 
 
 def _nearest_miss(submodels) -> str:

@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from ..model import Violation
 from ..registry import rule
-from ..semantics import candidate_values
+from ..semantics import candidate_values, submodel_declares
 from . import dbp_tables, hd_tables
 
 RULE_ID = "SMT-D2"
@@ -96,8 +96,7 @@ def declared(submodel):
     for supplemental in getattr(submodel, "supplemental_semantic_ids", None) or []:
         said |= candidate_values(supplemental)
     return [profile for profile in PROFILES
-            if profile.default.TEMPLATE_SEMANTIC_ID
-            in candidate_values(submodel.semantic_id)
+            if submodel_declares(submodel, profile.default.TEMPLATE_SEMANTIC_ID)
             and said & profile.marks]
 
 

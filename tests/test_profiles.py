@@ -258,6 +258,24 @@ def test_a_template_of_its_own_wearing_our_anchor_draws_no_notice(tmp_path):
     assert "SMT-D2" not in {f.id for f in runner.run(path).findings}
 
 
+def test_a_template_of_its_own_that_also_carries_the_mark_is_still_not_ours(tmp_path):
+    """The shape where the shield and the profile question meet: a
+    submodel with an identity of its own, this project's Handover anchor
+    in a supplemental, and the battery-passport mark beside it.
+
+    Both existing fixtures for the shield carry no mark, so neither can
+    see the failure where folding supplementals into
+    `semantics.submodel_declares` makes a foreign template *both* ours
+    and a declared profile of ours -- the report then names a template it
+    has just said it does not recognise.
+    """
+    path = tmp_path / "foreign-and-marked.json"
+    path.write_bytes(wearing_our_anchor_as_a_supplemental(
+        hd_tables.TEMPLATE_SEMANTIC_ID, "HandoverDocumentation", also=_mark()))
+    ids = {finding.id for finding in runner.run(path).findings}
+    assert ids == {"SMT-D1"}, sorted(ids)
+
+
 def test_a_mark_on_a_different_template_draws_nothing(tmp_path):
     """The guard is the main semanticId: a Technical Data submodel that
     somehow carried the battery-passport URN is not a Handover profile,
