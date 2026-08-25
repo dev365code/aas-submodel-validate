@@ -1,2 +1,2 @@
 """Importing the package registers every rule."""
-from . import container, hd  # noqa: F401
+from . import container, detect, hd  # noqa: F401

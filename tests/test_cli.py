@@ -17,7 +17,7 @@ def test_findings_exit_one_and_name_the_remedy(tmp_path, capsys):
     path.write_bytes(env_json("urn:wrong"))
     assert main([str(path)]) == 1
     out = capsys.readouterr().out
-    assert "HD-D1" in out
+    assert "SMT-D1" in out
     assert "fix:" in out
 
 

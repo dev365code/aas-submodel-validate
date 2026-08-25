@@ -105,10 +105,10 @@ def test_the_official_example_no_longer_gets_a_false_hdl3():
     assert [f for f in report.findings if f.id == "HDL3"] == []
 
 
-def test_hd_d1_fix_does_not_claim_the_template_uses_externalreference():
+def test_the_presence_fix_does_not_claim_an_externalreference():
     from aas_submodel_validate.registry import all_rules
-    from aas_submodel_validate.rules import hd  # noqa: F401 - registers the rules
-    d1 = next(r for r in all_rules() if r.id == "HD-D1")
+    from aas_submodel_validate.rules import detect  # noqa: F401 - registers the rules
+    d1 = next(r for r in all_rules() if r.id == "SMT-D1")
     assert "as the published template declares it" not in d1.fix
     assert "ExternalReference" not in d1.fix
 

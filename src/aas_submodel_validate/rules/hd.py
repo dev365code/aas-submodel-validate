@@ -2,8 +2,12 @@
 
 The generated structural layer (cardinality, types, per-element
 semanticIds) arrives with the vendored template; what lives here is what
-a template file cannot express. First of them: is the submodel this tool
-was pointed at even claiming to be Handover Documentation?
+a template file cannot express — the mandatory VDI 2770 classification,
+the status vocabulary, dates that are dates, files that exist.
+
+Whether a Handover submodel is present at all is *not* here: that
+question belongs to the tool rather than to this template, and it is
+asked once for every template in `rules/detect.py`.
 """
 from __future__ import annotations
 
@@ -11,49 +15,11 @@ import re
 
 from ..model import Violation
 from ..registry import rule
-from ..semantics import key_values
 from . import hd_tables
 from .hd_engine import analyze, matched_submodels
 
 #: The template's own identity — one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = hd_tables.TEMPLATE_SEMANTIC_ID
-_TEMPLATE_STEM = TEMPLATE_SEMANTIC_ID.rpartition("#")[0]
-
-
-def _nearest_miss(submodels):
-    """Why nothing matched, in the most useful words available."""
-    seen = []
-    for submodel in submodels:
-        for value in key_values(submodel.semantic_id):
-            seen.append(value)
-            if value.startswith(_TEMPLATE_STEM) and value != TEMPLATE_SEMANTIC_ID:
-                return ("found %s, which differs from the template's %s only in the "
-                        "ECLASS version suffix" % (value, TEMPLATE_SEMANTIC_ID))
-        if (getattr(submodel, "id_short", None) or "").lower() == "handoverdocumentation":
-            return ("a submodel is *named* HandoverDocumentation but its semanticId "
-                    "is %s — matching goes by semanticId, never by name"
-                    % (", ".join(key_values(submodel.semantic_id)) or "absent"))
-    if seen:
-        return "semanticId value(s): %s" % ", ".join(sorted(set(seen))[:3])
-    return "no submodel in the input declares any semanticId"
-
-
-@rule("HD-D1", kind="template", prio="MUST",
-      title="the input must contain a Handover Documentation submodel",
-      spec="IDTA 02004-2-0 §2.4, Table 2",
-      fix="Give the submodel a semanticId whose key value is %s -- the "
-          "identifier the IDTA 02004 template carries." % TEMPLATE_SEMANTIC_ID)
-def hd_d1_submodel_present(ctx):
-    """No findings is also what a perfect package looks like, so a run
-    that validated nothing must say so loudly (the sibling validators'
-    silent-pass lesson, applied from day one). Unreadable inputs are the
-    X rules' finding — piling this on top of those would be noise."""
-    if ctx.loaded.errors and not ctx.loaded.submodels:
-        return
-    if matched_submodels(ctx):
-        return
-    yield Violation("no submodel declares the Handover Documentation semanticId",
-                    detail=_nearest_miss(ctx.loaded.submodels))
 
 
 # -- the generated structural layer ------------------------------------------
@@ -65,7 +31,7 @@ def hd_d1_submodel_present(ctx):
 def _row_check(row_id: str):
     def check(ctx):
         if not matched_submodels(ctx):
-            return  # HD-D1's finding; empty scopes would double-report it
+            return  # SMT-D1's finding; empty scopes would double-report it
         yield from analyze(ctx)["violations"].get(row_id, ())
     return check
 

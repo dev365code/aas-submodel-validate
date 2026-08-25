@@ -15,6 +15,7 @@ from . import rules  # noqa: F401  - importing registers every rule
 from .loader import Loaded, load
 from .model import Finding, Report, Rule, Violation
 from .registry import all_rules
+from .rules import detect
 
 
 def execute(rules_to_run, ctx) -> List[Finding]:
@@ -90,11 +91,11 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False) -> Re
     report.findings = execute(rules_to_run, Context(loaded))
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
-        unmatched = [f for f in report.findings if f.id == "HD-D1"]
-        report.findings = [f for f in report.findings if f.id != "HD-D1"]
+        unmatched = [f for f in report.findings if f.id == detect.RULE_ID]
+        report.findings = [f for f in report.findings if f.id != detect.RULE_ID]
         for finding in unmatched:
-            report.notes.append("HD-D1 (allowed): %s -- %s"
-                                % (finding.violation.message,
+            report.notes.append("%s (allowed): %s -- %s"
+                                % (detect.RULE_ID, finding.violation.message,
                                    finding.violation.detail or ""))
     report.findings.sort(key=_reading_order)
     report.checked = len(rules_to_run)

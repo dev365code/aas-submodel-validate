@@ -33,17 +33,17 @@ def test_strict_meta_promotes_the_relay(tmp_path):
     assert main(["--strict-meta", path]) == 1
 
 
-def test_allow_unmatched_demotes_hd_d1_to_a_note(tmp_path, capsys):
+def test_allow_unmatched_demotes_the_presence_rule_to_a_note(tmp_path, capsys):
     path = _write(tmp_path, env_json("urn:not:handover"))
     assert main([path]) == 1
     capsys.readouterr()
     assert main(["--allow-unmatched", path]) == 0
     out = capsys.readouterr().out
-    assert "note" in out and "HD-D1" not in out.split("note")[0]
+    assert "note" in out and "SMT-D1" not in out.split("note")[0]
 
 
 def test_rules_lists_every_rule_without_an_input(capsys):
     assert main(["--rules"]) == 0
     out = capsys.readouterr().out
-    assert "HD-D1" in out and "HD-E38" in out and "META" in out
+    assert "SMT-D1" in out and "HD-E38" in out and "META" in out
     assert out.count("\n") >= 57
