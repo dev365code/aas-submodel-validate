@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 from typing import List, Optional
 
-_CDP_URL = re.compile(r"^https?://api\.eclass-cdp\.com/([0-9A-Za-z.-]+)/?$")
+_CDP_URL = re.compile(r"^https?://api\.eclass-cdp\.com/([0-9A-Za-z.-]+)/?$", re.IGNORECASE)
 _CDP_TAIL = re.compile(r"^(\d{4}-\d)-(\d{2}-[A-Z]{3}\d{3})-(\d{3})$")
 
 
@@ -44,7 +44,68 @@ def key_values(reference) -> List[str]:
 def version_stem(irdi: str) -> Optional[str]:
     """`0173-1#01-AHF578#003` -> `0173-1#01-AHF578`; None when the value
     does not end in an ECLASS version suffix."""
+    irdi = re.sub(r"~\d+", "", irdi)
     head, sep, tail = irdi.rpartition("#")
     if sep and tail.isdigit() and "#" in head:
         return head
     return None
+
+
+def candidate_values(reference) -> frozenset:
+    """Every spelling under which a reference may match a template row.
+
+    Each key's value, and the "/"-join when a reference stacks several
+    keys. IRDI composites are NOT split into their components: the review
+    that justified splitting ("the PDF cites the item id alone") was
+    checked against the published PDF and found false -- the tables carry
+    the composite -- and the splitting cross-contaminated matching (a
+    Document collection's id decomposed to its parent Documents-list id
+    and matched the list row too). See docs/divergences.md #8.
+    """
+    values = key_values(reference)
+    out = set(values)
+    if len(values) > 1:
+        out.add("/".join(values))
+    return frozenset(out)
+
+
+def candidate_values_from_dict(reference: Optional[dict]) -> frozenset:
+    """candidate_values for a JSON-shaped reference (test builders and
+    tools work on plain dicts before jsonization)."""
+    if not reference:
+        return frozenset()
+    values = [normalize(key.get("value", "")) for key in reference.get("keys", [])]
+    out = set(values)
+    if len(values) > 1:
+        out.add("/".join(values))
+    return frozenset(out)
+
+
+def element_candidate_values(element) -> frozenset:
+    """Match spellings for an element: its semanticId and every
+    supplementalSemanticId. The template's own supplementals are in the
+    row match set, so an instance that declares its identity only through
+    a supplemental should match too."""
+    out = set(candidate_values(getattr(element, "semantic_id", None)))
+    for supplemental in getattr(element, "supplemental_semantic_ids", None) or []:
+        out |= candidate_values(supplemental)
+    return frozenset(out)
+
+
+def edit_distance(a: str, b: str, cap: int = 6) -> int:
+    """Levenshtein distance between two short strings, capped: once it is
+    clearly large the exact value does not matter. Used to tell a genuine
+    near-miss (a singular/plural typo) from an unrelated neighbour that
+    merely shares a namespace directory."""
+    if abs(len(a) - len(b)) > cap:
+        return cap + 1
+    previous = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        current = [i]
+        for j, cb in enumerate(b, 1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1,
+                               previous[j - 1] + (ca != cb)))
+        previous = current
+        if min(previous) > cap:
+            return cap + 1
+    return previous[-1]

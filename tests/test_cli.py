@@ -2,12 +2,12 @@
 import json
 
 from aas_submodel_validate.cli import main
-from builders import env_json
+from builders import env_json, hd_env
 
 
 def test_a_clean_file_exits_zero(tmp_path, capsys):
     path = tmp_path / "env.json"
-    path.write_bytes(env_json())
+    path.write_bytes(json.dumps(hd_env()).encode("utf-8"))
     assert main([str(path)]) == 0
     assert "ok" in capsys.readouterr().out
 
