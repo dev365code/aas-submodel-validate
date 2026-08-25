@@ -148,6 +148,42 @@ def env_json(semantic_value: str = "0173-1#01-AHF578#003") -> bytes:
     }]}).encode("utf-8")
 
 
+def wearing_our_anchor_as_a_supplemental(anchor: str, id_short: str) -> bytes:
+    """An environment shaped like IDTA 02035-4: it declares an identity of
+    its own and carries one of ours in a *supplemental*.
+
+    Copied from the published file (pin 11ef3353,
+    `published/Digital Battery Passport/4_Technical Data/1/0/1/`), whose
+    submodel names `https://admin-shell.io/idta/digitalbatterypassport/
+    TechnicalData/1/0` and lists `0173-1#01-AHX837#002` -- this project's
+    Technical Data anchor -- beside a SAMM URN.
+
+    Synthesised rather than vendored on purpose: the only fact this
+    fixture holds is that shape, and the other several thousand rows of
+    the real file would be read by nothing. The anchor is passed in so
+    it comes from the generated table rather than from a second copy of
+    the string.
+    """
+    import json
+    return json.dumps({"submodels": [{
+        "id": "urn:test:a-template-of-its-own",
+        "idShort": id_short,
+        "modelType": "Submodel",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference",
+             "value": "https://admin-shell.io/idta/digitalbatterypassport"
+                      "/TechnicalData/1/0"}]},
+        "supplementalSemanticIds": [
+            {"type": "ExternalReference",
+             "keys": [{"type": "GlobalReference", "value": anchor}]},
+            {"type": "ExternalReference",
+             "keys": [{"type": "GlobalReference",
+                       "value": "urn:samm:io.admin-shell.idta.batterypass"
+                                ".technical_data:1.0.0#TechnicalData"}]},
+        ],
+    }]}).encode("utf-8")
+
+
 # --- a fully conformant Handover Documentation instance ---------------------
 
 def _sid(value):

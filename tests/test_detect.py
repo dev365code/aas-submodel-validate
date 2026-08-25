@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 
 from aas_submodel_validate import runner
-from builders import env_json
+from builders import env_json, wearing_our_anchor_as_a_supplemental
 
 HANDOVER_ID = "0173-1#01-AHF578#003"
 TECHNICAL_DATA_ID = "0173-1#01-AHX837#002"
@@ -83,6 +83,26 @@ def test_the_name_hint_covers_the_second_template_as_well(tmp_path):
     document["submodels"][0]["idShort"] = "TechnicalData"
     finding = _findings(tmp_path, json.dumps(document).encode())["SMT-D1"]
     assert "semanticId" in finding.violation.detail
+
+
+def test_a_submodel_wearing_our_anchor_in_a_supplemental_is_not_recognised(tmp_path):
+    """IDTA 02035-4 declares an identity of its own and carries this
+    project's Technical Data anchor as a supplemental. Folding
+    supplementals into submodel matching -- which is exactly what element
+    matching already does one level down -- would make that published
+    file Technical Data, and its differences from Technical Data would be
+    reported as its defects.
+
+    Nothing stopped that generalisation before this test: swapping
+    `candidate_values(submodel.semantic_id)` for
+    `element_candidate_values(submodel)` left the whole suite green.
+    """
+    from aas_submodel_validate.rules import td_tables
+    ids = _findings(tmp_path, wearing_our_anchor_as_a_supplemental(
+        td_tables.TEMPLATE_SEMANTIC_ID, "TechnicalData"))
+    assert "SMT-D1" in ids, "the honest answer is that we do not know this file"
+    assert not [rule_id for rule_id in ids if rule_id.startswith("TD")], \
+        "a template of its own was judged as ours"
 
 
 def test_an_unreadable_input_is_not_also_piled_on(tmp_path):
