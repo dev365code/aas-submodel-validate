@@ -21,16 +21,28 @@ ROOT = Path(__file__).resolve().parents[1]
 
 REPO = "admin-shell-io/submodel-templates"
 COMMIT = "11ef3353124626e2dba4cb50767024df9a39928a"
-BASE = "published/Handover Documentation"
 
 #: destination (repo-relative) -> source (repo-relative in the upstream repo)
+#:
+#: Written out in full rather than joined to a shared prefix: the upstream
+#: paths do not share one. They disagree about hyphens and underscores
+#: ("IDTA 02004-2-0-1_Template..." against "IDTA 02003_2-0-1_Template..."),
+#: about where the version sits in the tree, and one of them holds two
+#: spaces in a directory name. A prefix that fits both would hide exactly
+#: the detail somebody has to check against upstream.
 FILES = {
     "src/aas_submodel_validate/data/smt/02004/2.0.1/template.json":
-        BASE + "/2/0/1/IDTA 02004-2-0-1_Template_HandoverDocumentation.json",
+        "published/Handover Documentation/2/0/1/"
+        "IDTA 02004-2-0-1_Template_HandoverDocumentation.json",
+    "src/aas_submodel_validate/data/smt/02003/2.0.1/template.json":
+        "published/Technical_Data/2/0/1/"
+        "IDTA 02003_2-0-1_Template_TechnicalData.json",
     "tests/corpus/idta/example.json":
-        BASE + "/2/0/IDTA 02004-2-0_Example_HandoverDocumentation.json",
+        "published/Handover Documentation/2/0/"
+        "IDTA 02004-2-0_Example_HandoverDocumentation.json",
     "tests/corpus/idta/example.aasx":
-        BASE + "/2/0/IDTA 02004-2-0_Example_HandoverDocumentation.aasx",
+        "published/Handover Documentation/2/0/"
+        "IDTA 02004-2-0_Example_HandoverDocumentation.aasx",
 }
 
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Generate the structural rule table from the vendored official template.
+"""Generate the structural rule tables from the vendored official templates.
 
-Every element in the IDTA 02004 template carries its own machine-readable
+Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 38 rows is how one of them
-silently goes stale. `--check` regenerates and byte-compares, the same
-contract the sibling validators use for their generated files.
+extracted, not hand-written: hand-copying sixty-four rows is how one of
+them silently goes stale. `--check` regenerates and byte-compares, the
+same contract the sibling validators use for their generated files.
+
+One generator, one row shape, one table per template (PACKS below).
 
 What is deliberately interpreted rather than copied:
 
@@ -24,6 +26,20 @@ What is deliberately interpreted rather than copied:
   the table -- the digits are the multiple-instance suffix and so optional
   (docs/divergences.md #5) -- and it is only ever an informational lint
   (Annex A lets any unique idShort stand).
+- **Open content is not a rule.** 02003 §3.5 says "the set of suitable
+  semanticIds is not restricted": its thirty-six placeholder elements
+  describe what a manufacturer *may* add. Generating rules from them would
+  demand the unconstrained, and six of them share one identifier, so the
+  first would claim every arbitrary element the walk met. `skip_sids`
+  drops the subtree before it is numbered.
+- **A missing cardinality is 0..\\*, not an error and not One.** 02004
+  qualified every element; 02003 leaves four list items unqualified, and
+  its PDF element tables give each of them 0..*. Assuming One there would
+  invent an obligation the standard does not state.
+- **Several example values, one remedy.** 02003 gives one element four
+  ExampleValue qualifiers, one per classification system. Keeping the
+  first would tell a reader ECLASS is the answer when the template offers
+  four, so they are joined in template order.
 """
 from __future__ import annotations
 
@@ -38,15 +54,12 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from aas_submodel_validate.semantics import normalize  # noqa: E402
 
-TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02004/2.0.1/template.json"
-OUTPUT = ROOT / "src/aas_submodel_validate/rules/hd_tables.py"
-
-#: Item labels for elements the template leaves unnamed (list children
-#: carry no idShort -- the metamodel forbids it). These labels are chosen
-#: to be readable in a finding; several match the PDF's element names, a
-#: few (LanguageCode, EntityForDocumentation) are our own where the PDF
-#: uses a different word.
-ITEM_NAMES = {
+#: Item labels for elements a template leaves unnamed (list children carry
+#: no idShort -- the metamodel forbids it). These labels are chosen to be
+#: readable in a finding; most match the PDF's element names, a few
+#: (LanguageCode, EntityForDocumentation) are our own where the PDF uses a
+#: different word. Without one, a row would be called "DocumentsItem".
+HD_ITEM_NAMES = {
     "Documents": "Document",
     "DocumentIds": "DocumentId",
     "DocumentClassifications": "DocumentClassification",
@@ -59,6 +72,44 @@ ITEM_NAMES = {
     "DocumentedEntities": "DocumentedEntity",
     "Entities": "EntityForDocumentation",
 }
+
+#: 02003's four unnamed list items. The PDF's own element tables name each
+#: of them in the singular (Tables 3, 6, 7 and 12), so those are the words
+#: a reader will find when they go looking.
+TD_ITEM_NAMES = {
+    "ProductImages": "ProductImage",
+    "ProductClassifications": "ProductClassification",
+    "TechnicalPropertyAreas": "TechnicalPropertyArea",
+    "SpecificDescriptions": "SpecificDescription",
+}
+
+#: The open-content placeholders of 02003 §3.5 -- see the module docstring.
+ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
+
+#: One entry per vendored template. `source` names the file in the header
+#: of the generated module, so a reader lands on the right upstream
+#: artefact; `prefix` is the rule-id namespace the registry keeps unique.
+PACKS = (
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02004/2.0.1/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/hd_tables.py",
+        "prefix": "HD-E",
+        "source": "IDTA 02004-2-0-1 template.json",
+        "item_names": HD_ITEM_NAMES,
+        "example_types": ("ExampleValue",),
+        "skip_sids": frozenset(),
+    },
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02003/2.0.1/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/td_tables.py",
+        "prefix": "TD-E",
+        "source": "IDTA 02003_2-0-1 template.json",
+        "item_names": TD_ITEM_NAMES,
+        "example_types": ("SMT/ExampleValue/ECLASS", "SMT/ExampleValue/CDD",
+                          "SMT/ExampleValue/UNSPSC", "SMT/ExampleValue/CustomerSpecific"),
+        "skip_sids": frozenset((ARBITRARY,)),
+    },
+)
 
 CARDINALITY = {"One": (1, 1), "ZeroToOne": (0, 1),
                "OneToMany": (1, None), "ZeroToMany": (0, None)}
@@ -120,21 +171,37 @@ def _cardinality_words(card):
     return "any number"
 
 
-def _rows(element, parent_label, parent_id, counter):
-    label = element.get("idShort") or ITEM_NAMES.get(parent_label, parent_label + "Item")
+def _rows(element, parent_label, parent_id, counter, pack):
+    """One row, and its children's rows -- or None where the template
+    describes open content rather than an obligation (see `skip_sids`).
+    The check comes before the counter so skipped subtrees leave no gap in
+    the numbering and no trace in a sibling template's table."""
+    if _primary_sid(element) in pack["skip_sids"]:
+        return None
+    label = element.get("idShort") \
+        or pack["item_names"].get(parent_label, parent_label + "Item")
     counter[0] += 1
-    row_id = "HD-E%02d" % counter[0]
+    row_id = "%s%02d" % (pack["prefix"], counter[0])
     qualifiers = {q.get("type"): q.get("value") for q in element.get("qualifiers", [])}
-    card = CARDINALITY[qualifiers["SMT/Cardinality"]]
-    example = qualifiers.get("ExampleValue")
+    # Absent means 0..*: see the module docstring. A dict comprehension
+    # keeps the template's own order, which is the order examples join in.
+    card = CARDINALITY.get(qualifiers.get("SMT/Cardinality"), (0, None))
+    examples = [value for key, value in qualifiers.items()
+                if key in pack["example_types"]]
+    example = " | ".join(examples) if examples else None
     fix = ("Provide %s '%s' element(s)%s with semanticId %s%s."
            % (_cardinality_words(card), label,
               " under %s" % parent_label if parent_label else "",
               _primary_sid(element) or "(as the template declares)",
               "; example value: %r" % example if example else ""))
+    # A MultiLanguageProperty's `value` is a list of language entries, not
+    # of elements; only what declares a modelType is a child here.
     children = [
-        _rows(child, label, row_id, counter)
-        for child in (element.get("value") or [])
+        row for row in (
+            _rows(child, label, row_id, counter, pack)
+            for child in (element.get("value") or [])
+            if isinstance(child, dict) and "modelType" in child)
+        if row is not None
     ] if isinstance(element.get("value"), list) else []
     return {
         "id": row_id,
@@ -155,20 +222,39 @@ def _rows(element, parent_label, parent_id, counter):
     }
 
 
-def generate() -> str:
-    document = json.loads(TEMPLATE.read_text("utf-8-sig"))
+def _labels(rows, out):
+    for row in rows:
+        out.append(row["label"])
+        _labels(row["children"], out)
+    return out
+
+
+def generate(pack) -> str:
+    document = json.loads(pack["template"].read_text("utf-8-sig"))
     submodel = document["submodels"][0]
     counter = [0]
-    tree = tuple(_rows(element, "", None, counter)
-                 for element in submodel["submodelElements"])
+    tree = tuple(row for row in
+                 (_rows(element, "", None, counter, pack)
+                  for element in submodel["submodelElements"])
+                 if row is not None)
     submodel_sid = "/".join(k["value"] for k in submodel["semanticId"]["keys"])
     submodel_sid_type = submodel["semanticId"].get("type")
+
+    # The hand rules navigate by label, and BY_LABEL is a dict: two rows
+    # sharing a label would make one of them silently unreachable. Fail
+    # here, where a person can name the second one, rather than there.
+    labels = _labels(tree, [])
+    if len(set(labels)) != len(labels):
+        duplicates = sorted({label for label in labels if labels.count(label) > 1})
+        raise SystemExit("%s: two rows share a label (%s); give the item a name "
+                         "in the pack's item_names"
+                         % (pack["output"].name, ", ".join(duplicates)))
 
     lines = [
         '"""GENERATED by tools/extract_smt_rules.py from the vendored official',
         "template -- edit the generator, regenerate, never this file.",
         "",
-        "Source: IDTA 02004-2-0-1 template.json (CC BY 4.0, (c) IDTA and",
+        "Source: %s (CC BY 4.0, (c) IDTA and" % pack["source"],
         'contributors; pin and hashes in THIRD_PARTY.md)."""',
         "",
         "TEMPLATE_SEMANTIC_ID = %r" % submodel_sid,
@@ -208,17 +294,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    text = generate()
-    if args.check:
-        if OUTPUT.read_text("utf-8") != text:
-            print("rules/hd_tables.py is stale: run tools/extract_smt_rules.py",
-                  file=sys.stderr)
-            return 1
-        print("hd_tables.py matches its generator (%d rows)" % text.count("'id':"))
-        return 0
-    OUTPUT.write_text(text, "utf-8")
-    print("wrote %s" % OUTPUT)
-    return 0
+    bad = 0
+    for pack in PACKS:
+        output = pack["output"]
+        text = generate(pack)
+        if args.check:
+            if not output.exists() or output.read_text("utf-8") != text:
+                print("rules/%s is stale: run tools/extract_smt_rules.py"
+                      % output.name, file=sys.stderr)
+                bad = 1
+                continue
+            print("%s matches its generator (%d rows)"
+                  % (output.name, text.count("'id':")))
+        else:
+            output.write_text(text, "utf-8")
+            print("wrote %s" % output)
+    return bad
 
 
 if __name__ == "__main__":

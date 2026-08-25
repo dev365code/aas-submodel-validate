@@ -8,6 +8,8 @@ License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
 
   - src/aas_submodel_validate/data/smt/02004/2.0.1/template.json
     (IDTA 02004-2-0-1 Handover Documentation template, unmodified)
+  - src/aas_submodel_validate/data/smt/02003/2.0.1/template.json
+    (IDTA 02003 2.0.1 Technical Data template, unmodified)
 
 Copyright for that material: Industrial Digital Twin Association (IDTA)
 and the template's contributors. See THIRD_PARTY.md for the pinned
