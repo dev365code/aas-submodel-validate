@@ -4,7 +4,9 @@
 Everything comes from admin-shell-io/submodel-templates (CC BY 4.0) at
 one pinned commit, and every vendored byte is recorded in a sha256sums
 file beside it. `--check` verifies the recorded hashes offline on every
-CI run; `--refresh` re-fetches from the pin (the one operation that
+CI run, and sweeps the vendored trees for anything no entry names --
+the hash gate reads a list, and a file missing from that list is a file
+it silently approves; `--refresh` re-fetches from the pin (the one operation that
 needs the network). The pin moves only by editing COMMIT here, on
 purpose, in a commit that says why.
 """
@@ -55,6 +57,17 @@ FILES = {
 }
 
 
+#: Directories that hold nothing but vendored material. `--check` walks
+#: FILES, so a file no entry names is invisible to it -- and still ships,
+#: because `pyproject.toml`'s package-data globs on path, not on this
+#: list. Sweeping these trees is how the two stay the same set.
+VENDORED_TREES = ("src/aas_submodel_validate/data/smt", "tests/corpus/idta")
+
+#: What those trees hold that is ours rather than upstream's: the gate's
+#: own record, and the note that says where the corpus came from.
+OURS = ("sha256sums.txt", "README.md")
+
+
 def _url(source: str) -> str:
     return ("https://raw.githubusercontent.com/%s/%s/%s"
             % (REPO, COMMIT, urllib.parse.quote(source)))
@@ -84,8 +97,32 @@ def refresh() -> int:
     return 0
 
 
+def undeclared() -> list:
+    """Files under VENDORED_TREES that no FILES entry names.
+
+    Not an error the moment it happens -- a file arrives before its entry
+    in the seconds between two edits -- but an error by the time a gate
+    is asked whether the vendored material is verified, because for this
+    one it never answered.
+    """
+    declared = {ROOT / rel for rel in FILES}
+    found = []
+    for tree in VENDORED_TREES:
+        root = ROOT / tree
+        if not root.is_dir():
+            continue
+        for path in sorted(root.rglob("*")):
+            if path.is_file() and path.name not in OURS and path not in declared:
+                found.append(path.relative_to(ROOT).as_posix())
+    return found
+
+
 def check() -> int:
     bad = 0
+    for stray in undeclared():
+        print("vendored but not declared in FILES: %s (its bytes ship and "
+              "nothing records their hash)" % stray, file=sys.stderr)
+        bad = 1
     for rel in FILES:
         destination = ROOT / rel
         if not destination.exists():
@@ -99,8 +136,8 @@ def check() -> int:
             print("hash mismatch: %s" % rel, file=sys.stderr)
             bad = 1
     if not bad:
-        print("vendored material matches its recorded hashes (%d files, pin %s)"
-              % (len(FILES), COMMIT[:12]))
+        print("vendored material matches its recorded hashes, and the trees "
+              "hold nothing else (%d files, pin %s)" % (len(FILES), COMMIT[:12]))
     return bad
 
 
