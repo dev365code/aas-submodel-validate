@@ -432,6 +432,32 @@ def strip_row(env: dict, row, tables) -> dict:
     return env
 
 
+def break_row(env: dict, row, tables) -> dict:
+    """A copy of `env` that violates exactly `row`.
+
+    The mutation is chosen by what the row demands, and the choice is the
+    reason this lives here rather than in one test: a required element
+    the environment holds is removed; a required element whose container
+    the environment does *not* hold gets that container injected empty
+    (removing it would remove nothing); an optional one is injected past
+    its maximum. Two suites need the same three-way choice -- the one
+    that proves every generated rule fires, and the one that proves a
+    profile mark takes no rule away -- and the second was written without
+    it and silently reached only six of the eleven rows it named.
+    """
+    import copy
+    env = copy.deepcopy(env)
+    low, _high = row["card"]
+    if low < 1:
+        inject(env, tables.BY_ID.get(row["parent"]), [stub_of(row), stub_of(row)], tables)
+    elif any(_element_matches(element, row["match"]) for _c, element in _scopes(env)):
+        strip_row(env, row, tables)
+    else:
+        parent = tables.BY_ID[row["parent"]]
+        inject(env, tables.BY_ID.get(parent["parent"]), [stub_of(parent)], tables)
+    return env
+
+
 def stub_of(row) -> dict:
     out = {"modelType": row["kind"]}
     if row["sid"]:

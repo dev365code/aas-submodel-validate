@@ -19,6 +19,8 @@ import inspect
 import json
 from pathlib import Path
 
+import pytest
+
 from aas_submodel_validate import runner
 from aas_submodel_validate.model import Severity
 from aas_submodel_validate.rules import (
@@ -30,10 +32,10 @@ from aas_submodel_validate.rules import (
     td_tables,
 )
 from builders import (
+    break_row,
     declaring_profile,
     env_json,
     hd_env,
-    strip_row,
     td_env,
     wearing_our_anchor_as_a_supplemental,
 )
@@ -129,9 +131,9 @@ def test_the_notice_names_the_findings_a_conformant_battery_passport_gets(tmp_pa
     asks for draws six errors under 02004, and the notice names each of
     them -- so a reader can tell which of the findings above are the
     profile's disagreement rather than their own mistake."""
-    env = copy.deepcopy(hd_env())
+    env = hd_env()
     for row_id in UNCONDITIONAL:
-        strip_row(env, hd_tables.BY_ID[row_id], hd_tables)
+        env = break_row(env, hd_tables.BY_ID[row_id], hd_tables)
     report = _report(tmp_path, declaring_profile(env, _mark()))
     errors = {f.id for f in report.findings if f.severity is Severity.ERROR}
     assert errors == set(UNCONDITIONAL)
@@ -140,6 +142,63 @@ def test_the_notice_names_the_findings_a_conformant_battery_passport_gets(tmp_pa
 
 
 # -- what it must not do -----------------------------------------------------
+
+def _classification(env, field, value):
+    """Rewrite one field of every Document's classification."""
+    env = copy.deepcopy(env)
+    for document in env["submodels"][0]["submodelElements"][0]["value"]:
+        for child in document["value"]:
+            if child.get("idShort") != "DocumentClassifications":
+                continue
+            for item in child["value"]:
+                for leaf in item["value"]:
+                    if leaf.get("idShort") == field:
+                        leaf["value"] = value
+    return env
+
+
+#: One broken file per rule a switch would be tempted to excuse, and one
+#: per kind of rule it would not. Every relieved row is here by name --
+#: measured, not chosen: a version of this test that broke one of them
+#: passed while five others were being silenced, because those five sit
+#: under optional containers and no fixture reached them.
+BREAKAGE = dict(
+    [("relieved: " + hd_tables.BY_ID[row_id]["label"],
+      (lambda row: lambda: break_row(hd_env(), row, hd_tables))(hd_tables.BY_ID[row_id]))
+     for row_id in RELIEVED]
+    + [
+        ("a generated row 02035-2 keeps",
+         lambda: break_row(hd_env(), hd_tables.BY_LABEL["Title"], hd_tables)),
+        ("a hand rule", lambda: _classification(hd_env(), "ClassificationSystem", "SOMETHING-ELSE")),
+        ("another hand rule", lambda: _classification(hd_env(), "ClassId", "99-99")),
+        ("a lint", lambda: _classification(hd_env(), "ClassificationSystem", "VDI2770:2020")),
+        ("nothing at all", lambda: json.loads(env_json(hd_tables.TEMPLATE_SEMANTIC_ID))),
+    ])
+
+
+@pytest.mark.parametrize("broken", sorted(BREAKAGE), ids=sorted(BREAKAGE))
+def test_the_mark_changes_the_report_by_exactly_one_sentence(tmp_path, broken):
+    """The invariant the whole slice rests on, written as a comparison
+    rather than as a claim about one rule: for one file, marked and
+    unmarked, the findings are the same set apart from SMT-D2 itself.
+
+    It has to be a comparison. Every narrower version of this test was
+    measured and found to pass while the invariant was broken: a switch
+    installed in `rules/hd.py` -- where the rules that would be switched
+    actually live, not in `engine.py` -- excused HD-D2, the mandatory VDI
+    2770 classification this tool exists to check, and left 318 tests,
+    four gates and ruff green while a faulty file's exit code went from 1
+    to 0.
+    """
+    env = BREAKAGE[broken]()
+    plain = _ids(_report(tmp_path, env, "plain.json"))
+    marked = _ids(_report(tmp_path, declaring_profile(env, _mark()), "marked.json"))
+    assert plain, "this fixture breaks nothing, so it proves nothing"
+    assert marked - {"SMT-D2"} == plain
+    assert "SMT-D2" in marked
+
+
+# -- what it must not do, continued ------------------------------------------
 
 def test_the_mark_adds_a_sentence_and_no_finding(tmp_path):
     """A conformant 02004 file that also declares the battery-passport
@@ -224,12 +283,29 @@ def test_the_mark_answers_where_the_template_id_contradicts_it(tmp_path):
 
 # -- where it lives ----------------------------------------------------------
 
-def test_the_walk_and_the_presence_rule_never_learn_about_profiles():
-    """The profile question is asked outside the matching path on purpose.
-    If `engine` or `detect` imported this module, the next reasonable-
-    looking change is the one that makes matching read supplementals --
-    which a published template would break (tests/test_detect.py)."""
+def test_the_walk_and_the_presence_rule_never_import_profiles():
+    """The profile question is asked outside the matching path on purpose:
+    if `engine` or `detect` depended on this module, the next
+    reasonable-looking change is the one that makes matching read
+    supplementals, which a published template would break
+    (tests/test_detect.py).
+
+    Read as imports and not as text. The first version searched the
+    source for the word, and turned red the moment `engine.py`'s
+    docstring said where the profile question is asked instead -- a guard
+    that forbade documenting the design it was guarding.
+
+    It is a statement about dependency direction and nothing more. A
+    module reaching this one through `importlib` would pass here; what
+    catches that is the comparison above, which is about behaviour.
+    """
     for module in (engine, detect):
-        source = Path(inspect.getfile(module)).read_text("utf-8")
-        assert "profiles" not in source, \
-            "%s learned about profiles; matching must not" % module.__name__
+        tree = ast.parse(Path(inspect.getfile(module)).read_text("utf-8"))
+        for node in ast.walk(tree):
+            imported = []
+            if isinstance(node, ast.Import):
+                imported = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                imported = [alias.name for alias in node.names] + [node.module or ""]
+            assert not [name for name in imported if "profiles" in name], \
+                "%s imports profiles; matching must not depend on it" % module.__name__

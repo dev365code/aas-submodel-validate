@@ -15,7 +15,7 @@ import pytest
 
 from aas_submodel_validate import runner
 from aas_submodel_validate.rules import hd_tables
-from builders import hd_env, inject, strip_row, stub_of
+from builders import break_row, hd_env, inject, strip_row, stub_of
 
 
 def _ids(tmp_path, env: dict):
@@ -24,32 +24,13 @@ def _ids(tmp_path, env: dict):
     return {finding.id for finding in runner.run(path).findings}
 
 
-def _matched_in_golden(row) -> bool:
-    from builders import _element_matches, _scopes
-    return any(_element_matches(element, row["match"])
-               for _container, element in _scopes(hd_env()))
-
-
 def test_the_golden_environment_is_clean(tmp_path):
     assert _ids(tmp_path, hd_env()) == set()
 
 
 @pytest.mark.parametrize("row", hd_tables.ROWS, ids=[r["id"] for r in hd_tables.ROWS])
 def test_every_generated_rule_fires(tmp_path, row):
-    env = copy.deepcopy(hd_env())
-    low, _high = row["card"]
-    if low >= 1:
-        if _matched_in_golden(row):
-            strip_row(env, row, hd_tables)
-        else:
-            # required child of an optional list: an empty list violates it
-            parent = hd_tables.BY_ID[row["parent"]]
-            grandparent = hd_tables.BY_ID.get(parent["parent"])
-            inject(env, grandparent, [stub_of(parent)], hd_tables)
-    else:
-        parent = hd_tables.BY_ID.get(row["parent"])
-        inject(env, parent, [stub_of(row), stub_of(row)], hd_tables)
-    assert row["id"] in _ids(tmp_path, env)
+    assert row["id"] in _ids(tmp_path, break_row(hd_env(), row, hd_tables))
 
 
 def test_a_kind_mismatch_names_both_kinds(tmp_path):
