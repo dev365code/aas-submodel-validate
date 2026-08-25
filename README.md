@@ -35,8 +35,8 @@ semantic identifiers at every nesting level), the rest hand-written
 where a template file cannot speak. Five of the 123, X1–X5, are about
 the AASX/OPC package the submodel arrives in; one, SMT-D1, asks whether
 the input brought a submodel this tool knows at all; and one, SMT-D2,
-says which template answered when a submodel declares a profile that
-two published templates share.
+says which template answered wherever two published templates share one
+submodel identifier and something had to choose.
 
 | template | generated | hand-written |
 |---|---|---|
@@ -47,7 +47,7 @@ two published templates share.
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and
 a manufacturer's own properties pass without complaint. Near-miss
-identifiers are diagnosed rather than silently unmatched, in both.
+identifiers are diagnosed rather than silently unmatched, in all three.
 
 IDTA 02035-2 (*Digital Battery Passport*, part 2) publishes IDTA 02004's
 submodel identifier and asks for less than it does, so which of the two

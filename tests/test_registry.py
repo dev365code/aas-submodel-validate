@@ -1,4 +1,6 @@
 """A rule id is a contract: registered once, forever findable."""
+import re
+
 import pytest
 
 from aas_submodel_validate import registry
@@ -43,27 +45,34 @@ def test_every_registered_rule_names_its_remedy(monkeypatch):
             return ()
 
 
-#: Every rule-id namespace this tool registers, and what asks the question.
-#: A pack that starts registering adds a line; a pack that stops empties
-#: one. Both are diffs somebody has to justify.
+#: Every rule-id namespace this tool registers, as the whole shape of an
+#: id rather than a prefix, and what asks the question. A pack that starts
+#: registering adds a line; a pack that stops empties one. Both are diffs
+#: somebody has to justify.
+#:
+#: Whole shapes because a prefix is a wildcard: `"X"` admitted `XT-E01`
+#: and `XYZ99`, so an entire pack installed under the letter X passed the
+#: census as container rules.
 NAMESPACES = {
-    "X": "the AASX/OPC container the submodel arrived in",
-    "SMT-D": "the tool's own questions, belonging to no template",
-    "HD-E": "IDTA 02004, generated from the template's rows",
-    "HD-D": "IDTA 02004, what the template file cannot say",
-    "HDL": "IDTA 02004, informational lints",
-    "TD-E": "IDTA 02003, generated from the template's rows",
-    "TD-D": "IDTA 02003, what the template file cannot say",
-    "TDL": "IDTA 02003, informational lints",
-    "DBP2-E": "IDTA 02035-2, generated from the template's rows",
-    "DBP2-D": "IDTA 02035-2, 02004's hand rules over 02035-2's table",
-    "DBP2L": "IDTA 02035-2, informational lints",
+    r"X\d+": "the AASX/OPC container the submodel arrived in",
+    r"SMT-D\d+": "the tool's own questions, belonging to no template",
+    r"HD-E\d\d": "IDTA 02004, generated from the template's rows",
+    r"HD-D\d+": "IDTA 02004, what the template file cannot say",
+    r"HDL\d+": "IDTA 02004, informational lints",
+    r"TD-E\d\d": "IDTA 02003, generated from the template's rows",
+    r"TD-D\d+": "IDTA 02003, what the template file cannot say",
+    r"TDL\d+": "IDTA 02003, informational lints",
+    r"DBP2-E\d\d": "IDTA 02035-2, generated from the template's rows",
+    r"DBP2-D\d+": "IDTA 02035-2, 02004's hand rules over 02035-2's table",
+    r"DBP2L\d+": "IDTA 02035-2, informational lints",
 }
 
 
 def _namespace(rule_id):
-    matches = [ns for ns in NAMESPACES if rule_id.startswith(ns)]
-    return max(matches, key=len) if matches else None
+    for pattern in NAMESPACES:
+        if re.fullmatch(pattern, rule_id):
+            return pattern
+    return None
 
 
 def test_every_registered_id_belongs_to_a_declared_namespace():

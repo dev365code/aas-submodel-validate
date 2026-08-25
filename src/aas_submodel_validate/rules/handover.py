@@ -405,6 +405,12 @@ def install(prefix: str, tables, omit=(), inherits: str = None) -> None:
     at least once.
     """
     can = answerable(tables)
+    unknown = sorted(set(omit) - {suffix for suffix, *_rest in ROSTER})
+    if unknown:
+        raise SystemExit(
+            "%s omits %s, which is not a rule this module has; `omit` is where "
+            "somebody says a loss was meant, and a name that means nothing "
+            "says nothing" % (prefix, ", ".join(unknown)))
     for suffix in omit:
         if suffix in can:
             raise SystemExit(

@@ -232,9 +232,11 @@ def test_the_mark_adds_a_sentence_and_no_finding(tmp_path):
 
 
 def test_a_marked_submodel_that_is_broken_is_still_faulted(tmp_path):
-    """Choosing the other table here would silence 52 rules and leave 0 in
-    their place, and the tool would print `ok` over a file that violates
-    both templates. It does not."""
+    """A file that is barely a submodel is faulted whichever table
+    answers. When this was written, choosing the other table would have
+    silenced 52 rules and left nothing in their place; there are 33 in
+    their place now, and this is the fixture that says the substitution
+    happened rather than the silence."""
     env = json.loads(env_json(hd_tables.TEMPLATE_SEMANTIC_ID))
     report = _report(tmp_path, declaring_profile(env, _mark()))
     assert "HD-E01" in _ids(report)
@@ -243,10 +245,10 @@ def test_a_marked_submodel_that_is_broken_is_still_faulted(tmp_path):
 
 def test_the_package_registers_the_rule_and_not_only_this_test(tmp_path):
     """`tests/test_profiles.py` imports the module, which registers the
-    rule -- so the suite counts 90 rules whether or not the shipped
-    package does. Dropping `profiles` from `rules/__init__.py` leaves all
-    317 tests green and only `make exercised` red; the installed package
-    would quietly lose the rule. This is the suite saying why."""
+    rule -- so the suite counts every rule whether or not the shipped
+    package does. Dropping `profiles` from `rules/__init__.py` left the
+    whole suite green and only `make exercised` red; the installed
+    package would quietly lose the rule. This is the suite saying why."""
     imports = (Path(inspect.getfile(profiles)).parent / "__init__.py").read_text("utf-8")
     assert "profiles" in imports, \
         "importing the rules package must register this rule, not the test that tests it"
@@ -401,3 +403,27 @@ def test_a_profile_that_chose_nothing_says_so(tmp_path):
     assert any("chose nothing" in note for note in report.notes), report.notes
     assert not [f for f in report.findings if f.id == "SMT-D2"]
     assert runner.run(path).notes == [], "no flag, no note"
+
+
+def test_a_profile_pair_never_silences_a_pack_outside_it(tmp_path):
+    """A submodel may declare more than one identifier -- `candidate_values`
+    collects every key of the reference, deliberately (divergences #4).
+    When one of them belongs to a profile pair, the pair decides which of
+    *its* two tables answers. It has nothing to say about anybody else's.
+
+    It used to say `False` to all of them. A Technical Data submodel that
+    also declared 02004's anchor lost the entire 02003 pack -- a real
+    TD-E01 vanished -- and SMT-D2 stayed silent, because from the
+    profile's own point of view the default had answered and nothing was
+    declared. That is the verdict changing without the sentence that
+    explains it, which this arrangement exists to make impossible.
+    """
+    from aas_submodel_validate.rules import td_tables
+    broken = break_row(td_env(), td_tables.BY_LABEL["GeneralInformation"], td_tables)
+    assert "TD-E01" in _ids(_report(tmp_path, broken, "plain.json"))
+
+    stacked = copy.deepcopy(broken)
+    stacked["submodels"][0]["semanticId"]["keys"].append(
+        {"type": "Submodel", "value": hd_tables.TEMPLATE_SEMANTIC_ID})
+    assert "TD-E01" in _ids(_report(tmp_path, stacked, "stacked.json")), \
+        "a profile pair silenced a pack it has nothing to do with"

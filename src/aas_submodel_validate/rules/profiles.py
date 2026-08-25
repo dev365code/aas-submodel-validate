@@ -12,15 +12,21 @@ published template wears one of our anchors in a supplemental
 (tests/test_detect.py). The profile question is asked here, outside that
 path, and `engine.py` and `detect.py` do not import this module.
 
-**The answer only ever adds a sentence.** No rule is selected by it, no
-element is walked differently, and the severity is `info`, which
-`Report.ok` does not count -- so nothing here can move an exit code.
-That restraint is the measurement, not modesty: there is no published
-02035-2 *instance* anywhere to measure recall against (both published
-files are `kind: Template`), so the mark's precision is known and its
-recall is not. A signal like that may say something. It may not take a
-check away -- and taking checks away is exactly what choosing the other
-table would do, 52 rules' worth.
+**The mark reports; `--profile` chooses.** That split is the
+measurement, not modesty: no published 02035-2 *instance* exists
+anywhere (both published files are `kind: Template`), so the mark's
+precision is known and its recall is not, and a signal like that may say
+something without taking a check away. Judging by the other table takes
+21 checks away and turns 19 of them from a failed build into a passing
+one, so an operator asks for it in as many words. docs/divergences.md
+#30 has the numbers.
+
+What this module does move is the walk: `Selection` is carried on the
+context and `engine.matched_submodels` asks it which table answers. The
+same object answers `SMT-D2`, so a verdict cannot change without the
+sentence that explains it -- but only within one profile pair. A pair
+says nothing about a third pack's table, and the first version of
+`answers` said False to those too, silently.
 """
 from __future__ import annotations
 
@@ -160,8 +166,23 @@ class Selection:
         return None
 
     def answers(self, submodel, tables) -> bool:
+        """Does `tables` answer for this submodel?
+
+        A profile pair decides between *its own two* tables and says
+        nothing about anybody else's. A submodel can declare more than one
+        identifier -- `candidate_values` collects every key of the
+        reference on purpose (docs/divergences.md #4) -- and the first
+        version of this returned False for every table but the chosen one,
+        so a Technical Data submodel that also named 02004's anchor lost
+        the whole 02003 pack, silently.
+        """
         picked = self.chosen(submodel)
-        return True if picked is None else picked[1] is tables
+        if picked is None:
+            return True
+        profile, chosen, _name, _why = picked
+        if tables not in (profile.default, profile.alternative):
+            return True
+        return chosen is tables
 
 
 def _marks_of(submodel) -> frozenset:

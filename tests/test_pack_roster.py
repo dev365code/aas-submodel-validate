@@ -5,8 +5,8 @@ fourteen shared hand rules navigate to elements it does not have. Asking
 a table for a row it has no name for raises `KeyError`, and
 `runner.execute` turns that into a finding at the rule's own severity
 reading "the rule itself could not run" -- a conformant battery passport
-told to report a defect in the validator, at error severity for two of
-them and warning for the other two.
+told to report a defect in the validator, at error severity for D8 and
+warning for D6 and D9.
 
 So the count is not a claim in a design note; it is what these tests
 measure. And the refusal runs both ways: a pack that omits a rule its
@@ -66,46 +66,92 @@ def test_the_file_labels_come_from_the_table(monkeypatch):
     assert handover._file_labels(td_tables) == ("CompanyLogo", "ImageFile")
 
 
+def _navigation_call(node):
+    """Is this call one of the walk's navigation functions?
+
+    Both spellings: `instances_of(...)` and `engine.instances_of(...)`.
+    The first version matched only the bare name, and an attribute call
+    walked straight past the guard.
+    """
+    if not isinstance(node, ast.Call):
+        return False
+    if isinstance(node.func, ast.Name):
+        return node.func.id in NAVIGATION
+    return isinstance(node.func, ast.Attribute) and node.func.attr in NAVIGATION
+
+
 def _navigated_labels():
-    """Every string literal handed to a navigation function, by factory."""
+    """Every label handed to a navigation function, by function.
+
+    Labels must be literals -- a name, a module constant or an f-string
+    would put the label somewhere the roster cannot be checked against,
+    and `test_every_label_reaches_the_walk_as_a_literal` refuses that
+    separately. Helpers are folded into their callers to a fixpoint: one
+    round of folding let a two-step chain hide a label, which is the
+    shape the roster exists to catch.
+    """
     tree = ast.parse(Path(inspect.getfile(handover)).read_text("utf-8"))
-    out = {}
+    direct, calls = {}, {}
     for node in ast.walk(tree):
-        if not isinstance(node, ast.FunctionDef) or not node.name.startswith("_"):
+        if not isinstance(node, ast.FunctionDef):
             continue
-        found, via_variable = set(), set()
+        found = set()
+        called = set()
         for inner in ast.walk(node):
-            if (isinstance(inner, ast.Call) and isinstance(inner.func, ast.Name)
-                    and inner.func.id in NAVIGATION):
-                for argument in inner.args:
-                    if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
-                        found.add(argument.value)
-                    elif isinstance(argument, ast.Name):
-                        via_variable.add(argument.id)
-        # A body may walk a literal list of labels rather than name them
-        # one at a time -- D9 does. The loop's own tuple is where those
-        # labels are written down, and skipping it would leave the rule
-        # with the widest reach the least examined.
-        for inner in ast.walk(node):
-            if (isinstance(inner, ast.For) and isinstance(inner.target, ast.Name)
-                    and inner.target.id in via_variable
-                    and isinstance(inner.iter, (ast.Tuple, ast.List))):
-                found |= {e.value for e in inner.iter.elts
-                          if isinstance(e, ast.Constant) and isinstance(e.value, str)}
-        out[node.name] = (found, {c.func.id for c in ast.walk(node)
-                                  if isinstance(c, ast.Call)
-                                  and isinstance(c.func, ast.Name)})
-    # A body that navigates through a helper navigates those labels too.
-    # Without this the helper's three labels belong to no rule, and a
-    # label added there would be declared by nobody.
-    resolved = {}
-    for name, (labels, calls) in out.items():
-        reached = set(labels)
-        for callee in calls:
-            if callee in out:
-                reached |= out[callee][0]
-        resolved[name] = reached
+            if isinstance(inner, ast.Call):
+                if isinstance(inner.func, ast.Name):
+                    called.add(inner.func.id)
+                elif isinstance(inner.func, ast.Attribute):
+                    called.add(inner.func.attr)
+            if not _navigation_call(inner):
+                continue
+            for argument in inner.args:
+                if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+                    found.add(argument.value)
+                elif isinstance(argument, ast.Name):
+                    for loop in ast.walk(node):
+                        if (isinstance(loop, ast.For) and isinstance(loop.target, ast.Name)
+                                and loop.target.id == argument.id
+                                and isinstance(loop.iter, (ast.Tuple, ast.List))):
+                            found |= {e.value for e in loop.iter.elts
+                                      if isinstance(e, ast.Constant)
+                                      and isinstance(e.value, str)}
+        direct[node.name], calls[node.name] = found, called
+    resolved = dict(direct)
+    for _round in range(len(direct) + 1):        # fixpoint, not one hop
+        changed = False
+        for name, callees in calls.items():
+            reached = set(resolved[name])
+            for callee in callees:
+                reached |= resolved.get(callee, set())
+            if reached != resolved[name]:
+                resolved[name], changed = reached, True
+        if not changed:
+            break
     return {name: labels for name, labels in resolved.items() if labels}
+
+
+def test_every_label_reaches_the_walk_as_a_literal():
+    """A label that arrives as a name is a label the roster cannot be
+    checked against, so the check is that none does. Measured: a module
+    constant and an `engine.`-qualified call each carried an undeclared
+    label past the first version of this file with every gate green."""
+    tree = ast.parse(Path(inspect.getfile(handover)).read_text("utf-8"))
+    loop_variables = {loop.target.id for loop in ast.walk(tree)
+                      if isinstance(loop, ast.For) and isinstance(loop.target, ast.Name)
+                      and isinstance(loop.iter, (ast.Tuple, ast.List))}
+    for node in ast.walk(tree):
+        if not _navigation_call(node):
+            continue
+        for argument in node.args[1:]:
+            if isinstance(argument, ast.Constant) or (
+                    isinstance(argument, ast.Name)
+                    and argument.id in loop_variables | {"tables", "label"}):
+                continue
+            if isinstance(argument, ast.Name) and argument.id.isupper():
+                raise AssertionError(
+                    "a navigation label comes from %s; write it out so the "
+                    "roster can be checked against it" % argument.id)
 
 
 def test_the_roster_declares_every_label_its_bodies_navigate():
