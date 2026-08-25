@@ -86,7 +86,11 @@ def x4_supplementary_parts_exist(ctx):
         try:
             relationships = container.relationships(part)
         except ContainerError:
-            continue  # a spec part without its own .rels declares nothing
+            # A spec part with no relationships declares nothing. A part
+            # whose relationships could not be read is a container defect,
+            # and the loader has already reported it as one -- X4 has no
+            # true remedy for it and must not invent one.
+            continue
         for rel_type, target in relationships:
             # `target` came back from the container already normalised;
             # asking through the same entry point as HD-D7 keeps the two

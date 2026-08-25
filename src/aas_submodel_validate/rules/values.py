@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import re
 
-_XS_DATE = re.compile(r"^(-?\d{4,})-(\d{2})-(\d{2})(Z|[+-]\d{2}:\d{2})?$")
+#: `\Z` rather than `$`, which matches before a final newline, and
+#: ASCII digits rather than every decimal digit Unicode knows: an
+#: XML Schema processor accepts neither spelling.
+_XS_DATE = re.compile(r"^(-?\d{4,})-(\d{2})-(\d{2})(Z|[+-]\d{2}:\d{2})?\Z", re.ASCII)
 
 
 def valid_xs_date(value: str) -> bool:

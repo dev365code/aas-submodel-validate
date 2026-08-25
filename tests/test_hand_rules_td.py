@@ -128,3 +128,20 @@ def test_a_reference_type_that_differs_from_the_template_is_noted(tmp_path):
 def test_the_golden_environment_draws_no_lint(tmp_path):
     ids = _ids(tmp_path, td_env())
     assert "TDL1" not in ids and "TDL2" not in ids
+
+
+def test_a_date_with_a_trailing_newline_is_not_a_date(tmp_path):
+    """`$` matches before a final newline. An XML Schema processor would
+    refuse this value; the predicate was accepting it, in both templates,
+    and nothing asked."""
+    env = copy.deepcopy(td_env())
+    _further(env)["value"][1]["value"] = "2025-03-15\n"
+    assert "TD-D1" in _ids(tmp_path, env)
+
+
+def test_a_date_written_in_other_digits_is_not_a_date(tmp_path):
+    """`\\d` matches every decimal digit Unicode knows, and int() reads
+    them. xs:date is written in ASCII."""
+    env = copy.deepcopy(td_env())
+    _further(env)["value"][1]["value"] = "٢٠٢٥-٠٣-١٥"
+    assert "TD-D1" in _ids(tmp_path, env)

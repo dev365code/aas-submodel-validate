@@ -187,22 +187,25 @@ class AasxPackage:
         # where nothing wraps it -- which the first version of this
         # tuple missed.
         try:
-            # One byte past the cap, so that reaching the cap and
-            # exceeding it are distinguishable. Asking for a bounded
-            # number is what bounds the decompressor: an unbounded read
-            # hands it the whole stream and truncates the answer
-            # afterwards, having already paid for it.
+            # Asking for a bounded number is what bounds the
+            # decompressor: an unbounded read hands it the whole stream
+            # and truncates the answer afterwards, having already paid
+            # for it. A part declaring a hundred bytes and holding eight
+            # megabytes cost eight megabytes of peak memory before this,
+            # and costs the cap now.
+            #
+            # It is not a second gate. zipfile yields no more than the
+            # entry declares, and an entry declaring more than the cap
+            # was refused above, so the length that comes back can never
+            # exceed it -- a check on `len(data)` here would be a branch
+            # no input could reach.
             with self._zip.open(name) as part:
-                data = part.read(MAX_PART_BYTES + 1)
+                data = part.read(MAX_PART_BYTES)
         except (zipfile.BadZipFile, NotImplementedError, RuntimeError,
                 EOFError, OSError, zlib.error) as exc:
             raise UnreadablePart(
                 "%s: %s cannot be read: %s: %s"
                 % (self.path, name, type(exc).__name__, exc)) from exc
-        if len(data) > MAX_PART_BYTES:
-            raise PartTooLarge(
-                "%s: %s holds more than %d bytes, whatever the archive says"
-                % (self.path, name, MAX_PART_BYTES))
         if name not in self._counted:
             # Once per part. A rule may re-walk the chain -- X4 does --
             # and reading the same bytes a second time is not the

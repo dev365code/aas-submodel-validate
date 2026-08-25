@@ -191,3 +191,18 @@ def test_a_container_under_both_caps_still_reads(tmp_path, monkeypatch):
     path = _spec_parts_archive(tmp_path / "few.aasx", count=2, each=100 * 1024)
     report = runner.run(path)
     assert "X5" not in {f.id for f in report.findings}
+
+
+def test_an_unreadable_relationship_part_is_not_a_clean_bill(tmp_path):
+    """The archive names a part, declares supplementary files against it,
+    and cannot yield the bytes that say which. Every layer above treated
+    that as "declares nothing": X4 catches ContainerError and moves on,
+    and the loader never reads a spec part's own relationships, so no
+    other voice speaks. A defective container came back with no findings
+    and exit 0 -- the one outcome SECURITY.md says cannot happen."""
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json(),
+                      suppl_targets=["aasx/files/absent.pdf"])
+    corrupt_part(path, "aasx/_rels/env.json.rels", "stream")
+    report = runner.run(path)
+    assert not report.ok, "a container this broken must not pass"
+    assert {f.id for f in report.findings} & {"X1", "X5"}

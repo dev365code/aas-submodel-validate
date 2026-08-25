@@ -173,6 +173,19 @@ def _load_aasx(path: Path) -> Loaded:
         except ContainerError as exc:
             loaded.errors.append(LoadError("chain", str(exc), subject=part))
             continue
+        # Touch the part's own relationships here, where a failure can be
+        # loaded as an error. The rules read this later (X4 walks it for
+        # declared supplementary parts) and a rule cannot report a
+        # container defect -- it can only skip. An archive that could not
+        # yield those bytes used to come back with no findings at all.
+        try:
+            package.relationships(part)
+        except PartTooLarge as exc:
+            loaded.errors.append(LoadError("bounds", str(exc), subject=part))
+        except UnreadablePart as exc:
+            loaded.errors.append(LoadError("zip", str(exc), subject=part))
+        except ContainerError:
+            pass        # a spec part with no relationships declares nothing
         form = "environment-json" if part.lower().endswith(".json") else "environment-xml"
         _parse_environment(loaded, raw, part=part, form=form)
     return loaded
