@@ -45,6 +45,28 @@ def x3_payload_parses(ctx):
             yield Violation(error.message, subject=error.subject, detail=error.detail)
 
 
+@rule("X5", kind="container", prio="MUST",
+      title="the container fits in what an offline reader will take in",
+      spec="this project's own bounds -- see container.py",
+      fix="Send the part that needs checking, or split the container: this "
+          "reader refuses a single part over 64 MiB, and a container whose "
+          "parts come to over 256 MiB together, so that a machine with no "
+          "network cannot be exhausted by a file it was asked to check. "
+          "Nothing is wrong with the archive; it is larger than this tool "
+          "will read.")
+def x5_within_the_readers_bounds(ctx):
+    """Not a defect in the file, which is why it is not X1.
+
+    X1 tells an author to re-create the archive, and there is nothing
+    here to re-create. Refusing to read is this tool's decision, and a
+    finding that reports somebody else's decision as the author's fault
+    is the kind of remedy this project promised not to write.
+    """
+    for error in ctx.loaded.errors:
+        if error.stage == "bounds":
+            yield Violation(error.message, subject=error.subject, detail=error.detail)
+
+
 @rule("X4", kind="container", prio="SHOULD",
       title="declared supplementary parts exist",
       spec="IDTA 01005 (AASX, aas-suppl relationships)",

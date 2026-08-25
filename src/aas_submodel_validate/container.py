@@ -28,9 +28,19 @@ SUPPL_REL = "http://admin-shell.io/aasx/relationships/aas-suppl"
 
 #: A package arrives from a supplier, so what it decompresses to is
 #: untrusted. 64 MiB is far above any real AAS metadata document and far
-#: below what exhausts an air-gapped machine; the check runs off the ZIP
-#: directory, so an oversized part is refused without being read.
+#: below what exhausts an air-gapped machine.
+#:
+#: The archive's own account of a part's size is a fast way to refuse an
+#: honest one, and nothing more: it is a number the file carries, not a
+#: number this reader measured, and a part may declare a hundred bytes
+#: and hold eight megabytes. What bounds the read is the read.
 MAX_PART_BYTES = 64 * 1024 * 1024
+
+#: And one container's parts, together. Every part may sit under the cap
+#: while the whole does not -- an archive of forty honest parts costs
+#: forty times one. Four times the single-part cap leaves room for a
+#: container carrying several environments and refuses the pathological.
+MAX_TOTAL_PART_BYTES = 4 * MAX_PART_BYTES
 _DOCTYPE = __import__("re").compile(rb"<!DOCTYPE", __import__("re").IGNORECASE)
 
 _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
@@ -38,6 +48,16 @@ _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}R
 
 class ContainerError(Exception):
     """The file is not something this reader can follow as an AASX."""
+
+
+class PartTooLarge(ContainerError):
+    """The archive is well-formed and this reader will not read it all.
+
+    Separate from its siblings because it is not a claim about the file.
+    Nothing here is malformed; the file is simply larger than a validator
+    meant for an air-gapped machine will take in, and the remedy is the
+    author's choice of what to send, not a repair.
+    """
 
 
 class UnreadablePart(ContainerError):
@@ -69,6 +89,9 @@ class AasxPackage:
             raise ContainerError("cannot open %s as a ZIP container: %s"
                                  % (self.path, exc)) from exc
         self._names = frozenset(self._zip.namelist())
+        #: Bytes handed out so far, for MAX_TOTAL_PART_BYTES. One
+        #: package object is one validation, so this is that run's total.
+        self._read_total = 0
 
     # -- files ---------------------------------------------------------------
     def names(self) -> List[str]:
@@ -82,7 +105,7 @@ class AasxPackage:
             raise ContainerError("%s names no part %s" % (self.path, name))
         info = self._zip.getinfo(name)
         if info.file_size > MAX_PART_BYTES:
-            raise ContainerError(
+            raise PartTooLarge(
                 "%s refuses %s: %d bytes uncompressed, above the %d byte limit"
                 % (self.path, name, info.file_size, MAX_PART_BYTES))
         # zipfile raises for a part the archive describes wrongly: a
@@ -94,12 +117,28 @@ class AasxPackage:
         # where nothing wraps it -- which the first version of this
         # tuple missed.
         try:
-            return self._zip.read(name)
+            # One byte past the cap, so that reaching the cap and
+            # exceeding it are distinguishable. Asking for a bounded
+            # number is what bounds the decompressor: an unbounded read
+            # hands it the whole stream and truncates the answer
+            # afterwards, having already paid for it.
+            with self._zip.open(name) as part:
+                data = part.read(MAX_PART_BYTES + 1)
         except (zipfile.BadZipFile, NotImplementedError, RuntimeError,
                 EOFError, OSError, zlib.error) as exc:
             raise UnreadablePart(
                 "%s: %s cannot be read: %s: %s"
                 % (self.path, name, type(exc).__name__, exc)) from exc
+        if len(data) > MAX_PART_BYTES:
+            raise PartTooLarge(
+                "%s: %s holds more than %d bytes, whatever the archive says"
+                % (self.path, name, MAX_PART_BYTES))
+        self._read_total += len(data)
+        if self._read_total > MAX_TOTAL_PART_BYTES:
+            raise PartTooLarge(
+                "%s: its parts come to more than %d bytes together"
+                % (self.path, MAX_TOTAL_PART_BYTES))
+        return data
 
     # -- the OPC chain -------------------------------------------------------
     def relationships(self, source: str = "") -> List[Tuple[str, str]]:

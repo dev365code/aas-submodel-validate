@@ -18,7 +18,7 @@ from typing import List, Optional
 
 from aas_core3 import jsonization, types, xmlization
 
-from .container import AasxPackage, ContainerError, UnreadablePart
+from .container import AasxPackage, ContainerError, PartTooLarge, UnreadablePart
 
 _DOCTYPE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
 
@@ -137,6 +137,9 @@ def _load_aasx(path: Path) -> Loaded:
     # there. Every finding this project makes carries a true remedy.
     try:
         parts = package.spec_parts
+    except PartTooLarge as exc:
+        loaded.errors.append(LoadError("bounds", str(exc)))
+        return loaded
     except UnreadablePart as exc:
         loaded.errors.append(LoadError("zip", str(exc)))
         return loaded
@@ -147,6 +150,9 @@ def _load_aasx(path: Path) -> Loaded:
     for part in parts:
         try:
             raw = package.read(part)
+        except PartTooLarge as exc:
+            loaded.errors.append(LoadError("bounds", str(exc), subject=part))
+            continue
         except UnreadablePart as exc:
             loaded.errors.append(LoadError("zip", str(exc), subject=part))
             continue
