@@ -182,9 +182,16 @@ BREAKAGE = dict(
 
 @pytest.mark.parametrize("broken", sorted(BREAKAGE), ids=sorted(BREAKAGE))
 def test_the_mark_changes_the_report_by_exactly_one_sentence(tmp_path, broken):
-    """The invariant the whole slice rests on, written as a comparison
-    rather than as a claim about one rule: for one file, marked and
-    unmarked, the findings are the same set apart from SMT-D2 itself.
+    """The decision, written as a comparison rather than as a claim about
+    one rule: for one file, marked and unmarked, the findings are the same
+    set apart from SMT-D2 itself.
+
+    The mark reports and does not choose (docs/divergences.md #30). It
+    has precision 1.0 over everything published and recall nobody can
+    measure, and letting it choose would silence 21 rule ids on a file
+    that carries it wrongly, 18 of them turning exit 1 into exit 0.
+    `--profile` chooses instead, in both directions, and the note names
+    it. What this test refuses is the switch arriving by accident.
 
     It has to be a comparison. Every narrower version of this test was
     measured and found to pass while the invariant was broken: a switch

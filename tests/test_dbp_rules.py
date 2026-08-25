@@ -5,8 +5,10 @@ identifier and do not want the same things. So the tests that matter are
 comparisons: the same file is clean under one and faulted under the
 other, and every row of the second table can be made to fire.
 
-Which of the two answers is the caller's, for now: `--profile`. The file's
-own declaration does not choose yet.
+Which of the two answers is the caller's: `--profile`. The file's own
+declaration reports and does not choose, which is a decision with a
+measurement behind it rather than a stage on the way to something --
+docs/divergences.md #30.
 """
 from __future__ import annotations
 
