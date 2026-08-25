@@ -6,6 +6,7 @@
 |---|---|---|
 | `src/aas_submodel_validate/data/smt/02004/2.0.1/template.json` | IDTA 02004-2-0-1 *Handover Documentation* template | no |
 | `src/aas_submodel_validate/data/smt/02003/2.0.1/template.json` | IDTA 02003 2.0.1 *Technical Data* template | no |
+| `src/aas_submodel_validate/data/smt/02035-2/1.0/template.json` | IDTA 02035-2 1.0 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
 | `tests/corpus/idta/02004/example.json` | official 02004 2.0 example (environment JSON) | no |
 | `tests/corpus/idta/02004/example.aasx` | official 02004 2.0 example (AASX) | no |
 | `tests/corpus/idta/02003/sample-2.0.json` | official 02003 2.0 sample (environment JSON) | no |
@@ -15,7 +16,8 @@
 Source: [admin-shell-io/submodel-templates](https://github.com/admin-shell-io/submodel-templates),
 licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), © IDTA
 and contributors. Pinned to one commit and hash-verified on every CI run
-by `tools/vendor_template.py --check`; the pin and the recorded SHA-256
+by `tools/vendor_template.py --check`, which also sweeps those trees for
+anything this table does not list; the pin and the recorded SHA-256
 digests live beside the files. `--refresh` is the only operation that
 touches the network.
 
@@ -23,6 +25,10 @@ The template files are the *generator input* for the structural rule
 tables (`rules/hd_tables.py`, `rules/td_tables.py` — one table per
 template, one generator); the examples are test corpus — including their
 defects, which are pinned by name in the suite rather than repaired.
+
+02035-2 is vendored ahead of the rules that will read it: it is here to
+be measured against 02004, whose submodel identifier it shares, and
+nothing is generated from it yet. The tool reports no finding about it.
 
 ## Runtime dependency
 

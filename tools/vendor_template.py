@@ -39,6 +39,16 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02003/2.0.1/template.json":
         "published/Technical_Data/2/0/1/"
         "IDTA 02003_2-0-1_Template_TechnicalData.json",
+    # 02035-2 is the Digital Battery Passport's part 2 and a *second*
+    # Handover Documentation template: the same submodel semanticId as
+    # 02004, different requirements. Upstream publishes it twice in this
+    # directory and the "_without_examplevalues" twin is not what its name
+    # says -- it keeps all twelve ExampleValue qualifiers and differs by one
+    # Property value and a final newline (docs/divergences.md #25). This is
+    # the published file.
+    "src/aas_submodel_validate/data/smt/02035-2/1.0/template.json":
+        "published/Digital Battery Passport/2_Handover Documentation/1/0/"
+        "IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json",
     "tests/corpus/idta/02004/example.json":
         "published/Handover Documentation/2/0/"
         "IDTA 02004-2-0_Example_HandoverDocumentation.json",

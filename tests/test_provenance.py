@@ -70,3 +70,37 @@ def test_the_files_this_project_writes_itself_are_not_strays(tmp_path, monkeypat
 def test_this_tree_has_no_vendored_file_that_files_does_not_name():
     """The live invariant, on the real tree."""
     assert vendor_template.undeclared() == []
+
+
+#: Vendored material that travels in the distribution rather than staying
+#: in the checkout. The corpus does not ship -- the wheel gate asserts its
+#: absence -- so only these carry an attribution obligation.
+SHIPPED = [rel for rel in vendor_template.FILES if rel.startswith("src/")]
+
+
+def test_the_notice_names_every_vendored_file_that_ships():
+    """CC BY 4.0 attribution is an obligation on the *distribution*, and
+    the distribution is whatever `package-data` globbed -- a path glob,
+    which picks up a new template without anyone deciding it should.
+    pyproject's comment states the obligation in one direction only
+    ("NOTICE says the distribution contains it, so it must"); this is the
+    other one."""
+    notice = (ROOT / "NOTICE").read_text("utf-8")
+    third_party = (ROOT / "THIRD_PARTY.md").read_text("utf-8")
+    for rel in SHIPPED:
+        assert rel in notice, "NOTICE does not name %s, which ships" % rel
+        assert rel in third_party, "THIRD_PARTY.md does not list %s" % rel
+
+
+def test_the_wheel_gate_requires_every_vendored_file_that_ships():
+    """The wheel job exists so that "NOTICE lies about what it ships"
+    cannot happen -- its own words. Its `required` list is written by
+    hand, so it holds only as long as somebody remembers to extend it,
+    which is the failure it was built to catch."""
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
+    for rel in SHIPPED:
+        installed = rel[len("src/"):]
+        sums = installed.rsplit("/", 1)[0] + "/sha256sums.txt"
+        for name in (installed, sums):
+            assert '"%s"' % name in workflow, \
+                "the wheel gate does not require %s" % name

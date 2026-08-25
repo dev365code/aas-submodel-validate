@@ -92,6 +92,8 @@ jobs:
               "aas_submodel_validate/data/smt/02004/2.0.1/sha256sums.txt",
               "aas_submodel_validate/data/smt/02003/2.0.1/template.json",
               "aas_submodel_validate/data/smt/02003/2.0.1/sha256sums.txt",
+              "aas_submodel_validate/data/smt/02035-2/1.0/template.json",
+              "aas_submodel_validate/data/smt/02035-2/1.0/sha256sums.txt",
           ]
           missing = [n for n in required if n not in names]
           if missing:
