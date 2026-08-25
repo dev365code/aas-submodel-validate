@@ -14,3 +14,10 @@ dist/
 .spec-cache/
 docs/consortium/
 docs/private/
+
+# Working notes stay local.
+/CLAUDE.md
+/AGENTS.md
+/.claude/
+/docs/findings.md
+/docs/audits.md

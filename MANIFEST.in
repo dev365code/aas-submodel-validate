@@ -7,6 +7,11 @@ graft tools
 graft docs
 graft .github
 include Makefile MANIFEST.in
-include the working notes CONTRIBUTING.md SECURITY.md NOTICE THIRD_PARTY.md CHANGELOG.md
+include CONTRIBUTING.md SECURITY.md NOTICE THIRD_PARTY.md CHANGELOG.md
 global-exclude __pycache__/* *.pyc
 recursive-exclude tests .rule-coverage.json
+
+# Working notes are not part of the distribution.
+exclude CLAUDE.md AGENTS.md
+prune .claude
+exclude docs/findings.md docs/audits.md

@@ -106,7 +106,7 @@ def test_a_part_read_twice_counts_once(tmp_path, monkeypatch):
     happened to cross the line first -- a container passing or failing by
     rule registration order.
 
-    the defect register records that repair; nothing tested it. Removing the
+    the changelog records that repair; nothing tested it. Removing the
     `_counted` guard left the whole suite green, so the cap is lowered
     here instead of the archive being made enormous: the same part read
     twice must not refuse, and a *different* part of the same size must.
