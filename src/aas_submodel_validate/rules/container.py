@@ -88,6 +88,9 @@ def x4_supplementary_parts_exist(ctx):
         except ContainerError:
             continue  # a spec part without its own .rels declares nothing
         for rel_type, target in relationships:
-            if rel_type == SUPPL_REL and not container.has(target):
+            # `target` came back from the container already normalised;
+            # asking through the same entry point as HD-D7 keeps the two
+            # rules from ever disagreeing about what a name means.
+            if rel_type == SUPPL_REL and container.part(target) is None:
                 yield Violation("an aas-suppl relationship names a part the "
                                 "archive does not hold", subject=target)

@@ -170,7 +170,12 @@ def hd_d7_files_exist(ctx):
             value = getattr(element, "value", None)
             if not isinstance(value, str) or not value.strip() or "://" in value:
                 continue  # an empty value names nothing -- a different defect
-            if not container.has(value.lstrip("/")):
+            from ..container import canonical_part_name
+            if canonical_part_name(value) is None:
+                yield Violation("this File's value is not a part name",
+                                subject=subject,
+                                detail="%s climbs out of the package" % value)
+            elif container.part(value) is None:
                 yield Violation("the container holds no part at this File's value",
                                 subject=subject, detail=value)
 

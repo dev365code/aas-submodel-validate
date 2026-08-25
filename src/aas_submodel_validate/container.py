@@ -14,6 +14,7 @@ where every wheel crosses an air gap by hand.
 from __future__ import annotations
 
 import posixpath
+import urllib.parse
 import zipfile
 import zlib
 from pathlib import Path
@@ -44,6 +45,38 @@ MAX_TOTAL_PART_BYTES = 4 * MAX_PART_BYTES
 _DOCTYPE = __import__("re").compile(rb"<!DOCTYPE", __import__("re").IGNORECASE)
 
 _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
+
+
+def canonical_part_name(value: str):
+    """The archive entry a part name refers to, or None if it names none.
+
+    OPC part names are absolute, use "/" as the only separator, escape
+    reserved characters, and carry no empty, "." or ".." segments
+    (ECMA-376 Part 2). Files in the wild are written by tools that were
+    not all reading that: a leading "./", a doubled separator, a step up
+    and back, the other slash on a Windows desktop. Those are spellings
+    of the same name, and a reader that compares strings calls a
+    conformant package broken.
+
+    None means the value is not a part name -- it climbs out of the
+    package, or there is nothing left of it. That is a different defect
+    from a part being absent, and the rules say so separately.
+    """
+    if not value or not value.strip():
+        return None
+    text = value.replace("\\", "/")
+    text = urllib.parse.unquote(text)
+    segments = []
+    for segment in text.split("/"):
+        if segment in ("", "."):
+            continue
+        if segment == "..":
+            if not segments:
+                return None          # a name that climbs out of the package
+            segments.pop()
+            continue
+        segments.append(segment)
+    return "/".join(segments) or None
 
 
 class ContainerError(Exception):
@@ -92,6 +125,8 @@ class AasxPackage:
         #: Bytes handed out so far, for MAX_TOTAL_PART_BYTES. One
         #: package object is one validation, so this is that run's total.
         self._read_total = 0
+        #: Entry names by their normalised spelling, built on first need.
+        self._canonical = None
 
     # -- files ---------------------------------------------------------------
     def names(self) -> List[str]:
@@ -99,6 +134,27 @@ class AasxPackage:
 
     def has(self, name: str) -> bool:
         return name in self._names
+
+    def part(self, value: str):
+        """Which entry `value` names, or None.
+
+        Exact first: an archive may hold an entry whose name really does
+        contain a percent escape, and decoding it before looking would
+        lose that file to a reader trying to be helpful. The normalised
+        index answers only for what the literal did not.
+        """
+        if value in self._names:
+            return value
+        canonical = canonical_part_name(value)
+        if canonical is None:
+            return None
+        if canonical in self._names:
+            return canonical
+        if self._canonical is None:
+            self._canonical = {}
+            for name in self._names:
+                self._canonical.setdefault(canonical_part_name(name), name)
+        return self._canonical.get(canonical)
 
     def read(self, name: str) -> bytes:
         if name not in self._names:
@@ -173,10 +229,16 @@ class AasxPackage:
         resolved = []
         for el in root.iter(_RELATIONSHIP):
             target = el.get("Target", "")
+            # Where the name starts from is the difference between the two
+            # kinds of string; how it is spelled is not, so both branches
+            # end in the same normaliser. The absolute branch used to skip
+            # it, which left "/a/./b" resolving differently from "a/./b".
             if target.startswith("/"):
-                name = target[1:]
+                name = canonical_part_name(target)
             else:
-                name = posixpath.normpath(posixpath.join(base_dir, target))
+                name = canonical_part_name(posixpath.join(base_dir, target))
+            if name is None:
+                continue    # not a part name; X2 reports the chain it breaks
             resolved.append((el.get("Type", ""), name))
         return resolved
 
