@@ -29,8 +29,9 @@ What is deliberately interpreted rather than copied:
 - **Open content is not a rule.** 02003 §3.5 says "the set of suitable
   semanticIds is not restricted": its thirty-six placeholder elements
   describe what a manufacturer *may* add. Generating rules from them would
-  demand the unconstrained, and six of them share one identifier, so the
-  first would claim every arbitrary element the walk met. `skip_sids`
+  demand the unconstrained, and all thirty-six carry the same identifier
+  -- six of them siblings in one scope -- so the first row would claim
+  every arbitrary element the walk met. `skip_sids`
   drops the subtree before it is numbered.
 - **A missing cardinality is 0..\\*, not an error and not One.** 02004
   qualified every element; 02003 leaves four list items unqualified, and
@@ -73,9 +74,11 @@ HD_ITEM_NAMES = {
     "Entities": "EntityForDocumentation",
 }
 
-#: 02003's four unnamed list items. The PDF's own element tables name each
-#: of them in the singular (Tables 3, 6, 7 and 12), so those are the words
-#: a reader will find when they go looking.
+#: 02003's four unnamed list items. Three of these are the PDF's own word
+#: for the item (Tables 3, 7 and 11); ProductClassification is ours -- the
+#: PDF writes that one in the plural in both the list row and the item's
+#: own table, and a row called "ProductClassifications" twice over would
+#: be unreadable in a finding.
 TD_ITEM_NAMES = {
     "ProductImages": "ProductImage",
     "ProductClassifications": "ProductClassification",
