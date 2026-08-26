@@ -55,8 +55,9 @@ answers has to be chosen. Today that choice is the caller's:
 `--profile 02035-2` judges by the battery passport's table,
 `--profile 02004` by the Handover template's, and without the flag 02004
 answers as it always has. Whenever a file declares the profile or the
-flag is used, the report says which template answered and counts what
-the other one would have asked and this run did not (SMT-D2). A plain
+flag is used, the report says which template answered and counts the
+checks the two disagree about — what this run asked that the other would
+not, or what it did not ask that the other would (SMT-D2). A plain
 02004 file judged as 02004 draws nothing, because there was no choice
 to report.
 

@@ -36,6 +36,16 @@ def test_the_rule_counts_are_the_registrys():
     assert "| 22 |" in README
 
 
+def test_the_generator_counts_the_rows_it_warns_about():
+    """The generator's docstring warns that a hand-copied row count goes
+    stale, and was one: it said sixty-four from when two tables existed and
+    went on saying it through a third. The warning is worth keeping and the
+    number belongs where the others are."""
+    generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
+    source = (ROOT / "tools" / "extract_smt_rules.py").read_text("utf-8")
+    assert "hand-copying %d rows" % generated in source
+
+
 def test_the_console_sample_is_what_the_tool_prints(tmp_path, monkeypatch):
     (tmp_path / "machine-docs.json").write_bytes(env_json("urn:somecompany:docs"))
     monkeypatch.chdir(tmp_path)

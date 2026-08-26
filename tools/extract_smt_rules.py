@@ -4,9 +4,13 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying sixty-four rows is how one of
-them silently goes stale. `--check` regenerates and byte-compares, the
-same contract the sibling validators use for their generated files.
+extracted, not hand-written: hand-copying 86 rows is how one of them
+silently goes stale. That number is pinned in `tests/test_readme_front.py`
+along with the rest, because it said sixty-four for as long as there were
+two tables and went on saying it through a third -- this sentence was an
+instance of the thing it warns about. `--check` regenerates and
+byte-compares, the same contract the sibling validators use for their
+generated files.
 
 One generator, one row shape, one table per template (PACKS below).
 
