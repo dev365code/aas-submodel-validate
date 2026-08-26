@@ -1,6 +1,6 @@
 """One broken rule must not hide the others."""
 from aas_submodel_validate.model import Rule, Severity, Violation
-from aas_submodel_validate.runner import execute
+from aas_submodel_validate.runner import COULD_NOT_RUN, execute
 
 
 def _rule(rule_id, fn):
@@ -20,4 +20,7 @@ def test_a_rule_that_raises_becomes_a_finding_not_a_crash():
     crash = findings[1]
     assert crash.severity is Severity.ERROR
     assert "KeyError" in (crash.violation.detail or "")
-    assert "could not run" in crash.violation.message
+    # The exact sentence, not a substring of it: the coverage
+    # collector filters on this string, and a near-match there
+    # silently counts a crash as the rule working.
+    assert crash.violation.message == COULD_NOT_RUN

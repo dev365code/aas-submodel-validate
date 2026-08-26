@@ -26,7 +26,13 @@ def _observe_which_rules_fire():
 
     def wrapped(path, **kwargs):
         report = original(path, **kwargs)
-        FIRED.update(finding.id for finding in report.findings)
+        # A rule that raised is reported under its own id, so counting it
+        # here would let `make exercised` -- whose whole job is to find
+        # rules that never run -- pass on a rule that only ever crashes.
+        # Measured: break one rule's body and the gate still says all 124
+        # fire. It is asking about ids, and a crash brings the id with it.
+        FIRED.update(finding.id for finding in report.findings
+                     if finding.violation.message != runner.COULD_NOT_RUN)
         return report
 
     runner.run = wrapped

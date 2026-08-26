@@ -17,6 +17,13 @@ from .model import Finding, Report, Rule, Violation
 from .registry import all_rules
 from .rules import detect
 
+#: What a rule that raised is reported as. Named rather than written
+#: twice, because the coverage collector has to tell this apart from the
+#: rule working: a crash arrives as a finding under the rule's own id, so
+#: counting it as a firing lets `make exercised` -- the gate that exists
+#: to find rules which never run -- pass on a rule that only ever crashes.
+COULD_NOT_RUN = "the rule itself could not run"
+
 
 def execute(rules_to_run, ctx) -> List[Finding]:
     findings: List[Finding] = []
@@ -25,7 +32,7 @@ def execute(rules_to_run, ctx) -> List[Finding]:
             findings.extend(Finding(rule, violation) for violation in rule.fn(ctx))
         except Exception as exc:  # noqa: BLE001 - the isolation is the point
             findings.append(Finding(rule, Violation(
-                "the rule itself could not run",
+                COULD_NOT_RUN,
                 detail="%s: %s" % (type(exc).__name__, exc),
                 fix="This is a defect in the validator, not in your file; "
                     "please report it.")))
