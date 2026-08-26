@@ -5,8 +5,8 @@ import copy
 import json
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.rules import engine, hd_tables, td_tables
-from builders import hd_env
+from aas_submodel_validate.rules import hd_tables, td_tables
+from builders import hd_env, td_env
 
 
 def _findings(tmp_path, env):
@@ -180,6 +180,28 @@ def _root_element(env, sid_value):
     return env
 
 
+def _element_wearing(env, sid_value):
+    """The one element in `env` whose main semanticId is `sid_value`."""
+    def walk(node):
+        if isinstance(node, dict):
+            keys = node.get("semanticId", {}).get("keys") or [{}]
+            if keys[0].get("value") == sid_value:
+                yield node
+            for value in node.values():
+                yield from walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                yield from walk(value)
+
+    found = list(walk(env))
+    assert len(found) == 1, "expected one %s, found %d" % (sid_value, len(found))
+    return found[0]
+
+
+def _document_ids(env):
+    return _element_wearing(env, hd_tables.BY_LABEL["DocumentIds"]["sid"])
+
+
 def test_a_genuine_singular_plural_typo_is_a_near_miss(tmp_path):
     env = _root_element(hd_env(),
                         "https://admin-shell.io/vdi/2770/1/0/EntityForDocumentation")
@@ -199,68 +221,98 @@ def test_a_wholly_different_last_segment_is_not_a_near_miss(tmp_path):
 
 # -- HDL2: how near "near" is, at both ends of a segment's length -------------
 #
-# The three fixtures above all sit far from the boundary: one typo at
-# distance 3 against a bound of 6, and two neighbours nowhere near it. So
-# every constant in `max(3, len(tail) // 4)` could be moved -- the floor
-# to 0, the divisor to 5, the `max` to `min` -- and all three stayed
-# green. What each part of that expression is for is asserted here, with
-# the identifiers taken from the vendored tables rather than invented,
-# because a bound tested against made-up strings is a bound tested
-# against nothing.
+# The three fixtures above all sit far from the boundary -- one typo at
+# distance 3 against a bound of 6, and two neighbours nowhere near it --
+# so `max(3, len(tail) // 4)` could lose its floor, its scale, or both
+# and they stayed green.
+#
+# Each part of that expression answers a different shape of drift, and
+# each is asked here through a whole file, because what a reader gets is
+# a finding and not a predicate: the walk offers the near-miss search
+# only elements it did not claim, caps one element at one diagnosis, and
+# wraps the answer in a lint. A test that calls the predicate skips all
+# of it.
 
 
-def test_a_template_version_drift_in_an_iri_is_a_near_miss():
-    """The floor exists for short segments, and IDTA writes the shortest
-    one there is: a submodel template's IRI ends in its version, so the
-    last segment of ClassificationSystemUrl is a single character.
+def test_a_template_version_drift_in_an_iri_is_a_near_miss(tmp_path):
+    """The floor is for short segments, and IDTA writes the shortest one
+    there is: a submodel template's IRI ends in its version, so the last
+    segment of ClassificationSystemUrl is a single character.
 
-    A quarter of one character is nothing. Scale alone would put the
-    bound at zero and refuse to call `.../2/1` near `.../2/0` -- and a
-    file written against the next revision of a template would then
-    simply not match, with no line in the report saying why. That is the
-    silent pass this lint exists to prevent."""
-    expected = td_tables.BY_LABEL["ClassificationSystemUrl"]["sid"]
-    assert expected.endswith("/2/0"), "the value this bound was measured on moved"
-    drifted = expected[:-1] + "1"
-    assert engine._near_miss({drifted}, [expected]) == (drifted, expected)
+    A quarter of one character is nothing. Scale alone puts the bound at
+    zero and refuses to call `.../2/1` near `.../2/0`, and a file written
+    against the next revision of a template then simply does not match,
+    with no line in the report saying why."""
+    url = td_tables.BY_LABEL["ClassificationSystemUrl"]["sid"]
+    assert url.endswith("/2/0"), "the value this bound was measured on moved"
+    env = copy.deepcopy(td_env())
+    drifted = _element_wearing(env, url)
+    drifted["semanticId"]["keys"][0]["value"] = url[:-1] + "1"
+    assert "TDL1" in _findings(tmp_path, env)
 
 
-def test_two_different_irdis_under_one_list_are_not_a_near_miss():
-    """And the other half of the same expression: the segment comparison
-    is for IRIs, and the guard that says so is load-bearing.
+def test_a_supplier_spelling_of_a_long_segment_is_a_near_miss(tmp_path):
+    """And the scale is for long ones. `EntitiesForDocumentation` is
+    twenty-four characters, and the ways a supplier writes it by hand --
+    snake_case, kebab-case -- are five edits away: past the floor, inside
+    a quarter of the segment.
 
-    ECLASS composites are built the same shape -- a list's identifier,
-    a slash, its item's -- so without the guard they take the IRI branch
-    too. Two items belonging to different lists differ in one character
-    of a twenty-character tail, which is well inside the bound, and they
+    Delete the scale and the bound is the floor, which admits the typo
+    above and refuses this. Divide by five instead of four and the bound
+    is four, which does the same. Neither is visible from any pair of
+    values inside the tables; both are visible from a value a supplier
+    would write, which is the only side of this comparison that is not
+    ours to choose."""
+    for spelling in ("entities_for_documentation", "entities-for-documentation"):
+        env = _root_element(
+            hd_env(), "https://admin-shell.io/vdi/2770/1/0/" + spelling)
+        assert "HDL2" in _findings(tmp_path, env), spelling
+
+
+def test_two_different_irdis_under_one_list_are_not_a_near_miss(tmp_path):
+    """The segment comparison is for IRIs, and the guard saying so is
+    load-bearing: ECLASS composites are built the same shape -- a list's
+    identifier, a slash, its item's -- so without it they take the same
+    branch. Two items belonging to different lists then differ in one
+    character of a twenty-character tail, well inside the bound, and they
     are not a typo for each other: `AHF580` and `AHF581` are separate
-    ECLASS properties. Version drift in an IRDI is real and is caught
-    above this, by the stem comparison, which is what knows a `#003` from
-    a `#004`."""
+    ECLASS properties.
+
+    Each half comes from the tables and the join does not, which is the
+    point rather than a compromise: it is the shape a file gets when
+    somebody copies one row's identifier and edits the end. Version drift
+    in a real IRDI is caught above this, by the stem comparison, which
+    knows a `#003` from a `#004`."""
     expected = hd_tables.BY_LABEL["DocumentId"]["sid"]
     other_item = hd_tables.BY_LABEL["DocumentClassification"]["sid"].rsplit("/", 1)[1]
-    seen = expected.rsplit("/", 1)[0] + "/" + other_item
-    assert seen != expected and "://" not in seen
-    assert engine._near_miss({seen}, [expected]) is None
+    spliced = expected.rsplit("/", 1)[0] + "/" + other_item
+    assert "://" not in spliced and spliced != expected
+    env = copy.deepcopy(hd_env())
+    _document_ids(env)["value"].append({
+        "modelType": "SubmodelElementCollection",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference", "value": spliced}]},
+        "value": [{"modelType": "Property", "valueType": "xs:string",
+                   "idShort": "Stray", "value": "x"}]})
+    assert "HDL2" not in _findings(tmp_path, env)
 
 
-#: What is left of `max(3, len(tail) // 4)` after the two tests above,
-#: measured rather than assumed: the floor moved to 2 or to 4, the
-#: divisor to 5, and `<=` to `<`. All four survive, and none of them is
-#: worth a fixture.
+#: What is left of the bound after those three, measured rather than
+#: assumed: the floor moved to 2 or to 4, `<=` swapped for `<`, and the
+#: whole expression replaced by the constant 6. All four survive.
 #:
-#: The two claims that *are* claims -- that a floor exists at all, and
-#: that it combines with the scale by `max` -- are what those tests hold;
-#: dropping the floor to zero or swapping `max` for `min` fails them. The
-#: remaining constants are slack. Across the 32 IRI values the three
-#: vendored tables match on, every variant above agrees with every other
-#: about every pair. Against the drifts that actually happen they agree
-#: too: a template's minor version going from `0` to `1` or to `12` is
-#: caught by all of them, and the first case they part company on is a
-#: three-digit minor version, which IDTA does not publish.
+#: The floor's exact value and the comparison's strictness are slack: the
+#: shortest segment in the tables is one character and the drifts that
+#: happen to it are one or two edits, so any floor from 1 to 4 answers
+#: them the same. The constant 6 survives for a duller reason -- the
+#: longest segment in the tables is twenty-four characters, so the scale
+#: tops out at exactly 6 and the two expressions cannot be told apart
+#: until a longer row arrives.
 #:
-#: Fixtures for those would have to be invented, and a bound measured
-#: against invented strings is the constant copied out rather than tested.
+#: That last one is worth knowing rather than fixing. `edit_distance`
+#: saturates at 7, so a bound of 7 or more stops discriminating at all;
+#: the scale reaches 7 at a segment of 28 characters, four longer than
+#: anything vendored today.
 
 
 # -- HD-D10: VDI 2770 wants a PDF/A rendition (§2.1) --------------------------

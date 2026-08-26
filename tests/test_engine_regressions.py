@@ -1,8 +1,13 @@
-"""Regressions a later review found in the matching engine.
+"""What the matching engine decides, and what happens when it decides wrong.
 
-Every test here reproduces a confirmed finding: a conformant file being
-failed, a defective file being hidden, a crash, or a non-deterministic
-report. They were red against the pre-redesign engine.
+The older half reproduces confirmed findings -- a conformant file being
+failed, a defective file being hidden, a crash, a non-deterministic
+report -- and was red against the pre-redesign engine.
+
+The newer half comes from the other direction: decisions that could be
+reversed with the suite green. Nothing was wrong with them; nothing was
+holding them either, which is the same exposure arrived at from the far
+side. Each names the reversal it prevents.
 """
 from __future__ import annotations
 
@@ -40,6 +45,34 @@ def _ids(tmp_path, env):
 
 def _document(env):
     return env["submodels"][0]["submodelElements"][0]["value"][0]
+
+
+def _element_wearing(env, sid_value, kind=None):
+    """The one element in `env` whose main semanticId is `sid_value`.
+
+    `kind` is needed where a list and its child share an identifier --
+    `Language` and `LanguageCode` both spell `0173-1#02-AAN468#008`,
+    which is the arrangement the in-list fallback exists for.
+    """
+    def walk(node):
+        if isinstance(node, dict):
+            keys = node.get("semanticId", {}).get("keys") or [{}]
+            if keys[0].get("value") == sid_value \
+                    and (kind is None or node.get("modelType") == kind):
+                yield node
+            for value in node.values():
+                yield from walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                yield from walk(value)
+
+    found = list(walk(env))
+    assert len(found) == 1, "expected one %s, found %d" % (sid_value, len(found))
+    return found[0]
+
+
+def _document_ids(env):
+    return _element_wearing(env, hd_tables.BY_LABEL["DocumentIds"]["sid"])
 
 
 def _classifications_sml(env):
@@ -120,8 +153,12 @@ def test_a_document_id_does_not_double_as_its_parent_list(tmp_path):
 #: could be switched on where it does not belong, which turns "this
 #: element declares nothing" into "this element is whatever row comes
 #: first with a matching kind".
+#: No `value`: an empty list is not "no children", it is a declared
+#: emptiness the metamodel refuses (tests/builders.py says so), and a
+#: fixture that trips a relayed constraint for no reason needs a sentence
+#: explaining the finding away. Omitting it draws nothing at all.
 NAMELESS_LIST = {"idShort": "Nameless", "modelType": "SubmodelElementList",
-                 "typeValueListElement": "SubmodelElementCollection", "value": []}
+                 "typeValueListElement": "SubmodelElementCollection"}
 
 
 def test_a_nameless_element_at_the_top_is_not_the_first_row_that_fits(tmp_path):
@@ -139,16 +176,14 @@ def test_a_nameless_child_of_a_collection_is_not_claimed_either(tmp_path):
     """The same licence at the other seam. `child_of` is what the hand
     rules navigate with, and it asks the walk's own matcher -- so it has
     to decide the same question, and its parents are collections, never
-    lists. A nameless list placed first among a Document's children would
-    otherwise answer to `DocumentIds`, and the rules that read the real
-    one would read this instead: HD-D4 would find no primary flag among
-    no identifiers."""
+    lists. A nameless list placed first among a Document's children is
+    then whatever row asks first, and the rules that navigate there read
+    it instead of the element they meant: measured, `DocumentClassifications`
+    resolves to the nameless list and HD-D2 -- a MUST, the mandatory VDI
+    2770 classification -- reports it missing from a file that has it."""
     env = copy.deepcopy(hd_env())
     _document(env)["value"].insert(0, copy.deepcopy(NAMELESS_LIST))
-    # This project's own findings, not the relayed channel's: a list
-    # declaring nothing is a metamodel matter and aas-core3.0 says so.
-    assert not [rule_id for rule_id in _ids(tmp_path, env)
-                if rule_id.startswith("HD")]
+    assert _ids(tmp_path, env) == set()
 
 
 def test_a_leaf_wearing_a_lists_identifier_is_not_walked_into(tmp_path):
@@ -174,6 +209,83 @@ def test_a_leaf_wearing_a_lists_identifier_is_not_walked_into(tmp_path):
     # And the walk still says what is wrong with the file: two elements
     # answer to a row that admits one.
     assert "HD-E03" in {f.id for f in report.findings}
+
+
+def test_a_list_child_wearing_a_wrong_identifier_is_not_claimed_by_the_row(tmp_path):
+    """The licence is for a child that declares *nothing*, not for one
+    that declares something else. That is the whole of divergence #11 --
+    "keys on the main semanticId being absent, not on having no
+    identifiers at all" -- and it is the condition, not a detail of it:
+    without it a list child wearing any identifier at all answers to the
+    row, and the row stops being about identifiers.
+
+    The Language list's one child, given an identifier that is not
+    LanguageCode's. It must go unclaimed, which is what leaves HD-E16
+    reporting the row as empty."""
+    env = copy.deepcopy(hd_env())
+    language = _element_wearing(env, hd_tables.BY_LABEL["Language"]["sid"],
+                                kind="SubmodelElementList")
+    language["value"][0]["semanticId"] = {
+        "type": "ExternalReference",
+        "keys": [{"type": "GlobalReference", "value": "urn:not:a:language:code"}]}
+    assert "HD-E16" in _ids(tmp_path, env)
+
+
+def test_a_nameless_list_child_of_the_wrong_kind_is_not_claimed_either(tmp_path):
+    """And the licence is for a child of the row's *kind*. A stray
+    Property in the Documents list declares nothing, and the sole child
+    row there is a collection: claiming it would report `'Document' must
+    be a SubmodelElementCollection` against an element that never
+    claimed to be one."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"][0]["value"].append(
+        {"modelType": "Property", "valueType": "xs:string", "value": "stray"})
+    assert not [rule_id for rule_id in _ids(tmp_path, env)
+                if rule_id.startswith("HD")]
+
+
+def test_a_nameless_collection_child_is_not_claimed_by_a_navigating_rule(tmp_path):
+    """`children_of` decides this a third time, and separately from
+    `child_of`: its parent is whatever the hand rule reached, which is a
+    collection when the list it wanted is absent. A Document with no
+    DocumentIds falls back to the Document itself, and nameless
+    collections sitting there must not answer for `DocumentId`.
+
+    Two of them, because one is not enough to be seen: HD-D5 asks which
+    of several identifiers is primary and says nothing about a single
+    one. With two, the mutant reports that a file carrying no
+    DocumentIds at all has failed to mark one of them primary."""
+    env = copy.deepcopy(hd_env())
+    document = _document(env)
+    absent = _document_ids(env)
+    document["value"] = [child for child in document["value"] if child is not absent]
+    for suffix in ("A", "B"):
+        document["value"].insert(0, {
+            "modelType": "SubmodelElementCollection",
+            "value": [{"modelType": "Property", "valueType": "xs:string",
+                       "idShort": "Q" + suffix, "value": "z"}]})
+    ids = _ids(tmp_path, env)
+    assert "HD-E03" in ids            # the missing DocumentIds, still reported
+    assert "HD-D5" not in ids         # and no rule read the nameless ones instead
+
+
+def test_a_reference_indexes_only_where_the_metamodel_indexes(tmp_path):
+    """`in_list` is recomputed at every step, and only the first step was
+    asserted. Below it a collection's children are addressed by idShort;
+    a key path that walks into one and then says "0" names a child called
+    "0" and nothing else.
+
+    Wrong in the quiet direction: HD-D9 would call a reference resolved
+    that walks nowhere, which is the silence this rule exists to break."""
+    submodel = load(_write(tmp_path, copy.deepcopy(hd_env()))).submodels[0]
+
+    def walks(*steps):
+        return engine.resolve_in_submodel(
+            submodel, [_Key("u")] + [_Key(step) for step in steps])
+
+    assert walks("Documents", "0")                    # a list: by index
+    assert not walks("Documents", "0", "0")           # its child is a collection
+    assert not walks("Documents", "0", "DocumentIds", "0", "0")
 
 
 # -- one defect must not silence the next element ---------------------------
@@ -242,48 +354,32 @@ def test_a_reference_addresses_by_position_only_inside_a_list(tmp_path):
     assert not engine.resolve_in_submodel(submodel, [_Key("urn:x"), _Key("0")])
 
 
-def test_an_index_resolves_past_a_list_child_that_carries_an_id_short():
-    """A SubmodelElementList's children are addressed by index, and
-    AASd-120 says they carry no idShort. The official example gives them
-    one anyway -- `Datasheet`, `CADmodel` -- and that is the file's
-    defect, reported by the relayed channel. A reference addressing the
-    same children by index is not defective, and resolving it must not
-    depend on the idShort being absent: the fixtures here happen to leave
-    it out, so nothing asked.
-
-    Read from the published example rather than built, because what makes
-    this worth asserting is that the shape occurs in the reference
-    material."""
-    submodel = load("tests/corpus/idta/02004/example.json").submodels[0]
-    children = submodel.submodel_elements[0].value
-    assert [child.id_short for child in children[:2]] == ["Datasheet", "CADmodel"], \
-        "the example stopped carrying the defect this asks about"
-    assert engine.resolve_in_submodel(
-        submodel, [_Key("u"), _Key("Documents"), _Key("0")])
-    assert engine.resolve_in_submodel(
-        submodel, [_Key("u"), _Key("Documents"), _Key("Datasheet")])
-
-
 #: What survives everything above, measured, with the reason -- so the
 #: next person measuring does not spend an afternoon rediscovering it.
 #:
 #: *The walk's cache, disabled.* `analyze` recomputes instead of reading
-#: its slot. `_analyze` builds a fresh result and reads nothing outside
-#: the context, so this is equivalent; what is *not* equivalent is the
-#: cache's key, and giving it a single slot is caught by three tests.
+#: its slot. No caller mutates the result, so the findings are the same
+#: -- but "equivalent" is the wrong word and was measured to be: the
+#: module docstring says walking once per rule is how a validator gets
+#: quadratic, and disabling the cache takes the official example from
+#: three walks to sixty-seven. Equivalent on the verdict, not on the
+#: cost, and the cost has no test.
+#:
+#: What is *not* equivalent is the cache's key. Giving it a single slot
+#: for every table fails most of the suite. An earlier note here said
+#: three, which was a truncated list of failures being read as a count --
+#: and the number is left out now rather than corrected, because it moves
+#: with the suite and a note is worth having only while its figures are.
 #:
 #: *The first `and` of the near-miss IRI guard, loosened to `or`.*
-#: Equivalent, and provably: the branch it opens goes on to require
-#: `seen_head == exp_head`, and a head shared with a value containing
-#: `://` either contains `://` itself or is the `a:/` that makes the
-#: other value `a://...`. Either way the original condition held too.
-#:
-#: *Taking the last matching child instead of the first*, in
-#: `resolve_in_submodel`. Observable only where two children answer to
-#: one key -- a duplicate idShort (AASd-022) or an idShort that is a bare
-#: number in a list (AASd-002). Both are files the relayed channel
-#: already refuses, so a fixture for this would be asserting the order in
-#: which two defects are reported.
+#: Equivalent, but not for the reason first written here. The argument
+#: was that a head shared with a value containing `://` must itself
+#: contain `://`, which is false where the slashes are stripped off the
+#: end. What actually holds is one scope out: `_scope` offers the
+#: near-miss search only elements it did not claim, and an unclaimed
+#: element's candidates intersect no row's match set -- so `seen ==
+#: expected` never arrives here, and the term that compares them cannot
+#: decide anything.
 
 
 def test_a_reference_to_the_submodel_itself_resolves(tmp_path):
