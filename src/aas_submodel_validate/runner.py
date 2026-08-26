@@ -121,4 +121,9 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             % profile)
     report.findings.sort(key=_reading_order)
     report.checked = len(rules_to_run)
+    # Every load error means content that was not read: an archive that
+    # would not open, a chain that went nowhere, a part that would not
+    # parse, a document over the bound. What was not read was not judged,
+    # and the report is the only place that can say so.
+    report.complete = not loaded.errors
     return report

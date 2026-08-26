@@ -10,6 +10,33 @@ from ..container import MAX_PART_BYTES, MAX_TOTAL_PART_BYTES
 from ..model import Violation
 from ..registry import rule
 
+#: What X5 says to an input that is not a container. Absent means the
+#: rule's standing advice, which is the container's: it names a part to
+#: send and a container to split, and an author who sent neither is being
+#: told to do something they cannot.
+#:
+#: Keyed by the form the loader started with, not the one it decided,
+#: because the bound is applied before the branch that decides -- so a
+#: form added later cannot arrive without a bound by being added on the
+#: wrong side of that question. The consequence is that `.json` here
+#: could still be either an environment or a bare Submodel, and the
+#: sentence says both rather than guessing about a document this reader
+#: has just declined to read.
+_ONE_DOCUMENT = "This reader takes in no single document over %d MiB." % (
+    MAX_PART_BYTES // 1024 ** 2)
+_NOT_YOUR_FAULT = "Nothing is wrong with what you sent; it was refused, not judged."
+
+_BOUNDS_REMEDY = {
+    "environment-json": "%s An environment divides along its submodels, so "
+                        "fewer of them per file is the way through; one "
+                        "Submodel on its own does not divide, and a file that "
+                        "large cannot be checked here. %s"
+                        % (_ONE_DOCUMENT, _NOT_YOUR_FAULT),
+    "environment-xml": "%s An environment divides along its submodels, so "
+                       "fewer of them per file is the way through. %s"
+                       % (_ONE_DOCUMENT, _NOT_YOUR_FAULT),
+}
+
 
 @rule("X1", kind="container", prio="MUST",
       title="the file must be a ZIP (OPC) container this reader can open",
@@ -38,8 +65,10 @@ def x2_chain_resolves(ctx):
 @rule("X3", kind="container", prio="MUST",
       title="the payload must parse as an AAS environment",
       spec="IDTA 01001 (metamodel) and its published JSON/XML schemas",
-      fix="Open the named part and fix the syntax its parser rejects; the "
-          "extension decides the format (.json as AAS JSON, otherwise AAS XML).")
+      fix="Open the named document and fix the syntax its parser rejects; "
+          "the extension decides the format (.json as AAS JSON, otherwise AAS "
+          "XML). Packaged or bare: a part of a container and a file on its "
+          "own reach this the same way.")
 def x3_payload_parses(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "payload":
@@ -49,11 +78,11 @@ def x3_payload_parses(ctx):
 @rule("X5", kind="container", prio="MUST",
       title="the input fits in what an offline reader will take in",
       spec="this project's own bounds -- see container.py",
-      fix="Send the part that needs checking, or split what you sent: this "
-          "reader refuses any single document over %d MiB, and a container "
-          "whose parts come to over %d MiB together. Nothing is wrong with "
-          "what you sent; it is larger than this tool will read, and what "
-          "was refused was not judged."
+      fix="This reader takes in no single document over %d MiB, and no "
+          "container whose parts come to over %d MiB together. Nothing is "
+          "wrong with what you sent; it was refused, not judged. Where the "
+          "input is a container, send the part that needs checking on its "
+          "own or split the container."
           % (MAX_PART_BYTES // 1024 ** 2, MAX_TOTAL_PART_BYTES // 1024 ** 2))
 def x5_within_the_readers_bounds(ctx):
     """Not a defect in the file, which is why it is not X1.
@@ -62,10 +91,16 @@ def x5_within_the_readers_bounds(ctx):
     here to re-create. Refusing to read is this tool's decision, and a
     finding that reports somebody else's decision as the author's fault
     is the kind of remedy this project promised not to write.
+
+    Which is also why the remedy is per-input. "Send the part", "split
+    the container": a bare document has neither, and a single Submodel
+    has no split at all -- telling its author to divide it is the same
+    mistake in a smaller place.
     """
     for error in ctx.loaded.errors:
         if error.stage == "bounds":
-            yield Violation(error.message, subject=error.subject, detail=error.detail)
+            yield Violation(error.message, subject=error.subject, detail=error.detail,
+                            fix=_BOUNDS_REMEDY.get(ctx.loaded.form))
 
 
 @rule("X4", kind="container", prio="SHOULD",

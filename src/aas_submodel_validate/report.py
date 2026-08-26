@@ -39,7 +39,13 @@ def render(report: Report) -> str:
         # report has notes of its own, printed above and not counted
         # here -- one word for two things, with a run that printed a note
         # and summarised "0 note(s)" as the proof.
-        lines.append("%d error(s), %d warning(s), %d info — %s"
+        # And whether the counts above describe the whole input. A refused
+        # file summarises as one error, which is what a judged file that
+        # failed looks like -- the JSON report grew a field to tell those
+        # apart and the person at the terminal is owed the same sentence.
+        lines.append("%d error(s), %d warning(s), %d info — %s%s"
                      % (report.count(Severity.ERROR), report.count(Severity.WARNING),
-                        report.count(Severity.INFO), report.path))
+                        report.count(Severity.INFO), report.path,
+                        "" if report.complete
+                        else " (not a full verdict: some of it was not read)"))
     return "\n".join(lines)

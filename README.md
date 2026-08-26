@@ -32,10 +32,10 @@ pure Python, no C extensions — installable from a USB stick.
 123 rules across three IDTA templates — 86 generated from the vendored
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), the rest hand-written
-where a template file cannot speak. Four of the 123, X1–X4, are about
-the AASX/OPC package the submodel arrives in, and a fifth, X5, is this
-reader's own bound on how much it will take in, whether or not anybody
-packaged it; one, SMT-D1, asks whether
+where a template file cannot speak. X1, X2 and X4 are about the AASX/OPC
+package the submodel arrives in; X3 says a document would not parse,
+packaged or bare; and X5 is this reader's own bound on how much it will
+take in, whichever way it arrives. One, SMT-D1, asks whether
 the input brought a submodel this tool knows at all; and one, SMT-D2,
 says which template answered wherever two published templates share one
 submodel identifier and something had to choose.

@@ -4,6 +4,7 @@ review's confirmed DoS and crash cases.
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import stat
 import tracemalloc
@@ -17,6 +18,7 @@ from aas_submodel_validate import container, loader, runner
 from aas_submodel_validate.cli import EXIT_ERROR, main
 from aas_submodel_validate.container import AasxPackage, ContainerError
 from aas_submodel_validate.registry import all_rules
+from aas_submodel_validate.report import render
 from builders import (
     CONTENT_TYPES,
     ORIGIN_REL,
@@ -349,6 +351,83 @@ def test_a_read_that_runs_out_of_memory_could_not_run(tmp_path):
     path.write_bytes(env_json("urn:x"))
     with mock.patch("pathlib.Path.open", side_effect=MemoryError("no memory")):
         assert main([str(path), "-q"]) == EXIT_ERROR
+
+
+def test_the_security_note_names_the_caps_it_promises():
+    """SECURITY.md said the bound was the same packaged or bare. It is
+    not: a container may deliver four times what a bare document may,
+    because its parts are bounded each and again together.
+
+    The whole clause is derived, not each number looked for on its own --
+    the page names 64 MiB twice, so "is 64 somewhere in the file" stays
+    true while the sentence around it says something else. Measured: it
+    did, under the first version of this test."""
+    text = " ".join((pathlib.Path(__file__).resolve().parents[1]
+                     / "SECURITY.md").read_text("utf-8").split())
+    single = container.MAX_PART_BYTES // 1024 ** 2
+    together = container.MAX_TOTAL_PART_BYTES // 1024 ** 2
+    assert ("one document at %d MiB, and a container's parts at %d MiB each "
+            "and %d MiB together" % (single, single, together)) in text
+    assert container.MAX_TOTAL_PART_BYTES // container.MAX_PART_BYTES == 4
+    assert "four times what a bare document may" in text
+
+
+@pytest.mark.parametrize("name,body", (
+    ("sm.json", json.dumps({"modelType": "Submodel", "id": "urn:x"}).encode()),
+    ("env.json", env_json("urn:x")),
+    ("env.xml", b"<environment/>"),
+))
+def test_the_refusal_tells_a_bare_document_something_it_can_do(tmp_path, monkeypatch,
+                                                               name, body):
+    """"Send the part", "split the container": two things a bare document
+    does not have. Telling an author to do something they cannot is the
+    remedy this project promised not to write, and the model already
+    carries the per-instance field for saying otherwise.
+
+    The `.json` sentence covers both an environment and a single Submodel
+    because the bound is applied before the branch that tells them apart
+    -- a reader that has just declined to open a file does not then get
+    to say what was inside it."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+    path = tmp_path / name
+    path.write_bytes(body + b" " * 600)
+    fix = next(f for f in runner.run(path).findings if f.id == "X5").fix
+    assert "container" not in fix, "a bare document was told about a container"
+    assert "submodels" in fix
+    if name.endswith(".json"):
+        assert "cannot be checked here" in fix, "the indivisible case went unsaid"
+
+
+def test_the_terminal_summary_says_when_it_is_not_a_full_verdict(tmp_path, monkeypatch):
+    """The JSON report grew a field to tell a refusal from a verdict, and
+    the person at the terminal reads the same run. One error on a file
+    nobody opened looks exactly like one error on a file that was read
+    and found wanting -- which is the control below."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+    refused = tmp_path / "big.json"
+    refused.write_bytes(b" " * 600)
+    assert "not a full verdict" in render(runner.run(refused))
+
+    judged = tmp_path / "unmatched.json"
+    judged.write_bytes(env_json("urn:nobody:recognises:this"))
+    rendered = render(runner.run(judged))
+    assert rendered.startswith("error"), "the control stopped drawing a finding"
+    assert "not a full verdict" not in rendered
+
+
+def test_a_refused_input_says_the_verdict_is_incomplete(tmp_path, monkeypatch):
+    """A refused file came back `ok: false`, one error, 123 rules checked
+    -- which is what a judged file that failed looks like. Nothing was
+    read. A consumer had the string "X5" and nothing else to tell the two
+    apart."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+    path = tmp_path / "big.json"
+    path.write_bytes(b" " * 600)
+    assert runner.run(path).as_dict()["summary"]["complete"] is False
+
+    clean = tmp_path / "clean.json"
+    clean.write_bytes(env_json("urn:x"))
+    assert runner.run(clean).as_dict()["summary"]["complete"] is True
 
 
 def test_the_cap_the_remedy_names_is_the_cap(monkeypatch):

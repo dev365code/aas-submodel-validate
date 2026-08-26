@@ -6,6 +6,7 @@ registry says 57 is the kind of small lie that outlives its excuse.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from aas_submodel_validate import (
@@ -34,6 +35,43 @@ def test_the_rule_counts_are_the_registrys():
     assert "| 38 |" in README
     assert "| 26 |" in README
     assert "| 22 |" in README
+
+
+def _x_rules_a_bare_document_can_draw(tmp_path, monkeypatch):
+    """Measured, not read off the code: run documents with no container
+    around them and collect the X findings they draw."""
+    from aas_submodel_validate import container
+
+    drawn = set()
+    for name, data in (("bad.json", b"{ not json"), ("bad.xml", b"<nope")):
+        path = tmp_path / name
+        path.write_bytes(data)
+        drawn |= {f.id for f in runner.run(path).findings if f.id.startswith("X")}
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+    over = tmp_path / "big.json"
+    over.write_bytes(b" " * 600)
+    drawn |= {f.id for f in runner.run(over).findings if f.id.startswith("X")}
+    return drawn
+
+
+def test_the_readme_names_the_rules_that_are_about_packaging(tmp_path, monkeypatch):
+    """The front page said five of the X rules were about the AASX/OPC
+    package, then four. Both counted X3, which answers for a bare .json
+    that will not parse, and the second also stopped counting X5 on the
+    commit that gave X5 bare files to answer for.
+
+    The sentence is derived here rather than compared to a remembered
+    one: whichever ids a document with no container can draw are not the
+    packaging rules, and the README says so in those words."""
+    every_x = sorted(rule.id for rule in all_rules() if re.fullmatch(r"X\d+", rule.id))
+    bare = _x_rules_a_bare_document_can_draw(tmp_path, monkeypatch)
+    assert bare, "no bare input drew an X rule; the measurement stopped measuring"
+    packaging = [rule_id for rule_id in every_x if rule_id not in bare]
+    # Whitespace-normalised: the README wraps at seventy-two columns and a
+    # sentence straddles the break wherever it happens to fall. What is
+    # pinned is what it says.
+    assert "%s and %s are about the AASX/OPC package" % (
+        ", ".join(packaging[:-1]), packaging[-1]) in " ".join(README.split())
 
 
 def test_the_generator_counts_the_rows_it_warns_about():

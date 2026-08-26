@@ -106,6 +106,12 @@ class Report:
     findings: List[Finding] = field(default_factory=list)
     checked: int = 0
     notes: List[str] = field(default_factory=list)
+    #: Whether everything this run was handed got read. A refused input
+    #: comes back `ok: false` with one error and every rule counted --
+    #: which is exactly what a judged file that failed looks like, and
+    #: nothing was judged. A consumer had the string "X5" and nothing
+    #: else to tell the two apart.
+    complete: bool = True
 
     def count(self, severity: Severity) -> int:
         return sum(1 for f in self.findings if f.severity is severity)
@@ -124,6 +130,9 @@ class Report:
                 "warnings": self.count(Severity.WARNING),
                 "info": self.count(Severity.INFO),
                 "rulesChecked": self.checked,
+                # Additive, so schemaVersion stays 1: a consumer that does
+                # not know the key reads exactly what it read before.
+                "complete": self.complete,
             },
             "notes": self.notes,
             "findings": [f.as_dict() for f in self.findings],
