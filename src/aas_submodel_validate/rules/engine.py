@@ -38,7 +38,20 @@ from ..semantics import (
     version_stem,
 )
 
+#: How a cardinality is said. The generator has its own copy of these
+#: words for the remedy; the two are compared row by row in
+#: `test_generated_rules.py`, and they disagreed about the fourth shape
+#: until both were made to say `any number of`.
+#:
+#: That fourth shape is not here, and cannot be: `(0, None)` is
+#: unbounded and not required, so `count < 0` never holds and there is no
+#: upper test to fail. The fallback below is what a shape outside this
+#: table would get, and no shape outside it can produce a message --
+#: which `test_the_walk_has_a_word_for_every_count_it_can_report` is
+#: what keeps true, since a fifth cardinality in a future template would
+#: otherwise arrive here silently.
 _KIND_WORDS = {(1, 1): "exactly one", (0, 1): "at most one", (1, None): "one or more"}
+_UNCOUNTED = "any number of"
 
 
 def analyze(ctx, tables) -> Dict:
@@ -129,7 +142,7 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
         if count < low or (high is not None and count > high):
             result["violations"].setdefault(row["id"], []).append(Violation(
                 "the template expects %s '%s' here; found %d"
-                % (_KIND_WORDS.get((low, high), "a bounded number of"), row["label"], count),
+                % (_KIND_WORDS.get((low, high), _UNCOUNTED), row["label"], count),
                 subject=path,
                 detail=("elements: %s" % ", ".join(
                     _subject(path, e, i) for i, e in matched)) if matched else None))

@@ -214,7 +214,12 @@ def _cardinality_words(card):
         return "at most one"
     if high is None and low == 1:
         return "one or more"
-    return "any number"
+    # Unbounded and not required. The walk cannot report a count for this
+    # shape -- `count < 0` never holds and there is no upper test -- so
+    # this word reaches a remedy and never a message. It still has to be
+    # a sentence: it shipped as "Provide any number 'ProductImage'
+    # element(s)", which is not one.
+    return "any number of"
 
 
 def _rows(element, parent_label, parent_id, counter, pack):

@@ -14,7 +14,12 @@ import json
 import pytest
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.rules import hd_tables
+from aas_submodel_validate.rules import (
+    dbp_tables,
+    engine,
+    hd_tables,
+    td_tables,
+)
 from builders import break_row, hd_env, inject, strip_row, stub_of
 
 
@@ -51,6 +56,45 @@ CARDINALITY_WORDS = ("exactly one", "at most one", "one or more")
 def _cardinality_phrase(text):
     said = [phrase for phrase in CARDINALITY_WORDS if phrase in (text or "")]
     return said[0] if len(said) == 1 else None
+
+
+def test_the_walk_has_a_word_for_every_count_it_can_report():
+    """The message's vocabulary against the shapes the tables actually
+    carry, across all three of them -- the test below reads 02004 only,
+    and a shape none of its rows has would reach the fallback with
+    nothing to compare it to.
+
+    Reportable means a count can fail: `(0, None)` is unbounded and not
+    required, so `count < 0` never holds and there is no upper test. That
+    shape exists (five rows of it, all in 02003) and is the reason the
+    fallback is there at all; it is also why the fallback is unreachable,
+    which is worth a gate rather than a comment. A fifth cardinality in a
+    future template arrives here silently otherwise."""
+    reportable = set()
+
+    def walk(rows):
+        for row in rows:
+            low, high = row["card"]
+            if low > 0 or high is not None:
+                reportable.add((low, high))
+            walk(row["children"])
+
+    for tables in (hd_tables, td_tables, dbp_tables):
+        walk(tables.TREE)
+    assert reportable, "no table has a countable row any more"
+    assert reportable == set(engine._KIND_WORDS)
+    # And the shape that is not reportable is really in the tables, or
+    # the sentence above is about nothing.
+    unbounded = set()
+
+    def walk_all(rows):
+        for row in rows:
+            unbounded.add(tuple(row["card"]))
+            walk_all(row["children"])
+
+    for tables in (hd_tables, td_tables, dbp_tables):
+        walk_all(tables.TREE)
+    assert (0, None) in unbounded
 
 
 def test_a_cardinality_message_and_its_remedy_say_the_same_thing(tmp_path):

@@ -132,7 +132,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number 'ProductImage' element(s) under ProductImages with semanticId 0173-1#02-ABM220#001/0173-1#01-AHY911#001.",
+                        'fix': "Provide any number of 'ProductImage' element(s) under ProductImages with semanticId 0173-1#02-ABM220#001/0173-1#01-AHY911#001.",
                         'children': (
                             {
                                 'id': 'TD-E09',
@@ -200,7 +200,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number 'ProductClassification' element(s) under ProductClassifications with semanticId 0173-1#02-ABK162#002/0173-1#01-AHX839#002.",
+                'fix': "Provide any number of 'ProductClassification' element(s) under ProductClassifications with semanticId 0173-1#02-ABK162#002/0173-1#01-AHX839#002.",
                 'children': (
                     {
                         'id': 'TD-E13',
@@ -346,7 +346,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number 'TechnicalPropertyArea' element(s) under TechnicalPropertyAreas with semanticId 0173-1#02-ABL358#002/0173-1#01-AHX773#002.",
+                'fix': "Provide any number of 'TechnicalPropertyArea' element(s) under TechnicalPropertyAreas with semanticId 0173-1#02-ABL358#002/0173-1#01-AHX773#002.",
                 'children': (),
             },
         ),
@@ -379,7 +379,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number 'TextStatement' element(s) under FurtherInformation with semanticId 0173-1#02-ABK134#002.",
+                'fix': "Provide any number of 'TextStatement' element(s) under FurtherInformation with semanticId 0173-1#02-ABK134#002.",
                 'children': (),
             },
             {
@@ -428,7 +428,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number 'SpecificDescription' element(s) under SpecificDescriptions with semanticId 0173-1#02-ABM221#001/0173-1#01-AHY912#001.",
+                'fix': "Provide any number of 'SpecificDescription' element(s) under SpecificDescriptions with semanticId 0173-1#02-ABM221#001/0173-1#01-AHY912#001.",
                 'children': (),
             },
         ),
