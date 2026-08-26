@@ -4,10 +4,12 @@ review's confirmed DoS and crash cases.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import pathlib
 import stat
 import tracemalloc
+import types
 import zipfile
 from unittest import mock
 from xml.etree import ElementTree
@@ -467,6 +469,192 @@ def test_a_rels_this_reader_refused_is_not_a_clean_bill(tmp_path):
     assert report.as_dict()["summary"]["complete"] is False
 
 
+def _wide_archive(path, entries, *, name="%07d", comment=b""):
+    """A conformant .aasx with `entries` extra entries beside it.
+
+    Every field is truthful and every part is honest; the only excess is
+    how many names the directory declares. This is the shape the caps
+    above cannot see: nothing here is decompressed, and the archive is
+    small, because the entries hold nothing at all."""
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_STORED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", env_json())
+        for i in range(entries):
+            archive.writestr(name % i, b"")
+        if comment:
+            archive.comment = comment
+    return path
+
+
+def _directory_bytes(path):
+    with open(path, "rb") as handle:
+        end = zipfile._EndRecData(handle)
+    return end[zipfile._ECD_SIZE]
+
+
+def test_an_archive_that_declares_too_many_names_is_refused(tmp_path, monkeypatch):
+    """A ZIP's directory is indexed whole before any cap here applies:
+    zipfile builds a record per entry inside `ZipFile()`, and the caps
+    above are about decompressing parts, which has not begun.
+
+    Measured, on an archive that is otherwise perfect -- valid chain,
+    conformant payload, `complete: true`, only real template findings:
+    800,000 empty entries weigh 68.7 MiB on disk and 523 MiB in memory.
+    Linear, with no ceiling. The bound is on the directory's own bytes
+    because that number is the one zipfile acts on: it reads exactly
+    `size_cd` bytes and stops."""
+    path = _wide_archive(tmp_path / "wide.aasx", 4000)
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", 8 * 1024)
+    with pytest.raises(container.DirectoryTooLarge):
+        AasxPackage(path)
+    report = runner.run(path)
+    assert "X5" in {f.id for f in report.findings}
+    assert report.as_dict()["summary"]["judged"] is False
+
+
+def test_the_refusal_names_the_bound_it_actually_applied(tmp_path, monkeypatch):
+    """X5 built its remedy from the *form* of the input and dropped the
+    one the loader wrote for this refusal, so an archive turned away for
+    its directory was told about document size and part totals -- two
+    numbers that had nothing to do with why it was refused, and one
+    instruction ("send the part that needs checking on its own") that
+    would not have helped, since the directory is indexed whichever part
+    you ask for.
+
+    The rule's own docstring already said the remedy is per-input. It was
+    per-form."""
+    path = _wide_archive(tmp_path / "wide.aasx", 4000)
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", 8 * 1024)
+    remedy = next(f.fix for f in runner.run(path).findings if f.id == "X5")
+    assert "directory" in remedy
+    assert "%d MiB" % (container.MAX_PART_BYTES // 1024 ** 2) not in remedy, \
+        "the remedy names a cap this refusal did not apply"
+
+
+def test_an_archive_under_the_bound_still_opens(tmp_path, monkeypatch):
+    """A bound, not a ban. The margin against real packages is what makes
+    this safe to ship: the two official example containers declare 13 and
+    16 entries, for directories of 1,119 and 1,331 bytes."""
+    path = _wide_archive(tmp_path / "narrow.aasx", 40)
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", _directory_bytes(path))
+    with AasxPackage(path) as package:
+        assert package.names()
+    assert runner.run(path).as_dict()["summary"]["judged"] is True
+
+
+def test_the_refusal_is_cheaper_than_the_indexing_it_prevents(tmp_path, monkeypatch):
+    """The point of the bound is where it sits. A check after
+    `ZipFile()` returns would be green on every test above and would have
+    bought nothing: the memory is spent by the time it could look."""
+    path = _wide_archive(tmp_path / "wide.aasx", 4000)
+
+    def peak(cap):
+        monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", cap)
+        tracemalloc.start()
+        try:
+            with contextlib.suppress(container.DirectoryTooLarge):
+                AasxPackage(path).close()
+            return tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+
+    refused = peak(8 * 1024)
+    indexed = peak(64 * 1024 * 1024)
+    assert refused < indexed / 4, "refusing cost %d against %d to index" % (refused, indexed)
+
+
+def test_the_bound_agrees_with_the_reader_it_guards(tmp_path, monkeypatch):
+    """The refusal is read through `zipfile`'s own account of the archive
+    rather than a second reading of it, and that is the whole design.
+
+    A file comment containing the end-of-directory signature sends
+    zipfile's `rfind` into the comment: it reports a directory of zero
+    bytes and then builds zero entries. A more careful reader would find
+    the real record and refuse an archive zipfile opens -- which is the
+    over-refusal this project exists not to commit. Asserted as
+    agreement, not as a number: whatever the guard reads is what the
+    opener will act on."""
+    for entries, comment in ((2000, b""), (2000, b"PK\x05\x06" + b"\x00" * 18),
+                             (0, b""), (200, b"a" * 60_000)):
+        path = _wide_archive(tmp_path / ("agree-%d-%d.aasx" % (entries, len(comment))),
+                             entries, comment=comment)
+        declared = _directory_bytes(path)
+        with zipfile.ZipFile(path) as archive:
+            built = len(archive.infolist())
+        assert built * 46 <= declared, (
+            "%d entries built from a directory declared at %d bytes"
+            % (built, declared))
+
+
+def test_a_directory_too_wide_to_count_in_two_bytes_is_still_measured(tmp_path,
+                                                                      monkeypatch):
+    """Past 65,535 entries a ZIP moves its real record into a ZIP64 one
+    and leaves sentinels behind in the old fields. The count is the field
+    that overflows; the size is the field this bound reads, and both go
+    through the same reader either way.
+
+    Both directions, because a ZIP64 record does not itself mean large."""
+    wide = _wide_archive(tmp_path / "zip64.aasx", 70_000)
+    assert _directory_bytes(wide) > 0, "the ZIP64 record was not read"
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", 8 * 1024)
+    with pytest.raises(container.DirectoryTooLarge):
+        AasxPackage(wide)
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", 64 * 1024 * 1024)
+    with AasxPackage(wide) as package:
+        assert "aasx/env.json" in package.names()
+
+
+def test_a_file_that_is_not_a_zip_is_still_not_a_zip(tmp_path, monkeypatch):
+    """The guard runs before the archive is opened, so it sees files that
+    are not archives. "Cannot find the directory" must not become "the
+    directory is too large" -- X1 tells an author to re-create the
+    package and X5 tells them it was refused, and only one of those is
+    true here."""
+    path = tmp_path / "not.aasx"
+    path.write_bytes(b"this is not a ZIP file at all")
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", 1)
+    ids = {f.id for f in runner.run(path).findings}
+    assert "X1" in ids and "X5" not in ids
+
+
+def test_the_guard_fails_towards_reading_the_file(tmp_path, monkeypatch):
+    """It reads the archive's own account of itself through a private
+    stdlib entry point, deliberately -- the alternative is a second
+    reading that can disagree with the opener. If that entry point ever
+    goes away, the bound goes away and the file is still read. A guard
+    that took its own blindness for a refusal would refuse files this
+    reader has always accepted.
+
+    Modelled as a `zipfile` with its private names removed and its public
+    ones intact, which is the shape such a Python would have. Patching
+    the real `_EndRecData` instead models nothing: `ZipFile` calls it
+    too, so the opener breaks in the same breath and the test proves only
+    that a broken stdlib breaks."""
+    path = _wide_archive(tmp_path / "fine.aasx", 10)
+    public_only = types.SimpleNamespace(
+        **{name: getattr(zipfile, name) for name in dir(zipfile)
+           if not name.startswith("_")})
+    assert not hasattr(public_only, "_EndRecData")
+    monkeypatch.setattr(container, "zipfile", public_only)
+    assert container._directory_bytes(path) is None, "the guard still measured"
+    assert runner.run(path).as_dict()["summary"]["judged"] is True
+
+
+def test_the_private_names_this_bound_leans_on_are_still_there():
+    """The tripwire. The bound is read through `zipfile._EndRecData` and
+    its `_ECD_*` offsets, which are private, undocumented and unchanged
+    for about twenty-five years. If a future Python moves them the test
+    above keeps passing -- the guard fails open, by design -- and this
+    one goes red in CI instead of the bound quietly disappearing at a
+    user's site."""
+    assert callable(getattr(zipfile, "_EndRecData", None))
+    assert zipfile._ECD_SIZE == 5
+
+
 def test_the_security_note_names_the_caps_it_promises():
     """SECURITY.md said the bound was the same packaged or bare. It is
     not: a container may deliver four times what a bare document may,
@@ -484,6 +672,12 @@ def test_the_security_note_names_the_caps_it_promises():
             "and %d MiB together" % (single, single, together)) in text
     assert container.MAX_TOTAL_PART_BYTES // container.MAX_PART_BYTES == 4
     assert "four times what a bare document may" in text
+    # And the third bound, which is not about bytes read at all. The page
+    # used to name it in the list of things it does *not* cover, so the
+    # sentence has to move as well as the number.
+    assert ("directory of names is bounded too, at %d MiB"
+            % (container.MAX_DIRECTORY_BYTES // 1024 ** 2)) in text
+    assert "and a ZIP's own directory" not in text
 
 
 @pytest.mark.parametrize("name,body", (

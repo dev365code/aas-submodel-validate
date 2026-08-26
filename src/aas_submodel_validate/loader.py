@@ -21,6 +21,7 @@ from . import container
 from .container import (
     AasxPackage,
     ContainerError,
+    DirectoryTooLarge,
     NoRelationships,
     PartTooLarge,
     RefusedContent,
@@ -233,6 +234,20 @@ def _load_aasx(path: Path) -> Loaded:
     loaded = Loaded(path=str(path), form="aasx")
     try:
         package = AasxPackage(path)
+    except DirectoryTooLarge as exc:
+        # Before its parent, and staged "bounds" rather than "zip": X1
+        # would tell the author to re-create the package, and there is
+        # nothing wrong with it to repair. This is a decision of ours.
+        loaded.errors.append(LoadError(
+            "bounds", str(exc), subject=str(path),
+            fix="This reader indexes no archive whose directory of names "
+                "comes to more than %d MiB -- a ZIP is indexed whole before "
+                "any of it is read, so the cost is paid on the names alone, "
+                "however little the entries hold. Remove what the package "
+                "does not need to carry. Nothing is wrong with what you "
+                "sent; it was refused, not judged."
+                % (container.MAX_DIRECTORY_BYTES // 1024 ** 2)))
+        return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("zip", str(exc)))
         return loaded

@@ -15,7 +15,10 @@ parser covers; every finding carries a remedy
 sentence; and the official example is pinned by name — defects and all.
 What this reader takes in is bounded whichever way a document arrives —
 one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB
-together — and what it refuses to read, it does not judge: `summary.complete`
+together, and a container's directory of names at 16 MiB, which is a
+different kind of cost: a ZIP is indexed whole before any of it is read,
+so it falls on how many names an archive declares rather than on what its
+entries hold — and what it refuses to read, it does not judge: `summary.complete`
 in the JSON report and a clause on the terminal summary say when the
 counts describe less than the whole input. `summary.judged` says the
 sharper thing beside it — whether anything reached the rules at all — and

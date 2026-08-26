@@ -10,7 +10,13 @@ reader takes in is bounded: one document at 64 MiB, and a container's
 parts at 64 MiB each and 256 MiB together — so a container may deliver
 four times what a bare document may. The total is asked before each part
 is decompressed, so a container already past it stops costing, and a part
-counts once however many relationships name it. What the bound does not
-cover: the memory a parse then costs, which is a multiple of the bytes
-read, and a ZIP's own directory. What it refuses to read, it does not
-judge, and the report says so. Validation performs no network access.
+counts once however many relationships name it. A container's directory
+of names is bounded too, at 16 MiB, and separately: a ZIP is indexed
+whole before any of it is read, so the cost falls on how many names the
+archive declares rather than on what its entries hold — an archive of
+800,000 empty entries weighed 69 MiB on disk and 523 MiB in memory, and
+was otherwise perfectly conformant. What the bound does not cover: the
+memory a parse then costs, which is a multiple of the bytes read. What it
+refuses to read, it does not judge, the report says so, and the run
+leaves by the could-not-run exit code rather than reporting a verdict it
+does not have. Validation performs no network access.

@@ -44,6 +44,30 @@ MAX_PART_BYTES = 64 * 1024 * 1024
 #: container carrying several environments and refuses the pathological.
 MAX_TOTAL_PART_BYTES = 4 * MAX_PART_BYTES
 
+#: And the archive's own account of itself, which costs before either of
+#: the caps above applies. `zipfile` builds one record per name the
+#: central directory declares, inside `ZipFile()`, while nothing has been
+#: decompressed and no part has been chosen. Measured on an archive that
+#: is otherwise perfect -- valid chain, conformant payload, a full
+#: verdict, only real template findings -- 800,000 empty entries weigh
+#: 68.7 MiB on disk and 523 MiB in memory: about thirteen times the
+#: directory's own bytes, linear, with no ceiling.
+#:
+#: The bound is on those bytes and not on the entry count, because the
+#: count is a number the file carries and nothing checks: understating it
+#: in the record and leaving the directory alone builds every entry
+#: anyway. The size is what `zipfile` acts on -- it reads exactly that
+#: many bytes and stops -- so understating *it* costs the attacker the
+#: entries they were trying to smuggle.
+#:
+#: A quarter of the single-part cap, in the same proportion
+#: `MAX_TOTAL_PART_BYTES` uses: thirteen times 16 MiB is about 208 MiB,
+#: under the 256 MiB this reader already lets a container's parts
+#: deliver. It admits a package declaring roughly 150,000 parts at
+#: sixty-character names; the two official example containers declare 13
+#: and 16, for directories of 1,119 and 1,331 bytes.
+MAX_DIRECTORY_BYTES = MAX_PART_BYTES // 4
+
 #: What zipfile raises for an archive it cannot make sense of.
 #:
 #: Named once because it was written twice and the two disagreed. Opening
@@ -274,6 +298,16 @@ class PartTooLarge(ContainerError):
     """
 
 
+class DirectoryTooLarge(ContainerError):
+    """The archive declares more names than this reader will index.
+
+    A sibling of PartTooLarge and for the same reason: nothing here is
+    malformed. The archive may be perfectly well-formed and its parts all
+    honest, and it is still more than a validator meant for an air-gapped
+    machine will take in before it has read a byte of payload.
+    """
+
+
 class UnreadablePart(ContainerError):
     """The archive names a part but cannot yield its bytes.
 
@@ -292,11 +326,45 @@ def _rels_name(source: str) -> str:
     return posixpath.join(directory, "_rels", base + ".rels")
 
 
+def _directory_bytes(path):
+    """How many bytes of central directory `zipfile` is about to read, or
+    None if it cannot be asked.
+
+    Asked *through* `zipfile`'s own end-of-directory reader rather than by
+    reading the record again here. That is the whole design: a second
+    reading can disagree with the opener, and where it disagrees it
+    refuses files the opener would have read. A file comment holding the
+    end-of-directory signature is the case that decides it -- `zipfile`'s
+    search lands inside the comment, reports a directory of nothing, and
+    then builds nothing, so the two agree; a more careful reader would
+    find the real record and refuse an archive `zipfile` opens happily.
+    The same argument `xml_as_utf8` makes above, and `part` below.
+
+    The entry point is private. Everything unexpected -- a file that is
+    not an archive, a truncated one, a Python that has moved it -- comes
+    back None and the archive is opened as it always was: the bound goes
+    away before the reading does. `test_the_private_names_this_bound
+    _leans_on_are_still_there` is what notices, in CI rather than at a
+    user's.
+    """
+    try:
+        with open(path, "rb") as handle:
+            end = zipfile._EndRecData(handle)
+        return None if end is None else end[zipfile._ECD_SIZE]
+    except Exception:  # noqa: BLE001 - failing open is the point
+        return None
+
+
 class AasxPackage:
     """An opened .aasx. Use as a context manager, like ZipFile."""
 
     def __init__(self, path):
         self.path = Path(path)
+        declared = _directory_bytes(self.path)
+        if declared is not None and declared > MAX_DIRECTORY_BYTES:
+            raise DirectoryTooLarge(
+                "%s: its central directory declares %d bytes of names, above "
+                "the %d byte limit" % (self.path, declared, MAX_DIRECTORY_BYTES))
         try:
             self._zip = zipfile.ZipFile(self.path)
         except UNREADABLE as exc:

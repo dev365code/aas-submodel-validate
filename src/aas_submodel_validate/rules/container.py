@@ -109,11 +109,19 @@ def x5_within_the_readers_bounds(ctx):
     the container": a bare document has neither, and a single Submodel
     has no split at all -- telling its author to divide it is the same
     mistake in a smaller place.
+
+    Per-input, and it was per-*form*: an error carrying a remedy of its
+    own had it thrown away for one built from the shape of the file. An
+    archive refused for its directory of names was told about document
+    size and part totals, neither of which it had crossed, and instructed
+    to send one part on its own -- which does not help, because the
+    directory is indexed whichever part you ask for. Where the loader
+    wrote a sentence about this refusal, it is the one that goes out.
     """
     for error in ctx.loaded.errors:
         if error.stage == "bounds":
             yield Violation(error.message, subject=error.subject, detail=error.detail,
-                            fix=_bounds_remedy(ctx.loaded.form))
+                            fix=error.fix or _bounds_remedy(ctx.loaded.form))
 
 
 @rule("X4", kind="container", prio="SHOULD",
