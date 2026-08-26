@@ -151,6 +151,31 @@ def test_a_nameless_child_of_a_collection_is_not_claimed_either(tmp_path):
                 if rule_id.startswith("HD")]
 
 
+def test_a_leaf_wearing_a_lists_identifier_is_not_walked_into(tmp_path):
+    """`child_of` answers with whatever matches the row, and matching does
+    not ask about kind -- so a Property wearing a list's identifier is
+    what the hand rules get handed, and `children_of` is then asked for
+    its children. Its value is a string.
+
+    The refusal that stops this is one line in `children_of` and nothing
+    reached it: deleting it left the suite green while a run over such a
+    file ended in a traceback dressed as a finding. Placed first among a
+    Document's children, because `child_of` takes the first match and the
+    real DocumentIds is still there behind it."""
+    env = copy.deepcopy(hd_env())
+    _document(env)["value"].insert(0, {
+        "modelType": "Property", "valueType": "xs:string", "value": "not a list",
+        "semanticId": {"type": "ExternalReference", "keys": [{
+            "type": "GlobalReference",
+            "value": hd_tables.BY_LABEL["DocumentIds"]["sid"]}]}})
+    report = runner.run(_write(tmp_path, env))
+    assert [f.id for f in report.findings
+            if "could not run" in f.violation.message] == []
+    # And the walk still says what is wrong with the file: two elements
+    # answer to a row that admits one.
+    assert "HD-E03" in {f.id for f in report.findings}
+
+
 # -- one defect must not silence the next element ---------------------------
 
 def test_a_kind_violation_does_not_silence_the_element_beside_it(tmp_path):
