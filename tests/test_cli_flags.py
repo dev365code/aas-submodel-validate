@@ -9,6 +9,10 @@ import pytest
 from aas_submodel_validate.cli import main
 from builders import env_json, hd_env
 
+# The one copy of the published shape. Imported rather than repeated,
+# because two golden lists disagree the day one of them is updated.
+from test_model import FINDING_KEYS, REPORT_KEYS, SUMMARY_KEYS
+
 
 def _write(tmp_path, payload: bytes):
     path = tmp_path / "env.json"
@@ -105,3 +109,19 @@ def test_a_run_with_a_note_does_not_call_itself_ok(tmp_path, capsys):
     clean.write_bytes(json.dumps(hd_env()).encode("utf-8"))
     assert main([str(clean)]) == 0
     assert "rules registered)" in capsys.readouterr().out
+
+
+def test_the_json_a_pipeline_reads_is_the_shape_it_was_promised(tmp_path, capsys):
+    """`as_dict` is unit-tested against the shape `schemaVersion: 1`
+    names, and that proves the model can produce it. This is the path a
+    consumer actually uses -- and nothing here read the flag's output at
+    all, so `-f json` could have printed anything that did not crash."""
+    path = _write(tmp_path, env_json("urn:nobody:recognises:this"))
+    assert main([path, "-f", "json"]) == 1
+    document = json.loads(capsys.readouterr().out)
+    assert set(document) == REPORT_KEYS
+    assert set(document["summary"]) == SUMMARY_KEYS
+    assert document["findings"], "no finding, so the finding shape went unchecked"
+    for finding in document["findings"]:
+        assert set(finding) == FINDING_KEYS
+    assert document["path"] == path
