@@ -141,6 +141,14 @@ def _sniff(raw: bytes):
     if len(raw) < 4:
         return None
     null = tuple(byte == 0 for byte in raw[:4])
+    # Named rather than folded into the fall-through below, and it does
+    # not change the answer: neither UTF-32 shape equals either UTF-16
+    # shape, so deleting these two lines leaves them reaching the same
+    # `return None` at the end. What actually separates the two families
+    # is asking four bytes instead of two -- `3C 00` opens both. This
+    # says which four-byte shapes were considered and rejected, so that a
+    # later reader does not have to re-derive it from the ones that were
+    # accepted.
     if null in ((False, True, True, True), (True, True, True, False)):
         return None                                 # unmarked UTF-32
     if null == (False, True, False, True):

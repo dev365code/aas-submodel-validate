@@ -655,6 +655,77 @@ def test_the_private_names_this_bound_leans_on_are_still_there():
     assert zipfile._ECD_SIZE == 5
 
 
+#: The prolog walk decides two ways, and only one of them was asked.
+#: Refusing to read a DTD is the cheap direction to be wrong in; saying a
+#: document declares one when it does not is the expensive one -- the
+#: finding is false, and its remedy ("Remove the DTD") names something
+#: that is not there.
+@pytest.mark.parametrize("body,why", (
+    (b"no angle brackets at all", "nothing that could open a declaration"),
+    (b"<!--a comment that never closes <!DOCTYPE x>", "an unclosed comment"),
+    (b"<?a processing instruction that never closes <!DOCTYPE x>", "an unclosed PI"),
+    (b"", "no bytes at all"),
+))
+def test_a_document_that_declares_no_doctype_is_not_refused_for_one(body, why):
+    """Each of these leaves the walk with no declaration to find, and the
+    two ways it can end -- running out of `<`, and running off the end of
+    the prolog -- both have to answer no.
+
+    The unclosed comment is the one that decides it: the DOCTYPE inside
+    is inside a comment, which is where a parser will never look, so
+    reporting it would refuse a file for the text of a remark."""
+    assert not container.declares_doctype(body), why
+
+
+def test_a_declaration_behind_a_comment_is_found_without_a_declaration_in_front(tmp_path):
+    """The walk skips comments rather than stopping at the first `<`, and
+    the fixtures for that all open with `<?xml ...?>` -- so skipping the
+    PI and skipping the comment came to the same thing and the comment
+    step was never asked on its own.
+
+    An XML declaration is optional. A document that opens with a comment,
+    with something tag-shaped inside it, and carries its DOCTYPE behind
+    that, is the shape the walk exists for."""
+    path = tmp_path / "env.xml"
+    path.write_bytes(b"<!--see <environment> below--><!DOCTYPE environment []>"
+                     b'<environment xmlns="https://admin-shell.io/aas/3/0"/>')
+    assert [e.message for e in loader.load(path).errors] == [
+        "the XML declares a DOCTYPE, which is refused"]
+
+
+def test_a_container_at_the_total_is_still_read(tmp_path, monkeypatch):
+    """The other edge of the total, which the single-part cap has had
+    since it was written and this one never did. A container whose parts
+    come to exactly the total is inside it; refusing there would turn the
+    bound into a bound on one byte less, silently."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 256 * 1024)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 3 * 64 * 1024)
+    path = _spec_parts_archive(tmp_path / "attotal.aasx", count=3, each=64 * 1024)
+    with AasxPackage(path) as package:
+        read = sum(len(package.read("aasx/env%d.json" % i)) for i in range(3))
+    assert read == container.MAX_TOTAL_PART_BYTES
+
+
+def test_a_part_read_twice_at_the_total_is_not_a_refusal(tmp_path, monkeypatch):
+    """A part counts once however many relationships name it -- X4 walks
+    the chain again -- and the comment beside the counter says why:
+    counting it twice made the refusal depend on which rule happened to
+    cross the line.
+
+    The total is asked twice, once before a part is decompressed and once
+    after, and only the second edge was pinned. At exactly the total the
+    two questions differ: a re-read adds nothing, so it must pass, and a
+    pre-check that refuses on equality turns a container this reader has
+    already accepted into one it will not finish reading."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 256 * 1024)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 3 * 64 * 1024)
+    path = _spec_parts_archive(tmp_path / "reread.aasx", count=3, each=64 * 1024)
+    with AasxPackage(path) as package:
+        for index in range(3):
+            package.read("aasx/env%d.json" % index)
+        assert len(package.read("aasx/env0.json")) == 64 * 1024
+
+
 def test_the_security_note_names_the_caps_it_promises():
     """SECURITY.md said the bound was the same packaged or bare. It is
     not: a container may deliver four times what a bare document may,
