@@ -23,7 +23,9 @@ is released, and the CHANGELOG says whether it has been.
 Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
 `.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
 severity, 1 at least one error, 2 could not run — warnings and info do
-not fail a build unless you ask with `-W`. One dependency
+not fail a build unless you ask with `-W`. `-f json` writes a versioned
+machine-readable report, described in
+[docs/report-schema.md](docs/report-schema.md). One dependency
 ([aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)),
 pure Python, no C extensions — installable from a USB stick.
 
@@ -93,7 +95,9 @@ re-invented here.
 
 What it refuses to do is written down in [docs/scope.md](docs/scope.md);
 every chosen reading of the template, with evidence, in
-[docs/divergences.md](docs/divergences.md).
+[docs/divergences.md](docs/divergences.md); the shape of the JSON report,
+and what its version number promises, in
+[docs/report-schema.md](docs/report-schema.md).
 
 ## Licence
 

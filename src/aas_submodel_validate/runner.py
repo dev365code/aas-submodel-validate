@@ -132,4 +132,10 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # parse, a document over the bound. What was not read was not judged,
     # and the report is the only place that can say so.
     report.complete = not loaded.errors
+    # What was asked, recorded beside what was found: the flags move the
+    # verdict, so a document that does not carry them cannot be compared
+    # with another.
+    report.profile = profile
+    report.strict_meta = strict_meta
+    report.allow_unmatched = allow_unmatched
     return report

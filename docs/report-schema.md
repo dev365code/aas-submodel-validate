@@ -1,0 +1,111 @@
+# The JSON report
+
+`smtv -f json` writes one JSON object per run, on stdout. This is what is
+in it, and what the version number at the top of it promises.
+
+```json
+{
+  "schemaVersion": 1,
+  "toolVersion": "0.1.0",
+  "path": "machine-docs.aasx",
+  "ok": false,
+  "options": {"profile": null, "strictMeta": false, "allowUnmatched": false},
+  "summary": {"errors": 1, "warnings": 0, "info": 0,
+              "rulesChecked": 123, "complete": true},
+  "notes": [],
+  "findings": [
+    {
+      "rule": "HD-D8",
+      "kind": "template",
+      "severity": "error",
+      "priority": "MUST",
+      "message": "StatusSetDate is not a valid xs:date",
+      "subject": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]",
+      "detail": "'06.02.2020'",
+      "fix": "Write StatusSetDate as YYYY-MM-DD (xs:date), e.g. 2020-02-06.",
+      "title": "StatusSetDate is a calendar date",
+      "spec": "IDTA 02004-2-0 §2.8 (xs:date)"
+    }
+  ]
+}
+```
+
+## What `schemaVersion` promises
+
+`schemaVersion` is the shape's number, not the tool's. It stays at `1`
+while every key below keeps its name and its meaning. A key may be
+*added* without the version moving — a consumer that does not know the
+key reads exactly what it read before — so read by key and ignore what
+you do not recognise. A key being renamed or removed, or a value
+changing what it means, moves the version.
+
+`toolVersion` is the producer's version, and answers the other question:
+which build wrote this report. The two move independently, and a bug
+report needs the second one.
+
+## The top level
+
+| key | type | |
+|---|---|---|
+| `schemaVersion` | integer | The shape. `1`. |
+| `toolVersion` | string | The version of `aas-submodel-validate` that wrote the report. |
+| `path` | string | The input, as it was given on the command line. |
+| `ok` | boolean | No finding at `error` severity. This is what the exit code is derived from — `-W` raises the bar for the exit code without changing `ok`. |
+| `options` | object | What was asked of this run; see below. |
+| `summary` | object | Counts; see below. |
+| `notes` | array of string | Things worth saying once about the run rather than about the file — a `--profile` that named a template nothing here answers to, or an unmatched submodel that `--allow-unmatched` let through. |
+| `findings` | array of object | Every finding, in reading order; see below. |
+
+## `options`
+
+The same file comes back `ok` under one set of flags and not under
+another, so a report that did not carry its flags could not be compared
+with another report.
+
+| key | type | |
+|---|---|---|
+| `profile` | string or null | The `--profile` value, or `null` when the choice was left to the default. |
+| `strictMeta` | boolean | `--strict-meta`: the relayed metamodel channel reports at `MUST` rather than `SHOULD`. |
+| `allowUnmatched` | boolean | `--allow-unmatched`: a submodel this tool does not recognise is a note rather than a finding. |
+
+## `summary`
+
+| key | type | |
+|---|---|---|
+| `errors` | integer | Findings at `error` severity. |
+| `warnings` | integer | Findings at `warning` severity. |
+| `info` | integer | Findings at `info` severity. |
+| `rulesChecked` | integer | How many rules ran. Not the number of findings. |
+| `complete` | boolean | Whether everything this run was handed got read. `false` means an archive that would not open, a part that would not parse, or a document over the reader's bound — what was not read was not judged, and a report that only said `ok: false` could not tell you which. |
+
+Gate on `ok` and on `complete`. A refused input arrives as `ok: false`
+with one error and every rule counted, which is exactly what a judged
+file that failed looks like.
+
+## `findings`
+
+Sorted for a person reading top to bottom: `error` before `warning`
+before `info`; within a severity, `container` before `template` before
+`lint` before `meta`, because a file can draw dozens of relayed
+metamodel messages and they must not bury the template findings the
+reader came for. The order is total, so two runs over one file cannot
+differ.
+
+| key | type | |
+|---|---|---|
+| `rule` | string | The rule id — stable, and the thing to filter on. |
+| `kind` | string | `container`, `template`, `lint` or `meta`. |
+| `severity` | string | `error`, `warning` or `info` — this project's reading of the priority. |
+| `priority` | string | The specification's own RFC 2119 word: `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `RECOMMENDED`, `SHOULD`, `MAY` or `OPTIONAL`. Both are published so a consumer that wants to re-derive the severity can. |
+| `message` | string | What is wrong. |
+| `subject` | string or null | Where: an idShort path, an identifier, or a part name. `null` where the finding is about the document as a whole. |
+| `detail` | string or null | Context — usually the value that was seen. |
+| `fix` | string | One imperative sentence: what to change so this stops being reported. Every finding carries one. |
+| `title` | string | The rule's standing description, the same for every finding it produces. |
+| `spec` | string or null | Where the requirement lives — the template and section. |
+
+`kind` is `meta` for findings relayed from
+[aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s
+metamodel verification, which this project delegates to and never
+re-implements. Those carry the rule id `META` and the constraint's own
+name in the message.

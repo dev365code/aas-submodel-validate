@@ -9,6 +9,7 @@ import json
 
 import pytest
 
+from aas_submodel_validate import __version__
 from aas_submodel_validate.model import Finding, Report, Rule, Severity, Violation
 
 
@@ -46,10 +47,24 @@ def test_findings_serialise_for_machines():
 #: consumer that does not know the key reads what it read before.
 #: Renaming or removing one is not. Both changes pass through this list,
 #: which is the whole point: somebody has to say so.
-REPORT_KEYS = {"schemaVersion", "path", "ok", "summary", "notes", "findings"}
-SUMMARY_KEYS = {"errors", "warnings", "info", "rulesChecked", "complete"}
-FINDING_KEYS = {"rule", "kind", "severity", "priority", "message", "subject",
-                "detail", "fix", "title", "spec"}
+#: Two lists, because one cannot tell a compatible change from a
+#: breaking one. With a single golden, renaming `spec` and adding
+#: `generatedBy` are the same diff -- edit the code, edit the list, stay
+#: on version 1 -- and only one of those is allowed to.
+#:
+#: This is what `schemaVersion: 1` promises will not disappear. A diff
+#: touching it is a diff that has to answer for the version.
+V1_REQUIRED = {"schemaVersion", "path", "ok", "summary", "notes", "findings"}
+V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked"}
+V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
+              "detail", "fix", "title", "spec"}
+
+#: And this is everything the document carries today. Additions land here
+#: alone and leave the version where it is.
+REPORT_KEYS = V1_REQUIRED | {"toolVersion", "options"}
+SUMMARY_KEYS = V1_SUMMARY | {"complete"}
+FINDING_KEYS = set(V1_FINDING)
+OPTIONS_KEYS = {"profile", "strictMeta", "allowUnmatched"}
 
 
 def _report():
@@ -63,9 +78,38 @@ def _report():
 
 def test_the_report_has_the_shape_version_one_names():
     document = _report().as_dict()
+    # What may not go, and then what is actually there. A rename passes
+    # the second on its own -- edit the code, edit the list -- and fails
+    # the first, which is where the version question gets asked.
+    assert set(document) >= V1_REQUIRED
+    assert set(document["summary"]) >= V1_SUMMARY
+    assert set(document["findings"][0]) >= V1_FINDING
     assert set(document) == REPORT_KEYS
     assert set(document["summary"]) == SUMMARY_KEYS
     assert set(document["findings"][0]) == FINDING_KEYS
+    assert set(document["options"]) == OPTIONS_KEYS
+
+
+def test_the_summary_counts_what_it_says_it_counts():
+    """Names and types leave the numbers free: swapping `errors` and
+    `warnings`, or counting findings where the registry was meant, was
+    invisible. A consumer gates a build on these."""
+    document = _report().as_dict()
+    assert document["summary"] == {"errors": 1, "warnings": 0, "info": 0,
+                                   "rulesChecked": 123, "complete": True}
+
+
+def test_the_report_says_what_was_asked_of_it():
+    """The same file comes back `ok` under one set of flags and not under
+    another. Two documents said nothing about which run they were, so a
+    reader comparing them had the prose of a finding's message and
+    nothing else."""
+    report = _report()
+    report.profile, report.strict_meta, report.allow_unmatched = "02035-2", True, False
+    document = report.as_dict()
+    assert document["options"] == {"profile": "02035-2", "strictMeta": True,
+                                   "allowUnmatched": False}
+    assert document["toolVersion"] == __version__
 
 
 def test_the_version_says_which_shape_it_is():

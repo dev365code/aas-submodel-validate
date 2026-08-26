@@ -126,6 +126,15 @@ class Report:
     #: nothing was judged. A consumer had the string "X5" and nothing
     #: else to tell the two apart.
     complete: bool = True
+    #: What was asked of this run. The same file comes back `ok` under one
+    #: set of flags and not under another -- the official example passes
+    #: by default and fails under `--strict-meta` -- and a profile decides
+    #: which of two templates answers at all. Two such documents were
+    #: indistinguishable, and a reader comparing them had only the prose
+    #: inside a finding's message to go on.
+    profile: Optional[str] = None
+    strict_meta: bool = False
+    allow_unmatched: bool = False
 
     def count(self, severity: Severity) -> int:
         return sum(1 for f in self.findings if f.severity is severity)
@@ -135,10 +144,21 @@ class Report:
         return self.count(Severity.ERROR) == 0
 
     def as_dict(self) -> dict:
+        from . import __version__
+
         return {
             "schemaVersion": 1,
+            # The shape's number and the producer's are different numbers.
+            # A consumer that finds a defect in a report needs to say which
+            # build wrote it, and `schemaVersion` cannot answer that.
+            "toolVersion": __version__,
             "path": self.path,
             "ok": self.ok,
+            "options": {
+                "profile": self.profile,
+                "strictMeta": self.strict_meta,
+                "allowUnmatched": self.allow_unmatched,
+            },
             "summary": {
                 "errors": self.count(Severity.ERROR),
                 "warnings": self.count(Severity.WARNING),
