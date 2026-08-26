@@ -38,6 +38,20 @@ PRIO_SEVERITY = {
 }
 
 
+#: What a rule is about, in the order a report is read: the container the
+#: submodel arrived in, then the template it claims to be, then this
+#: project's informational lints, then the metamodel channel relayed from
+#: aas-core3.0 -- 77 relayed messages must not bury the two template
+#: findings the reader came for.
+#:
+#: One list, because it was two and neither could see the other: the
+#: reading order held its own copy, and a kind outside that copy sorted
+#: into the middle of it. `runner` derives its order from this and
+#: `registry` refuses anything outside it, so a fifth kind is a change to
+#: this line and nowhere else.
+KINDS = ("container", "template", "lint", "meta")
+
+
 @dataclass(frozen=True)
 class Violation:
     """One concrete thing that is wrong, produced by a rule."""

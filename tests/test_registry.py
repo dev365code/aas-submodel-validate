@@ -5,7 +5,7 @@ import pytest
 
 from aas_submodel_validate import registry
 from aas_submodel_validate import rules as _rules  # noqa: F401 - registers
-from aas_submodel_validate.model import Violation
+from aas_submodel_validate.model import KINDS, Violation
 from aas_submodel_validate.registry import all_rules
 
 
@@ -43,6 +43,46 @@ def test_every_registered_rule_names_its_remedy(monkeypatch):
         @registry.rule("Z2", kind="container", prio="MUST", title="no remedy")
         def bad(ctx):
             return ()
+
+
+def test_a_kind_the_report_cannot_read_is_refused(monkeypatch):
+    """`kind` reaches two table lookups and a published field. The
+    reading order's lookup used to fall back, so a rule registered as
+    `tempalte` sorted where lints sort -- into the middle of the channels
+    a reader is scanning rather than beside the other template findings
+    -- and the JSON report carried the typo out to whoever reads `kind`.
+    Nothing anywhere said so."""
+    monkeypatch.setattr(registry, "_registry", {})
+    with pytest.raises(ValueError, match="tempalte"):
+        @registry.rule("Z3", kind="tempalte", prio="MUST", title="a typo", fix="f")
+        def bad(ctx):
+            return ()
+
+
+def test_a_priority_that_scores_as_nothing_is_refused(monkeypatch):
+    """Worse than the kind, because it moves the verdict: severity is
+    looked up from `prio`, and the lookup fell back to *warning*. A MUST
+    typed `MSUT` stopped counting as an error, so the file it condemned
+    came back `ok` and the run exited 0 -- a validator silently agreeing
+    with a document it had just found a MUST violation in."""
+    monkeypatch.setattr(registry, "_registry", {})
+    with pytest.raises(ValueError, match="MSUT"):
+        @registry.rule("Z4", kind="template", prio="MSUT", title="a typo", fix="f")
+        def bad(ctx):
+            return ()
+
+
+def test_the_vocabulary_the_gate_admits_is_the_one_reports_use(monkeypatch):
+    """The gate is only as good as the list behind it: a list that grew a
+    fifth kind nobody reads would admit it and the reading order would
+    put it last without anyone deciding that. What is registered today,
+    against what may be."""
+    monkeypatch.setattr(registry, "_registry", {})
+    for kind in KINDS:
+        @registry.rule("Z-%s" % kind, kind=kind, prio="MUST", title=kind, fix="f")
+        def fine(ctx):
+            return ()
+    assert {rule.kind for rule in registry.all_rules()} == set(KINDS)
 
 
 #: Every rule-id namespace this tool registers, as the whole shape of an

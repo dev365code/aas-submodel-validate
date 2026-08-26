@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 from aas_submodel_validate import runner
+from aas_submodel_validate.model import Finding, Rule, Violation
 from builders import build_aasx, hd_env
 
 EXAMPLE = Path(__file__).resolve().parent / "corpus/idta/02004/example.json"
@@ -70,27 +71,87 @@ def test_the_kind_decides_before_the_id(tmp_path):
     assert warnings.index("HDL5") < warnings.index("META")
 
 
+def _pair_alike_but_for(component, values):
+    """Two findings from one rule about one subject, differing in exactly
+    one component of the key -- the smallest input that can say whether
+    that component is being asked at all."""
+    rule = Rule(id="T1", kind="template", prio="MUST", title="t", spec=None,
+                fn=lambda ctx: ())
+    alike = {"message": "the value is wrong", "subject": "urn:x"}
+    return [Finding(rule, Violation(**{**alike, component: value}))
+            for value in values]
+
+
 def test_no_two_findings_share_a_place_in_the_order(tmp_path):
     """"Total order down to the message so two runs cannot differ" is a
     claim about ties, and a tie is what a sort hands back to whatever
-    order the findings arrived in. Five pairs here agree on severity,
-    kind, id and subject; the message is the only thing left to separate
-    them.
+    order the findings arrived in.
 
-    Dropping the message from the key is the one mutation of this
-    ordering that still lives, and it lives because it cannot be seen:
-    the relayed channel emits `AASd-109` before `AASd-120`, which is also
-    the order the message would sort them into, so the tie resolves the
-    same way with the component and without it. What is asserted instead
-    is the property the component exists for -- the key is total -- and
-    that the tie is real, so this stops being a sentence about nothing
-    the day an input arrives in the other order."""
+    Asked of `runner._reading_order`, not of this file's copy of it. The
+    copy is what the order test above needs -- a second opinion about
+    where findings belong -- and it is exactly the wrong thing here,
+    because this is a claim about the real key: computed from the copy,
+    dropping the message from `_reading_order` changed nothing and the
+    mutation lived.
+
+    Two halves, because the fixture can only answer the first. Whether
+    the key separates everything a real run produces needs a real run.
+    Whether the message is what separates two findings alike in every
+    other component needs two such findings, and the fixture supplied
+    them by accident: the relayed channel happens to report two
+    constraints against one path. Asserting that it keeps doing so made
+    a test of this ordering fail for work on that channel, so the pair
+    that needs the message is built here instead."""
     report = runner.run(_four_kinds_at_one_severity(tmp_path))
-    keys = [_as_read(f) for f in report.findings]
+    keys = [runner._reading_order(f) for f in report.findings]
     assert len(set(keys)) == len(keys), "two findings share a place in the order"
-    without_message = [key[:-1] for key in keys]
-    assert len(set(without_message)) < len(without_message), \
-        "nothing here needs the message to be separated, so this asserts nothing"
+
+    for component, values in (("message", ("first thing", "second thing")),
+                              ("subject", ("urn:a", "urn:b"))):
+        one, other = _pair_alike_but_for(component, values)
+        assert runner._reading_order(one) != runner._reading_order(other), \
+            "two findings alike but for their %s land in one place" % component
+
+
+def test_a_kind_the_order_does_not_know_goes_last():
+    """Registration refuses a kind outside the vocabulary, so a
+    registered rule cannot get here; this project builds a few rules by
+    hand and they can.
+
+    The fallback used to be the position lints occupy, which put an
+    unrecognised kind in the middle of the channels a reader scans --
+    between this project's own findings and the relayed ones, where it
+    reads as if somebody had placed it there. After everything known is
+    the only position that claims nothing."""
+    unknown = Rule(id="T1", kind="a kind from the future", prio="MUST",
+                   title="t", spec=None, fn=lambda ctx: ())
+    last_known = Rule(id="T1", kind=KIND[-1], prio="MUST", title="t",
+                      spec=None, fn=lambda ctx: ())
+    violation = Violation("the value is wrong", subject="urn:x")
+    assert (runner._reading_order(Finding(unknown, violation))
+            > runner._reading_order(Finding(last_known, violation)))
+
+
+def test_a_rule_that_stops_halfway_still_leaves_a_report_that_can_be_read(tmp_path):
+    """A rule yields findings as it goes, so one that raises on its third
+    subject has already produced two -- and the crash is reported under
+    the same id, at the same severity, with no subject of its own.
+
+    Which puts `None` beside a string in the one component of the key
+    that is allowed to be absent, and a tuple sort compares them: the
+    guard that turns it into `""` is the whole reason this run ends in a
+    report rather than a traceback. Nothing measured it, and removing it
+    left the suite green."""
+    def stops_halfway(ctx):
+        yield Violation("the value is wrong", subject="urn:x")
+        raise KeyError("the third subject")
+
+    rule = Rule(id="T1", kind="template", prio="MUST", title="t", spec=None,
+                fn=stops_halfway, fix="mend it")
+    findings = runner.execute([rule], ctx=None)
+    assert [f.violation.subject for f in findings] == ["urn:x", None], \
+        "this no longer puts an absent subject beside a present one"
+    assert sorted(findings, key=runner._reading_order)
 
 
 def test_this_fixture_would_notice_the_sort_going_away(tmp_path, monkeypatch):
@@ -112,6 +173,12 @@ def test_errors_lead_and_meta_trails(tmp_path):
     # (idShort on a list child), one lint info (reference type)
     documents = submodel["submodelElements"][0]
     documents["value"][0]["idShort"] = "Datasheet"
+    # The info. Its comment above was written before it was, and for a
+    # while it said so alone: no fixture anywhere produced an `info`
+    # finding in a sorted report, so `info`'s rank was a number nothing
+    # read. It could be moved to the front -- lints above the errors --
+    # with the suite green.
+    documents["semanticId"]["type"] = "ModelReference"
     # a lint warning of our own, so the kind order below has two kinds to
     # order: the template's own §2.3 spelling draws HDL5. Without it every
     # warning in this fixture came from the metamodel channel, and any
@@ -131,6 +198,8 @@ def test_errors_lead_and_meta_trails(tmp_path):
     path.write_bytes(json.dumps(env).encode("utf-8"))
     report = runner.run(path)
     severities = [str(f.severity) for f in report.findings]
+    assert set(severities) == set(SEVERITY), \
+        "this fixture no longer carries all three severities, so it ranks two"
     assert severities == sorted(severities, key=("error", "warning", "info").index)
     kinds = [f.rule.kind for f in report.findings if str(f.severity) == "warning"]
     assert "meta" in kinds and set(kinds) != {"meta"}, \

@@ -13,7 +13,7 @@ from aas_core3 import verification
 
 from . import rules  # noqa: F401  - importing registers every rule
 from .loader import Loaded, load
-from .model import Finding, Report, Rule, Violation
+from .model import KINDS, Finding, Report, Rule, Violation
 from .registry import all_rules
 from .rules import detect
 
@@ -82,13 +82,19 @@ def _meta_findings(loaded: Loaded, strict: bool):
 #: our own channels before the relayed metamodel one, because 77 relayed
 #: constraint messages must not bury the two template findings the
 #: reader came for. Total down to the message, so two runs cannot differ.
+#: Derived from `model.KINDS`, not restated: this was a second copy, and
+#: a kind missing from it sorted as if it were a lint -- into the middle
+#: of the reader's own channels rather than after them. Registration
+#: refuses a kind outside the vocabulary, so the fallback below is
+#: unreachable for a registered rule; it stays for the ones this project
+#: builds by hand, and it sends what it does not recognise to the end.
 _SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
-_KIND_ORDER = {"container": 0, "template": 1, "lint": 2, "meta": 3}
+_KIND_ORDER = {kind: position for position, kind in enumerate(KINDS)}
 
 
 def _reading_order(finding: Finding):
     return (_SEVERITY_ORDER[str(finding.severity)],
-            _KIND_ORDER.get(finding.rule.kind, 2),
+            _KIND_ORDER.get(finding.rule.kind, len(KINDS)),
             finding.id,
             finding.violation.subject or "",
             finding.violation.message)
