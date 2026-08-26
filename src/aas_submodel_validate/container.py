@@ -44,17 +44,40 @@ MAX_PART_BYTES = 64 * 1024 * 1024
 #: container carrying several environments and refuses the pathological.
 MAX_TOTAL_PART_BYTES = 4 * MAX_PART_BYTES
 
-_DOCTYPE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
-
 #: Byte order marks, longest first, because a UTF-32 mark begins with a
 #: UTF-16 one and the order is what tells them apart.
-_BOMS = ((b"\xff\xfe\x00\x00", "utf-32-le"), (b"\x00\x00\xfe\xff", "utf-32-be"),
-         (b"\xff\xfe", "utf-16-le"), (b"\xfe\xff", "utf-16-be"),
-         (b"\xef\xbb\xbf", "utf-8-sig"))
+#:
+#: The UTF-32 rows are here to be *recognised*, not read. The parser
+#: refuses UTF-32 whether it is marked or not, so decoding it here would
+#: admit documents nothing else in the ecosystem will open -- and a
+#: validator calling a file conformant that no other reader can parse has
+#: done the worst thing it can do. Dropping the rows instead is not an
+#: option either: `FF FE 00 00` would then match the UTF-16 mark two rows
+#: below and be read as something it is not.
+#:
+#: The UTF-16 rows name `utf-16` rather than a byte order, because that
+#: codec consumes the mark it just matched on. `utf-16-le` leaves it
+#: behind as U+FEFF, in the one position where a leading character
+#: changes what the rest of this module is looking at.
+#: A UTF-8 mark is recognised for the same reason and read for none: the
+#: bytes behind it already are what everything downstream wants, and the
+#: parser skips the mark itself. Every official AASX in the corpus is
+#: marked UTF-8, so this is the row most documents take -- and the one
+#: where doing nothing is the whole job.
+_BOMS = ((b"\xff\xfe\x00\x00", None), (b"\x00\x00\xfe\xff", None),
+         (b"\xff\xfe", "utf-16"), (b"\xfe\xff", "utf-16"),
+         (b"\xef\xbb\xbf", None))
 
 #: An encoding declaration that survived a decode would contradict the
 #: bytes it is attached to, so it goes with the encoding it named.
-_DECLARED_ENCODING = re.compile(r'(<\?xml[^>]*?)\s+encoding\s*=\s*(["\'])[^"\']*\2')
+#:
+#: Anchored, because `count=1` takes the first match *anywhere*. A
+#: document carrying a byte order mark and no declaration -- the shape
+#: the official 02003 payload has -- offers no prolog to match, so the
+#: first `encoding="..."` in its content was being deleted instead. This
+#: project reads what it is given and transforms nothing (docs/scope.md).
+_DECLARED_ENCODING = re.compile(
+    r'\A(﻿?<\?xml[^?>]*?)\s+encoding\s*=\s*(["\'])[^"\']*\2')
 
 
 def _sniff(raw: bytes):
@@ -97,10 +120,14 @@ def xml_as_utf8(raw: bytes) -> bytes:
     encoding they claim come back untouched: the parser will refuse them
     too, and refusing here instead would be this reader inventing a
     verdict.
+
+    Untouched is the common case and the intended one. Only a document
+    the parser reads as UTF-16 is rewritten, because only there do the
+    bytes downstream needs differ from the bytes that arrived.
     """
     for bom, encoding in _BOMS:
         if raw.startswith(bom):
-            return _as_utf8(raw, encoding)
+            return raw if encoding is None else _as_utf8(raw, encoding)
     encoding = _sniff(raw)
     if encoding is not None:
         return _as_utf8(raw, encoding)
@@ -116,14 +143,41 @@ def _as_utf8(raw: bytes, encoding: str) -> bytes:
 
 
 def declares_doctype(raw: bytes) -> bool:
-    """Whether the document declares a DTD.
+    """Whether the document declares a DTD, asked of the prolog alone.
 
     Asked of bytes that have been through `xml_as_utf8`, and only of
     those: asked of the bytes as they arrived it answers for UTF-8 and
     guesses for everything else. Both readers ask it here so that neither
-    can grow its own copy of the pattern and drift.
+    can grow its own copy of the question and drift.
+
+    The prolog is the only place a DTD can be declared, and a conformant
+    document is allowed to *mention* one -- in a comment, in CDATA, in
+    the text of a page about XML. Matching the token anywhere refuses a
+    file for talking about the thing rather than doing it, and a finding
+    against a conformant file is the one thing worse than silence.
+
+    The walk skips processing instructions and comments rather than
+    stopping at the first `<`, because a comment in the prolog may
+    contain anything at all -- including something shaped like a start
+    tag -- and stopping there would leave a real declaration behind it
+    unread. That is the direction where being wrong is expensive.
     """
-    return bool(_DOCTYPE.search(raw))
+    i, end = 0, len(raw)
+    while i < end:
+        start = raw.find(b"<", i)
+        if start < 0:
+            return False
+        if raw[start:start + 9].lower() == b"<!doctype":
+            return True
+        if raw[start:start + 4] == b"<!--":
+            close = raw.find(b"-->", start)
+            i = end if close < 0 else close + 3
+        elif raw[start:start + 2] == b"<?":
+            close = raw.find(b"?>", start)
+            i = end if close < 0 else close + 2
+        else:
+            return False                    # the root element: prolog over
+    return False
 
 _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
 
@@ -319,7 +373,7 @@ class AasxPackage:
         # nested-entity DTD is a decompression-free way to exhaust memory
         # (billion laughs; the parser expands it before any handler runs).
         # Refuse the declaration rather than try to bound the expansion.
-        if _DOCTYPE.search(raw):
+        if declares_doctype(raw):
             raise ContainerError("%s: %s declares a DOCTYPE, which is refused"
                                  % (self.path, rels))
         try:

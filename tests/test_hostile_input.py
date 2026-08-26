@@ -9,6 +9,7 @@ import stat
 import tracemalloc
 import zipfile
 from unittest import mock
+from xml.etree import ElementTree
 
 import pytest
 
@@ -146,20 +147,98 @@ def test_a_rels_entity_bomb_is_refused_whatever_encoding_it_arrives_in(tmp_path,
         _ = package.origin
 
 
-def _environment_xml(encoding: str = "utf-8", *, dtd: bool = False) -> bytes:
+#: Encodings the parser refuses. Deciding a document the way the parser
+#: decides it cuts both ways: reading one it will not read admits files
+#: the rest of the ecosystem rejects, and a validator that calls a file
+#: fine when no other reader can open it has done the worst thing it can.
+REFUSED_ENCODINGS = ("utf-32", "utf-32-le", "utf-32-be")
+
+
+@pytest.mark.parametrize("encoding", REFUSED_ENCODINGS)
+def test_an_encoding_the_parser_refuses_is_not_read_here_either(tmp_path, encoding):
+    """The byte order mark table decoded UTF-32 while the sniff, right
+    beside it, refused unmarked UTF-32 and said why. Marked and unmarked
+    have to give the same answer, because the parser gives the same
+    answer to both."""
+    path = tmp_path / "env.xml"
+    path.write_bytes(_environment_xml(encoding))
+    with pytest.raises(ElementTree.ParseError):     # what every other reader does
+        ElementTree.fromstring(path.read_bytes())
+    assert [e.message for e in loader.load(path).errors] == [
+        "the document could not be read as an AAS environment"]
+
+
+def test_only_the_declaration_loses_its_encoding(tmp_path):
+    """`count=1` takes the first match anywhere in the document, and a
+    file with a byte order mark and no declaration -- the shape the
+    official 02003 payload has -- offers no prolog for it to land in. It
+    was landing in the content instead, and docs/scope.md says this
+    project reads what it is given and transforms nothing."""
+    raw = ('﻿<environment xmlns="https://admin-shell.io/aas/3/0"><submodels />'
+           '<note><![CDATA[<?xml version="1.0" encoding="ISO-8859-1"?>]]></note>'
+           '</environment>').encode()
+    assert b'encoding="ISO-8859-1"' in container.xml_as_utf8(raw)
+
+
+def test_a_declaration_still_loses_the_encoding_it_no_longer_has(tmp_path):
+    """The other half: once the bytes are UTF-8 the declaration would be
+    a fatal error if it went on naming UTF-16, so it does have to go --
+    and everything else in the declaration has to stay."""
+    raw = '<?xml version="1.0" encoding="utf-16" standalone="yes"?><x/>'.encode("utf-16")
+    assert container.xml_as_utf8(raw) == b'<?xml version="1.0" standalone="yes"?><x/>'
+
+
+SUBMODEL_ID = "urn:test:read-me"
+
+
+def _environment_xml(encoding: str = "utf-8", *, dtd: bool = False, prolog: str = "") -> bytes:
     doctype = "<!DOCTYPE environment [%s]>" % _entities() if dtd else ""
-    return ('<?xml version="1.0" encoding="%s"?>%s'
-            '<environment xmlns="https://admin-shell.io/aas/3/0"><submodels /></environment>'
-            % (_declares(encoding), doctype)).encode(encoding)
+    return ('<?xml version="1.0" encoding="%s"?>%s%s'
+            '<environment xmlns="https://admin-shell.io/aas/3/0"><submodels>'
+            "<submodel><id>%s</id></submodel>"
+            "</submodels></environment>"
+            % (_declares(encoding), prolog, doctype, SUBMODEL_ID)).encode(encoding)
 
 
 @pytest.mark.parametrize("encoding", XML_ENCODINGS)
 def test_a_bare_environment_is_read_whatever_encoding_it_arrives_in(tmp_path, encoding):
     """The same premise, one layer up: the payload reader has its own copy
-    of the refusal and its own blindness."""
+    of the refusal and its own blindness.
+
+    Asserted on what came back, not on the absence of errors. A document
+    misread as empty raises nothing either, so "no errors" is also what
+    the failure looks like."""
     path = tmp_path / "env.xml"
     path.write_bytes(_environment_xml(encoding))
-    assert [e.message for e in loader.load(path).errors] == []
+    loaded = loader.load(path)
+    assert [e.message for e in loaded.errors] == []
+    assert [s.id for s in loaded.submodels] == [SUBMODEL_ID]
+
+
+def test_a_document_that_only_mentions_a_doctype_is_read(tmp_path):
+    """A conformant document may talk about XML -- this project validates
+    technical documentation, where a page about markup is the ordinary
+    case rather than the contrived one. Refusing it for carrying the
+    token in its content reports a defect that is not there, and the
+    repair that made the refusal see UTF-16 made it see this too."""
+    path = tmp_path / "env.xml"
+    path.write_bytes(_environment_xml("utf-16-le").replace(
+        "<submodels>".encode("utf-16-le"),
+        "<!--the legacy form used <!DOCTYPE html>--><submodels>".encode("utf-16-le")))
+    loaded = loader.load(path)
+    assert [e.message for e in loaded.errors] == []
+    assert [s.id for s in loaded.submodels] == [SUBMODEL_ID]
+
+
+def test_a_comment_in_the_prolog_does_not_hide_the_declaration_behind_it(tmp_path):
+    """The walk skips comments rather than stopping at the first `<`, and
+    this is the direction where stopping early would be expensive: a
+    comment may contain anything shaped like a start tag, and a real
+    declaration sitting after it would go unread."""
+    path = tmp_path / "env.xml"
+    path.write_bytes(_environment_xml(prolog="<!--see <environment> below-->", dtd=True))
+    assert [e.message for e in loader.load(path).errors] == [
+        "the XML declares a DOCTYPE, which is refused"]
 
 
 @pytest.mark.parametrize("encoding", XML_ENCODINGS)
