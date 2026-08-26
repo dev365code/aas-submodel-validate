@@ -17,6 +17,7 @@ from typing import List, Optional
 
 from aas_core3 import jsonization, types, xmlization
 
+from . import container
 from .container import (
     AasxPackage,
     ContainerError,
@@ -58,6 +59,50 @@ class Loaded:
 
 def _decode(raw: bytes) -> str:
     return raw.decode("utf-8-sig")
+
+
+def _read_bounded(loaded: Loaded, path: Path):
+    """The document's bytes, or None with the refusal already recorded.
+
+    The cap was the container's alone, so the same bytes were refused
+    packaged and read whole bare -- and what a reader will take in has
+    nothing to do with whether somebody zipped it first. Neither OPC nor
+    the AAS specification says anything about how much a reader must
+    accept, so the bound is this project's, and one that depends on the
+    envelope is not a bound.
+
+    `container.MAX_PART_BYTES`, and the module imported rather than the
+    name, so the value is read when the question is asked rather than
+    when this file was: one number in one place is the negation of the
+    defect being fixed.
+
+    Two steps, both load-bearing. The size the filesystem reports lets
+    the refusal say what the document weighs -- "over the limit" is true
+    of one byte over and of a hundred times over, and splitting it is
+    different work in each case. The bounded read is what actually
+    holds, because a stat describes the file as it was a moment ago and
+    a supplier may still be writing it.
+    """
+    cap = container.MAX_PART_BYTES
+    try:
+        size = path.stat().st_size
+        if size > cap:
+            loaded.errors.append(LoadError(
+                "bounds", "%s: %d bytes, above the %d byte limit" % (path, size, cap),
+                subject=str(path)))
+            return None
+        with path.open("rb") as handle:
+            raw = handle.read(cap + 1)
+    except (OSError, MemoryError) as exc:
+        # Not a defect in the file, so it leaves by the could-not-run code
+        # rather than as a verdict about a document nobody managed to read.
+        raise UnreadablePath("cannot read %s: %s: %s"
+                             % (path, type(exc).__name__, exc)) from exc
+    if len(raw) > cap:
+        loaded.errors.append(LoadError(
+            "bounds", "%s: more than %d bytes" % (path, cap), subject=str(path)))
+        return None
+    return raw
 
 
 def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form: str) -> None:
@@ -105,25 +150,23 @@ def load(path) -> Loaded:
         return _load_json(path)
     if suffix == ".xml":
         loaded = Loaded(path=str(path), form="environment-xml")
-        try:
-            raw = path.read_bytes()
-        except OSError as exc:
-            raise UnreadablePath("cannot read %s: %s" % (path, exc)) from exc
-        _parse_environment(loaded, raw, part=None, form="environment-xml")
+        raw = _read_bounded(loaded, path)
+        if raw is not None:
+            _parse_environment(loaded, raw, part=None, form="environment-xml")
         return loaded
     raise UnreadablePath("cannot tell what %s is: expected .aasx, .json or .xml" % path)
 
 
 def _load_json(path: Path) -> Loaded:
     loaded = Loaded(path=str(path), form="environment-json")
-    # Read once. The branch below decides what the document is, and the
-    # environment case used to go back to disk for bytes it already had
-    # -- a second read, and the only one in this module with nothing
-    # guarding it.
-    try:
-        raw = path.read_bytes()
-    except OSError as exc:
-        raise UnreadablePath("cannot read %s: %s" % (path, exc)) from exc
+    # Read once, and bounded before the branch below decides what the
+    # document is: a form added later cannot arrive without a bound by
+    # being added to the wrong side of that question. The environment
+    # case used to go back to disk for bytes it already had -- a second
+    # read, and the only one in this module with nothing guarding it.
+    raw = _read_bounded(loaded, path)
+    if raw is None:
+        return loaded
     try:
         document = json.loads(_decode(raw))
     except Exception as exc:

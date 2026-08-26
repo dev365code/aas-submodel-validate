@@ -98,13 +98,18 @@ def test_an_environment_json_is_read_from_disk_once(tmp_path, monkeypatch):
     """The JSON branch read the whole file, decided it was an environment
     rather than a bare submodel, and then read it again -- the second
     time outside any guard, where the .xml branch had learned to put
-    one."""
+    one.
+
+    Counted at `open`, which is where the read happens now that it is
+    bounded. A counter aimed at the call the loader no longer makes
+    would have gone on reporting one read forever."""
     import pathlib as _pathlib
     path = tmp_path / "env.json"
     path.write_bytes(env_json())
-    reads = []
-    original = _pathlib.Path.read_bytes
-    monkeypatch.setattr(_pathlib.Path, "read_bytes",
-                        lambda self: (reads.append(str(self)), original(self))[1])
+    opens = []
+    original = _pathlib.Path.open
+    monkeypatch.setattr(_pathlib.Path, "open",
+                        lambda self, *a, **kw: (opens.append(str(self)),
+                                                original(self, *a, **kw))[1])
     load(path)
-    assert reads.count(str(path)) == 1
+    assert opens.count(str(path)) == 1

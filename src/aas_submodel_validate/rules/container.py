@@ -6,6 +6,7 @@ broken file three ways.
 """
 from __future__ import annotations
 
+from ..container import MAX_PART_BYTES, MAX_TOTAL_PART_BYTES
 from ..model import Violation
 from ..registry import rule
 
@@ -46,14 +47,14 @@ def x3_payload_parses(ctx):
 
 
 @rule("X5", kind="container", prio="MUST",
-      title="the container fits in what an offline reader will take in",
+      title="the input fits in what an offline reader will take in",
       spec="this project's own bounds -- see container.py",
-      fix="Send the part that needs checking, or split the container: this "
-          "reader refuses a single part over 64 MiB, and a container whose "
-          "parts come to over 256 MiB together, so that a machine with no "
-          "network cannot be exhausted by a file it was asked to check. "
-          "Nothing is wrong with the archive; it is larger than this tool "
-          "will read.")
+      fix="Send the part that needs checking, or split what you sent: this "
+          "reader refuses any single document over %d MiB, and a container "
+          "whose parts come to over %d MiB together. Nothing is wrong with "
+          "what you sent; it is larger than this tool will read, and what "
+          "was refused was not judged."
+          % (MAX_PART_BYTES // 1024 ** 2, MAX_TOTAL_PART_BYTES // 1024 ** 2))
 def x5_within_the_readers_bounds(ctx):
     """Not a defect in the file, which is why it is not X1.
 
