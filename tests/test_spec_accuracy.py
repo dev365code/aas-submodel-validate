@@ -5,6 +5,7 @@ import copy
 import json
 
 from aas_submodel_validate import runner
+from aas_submodel_validate.rules import engine, hd_tables, td_tables
 from builders import hd_env
 
 
@@ -194,6 +195,53 @@ def test_a_wholly_different_last_segment_is_not_a_near_miss(tmp_path):
     env = _root_element(hd_env(),
                         "https://admin-shell.io/vdi/2770/1/0/SomethingCompletelyElse")
     assert "HDL2" not in _findings(tmp_path, env)
+
+
+# -- HDL2: how near "near" is, at both ends of a segment's length -------------
+#
+# The three fixtures above all sit far from the boundary: one typo at
+# distance 3 against a bound of 6, and two neighbours nowhere near it. So
+# every constant in `max(3, len(tail) // 4)` could be moved -- the floor
+# to 0, the divisor to 5, the `max` to `min` -- and all three stayed
+# green. What each part of that expression is for is asserted here, with
+# the identifiers taken from the vendored tables rather than invented,
+# because a bound tested against made-up strings is a bound tested
+# against nothing.
+
+
+def test_a_template_version_drift_in_an_iri_is_a_near_miss():
+    """The floor exists for short segments, and IDTA writes the shortest
+    one there is: a submodel template's IRI ends in its version, so the
+    last segment of ClassificationSystemUrl is a single character.
+
+    A quarter of one character is nothing. Scale alone would put the
+    bound at zero and refuse to call `.../2/1` near `.../2/0` -- and a
+    file written against the next revision of a template would then
+    simply not match, with no line in the report saying why. That is the
+    silent pass this lint exists to prevent."""
+    expected = td_tables.BY_LABEL["ClassificationSystemUrl"]["sid"]
+    assert expected.endswith("/2/0"), "the value this bound was measured on moved"
+    drifted = expected[:-1] + "1"
+    assert engine._near_miss({drifted}, [expected]) == (drifted, expected)
+
+
+def test_two_different_irdis_under_one_list_are_not_a_near_miss():
+    """And the other half of the same expression: the segment comparison
+    is for IRIs, and the guard that says so is load-bearing.
+
+    ECLASS composites are built the same shape -- a list's identifier,
+    a slash, its item's -- so without the guard they take the IRI branch
+    too. Two items belonging to different lists differ in one character
+    of a twenty-character tail, which is well inside the bound, and they
+    are not a typo for each other: `AHF580` and `AHF581` are separate
+    ECLASS properties. Version drift in an IRDI is real and is caught
+    above this, by the stem comparison, which is what knows a `#003` from
+    a `#004`."""
+    expected = hd_tables.BY_LABEL["DocumentId"]["sid"]
+    other_item = hd_tables.BY_LABEL["DocumentClassification"]["sid"].rsplit("/", 1)[1]
+    seen = expected.rsplit("/", 1)[0] + "/" + other_item
+    assert seen != expected and "://" not in seen
+    assert engine._near_miss({seen}, [expected]) is None
 
 
 # -- HD-D10: VDI 2770 wants a PDF/A rendition (§2.1) --------------------------

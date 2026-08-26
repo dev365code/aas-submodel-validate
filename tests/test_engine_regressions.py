@@ -13,7 +13,17 @@ import sys
 from pathlib import Path
 
 from aas_submodel_validate import runner
-from builders import hd_env
+from aas_submodel_validate.loader import load
+from aas_submodel_validate.rules import engine, hd_tables
+from builders import hd_env, inject, strip_row
+
+
+class _Key:
+    """One key of a ModelReference, as `resolve_in_submodel` reads it."""
+
+    def __init__(self, value):
+        self.value = value
+
 
 SRC = str(Path(__file__).resolve().parents[1] / "src")
 
@@ -99,6 +109,121 @@ def test_a_document_id_does_not_double_as_its_parent_list(tmp_path):
     env = copy.deepcopy(hd_env())
     ids = _ids(tmp_path, env)
     assert "HD-E01" not in ids                 # exactly one Documents, and it knows it
+
+
+# -- the in-list fallback is a licence, and it is licensed only in a list ----
+
+#: A list child with no semanticId of its own counts for its list's sole
+#: child row (docs/divergences.md #11): the official example ships them
+#: that way. The licence is deliberate and it is narrow, and nothing
+#: measured how narrow -- three places decide whether it applies and each
+#: could be switched on where it does not belong, which turns "this
+#: element declares nothing" into "this element is whatever row comes
+#: first with a matching kind".
+NAMELESS_LIST = {"idShort": "Nameless", "modelType": "SubmodelElementList",
+                 "typeValueListElement": "SubmodelElementCollection", "value": []}
+
+
+def test_a_nameless_element_at_the_top_is_not_the_first_row_that_fits(tmp_path):
+    """The submodel's own elements are not inside a list, so the licence
+    does not reach them. A SubmodelElementList declaring no semanticId
+    would otherwise be claimed by `Documents` -- the first top-level row
+    of that kind -- and a file carrying one alongside its real Documents
+    would be told it has two of something it has one of."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"].append(copy.deepcopy(NAMELESS_LIST))
+    assert "HD-E01" not in _ids(tmp_path, env)
+
+
+def test_a_nameless_child_of_a_collection_is_not_claimed_either(tmp_path):
+    """The same licence at the other seam. `child_of` is what the hand
+    rules navigate with, and it asks the walk's own matcher -- so it has
+    to decide the same question, and its parents are collections, never
+    lists. A nameless list placed first among a Document's children would
+    otherwise answer to `DocumentIds`, and the rules that read the real
+    one would read this instead: HD-D4 would find no primary flag among
+    no identifiers."""
+    env = copy.deepcopy(hd_env())
+    _document(env)["value"].insert(0, copy.deepcopy(NAMELESS_LIST))
+    # This project's own findings, not the relayed channel's: a list
+    # declaring nothing is a metamodel matter and aas-core3.0 says so.
+    assert not [rule_id for rule_id in _ids(tmp_path, env)
+                if rule_id.startswith("HD")]
+
+
+# -- one defect must not silence the next element ---------------------------
+
+def test_a_kind_violation_does_not_silence_the_element_beside_it(tmp_path):
+    """The comment one scope out says a wrong *count* must not silence
+    the per-element checks. This is the same claim one level in: the
+    per-element loop skips the rest of *this* element's checks when its
+    kind is wrong, and must go on to the next element.
+
+    Two `Version`s where the template wants one: the first a
+    MultiLanguageProperty, the second a Property carrying the wrong
+    valueType. All three findings, or the second element's defect is
+    hidden behind the first element's."""
+    row = hd_tables.BY_LABEL["Version"]
+    env = copy.deepcopy(hd_env())
+    strip_row(env, row, hd_tables)
+    sid = {"type": "ExternalReference",
+           "keys": [{"type": "GlobalReference", "value": row["sid"]}]}
+    inject(env, hd_tables.BY_ID[row["parent"]], [
+        {"idShort": "VersionA", "modelType": "MultiLanguageProperty",
+         "semanticId": sid, "value": [{"language": "en", "text": "V1"}]},
+        {"idShort": "VersionB", "modelType": "Property", "valueType": "xs:int",
+         "semanticId": sid, "value": "2"}], hd_tables)
+    path = _write(tmp_path, env)
+    said = [f.violation.message for f in runner.run(path).findings if f.id == row["id"]]
+    assert any("found 2" in m for m in said), said
+    assert any("must be a Property" in m for m in said), said
+    assert any("valueType xs:string" in m for m in said), \
+        "the second element's defect stopped being reported: %s" % said
+
+
+def test_one_element_draws_one_near_miss(tmp_path):
+    """An element carries every identifier it declares into the near-miss
+    search, so it can be almost-right for more than one row at once. It
+    is one element and it gets one diagnosis; reporting it against every
+    row it approaches would put the same element in the report as many
+    times as the template has rows near it."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"].append({
+        "idShort": "Both", "modelType": "SubmodelElementList",
+        "typeValueListElement": "Entity",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference", "value": "0173-1#02-ABI500#004"}]},
+        "supplementalSemanticIds": [{"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference",
+             "value": "https://admin-shell.io/vdi/2770/1/0/EntityForDocumentation"}]}],
+        "value": []})
+    near = [f for f in runner.run(_write(tmp_path, env)).findings if f.id == "HDL2"]
+    assert len(near) == 1, [f.violation.detail for f in near]
+
+
+# -- navigation for the hand rules: what a key path may address --------------
+
+def test_a_reference_addresses_by_position_only_inside_a_list(tmp_path):
+    """The metamodel addresses a SubmodelElementList's children by index
+    and everything else by idShort. A submodel's own elements are not a
+    list, so a first step of "0" names an element called "0" and nothing
+    else -- otherwise every reference whose first step happened to be a
+    number would resolve to whatever the file happens to put first, and
+    HD-D9 would report that a reference walks somewhere it does not."""
+    submodel = load(_write(tmp_path, copy.deepcopy(hd_env()))).submodels[0]
+    assert engine.resolve_in_submodel(submodel, [_Key("urn:x"), _Key("Documents")])
+    assert engine.resolve_in_submodel(
+        submodel, [_Key("urn:x"), _Key("Documents"), _Key("0")])
+    assert not engine.resolve_in_submodel(submodel, [_Key("urn:x"), _Key("0")])
+
+
+def test_a_reference_to_the_submodel_itself_resolves(tmp_path):
+    """A ModelReference whose only key is the submodel points at
+    something that exists, so HD-D9 has nothing to report. It is the one
+    path through this function that never enters the loop, and it decides
+    a MUST."""
+    submodel = load(_write(tmp_path, copy.deepcopy(hd_env()))).submodels[0]
+    assert engine.resolve_in_submodel(submodel, [_Key("urn:example:handover")])
 
 
 # -- determinism: same input, same bytes, whatever the hash seed -------------

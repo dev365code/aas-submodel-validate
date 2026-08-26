@@ -33,6 +33,56 @@ def test_every_generated_rule_fires(tmp_path, row):
     assert row["id"] in _ids(tmp_path, break_row(hd_env(), row, hd_tables))
 
 
+#: The three ways a cardinality is said. Two copies of this vocabulary
+#: exist and only one of them was checked: the generator writes the
+#: remedy ("Provide exactly one 'Documents' element(s)...") and the
+#: byte-compare gate holds it, while the walk writes the message from a
+#: table of its own that nothing read.
+#:
+#: A key moved in that table does not crash and does not lose the
+#: finding. It falls through to "a bounded number of", and the report
+#: then says one thing and advises another about the same row:
+#:
+#:     error  HD-E01  the template expects a bounded number of 'Documents'
+#:            fix: Provide exactly one 'Documents' element(s) with ...
+CARDINALITY_WORDS = ("exactly one", "at most one", "one or more")
+
+
+def _cardinality_phrase(text):
+    said = [phrase for phrase in CARDINALITY_WORDS if phrase in (text or "")]
+    return said[0] if len(said) == 1 else None
+
+
+def test_a_cardinality_message_and_its_remedy_say_the_same_thing(tmp_path):
+    """Every row, because the disagreement is per shape and the shapes
+    are spread across the table.
+
+    One test over the whole table rather than one per row: what a reader
+    needs when this goes red is which rows disagree, not the first one
+    alphabetically."""
+    disagreeing, said, checked = [], set(), 0
+    for row in hd_tables.ROWS:
+        path = tmp_path / "env.json"
+        path.write_bytes(json.dumps(break_row(hd_env(), row, hd_tables)).encode("utf-8"))
+        for finding in runner.run(path).findings:
+            if finding.id != row["id"] or "the template expects" not in \
+                    finding.violation.message:
+                continue
+            checked += 1
+            message = _cardinality_phrase(finding.violation.message)
+            said.add(message)
+            if message != _cardinality_phrase(finding.fix):
+                disagreeing.append((row["id"], finding.violation.message, finding.fix))
+            break
+    assert checked == len(hd_tables.ROWS), \
+        "only %d of %d rows reached a cardinality finding" % (checked, len(hd_tables.ROWS))
+    assert said == set(CARDINALITY_WORDS), \
+        "the table stopped exercising every shape: %s" % sorted(x for x in said if x)
+    assert not disagreeing, (
+        "the message and the remedy disagree about the cardinality: %r"
+        % disagreeing[:5])
+
+
 def test_a_kind_mismatch_names_both_kinds(tmp_path):
     env = copy.deepcopy(hd_env())
     row = hd_tables.BY_LABEL["Version"]
