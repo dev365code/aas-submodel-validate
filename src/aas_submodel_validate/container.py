@@ -383,9 +383,6 @@ class AasxPackage:
     def names(self) -> List[str]:
         return self._zip.namelist()
 
-    def has(self, name: str) -> bool:
-        return name in self._names
-
     def part(self, value: str):
         """Which entry `value` names, or None.
 
