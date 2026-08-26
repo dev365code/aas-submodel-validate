@@ -244,6 +244,25 @@ def test_two_different_irdis_under_one_list_are_not_a_near_miss():
     assert engine._near_miss({seen}, [expected]) is None
 
 
+#: What is left of `max(3, len(tail) // 4)` after the two tests above,
+#: measured rather than assumed: the floor moved to 2 or to 4, the
+#: divisor to 5, and `<=` to `<`. All four survive, and none of them is
+#: worth a fixture.
+#:
+#: The two claims that *are* claims -- that a floor exists at all, and
+#: that it combines with the scale by `max` -- are what those tests hold;
+#: dropping the floor to zero or swapping `max` for `min` fails them. The
+#: remaining constants are slack. Across the 32 IRI values the three
+#: vendored tables match on, every variant above agrees with every other
+#: about every pair. Against the drifts that actually happen they agree
+#: too: a template's minor version going from `0` to `1` or to `12` is
+#: caught by all of them, and the first case they part company on is a
+#: three-digit minor version, which IDTA does not publish.
+#:
+#: Fixtures for those would have to be invented, and a bound measured
+#: against invented strings is the constant copied out rather than tested.
+
+
 # -- HD-D10: VDI 2770 wants a PDF/A rendition (§2.1) --------------------------
 
 def test_a_version_whose_only_file_is_not_pdf_is_flagged(tmp_path):

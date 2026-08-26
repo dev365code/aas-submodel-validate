@@ -242,6 +242,50 @@ def test_a_reference_addresses_by_position_only_inside_a_list(tmp_path):
     assert not engine.resolve_in_submodel(submodel, [_Key("urn:x"), _Key("0")])
 
 
+def test_an_index_resolves_past_a_list_child_that_carries_an_id_short():
+    """A SubmodelElementList's children are addressed by index, and
+    AASd-120 says they carry no idShort. The official example gives them
+    one anyway -- `Datasheet`, `CADmodel` -- and that is the file's
+    defect, reported by the relayed channel. A reference addressing the
+    same children by index is not defective, and resolving it must not
+    depend on the idShort being absent: the fixtures here happen to leave
+    it out, so nothing asked.
+
+    Read from the published example rather than built, because what makes
+    this worth asserting is that the shape occurs in the reference
+    material."""
+    submodel = load("tests/corpus/idta/02004/example.json").submodels[0]
+    children = submodel.submodel_elements[0].value
+    assert [child.id_short for child in children[:2]] == ["Datasheet", "CADmodel"], \
+        "the example stopped carrying the defect this asks about"
+    assert engine.resolve_in_submodel(
+        submodel, [_Key("u"), _Key("Documents"), _Key("0")])
+    assert engine.resolve_in_submodel(
+        submodel, [_Key("u"), _Key("Documents"), _Key("Datasheet")])
+
+
+#: What survives everything above, measured, with the reason -- so the
+#: next person measuring does not spend an afternoon rediscovering it.
+#:
+#: *The walk's cache, disabled.* `analyze` recomputes instead of reading
+#: its slot. `_analyze` builds a fresh result and reads nothing outside
+#: the context, so this is equivalent; what is *not* equivalent is the
+#: cache's key, and giving it a single slot is caught by three tests.
+#:
+#: *The first `and` of the near-miss IRI guard, loosened to `or`.*
+#: Equivalent, and provably: the branch it opens goes on to require
+#: `seen_head == exp_head`, and a head shared with a value containing
+#: `://` either contains `://` itself or is the `a:/` that makes the
+#: other value `a://...`. Either way the original condition held too.
+#:
+#: *Taking the last matching child instead of the first*, in
+#: `resolve_in_submodel`. Observable only where two children answer to
+#: one key -- a duplicate idShort (AASd-022) or an idShort that is a bare
+#: number in a list (AASd-002). Both are files the relayed channel
+#: already refuses, so a fixture for this would be asserting the order in
+#: which two defects are reported.
+
+
 def test_a_reference_to_the_submodel_itself_resolves(tmp_path):
     """A ModelReference whose only key is the submodel points at
     something that exists, so HD-D9 has nothing to report. It is the one
