@@ -17,8 +17,11 @@ What this reader takes in is bounded whichever way a document arrives —
 one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB
 together — and what it refuses to read, it does not judge: `summary.complete`
 in the JSON report and a clause on the terminal summary say when the
-counts describe less than the whole input. The field is additive, so
-`schemaVersion` stays 1.
+counts describe less than the whole input. `summary.judged` says the
+sharper thing beside it — whether anything reached the rules at all — and
+an input that was refused rather than judged leaves by the could-not-run
+exit code, 2, where it used to leave by the code for a verdict. Both
+fields are additive, so `schemaVersion` stays 1.
 IDTA 02035-2 shares 02004's submodel identifier, so `--profile` chooses
 which of the two answers and SMT-D2 reports the choice; without the flag
 02004 answers. `rulesChecked` in the JSON report counts every registered

@@ -1,5 +1,8 @@
 """The command line. Exit codes are the API a build pipeline calls:
-0 clean, 1 findings at error severity, 2 could not run."""
+0 clean, 1 findings at error severity, 2 could not run -- which covers a
+path that cannot be read and an input this reader refused, because
+nothing about either was judged. A report may still be printed on 2,
+saying what was refused and what to do about it."""
 from __future__ import annotations
 
 import argparse
@@ -63,6 +66,13 @@ def main(argv: Optional[list] = None) -> int:
             print(json.dumps(report.as_dict(), indent=2))
         else:
             print(render(report))
+    if not report.judged:
+        # Nothing reached the rules, so there is no verdict to report --
+        # and 1 is the code for a verdict. Said on stderr as well, since
+        # -q suppressed the report that would otherwise explain it.
+        print("smtv: nothing in %s could be read, so nothing was judged"
+              % args.path, file=sys.stderr)
+        return EXIT_ERROR
     from .model import Severity
     failed = not report.ok or (args.warnings_as_errors
                                and report.count(Severity.WARNING) > 0)

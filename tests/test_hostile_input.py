@@ -573,6 +573,68 @@ def test_an_input_that_went_unread_says_the_verdict_is_incomplete(stage, tmp_pat
     assert "not a full verdict" in render(report)
 
 
+@pytest.mark.parametrize("stage", UNREAD_STAGES)
+def test_an_input_nothing_was_learned_about_leaves_by_the_could_not_run_code(
+        stage, tmp_path, monkeypatch, capsys):
+    """X5's remedy ends "Nothing is wrong with what you sent; it was
+    refused, not judged" -- and the run then exited 1, the code for
+    judged and found wanting. Two sentences about one run, disagreeing,
+    across the seam between a rule's prose and a return value, which is
+    why no test held it.
+
+    The report still prints. Exit 2 used to mean stdout was empty, and
+    giving that up is the cost: a refusal carries a remedy naming what to
+    do about it, and losing that to tidy a contract is the wrong trade."""
+    path = _input_unread_at(stage, tmp_path, monkeypatch)
+    assert main([str(path)]) == EXIT_ERROR
+    printed = capsys.readouterr()
+    assert "fix:" in printed.out, "the refusal stopped saying what to do"
+    assert str(path) in printed.err, "nothing on stderr, so -q explains nothing"
+    assert runner.run(path).as_dict()["summary"]["judged"] is False
+
+
+def test_a_part_that_went_unread_beside_one_that_did_not_is_still_a_verdict(tmp_path):
+    """The other side of the same line, and the reason the rule is about
+    what was judged rather than about what was read.
+
+    An archive with one good payload and one that will not parse is
+    incomplete, and it is also judged: the submodel that arrived was
+    walked and its findings are real. Sending this to exit 2 would put
+    genuine errors behind a code a gate is told means "tool problem"."""
+    names = ["aasx/good.json", "aasx/bad.json"]
+    path = tmp_path / "one-good-one-bad.aasx"
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/" + name) for name in names]))
+        archive.writestr(names[0], env_json())
+        archive.writestr(names[1], b"{ not json")
+    document = runner.run(path).as_dict()
+    assert document["summary"] == dict(document["summary"], complete=False, judged=True)
+    assert main([str(path), "-q"]) == 1
+
+
+def test_a_document_that_holds_no_submodel_is_judged_and_found_lacking(tmp_path):
+    """The other end of the predicate, and the reason it is two questions
+    and not one.
+
+    An environment that parses perfectly and declares no submodels was
+    read, and walked, and found to hold nothing this tool knows -- which
+    is a verdict, and SMT-D1's. Asking only "did any submodel arrive"
+    would send it to exit 2 as if the reader had failed, and would take
+    SMT-D1's finding down with it: the file that says nothing at all
+    would become the one file this validator has no opinion about."""
+    path = tmp_path / "empty.json"
+    path.write_bytes(b'{"submodels": []}')
+    report = runner.run(path)
+    assert report.as_dict()["summary"] == dict(report.as_dict()["summary"],
+                                               complete=True, judged=True)
+    assert "SMT-D1" in {f.id for f in report.findings}
+    assert main([str(path), "-q"]) == 1
+
+
 def test_a_report_that_read_everything_says_so(tmp_path):
     clean = tmp_path / "clean.json"
     clean.write_bytes(env_json("urn:x"))

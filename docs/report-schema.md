@@ -3,10 +3,13 @@
 `smtv -f json` writes one JSON object to stdout. This is what is in it,
 and what the version number at the top of it promises.
 
-Two runs write nothing there: `-q`, which asks for the exit code alone,
-and exit 2, where the path could not be read at all and the reason goes
-to stderr. A reader that parses stdout unconditionally meets its first
-`JSONDecodeError` on the case it most needs to handle.
+One run writes nothing there: `-q`, which asks for the exit code alone.
+Exit 2 sometimes does and sometimes does not — an input this reader
+refused comes back with a report saying what was refused and what to do
+about it, while a path that could not be read at all has no report to
+give and leaves only a line on stderr. Both write that line, so read
+stdout when it is not empty. A reader that parses it unconditionally
+meets its first `JSONDecodeError` on the case it most needs to handle.
 
 ```json
 {
@@ -15,8 +18,8 @@ to stderr. A reader that parses stdout unconditionally meets its first
   "path": "machine-docs.aasx",
   "ok": false,
   "options": {"profile": null, "strictMeta": false, "allowUnmatched": false},
-  "summary": {"errors": 1, "warnings": 0, "info": 0,
-              "rulesChecked": 123, "complete": true},
+  "summary": {"errors": 1, "warnings": 0, "info": 0, "rulesChecked": 123,
+              "complete": true, "judged": true},
   "notes": [],
   "findings": [
     {
@@ -55,7 +58,7 @@ report needs the second one.
 | `schemaVersion` | integer | The shape. `1`. |
 | `toolVersion` | string | The version of `aas-submodel-validate` that wrote the report. |
 | `path` | string | The input, as it was given on the command line. |
-| `ok` | boolean | No finding at `error` severity. This is what the exit code is derived from — `-W` raises the bar for the exit code without changing `ok`. |
+| `ok` | boolean | No finding at `error` severity. `-W` raises the bar for the exit code without changing `ok`, and so does `summary.judged`: a run that judged nothing exits 2 whatever `ok` says. |
 | `options` | object | What was asked of this run; see below. |
 | `summary` | object | Counts; see below. |
 | `notes` | array of string | Things worth saying once about the run rather than about the file — a `--profile` that named a template nothing here answers to, or an unmatched submodel that `--allow-unmatched` let through. |
@@ -81,11 +84,16 @@ with another report.
 | `warnings` | integer | Findings at `warning` severity. |
 | `info` | integer | Findings at `info` severity. |
 | `rulesChecked` | integer | Every rule registered in this build. Not how many applied to your file — a Technical Data file is not judged by 02004's rules, and the number does not move when a different template answers — and not the number of findings. The relayed `meta` channel is not registered and is not counted. |
+| `judged` | boolean | Whether anything reached the rules at all. `false` means the input was refused or could not be opened, so there is no verdict here — only the reason. The run exits 2. |
 | `complete` | boolean | Whether everything this run was handed got read. `false` means an archive that would not open, a relationship chain that went nowhere, a part that would not parse, or a document over the reader's bound — what was not read was not judged, and a report that only said `ok: false` could not tell you which. |
 
-Gate on `ok` and on `complete`. A refused input arrives as `ok: false`
-with one error and every rule counted, which is exactly what a judged
-file that failed looks like.
+The two are ordered, and both are worth gating on. `judged: false`
+implies `complete: false`; the reverse does not hold — an archive with
+one unreadable part among three good ones is incomplete and judged, and
+its findings are real. Three outcomes, then: a full verdict, a partial
+one, and no verdict at all. Without them a refused input arrived as
+`ok: false` with one error and every rule counted, which is exactly what
+a judged file that failed looks like.
 
 ## `findings`
 

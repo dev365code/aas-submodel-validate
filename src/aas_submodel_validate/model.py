@@ -133,6 +133,15 @@ class Report:
     #: nothing was judged. A consumer had the string "X5" and nothing
     #: else to tell the two apart.
     complete: bool = True
+    #: And whether anything reached the rules at all. `complete` is about
+    #: what was read; this is about what was judged, and the two are
+    #: ordered -- an archive with one bad part among three good ones is
+    #: incomplete and judged, while one that would not open is neither.
+    #: The exit code is derived from this: a refusal leaves by the
+    #: could-not-run code, because X5's own remedy says "it was refused,
+    #: not judged" and the run used to exit with the code for judged and
+    #: found wanting.
+    judged: bool = True
     #: What was asked of this run. The same file comes back `ok` under one
     #: set of flags and not under another -- the official example passes
     #: by default and fails under `--strict-meta` -- and a profile decides
@@ -174,6 +183,7 @@ class Report:
                 # Additive, so schemaVersion stays 1: a consumer that does
                 # not know the key reads exactly what it read before.
                 "complete": self.complete,
+                "judged": self.judged,
             },
             "notes": self.notes,
             "findings": [f.as_dict() for f in self.findings],

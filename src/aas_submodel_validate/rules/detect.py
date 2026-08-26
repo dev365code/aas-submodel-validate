@@ -93,7 +93,7 @@ def smt_d1_a_known_submodel_is_present(ctx):
     that validated nothing must say so loudly (the sibling validators'
     silent-pass lesson, applied from day one). Unreadable inputs are the
     X rules' finding — piling this on top of those would be noise."""
-    if ctx.loaded.errors and not ctx.loaded.submodels:
+    if ctx.loaded.nothing_was_judged:
         return
     if matched(ctx):
         return

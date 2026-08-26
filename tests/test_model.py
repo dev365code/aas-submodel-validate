@@ -64,7 +64,7 @@ def test_findings_serialise_for_machines():
 #: -- falsy -- and a strict run silently reads as permissive.
 V1_REQUIRED = {"schemaVersion", "toolVersion", "path", "ok", "options",
                "summary", "notes", "findings"}
-V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete"}
+V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete", "judged"}
 V1_OPTIONS = {"profile", "strictMeta", "allowUnmatched"}
 V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
               "detail", "fix", "title", "spec"}
@@ -125,7 +125,8 @@ def test_the_summary_counts_what_it_says_it_counts():
     invisible. A consumer gates a build on these."""
     document = _report().as_dict()
     assert document["summary"] == {"errors": 1, "warnings": 2, "info": 3,
-                                   "rulesChecked": 123, "complete": True}
+                                   "rulesChecked": 123, "complete": True,
+                                   "judged": True}
 
 
 def test_the_report_says_what_was_asked_of_it():
@@ -168,6 +169,7 @@ def test_the_report_says_what_the_types_promise():
     assert isinstance(document["notes"], list)
     assert isinstance(document["findings"], list)
     assert isinstance(document["summary"]["complete"], bool)
+    assert isinstance(document["summary"]["judged"], bool)
     assert isinstance(document["toolVersion"], str)
     for counter in ("errors", "warnings", "info", "rulesChecked"):
         assert isinstance(document["summary"][counter], int), counter

@@ -63,6 +63,22 @@ class Loaded:
     container: Optional[AasxPackage] = None
     errors: List[LoadError] = field(default_factory=list)
 
+    @property
+    def nothing_was_judged(self) -> bool:
+        """Something broke on the way in, and no submodel came out of it.
+
+        Not the same question as `errors`, which an archive with one bad
+        part and two good ones also answers yes to: that run read
+        something, walked it, and its findings are real. This one is
+        whether the rules were handed anything at all.
+
+        SMT-D1 has asked it since day one -- it stays silent rather than
+        pile "no submodel this tool knows" on top of the X rules -- and
+        spelled it out inline. Two readers of one question, so it lives
+        here and both ask it.
+        """
+        return bool(self.errors) and not self.submodels
+
 
 def _decode(raw: bytes) -> str:
     return raw.decode("utf-8-sig")

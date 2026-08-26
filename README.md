@@ -22,7 +22,9 @@ is released, and the CHANGELOG says whether it has been.
 
 Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
 `.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
-severity, 1 at least one error, 2 could not run — warnings and info do
+severity, 1 at least one error, 2 could not run — which covers a path
+that cannot be read and an input this reader refused, since nothing about
+either was judged. Warnings and info do
 not fail a build unless you ask with `-W`. `-f json` writes a versioned
 machine-readable report, described in
 [docs/report-schema.md](docs/report-schema.md). One dependency
