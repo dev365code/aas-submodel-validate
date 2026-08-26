@@ -97,6 +97,9 @@ def corrupt_part(path, entry: str, how: str):
     - "encrypted": the encryption flag, with no password to be had.
     - "stream": the compressed bytes themselves, which fail inside the
       decompressor rather than in any check zipfile makes first.
+    - "version": the ZIP version an entry says it needs, which fails
+      while the *directory* is being read -- before any part is chosen,
+      so it is the one mode here that never reaches the read path.
 
     Nothing is written to the repository -- callers pass a tmp_path.
     """
@@ -124,6 +127,9 @@ def corrupt_part(path, entry: str, how: str):
         flags = struct.unpack_from("<H", raw, central + 8)[0]
         struct.pack_into("<H", raw, central + 8, flags | 0x1)
         struct.pack_into("<H", raw, local + 6, flags | 0x1)
+    elif how == "version":
+        struct.pack_into("<H", raw, central + 6, 99)     # version needed
+        struct.pack_into("<H", raw, local + 4, 99)
     elif how == "stream":
         name_length = struct.unpack_from("<H", raw, local + 26)[0]
         extra_length = struct.unpack_from("<H", raw, local + 28)[0]

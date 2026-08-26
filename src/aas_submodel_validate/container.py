@@ -44,6 +44,22 @@ MAX_PART_BYTES = 64 * 1024 * 1024
 #: container carrying several environments and refuses the pathological.
 MAX_TOTAL_PART_BYTES = 4 * MAX_PART_BYTES
 
+#: What zipfile raises for an archive it cannot make sense of.
+#:
+#: Named once because it was written twice and the two disagreed. Opening
+#: the archive listed two of these; reading a part listed six. The
+#: difference was reachable: the version an entry says it needs is read
+#: while the *directory* is, inside `ZipFile()` itself, so a two-byte edit
+#: to any .aasx raised `NotImplementedError` past every handler in this
+#: project and printed a traceback -- against the one thing this reader
+#: promises about hostile input, which is that a container defect is a
+#: finding.
+#:
+#: Deliberately not `Exception`. A defect in this reader must not arrive
+#: dressed as a defect in the supplier's file.
+UNREADABLE = (zipfile.BadZipFile, NotImplementedError, RuntimeError,
+              EOFError, OSError, zlib.error)
+
 #: Byte order marks, longest first, because a UTF-32 mark begins with a
 #: UTF-16 one and the order is what tells them apart.
 #:
@@ -283,9 +299,9 @@ class AasxPackage:
         self.path = Path(path)
         try:
             self._zip = zipfile.ZipFile(self.path)
-        except (OSError, zipfile.BadZipFile) as exc:
-            raise ContainerError("cannot open %s as a ZIP container: %s"
-                                 % (self.path, exc)) from exc
+        except UNREADABLE as exc:
+            raise ContainerError("cannot open %s as a ZIP container: %s: %s"
+                                 % (self.path, type(exc).__name__, exc)) from exc
         self._names = frozenset(self._zip.namelist())
         #: Distinct bytes handed out so far, for MAX_TOTAL_PART_BYTES.
         #: One package object is one validation, so this is that run's
@@ -373,8 +389,7 @@ class AasxPackage:
             # no input could reach.
             with self._zip.open(name) as part:
                 data = part.read(MAX_PART_BYTES)
-        except (zipfile.BadZipFile, NotImplementedError, RuntimeError,
-                EOFError, OSError, zlib.error) as exc:
+        except UNREADABLE as exc:
             raise UnreadablePart(
                 "%s: %s cannot be read: %s: %s"
                 % (self.path, name, type(exc).__name__, exc)) from exc

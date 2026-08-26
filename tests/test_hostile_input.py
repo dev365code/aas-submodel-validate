@@ -637,14 +637,21 @@ def test_control_characters_do_not_reach_the_terminal_raw(tmp_path, capsys):
     assert "\x1b" not in out
 
 
-@pytest.mark.parametrize("how", ("declared_size", "method", "encrypted", "stream"))
+@pytest.mark.parametrize("how", ("declared_size", "method", "encrypted", "stream",
+                                 "version"))
 def test_a_part_that_cannot_be_decompressed_is_a_finding(tmp_path, how):
     """An archive may describe a part wrongly. Reading it then fails
     inside zipfile, with an exception this reader never declared -- and
     the promise is that a container defect is a finding, not a crash.
 
     Exit 1 alone does not prove it: a crash and a finding leave the same
-    code. So the report has to come back."""
+    code. So the report has to come back.
+
+    "version" is the one that got in. It fails while the directory is
+    read, inside `ZipFile()` itself, and the open site carried a shorter
+    list of exceptions than the read site did -- so `NotImplementedError`
+    walked past every handler in this project and a two-byte edit to any
+    .aasx printed a traceback."""
     path = build_aasx(tmp_path / "p.aasx", payload=env_json())
     corrupt_part(path, "aasx/env.json", how)
     report = runner.run(path)
