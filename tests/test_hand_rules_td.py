@@ -130,13 +130,20 @@ def test_the_golden_environment_draws_no_lint(tmp_path):
     assert "TDL1" not in ids and "TDL2" not in ids
 
 
-def test_a_date_with_a_trailing_newline_is_not_a_date(tmp_path):
-    """`$` matches before a final newline. An XML Schema processor would
-    refuse this value; the predicate was accepting it, in both templates,
-    and nothing asked."""
+def test_a_date_with_a_trailing_newline_is_still_a_date(tmp_path):
+    """`xs:date` carries `whiteSpace="collapse" fixed="true"` in the
+    schema W3C publishes for the built-in types, so a conforming
+    processor folds and trims before matching and this is the date it
+    looks like.
+
+    This asserted the opposite, on the reasoning that `$` matches before
+    a final newline and an XML Schema processor would refuse the value.
+    The first half is true of Python; the second is not true of XML
+    Schema, and the two together made a MUST finding out of a conformant
+    document. Read the standard, not the regex."""
     env = copy.deepcopy(td_env())
     _further(env)["value"][1]["value"] = "2025-03-15\n"
-    assert "TD-D1" in _ids(tmp_path, env)
+    assert "TD-D1" not in _ids(tmp_path, env)
 
 
 def test_a_date_written_in_other_digits_is_not_a_date(tmp_path):
