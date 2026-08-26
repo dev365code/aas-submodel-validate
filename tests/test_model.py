@@ -54,23 +54,51 @@ def test_findings_serialise_for_machines():
 #:
 #: This is what `schemaVersion: 1` promises will not disappear. A diff
 #: touching it is a diff that has to answer for the version.
-V1_REQUIRED = {"schemaVersion", "path", "ok", "summary", "notes", "findings"}
-V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked"}
+#:
+#: Everything shape 1 ships is in here, `toolVersion`, `options` and
+#: `complete` included. They were not, and the omission was the same bug
+#: in a smaller font: a floor that lists only what existed the day it was
+#: written protects less with every key added, and renaming
+#: `options.strictMeta` to `options.strict` would have been three green
+#: lines. A consumer reading `report.options.strictMeta` gets `undefined`
+#: -- falsy -- and a strict run silently reads as permissive.
+V1_REQUIRED = {"schemaVersion", "toolVersion", "path", "ok", "options",
+               "summary", "notes", "findings"}
+V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete"}
+V1_OPTIONS = {"profile", "strictMeta", "allowUnmatched"}
 V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
               "detail", "fix", "title", "spec"}
 
-#: And this is everything the document carries today. Additions land here
-#: alone and leave the version where it is.
-REPORT_KEYS = V1_REQUIRED | {"toolVersion", "options"}
-SUMMARY_KEYS = V1_SUMMARY | {"complete"}
-FINDING_KEYS = set(V1_FINDING)
-OPTIONS_KEYS = {"profile", "strictMeta", "allowUnmatched"}
+#: Keys added after shape 1 shipped. A key lands here alone -- a consumer
+#: that does not know it reads what it read before, so the version stays
+#: at 1 -- and moves up into the lists above at the release that ships
+#: it, because from then on renaming it breaks somebody. That promotion
+#: is the step nobody was told to take; it is written down here because
+#: the floor is worthless without it.
+ADDED_SINCE_V1 = set()
+ADDED_SINCE_V1_SUMMARY = set()
+ADDED_SINCE_V1_OPTIONS = set()
+ADDED_SINCE_V1_FINDING = set()
+
+#: And this is everything the document carries today.
+REPORT_KEYS = V1_REQUIRED | ADDED_SINCE_V1
+SUMMARY_KEYS = V1_SUMMARY | ADDED_SINCE_V1_SUMMARY
+OPTIONS_KEYS = V1_OPTIONS | ADDED_SINCE_V1_OPTIONS
+FINDING_KEYS = V1_FINDING | ADDED_SINCE_V1_FINDING
 
 
 def _report():
+    """One error, two warnings, three info.
+
+    Distinct and non-zero, because a golden with two zeroes in it cannot
+    see them swapped: `errors`/`warnings` was caught and `warnings`/`info`
+    was not, and the difference was that one pair happened to differ."""
     report = Report(path="machine-docs.json")
-    report.findings = [Finding(_rule(), Violation("wrong", subject="urn:x",
-                                                  detail="saw 2", fix="mend it"))]
+    report.findings = (
+        [Finding(_rule("MUST"), Violation("wrong", subject="urn:x",
+                                          detail="saw 2", fix="mend it"))]
+        + [Finding(_rule("SHOULD"), Violation("iffy %d" % n)) for n in range(2)]
+        + [Finding(_rule("MAY"), Violation("noted %d" % n)) for n in range(3)])
     report.checked = 123
     report.notes = ["something worth saying once"]
     return report
@@ -84,6 +112,7 @@ def test_the_report_has_the_shape_version_one_names():
     assert set(document) >= V1_REQUIRED
     assert set(document["summary"]) >= V1_SUMMARY
     assert set(document["findings"][0]) >= V1_FINDING
+    assert set(document["options"]) >= V1_OPTIONS
     assert set(document) == REPORT_KEYS
     assert set(document["summary"]) == SUMMARY_KEYS
     assert set(document["findings"][0]) == FINDING_KEYS
@@ -95,7 +124,7 @@ def test_the_summary_counts_what_it_says_it_counts():
     `warnings`, or counting findings where the registry was meant, was
     invisible. A consumer gates a build on these."""
     document = _report().as_dict()
-    assert document["summary"] == {"errors": 1, "warnings": 0, "info": 0,
+    assert document["summary"] == {"errors": 1, "warnings": 2, "info": 3,
                                    "rulesChecked": 123, "complete": True}
 
 
@@ -110,6 +139,17 @@ def test_the_report_says_what_was_asked_of_it():
     assert document["options"] == {"profile": "02035-2", "strictMeta": True,
                                    "allowUnmatched": False}
     assert document["toolVersion"] == __version__
+    # The documented default, which the case above never reaches: a run
+    # with no --profile publishes `null`, not the empty string a reader
+    # would have to treat as a profile named "".
+    assert _report().as_dict()["options"]["profile"] is None
+
+
+def test_the_notes_reach_the_document():
+    """`notes` is where a --profile that matched nothing and an
+    --allow-unmatched pass are reported, and only its type was asserted:
+    emitting `[]` for every run, forever, was green."""
+    assert _report().as_dict()["notes"] == ["something worth saying once"]
 
 
 def test_the_version_says_which_shape_it_is():
@@ -128,8 +168,14 @@ def test_the_report_says_what_the_types_promise():
     assert isinstance(document["notes"], list)
     assert isinstance(document["findings"], list)
     assert isinstance(document["summary"]["complete"], bool)
+    assert isinstance(document["toolVersion"], str)
     for counter in ("errors", "warnings", "info", "rulesChecked"):
         assert isinstance(document["summary"][counter], int), counter
+    # The flags especially. `1 == True` in Python, so a value assertion
+    # comparing the options dict passes while `json.dumps` writes
+    # `"strictMeta": 1` and a consumer testing `=== true` breaks.
+    for flag in ("strictMeta", "allowUnmatched"):
+        assert isinstance(document["options"][flag], bool), flag
 
 
 def test_the_report_survives_the_trip_through_json():

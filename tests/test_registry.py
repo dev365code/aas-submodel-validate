@@ -7,6 +7,7 @@ from aas_submodel_validate import registry
 from aas_submodel_validate import rules as _rules  # noqa: F401 - registers
 from aas_submodel_validate.model import KINDS, Violation
 from aas_submodel_validate.registry import all_rules
+from aas_submodel_validate.runner import _meta_rule
 
 
 def test_registration_and_lookup(monkeypatch):
@@ -72,17 +73,41 @@ def test_a_priority_that_scores_as_nothing_is_refused(monkeypatch):
             return ()
 
 
-def test_the_vocabulary_the_gate_admits_is_the_one_reports_use(monkeypatch):
-    """The gate is only as good as the list behind it: a list that grew a
-    fifth kind nobody reads would admit it and the reading order would
-    put it last without anyone deciding that. What is registered today,
-    against what may be."""
+def test_the_gate_admits_every_kind_the_vocabulary_names(monkeypatch):
+    """A gate that refused a legitimate kind would be found by whoever
+    added the rule, loudly; asserted anyway, because the cost of finding
+    it that way is somebody's afternoon."""
     monkeypatch.setattr(registry, "_registry", {})
     for kind in KINDS:
         @registry.rule("Z-%s" % kind, kind=kind, prio="MUST", title=kind, fix="f")
         def fine(ctx):
             return ()
-    assert {rule.kind for rule in registry.all_rules()} == set(KINDS)
+    assert len(registry.all_rules()) == len(KINDS)
+
+
+#: The one kind no rule registers. The metamodel channel is relayed from
+#: aas-core3.0 and built by hand in `runner`, deliberately outside the
+#: registry, and this project re-implements no AASd constraint -- so a
+#: registered rule wearing `meta` would be that promise breaking.
+UNREGISTERED_KINDS = {"meta"}
+
+
+def test_every_kind_in_the_vocabulary_has_a_user():
+    """The other direction, and the one that needed writing.
+
+    The test this replaced emptied the registry, registered one rule per
+    kind and then asserted that the kinds it had just registered were the
+    kinds in the list. It could not fail. A fifth kind added to `KINDS`
+    and used by nothing passed it, which is exactly the case its
+    docstring named.
+
+    Asked of the real registry, so the vocabulary cannot grow a word
+    nobody says, and `meta` cannot quietly acquire a registered rule."""
+    registered = {rule.kind for rule in all_rules()}
+    assert registered, "nothing registered at all -- this test proves nothing"
+    assert registered <= set(KINDS), "a rule wears a kind the report cannot read"
+    assert set(KINDS) - registered == UNREGISTERED_KINDS
+    assert _meta_rule(strict=False).kind in UNREGISTERED_KINDS
 
 
 #: Every rule-id namespace this tool registers, as the whole shape of an

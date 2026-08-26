@@ -1,7 +1,12 @@
 # The JSON report
 
-`smtv -f json` writes one JSON object per run, on stdout. This is what is
-in it, and what the version number at the top of it promises.
+`smtv -f json` writes one JSON object to stdout. This is what is in it,
+and what the version number at the top of it promises.
+
+Two runs write nothing there: `-q`, which asks for the exit code alone,
+and exit 2, where the path could not be read at all and the reason goes
+to stderr. A reader that parses stdout unconditionally meets its first
+`JSONDecodeError` on the case it most needs to handle.
 
 ```json
 {
@@ -75,8 +80,8 @@ with another report.
 | `errors` | integer | Findings at `error` severity. |
 | `warnings` | integer | Findings at `warning` severity. |
 | `info` | integer | Findings at `info` severity. |
-| `rulesChecked` | integer | How many rules ran. Not the number of findings. |
-| `complete` | boolean | Whether everything this run was handed got read. `false` means an archive that would not open, a part that would not parse, or a document over the reader's bound — what was not read was not judged, and a report that only said `ok: false` could not tell you which. |
+| `rulesChecked` | integer | Every rule registered in this build. Not how many applied to your file — a Technical Data file is not judged by 02004's rules, and the number does not move when a different template answers — and not the number of findings. The relayed `meta` channel is not registered and is not counted. |
+| `complete` | boolean | Whether everything this run was handed got read. `false` means an archive that would not open, a relationship chain that went nowhere, a part that would not parse, or a document over the reader's bound — what was not read was not judged, and a report that only said `ok: false` could not tell you which. |
 
 Gate on `ok` and on `complete`. A refused input arrives as `ok: false`
 with one error and every rule counted, which is exactly what a judged
@@ -96,7 +101,7 @@ differ.
 | `rule` | string | The rule id — stable, and the thing to filter on. |
 | `kind` | string | `container`, `template`, `lint` or `meta`. |
 | `severity` | string | `error`, `warning` or `info` — this project's reading of the priority. |
-| `priority` | string | The specification's own RFC 2119 word: `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `RECOMMENDED`, `SHOULD`, `MAY` or `OPTIONAL`. Both are published so a consumer that wants to re-derive the severity can. |
+| `priority` | string | The rule's own priority word, one of `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `RECOMMENDED`, `SHOULD`, `MAY` or `OPTIONAL` — the RFC 2119 keywords this project maps to a severity. The set is closed and wider than what today's rules use, so accept all eight. Both fields are published so a consumer that wants to re-derive the severity can. |
 | `message` | string | What is wrong. |
 | `subject` | string or null | Where: an idShort path, an identifier, or a part name. `null` where the finding is about the document as a whole. |
 | `detail` | string or null | Context — usually the value that was seen. |

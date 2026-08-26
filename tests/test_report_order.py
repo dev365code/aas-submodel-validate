@@ -11,7 +11,7 @@ import copy
 import json
 from pathlib import Path
 
-from aas_submodel_validate import runner
+from aas_submodel_validate import model, runner
 from aas_submodel_validate.model import Finding, Rule, Violation
 from builders import build_aasx, hd_env
 
@@ -23,6 +23,17 @@ EXAMPLE = Path(__file__).resolve().parent / "corpus/idta/02004/example.json"
 #: disagree when the first one moves.
 SEVERITY = ("error", "warning", "info")
 KIND = ("container", "template", "lint", "meta")
+
+
+def test_this_files_copy_knows_every_kind_there_is():
+    """The copy above is deliberate and its *order* is its own -- that is
+    what makes it a second opinion. Its *membership* is not: a fifth kind
+    in `model.KINDS` would reach `_as_read`, whose `KIND.index` would
+    raise ValueError from inside a list comprehension, and the reader of
+    that failure would be told nothing about the vocabulary. Nothing
+    pinned it, and the test that claimed to could not fail."""
+    assert set(KIND) == set(model.KINDS)
+    assert set(SEVERITY) == {str(s) for s in model.Severity}
 
 
 def _as_read(finding):
@@ -75,10 +86,14 @@ def _pair_alike_but_for(component, values):
     """Two findings from one rule about one subject, differing in exactly
     one component of the key -- the smallest input that can say whether
     that component is being asked at all."""
-    rule = Rule(id="T1", kind="template", prio="MUST", title="t", spec=None,
-                fn=lambda ctx: ())
+    def rule(rule_id):
+        return Rule(id=rule_id, kind="template", prio="MUST", title="t",
+                    spec=None, fn=lambda ctx: ())
+
     alike = {"message": "the value is wrong", "subject": "urn:x"}
-    return [Finding(rule, Violation(**{**alike, component: value}))
+    if component == "rule_id":
+        return [Finding(rule(value), Violation(**alike)) for value in values]
+    return [Finding(rule("T1"), Violation(**{**alike, component: value}))
             for value in values]
 
 
@@ -107,7 +122,8 @@ def test_no_two_findings_share_a_place_in_the_order(tmp_path):
     assert len(set(keys)) == len(keys), "two findings share a place in the order"
 
     for component, values in (("message", ("first thing", "second thing")),
-                              ("subject", ("urn:a", "urn:b"))):
+                              ("subject", ("urn:a", "urn:b")),
+                              ("rule_id", ("T1", "T2"))):
         one, other = _pair_alike_but_for(component, values)
         assert runner._reading_order(one) != runner._reading_order(other), \
             "two findings alike but for their %s land in one place" % component
@@ -132,7 +148,7 @@ def test_a_kind_the_order_does_not_know_goes_last():
             > runner._reading_order(Finding(last_known, violation)))
 
 
-def test_a_rule_that_stops_halfway_still_leaves_a_report_that_can_be_read(tmp_path):
+def test_a_rule_that_stops_halfway_still_leaves_a_report_that_can_be_read():
     """A rule yields findings as it goes, so one that raises on its third
     subject has already produced two -- and the crash is reported under
     the same id, at the same severity, with no subject of its own.
@@ -142,16 +158,30 @@ def test_a_rule_that_stops_halfway_still_leaves_a_report_that_can_be_read(tmp_pa
     guard that turns it into `""` is the whole reason this run ends in a
     report rather than a traceback. Nothing measured it, and removing it
     left the suite green."""
+    # A subject shaped like the ones rules really produce, and it has to
+    # be: the guard's replacement is a *value*, and only a subject that
+    # sorts on the far side of that value can see the wrong one. `str()`
+    # in place of the guard yields "None", which lands after "urn:x" and
+    # before "HandoverDocumentation/...", so a made-up subject let it
+    # through and a real one does not.
+    subject = "HandoverDocumentation/Documents/[0]"
+
     def stops_halfway(ctx):
-        yield Violation("the value is wrong", subject="urn:x")
+        yield Violation("the value is wrong", subject=subject)
         raise KeyError("the third subject")
 
     rule = Rule(id="T1", kind="template", prio="MUST", title="t", spec=None,
                 fn=stops_halfway, fix="mend it")
     findings = runner.execute([rule], ctx=None)
-    assert [f.violation.subject for f in findings] == ["urn:x", None], \
+    assert [f.violation.subject for f in findings] == [subject, None], \
         "this no longer puts an absent subject beside a present one"
-    assert sorted(findings, key=runner._reading_order)
+    # Where it lands, not merely that the sort survives. `assert
+    # sorted(...)` was a truthiness check on a non-empty list: it caught
+    # the guard being deleted, by raising, and let `or "zzz"` through --
+    # which sorts the crash to the bottom of its rule's block, under the
+    # partial findings, where the reader meets it last.
+    ordered = sorted(findings, key=runner._reading_order)
+    assert [f.violation.subject for f in ordered] == [None, subject]
 
 
 def test_this_fixture_would_notice_the_sort_going_away(tmp_path, monkeypatch):
@@ -169,16 +199,25 @@ def test_this_fixture_would_notice_the_sort_going_away(tmp_path, monkeypatch):
 def test_errors_lead_and_meta_trails(tmp_path):
     env = copy.deepcopy(hd_env())
     submodel = env["submodels"][0]
-    # one error (break StatusSetDate lexically), one meta warning
-    # (idShort on a list child), one lint info (reference type)
+    # One error (StatusSetDate broken lexically), one lint warning of our
+    # own (HDL5, below), one lint info (HDL3, below) and two relayed
+    # warnings the fixture has always carried: AASd-120 for the idShort
+    # on a list child, and a value/value-type mismatch. Counted here
+    # because the comment said "one meta warning" while two arrived.
     documents = submodel["submodelElements"][0]
     documents["value"][0]["idShort"] = "Datasheet"
-    # The info. Its comment above was written before it was, and for a
-    # while it said so alone: no fixture anywhere produced an `info`
-    # finding in a sorted report, so `info`'s rank was a number nothing
-    # read. It could be moved to the front -- lints above the errors --
-    # with the suite green.
+    # The info, which the comment above claimed before anything produced
+    # it: no fixture anywhere made an `info` finding in a sorted report,
+    # so `info`'s rank was a number nothing read and could be moved to
+    # the front -- lints above the errors -- with the suite green. HDL3
+    # answers when a reference's type is not the template's.
+    #
+    # The key's type moves with it. A `ModelReference` whose first key is
+    # a `GlobalReference` violates AASd-123, so flipping the type alone
+    # bought the info by making the file illegal in a second way and
+    # added a relayed warning nobody asked for.
     documents["semanticId"]["type"] = "ModelReference"
+    documents["semanticId"]["keys"][0]["type"] = "Submodel"
     # a lint warning of our own, so the kind order below has two kinds to
     # order: the template's own §2.3 spelling draws HDL5. Without it every
     # warning in this fixture came from the metamodel channel, and any

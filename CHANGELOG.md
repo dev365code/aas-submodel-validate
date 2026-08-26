@@ -23,3 +23,9 @@ IDTA 02035-2 shares 02004's submodel identifier, so `--profile` chooses
 which of the two answers and SMT-D2 reports the choice; without the flag
 02004 answers. `rulesChecked` in the JSON report counts every registered
 rule, so it counts all 123 whichever template answered.
+The JSON report's shape is written down in `docs/report-schema.md`, and
+carries two more fields: `toolVersion`, because the shape's number and
+the producer's are different numbers and a defect report needs the
+second; and `options`, because the flags move the verdict — the same file
+comes back `ok` under one set and not another — and two reports that did
+not say which run they were could not be compared.

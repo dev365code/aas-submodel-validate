@@ -7,11 +7,17 @@ import json
 import pytest
 
 from aas_submodel_validate.cli import main
+from aas_submodel_validate.registry import all_rules
 from builders import env_json, hd_env
 
 # The one copy of the published shape. Imported rather than repeated,
 # because two golden lists disagree the day one of them is updated.
-from test_model import FINDING_KEYS, REPORT_KEYS, SUMMARY_KEYS
+from test_model import (
+    FINDING_KEYS,
+    OPTIONS_KEYS,
+    REPORT_KEYS,
+    SUMMARY_KEYS,
+)
 
 
 def _write(tmp_path, payload: bytes):
@@ -121,7 +127,41 @@ def test_the_json_a_pipeline_reads_is_the_shape_it_was_promised(tmp_path, capsys
     document = json.loads(capsys.readouterr().out)
     assert set(document) == REPORT_KEYS
     assert set(document["summary"]) == SUMMARY_KEYS
+    # `options` is part of the published shape too, and its inner keys
+    # were checked only on the unit path -- the one place this file's own
+    # docstring says is not where a consumer reads from.
+    assert set(document["options"]) == OPTIONS_KEYS
     assert document["findings"], "no finding, so the finding shape went unchecked"
     for finding in document["findings"]:
         assert set(finding) == FINDING_KEYS
     assert document["path"] == path
+    # The number itself, not just its key. `report.checked = 0` passed
+    # everything: the count was pinned where it is copied into the
+    # document and nowhere where a run produces it.
+    assert document["summary"]["rulesChecked"] == len(all_rules())
+
+
+def test_the_options_a_report_publishes_are_the_flags_it_was_given(tmp_path, capsys):
+    """The flags move the verdict, so the report carries them -- and
+    nothing read them back off a run. Recording them was three lines in
+    `runner.run`, and all three could be deleted, or two of them swapped
+    so every strict run published `"strictMeta": false`, with the suite
+    green. A consumer diffing two reports would have concluded the tool
+    was non-deterministic.
+
+    One flag at a time, because a swap is invisible whenever two of them
+    agree."""
+    path = _write(tmp_path, json.dumps(hd_env()).encode("utf-8"))
+
+    def published(argv):
+        main([path, "-f", "json"] + argv)
+        return json.loads(capsys.readouterr().out)["options"]
+
+    assert published([]) == {
+        "profile": None, "strictMeta": False, "allowUnmatched": False}
+    assert published(["--strict-meta"]) == {
+        "profile": None, "strictMeta": True, "allowUnmatched": False}
+    assert published(["--allow-unmatched"]) == {
+        "profile": None, "strictMeta": False, "allowUnmatched": True}
+    assert published(["--profile", "02004"]) == {
+        "profile": "02004", "strictMeta": False, "allowUnmatched": False}

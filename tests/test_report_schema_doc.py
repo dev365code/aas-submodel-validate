@@ -50,12 +50,14 @@ def _documented_keys(section):
 
 
 def _description_of(section, key):
-    """The description cell of the one table row for `key`.
+    """The description cell of the one table row for `key` -- column
+    three, which is where a vocabulary is written down.
 
-    Not the whole section, and not the whole row: read off the section,
-    dropping `lint` from the row that lists the kinds passed, because the
-    prose above the table names the kinds too for a different reason. Not
-    the row either, because the row opens with the key's own name.
+    Neither of the wider readings works. Search the whole section and
+    deleting `lint` from the kinds row passes, because the prose above
+    the table happens to name the kinds too, for a different reason.
+    Search the whole row and every vocabulary contains the key's own
+    name, which is in column one.
     """
     row = next(line for line in section.splitlines()
                if line.startswith("| `%s` " % key))

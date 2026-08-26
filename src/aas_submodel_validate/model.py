@@ -47,8 +47,15 @@ PRIO_SEVERITY = {
 #: One list, because it was two and neither could see the other: the
 #: reading order held its own copy, and a kind outside that copy sorted
 #: into the middle of it. `runner` derives its order from this and
-#: `registry` refuses anything outside it, so a fifth kind is a change to
-#: this line and nowhere else.
+#: `registry` refuses anything outside it.
+#:
+#: A fifth kind is still not a one-line change, and the comment that said
+#: so was wrong: `docs/report-schema.md` publishes the vocabulary to
+#: consumers, and the report-order tests keep a second copy on purpose --
+#: a test that borrows the ordering it checks asserts that sorted things
+#: are sorted. Both are pinned against this list for *membership*, so
+#: both go red rather than stale; the copy's *order* stays its own, which
+#: is the whole reason it is a copy.
 KINDS = ("container", "template", "lint", "meta")
 
 
