@@ -8,7 +8,10 @@ Passport part 2* 1.0 — of which 86 are generated from the vendored
 official template files. The `meta` channel
 relays aas-core3.0's metamodel verification rather than restating it;
 four input forms are read (.aasx with XML or JSON payload, environment
-.json/.xml, bare Submodel .json); every finding carries a remedy
+.json/.xml, bare Submodel .json); XML arrives in whichever encoding the
+parser reads — UTF-8 or UTF-16, marked or not — and is decoded that way
+before the DTD refusal looks at it, so the refusal covers what the
+parser covers; every finding carries a remedy
 sentence; and the official example is pinned by name — defects and all.
 IDTA 02035-2 shares 02004's submodel identifier, so `--profile` chooses
 which of the two answers and SMT-D2 reports the choice; without the flag

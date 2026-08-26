@@ -14,6 +14,7 @@ where every wheel crosses an air gap by hand.
 from __future__ import annotations
 
 import posixpath
+import re
 import urllib.parse
 import zipfile
 import zlib
@@ -42,7 +43,87 @@ MAX_PART_BYTES = 64 * 1024 * 1024
 #: forty times one. Four times the single-part cap leaves room for a
 #: container carrying several environments and refuses the pathological.
 MAX_TOTAL_PART_BYTES = 4 * MAX_PART_BYTES
-_DOCTYPE = __import__("re").compile(rb"<!DOCTYPE", __import__("re").IGNORECASE)
+
+_DOCTYPE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
+
+#: Byte order marks, longest first, because a UTF-32 mark begins with a
+#: UTF-16 one and the order is what tells them apart.
+_BOMS = ((b"\xff\xfe\x00\x00", "utf-32-le"), (b"\x00\x00\xfe\xff", "utf-32-be"),
+         (b"\xff\xfe", "utf-16-le"), (b"\xfe\xff", "utf-16-be"),
+         (b"\xef\xbb\xbf", "utf-8-sig"))
+
+#: An encoding declaration that survived a decode would contradict the
+#: bytes it is attached to, so it goes with the encoding it named.
+_DECLARED_ENCODING = re.compile(r'(<\?xml[^>]*?)\s+encoding\s*=\s*(["\'])[^"\']*\2')
+
+
+def _sniff(raw: bytes):
+    """The encoding the parser will take an unmarked document for, or None.
+
+    XML requires a byte order mark on UTF-16 and the parser does not
+    insist, autodetecting instead -- so a document can be UTF-16 to the
+    parser and opaque bytes to every guard below it. That is how a
+    `<!DOCTYPE` written UTF-16 walked past a pattern that only ever
+    matches UTF-8, and had its entities expanded by the parser that was
+    supposed to never see it.
+
+    Decided on the *shape* of the first four bytes, not on what they are.
+    Keying on the document beginning with `<` is keying on the fixtures: a
+    document may open with whitespace, a comment or a processing
+    instruction, and may carry no declaration at all. Four bytes, not two,
+    because unmarked UTF-32-LE also begins `3C 00` -- reading it as UTF-16
+    would hand the parser text riddled with nulls and claim to understand
+    an encoding it refuses.
+    """
+    if len(raw) < 4:
+        return None
+    null = tuple(byte == 0 for byte in raw[:4])
+    if null in ((False, True, True, True), (True, True, True, False)):
+        return None                                 # unmarked UTF-32
+    if null == (False, True, False, True):
+        return "utf-16-le"
+    if null == (True, False, True, False):
+        return "utf-16-be"
+    return None
+
+
+def xml_as_utf8(raw: bytes) -> bytes:
+    """One XML document as UTF-8, decided the way the parser decides it.
+
+    Everything downstream reads these bytes. If this disagrees with the
+    parser about what the document says, every guard below is inspecting a
+    different document from the one that gets parsed -- which is the whole
+    defect this exists to close. Bytes that cannot be decoded as the
+    encoding they claim come back untouched: the parser will refuse them
+    too, and refusing here instead would be this reader inventing a
+    verdict.
+    """
+    for bom, encoding in _BOMS:
+        if raw.startswith(bom):
+            return _as_utf8(raw, encoding)
+    encoding = _sniff(raw)
+    if encoding is not None:
+        return _as_utf8(raw, encoding)
+    return raw
+
+
+def _as_utf8(raw: bytes, encoding: str) -> bytes:
+    try:
+        text = raw.decode(encoding)
+    except UnicodeDecodeError:
+        return raw
+    return _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
+
+
+def declares_doctype(raw: bytes) -> bool:
+    """Whether the document declares a DTD.
+
+    Asked of bytes that have been through `xml_as_utf8`, and only of
+    those: asked of the bytes as they arrived it answers for UTF-8 and
+    guesses for everything else. Both readers ask it here so that neither
+    can grow its own copy of the pattern and drift.
+    """
+    return bool(_DOCTYPE.search(raw))
 
 _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
 
@@ -225,18 +306,19 @@ class AasxPackage:
 
         Targets come back without their leading slash, ready to use as ZIP
         entry names. Real-world .rels files start with a UTF-8 byte order
-        mark; ElementTree's expat handles that on bytes input, so the raw
-        part is handed over undecoded.
+        mark, and the parser reads several other encodings besides -- so
+        the part is decoded the way the parser will read it before the
+        guard below reads a byte of it.
         """
         rels = _rels_name(source)
         if rels not in self._names:
             raise ContainerError("%s has no %s, so the chain from %r goes nowhere"
                                  % (self.path, rels, source or "the package root"))
-        raw = self.read(rels)
+        raw = xml_as_utf8(self.read(rels))
         # A relationships part has no legitimate use for a DTD, and a
         # nested-entity DTD is a decompression-free way to exhaust memory
-        # (billion laughs; expat expands it before any handler runs). Refuse
-        # the declaration rather than try to bound the expansion.
+        # (billion laughs; the parser expands it before any handler runs).
+        # Refuse the declaration rather than try to bound the expansion.
         if _DOCTYPE.search(raw):
             raise ContainerError("%s: %s declares a DOCTYPE, which is refused"
                                  % (self.path, rels))

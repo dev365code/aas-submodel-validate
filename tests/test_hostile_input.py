@@ -9,7 +9,7 @@ import zipfile
 
 import pytest
 
-from aas_submodel_validate import container, runner
+from aas_submodel_validate import container, loader, runner
 from aas_submodel_validate.cli import EXIT_ERROR, main
 from aas_submodel_validate.container import AasxPackage, ContainerError
 from builders import (
@@ -65,24 +65,108 @@ def test_the_oversized_part_is_a_finding_end_to_end(tmp_path, monkeypatch):
     assert [f for f in report.findings if "could not run" in f.violation.message] == []
 
 
-def _rels_with_dtd() -> bytes:
-    entities = "".join('<!ENTITY e%d "%s">' % (i, ("&e%d;" % (i - 1)) * 10 if i else "x" * 64)
-                       for i in range(9))
-    return (('<?xml version="1.0"?><!DOCTYPE Relationships [%s]>'
-             '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-             '<Relationship Type="http://admin-shell.io/aasx/relationships/aasx-origin" '
-             'Target="/aasx/aasx-origin" Id="R0">&e8;</Relationship></Relationships>')
-            % entities).encode("utf-8")
+#: What the parser reads when nothing tells it the encoding -- measured,
+#: not assumed. A byte order mark is honoured; without one it autodetects
+#: UTF-16 in both byte orders, and it refuses UTF-32 in both, so nothing
+#: can be smuggled in UTF-32. A guard that matches bytes matches the first
+#: of these and none of the rest.
+XML_ENCODINGS = ("utf-8", "utf-8-sig", "utf-16", "utf-16-le", "utf-16-be")
+
+RELS_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 
 
-def test_a_rels_entity_bomb_is_refused_not_expanded(tmp_path):
-    path = tmp_path / "laughs.aasx"
+def _declares(encoding: str) -> str:
+    return "utf-16" if encoding.startswith("utf-16") else "utf-8"
+
+
+def _clean_rels(encoding: str = "utf-8") -> bytes:
+    return ('<?xml version="1.0" encoding="%s"?><Relationships xmlns="%s">'
+            '<Relationship Type="%s" Target="/aasx/aasx-origin" Id="R0" /></Relationships>'
+            % (_declares(encoding), RELS_NS, ORIGIN_REL)).encode(encoding)
+
+
+#: The outermost entity the declarations below define. Named once: a
+#: fixture that declares five and references a sixth is refused for being
+#: undefined, which looks exactly like the guard working and is not.
+_TOP = 4
+
+
+def _entities() -> str:
+    """Nested enough to be the shape of the attack, small enough that a
+    parser which does expand it -- and this one does, measured: ten levels
+    of ten reach millions of characters -- finishes instead of taking the
+    suite with it."""
+    return "".join('<!ENTITY e%d "%s">' % (i, ("&e%d;" % (i - 1)) * 4 if i else "x" * 16)
+                   for i in range(_TOP + 1))
+
+
+def _rels_with_dtd(encoding: str = "utf-8") -> bytes:
+    entities = _entities()
+    return (('<?xml version="1.0" encoding="%s"?><!DOCTYPE Relationships [%s]>'
+             '<Relationships xmlns="%s">'
+             '<Relationship Type="%s" '
+             'Target="/aasx/aasx-origin" Id="R0">&e%d;</Relationship></Relationships>')
+            % (_declares(encoding), entities, RELS_NS, ORIGIN_REL, _TOP)).encode(encoding)
+
+
+def _archive_carrying(path, raw: bytes) -> None:
     with zipfile.ZipFile(path, "w") as archive:
-        archive.writestr("[Content_Types].xml", "<Types/>")
-        archive.writestr("_rels/.rels", _rels_with_dtd())
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", raw)
         archive.writestr("aasx/aasx-origin", b"")
+
+
+@pytest.mark.parametrize("encoding", XML_ENCODINGS)
+def test_a_clean_rels_is_read_whatever_encoding_it_arrives_in(tmp_path, encoding):
+    """The premise the refusal below rests on. Without it, refusing a bomb
+    in an encoding would prove nothing: the parser might simply not read
+    that encoding, and the guard would be taking credit for a limit that
+    is not its own."""
+    path = tmp_path / "clean.aasx"
+    _archive_carrying(path, _clean_rels(encoding))
+    with AasxPackage(path) as package:
+        assert package.origin == "aasx/aasx-origin"
+
+
+@pytest.mark.parametrize("encoding", XML_ENCODINGS)
+def test_a_rels_entity_bomb_is_refused_whatever_encoding_it_arrives_in(tmp_path, encoding):
+    """The refusal matched bytes, and a byte pattern finds `<!DOCTYPE` in
+    UTF-8 and nowhere else -- so the same declaration, written UTF-16,
+    walked past it and the parser expanded the entities. The gate is a
+    property, not a list of encodings to keep up to date: wherever a clean
+    document is read, one declaring a DOCTYPE is refused *here*, and the
+    test above is what makes that sentence mean something."""
+    path = tmp_path / "laughs.aasx"
+    _archive_carrying(path, _rels_with_dtd(encoding))
     with AasxPackage(path) as package, pytest.raises(ContainerError, match="DOCTYPE|entit"):
         _ = package.origin
+
+
+def _environment_xml(encoding: str = "utf-8", *, dtd: bool = False) -> bytes:
+    doctype = "<!DOCTYPE environment [%s]>" % _entities() if dtd else ""
+    return ('<?xml version="1.0" encoding="%s"?>%s'
+            '<environment xmlns="https://admin-shell.io/aas/3/0"><submodels /></environment>'
+            % (_declares(encoding), doctype)).encode(encoding)
+
+
+@pytest.mark.parametrize("encoding", XML_ENCODINGS)
+def test_a_bare_environment_is_read_whatever_encoding_it_arrives_in(tmp_path, encoding):
+    """The same premise, one layer up: the payload reader has its own copy
+    of the refusal and its own blindness."""
+    path = tmp_path / "env.xml"
+    path.write_bytes(_environment_xml(encoding))
+    assert [e.message for e in loader.load(path).errors] == []
+
+
+@pytest.mark.parametrize("encoding", XML_ENCODINGS)
+def test_a_bare_environment_dtd_is_refused_whatever_encoding_it_arrives_in(tmp_path, encoding):
+    """Worse here than in the container: two of these encodings did not
+    fail, they *passed* -- a document whose entity declarations had been
+    expanded came back read, with no finding to say so."""
+    path = tmp_path / "env.xml"
+    path.write_bytes(_environment_xml(encoding, dtd=True))
+    assert [e.message for e in loader.load(path).errors] == [
+        "the XML declares a DOCTYPE, which is refused"]
 
 
 @pytest.mark.parametrize("suffix", (".xml", ".json", ".aasx"))

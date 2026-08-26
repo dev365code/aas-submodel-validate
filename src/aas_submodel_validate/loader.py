@@ -11,16 +11,20 @@ the caller's mistake rather than the file's, and a different exit code.
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
 from aas_core3 import jsonization, types, xmlization
 
-from .container import AasxPackage, ContainerError, PartTooLarge, UnreadablePart
-
-_DOCTYPE = re.compile(rb"<!DOCTYPE", re.IGNORECASE)
+from .container import (
+    AasxPackage,
+    ContainerError,
+    PartTooLarge,
+    UnreadablePart,
+    declares_doctype,
+    xml_as_utf8,
+)
 
 
 class UnreadablePath(Exception):
@@ -58,11 +62,17 @@ def _decode(raw: bytes) -> str:
 
 def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form: str) -> None:
     """One environment document (JSON or XML) into loaded.submodels."""
-    if not form.endswith("json") and _DOCTYPE.search(raw):
-        loaded.errors.append(LoadError(
-            "payload", "the XML declares a DOCTYPE, which is refused",
-            subject=part or loaded.path))
-        return
+    if not form.endswith("json"):
+        # Decoded the way the parser will read it, before the guard reads a
+        # byte of it. The refusal matched bytes, and a byte pattern finds
+        # `<!DOCTYPE` in UTF-8 and nowhere else -- so the same declaration
+        # written UTF-16 came back not as a refusal but as a clean read.
+        raw = xml_as_utf8(raw)
+        if declares_doctype(raw):
+            loaded.errors.append(LoadError(
+                "payload", "the XML declares a DOCTYPE, which is refused",
+                subject=part or loaded.path))
+            return
     try:
         if form.endswith("json"):
             environment = jsonization.environment_from_jsonable(json.loads(_decode(raw)))
