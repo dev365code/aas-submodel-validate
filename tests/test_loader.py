@@ -9,12 +9,22 @@ rather than the file's.
 from __future__ import annotations
 
 import json
+import zipfile
 
 import pytest
 from aas_core3 import jsonization, xmlization
 
+from aas_submodel_validate import container
 from aas_submodel_validate.loader import UnreadablePath, load
-from builders import build_aasx, env_json
+from builders import (
+    CONTENT_TYPES,
+    ORIGIN_REL,
+    SPEC_REL,
+    build_aasx,
+    corrupt_part,
+    env_json,
+    rels,
+)
 
 
 def test_an_environment_json_file(tmp_path):
@@ -138,3 +148,74 @@ def test_an_environment_json_is_parsed_once(tmp_path, monkeypatch):
     assert not loaded.errors
     assert loaded.environment is not None, "the environment branch was not taken"
     assert len(parsed) == 1, "parsed %d times, on %r characters" % (len(parsed), parsed)
+
+
+@pytest.mark.parametrize("how", ("zip", "bounds"))
+def test_one_unreadable_part_does_not_hide_the_ones_behind_it(tmp_path, monkeypatch, how):
+    """The container's version of the rule the runner keeps for rules: one
+    broken thing must not silence the rest. A spec part that will not
+    decompress is recorded and the loop goes on, because the archive may
+    name several payloads and the reader was handed all of them.
+
+    Turning either `continue` in that loop into a `break` leaves the
+    submodels behind it unread -- and unread is not the same as absent:
+    the report would come back with one container finding, no template
+    findings, and `judged: false`, which says this reader learned nothing
+    about a file it could have judged."""
+    if how == "bounds":
+        monkeypatch.setattr(container, "MAX_PART_BYTES", 4096)
+    names = ["aasx/bad.json", "aasx/good.json"]
+    path = tmp_path / "two.aasx"
+    payload = env_json() if how == "zip" else b" " * 8192 + env_json()
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/" + name) for name in names]))
+        archive.writestr(names[0], payload)
+        archive.writestr(names[1], env_json())
+    if how == "zip":
+        corrupt_part(path, names[0], "method")
+    loaded = load(path)
+    assert [error.stage for error in loaded.errors] == [how]
+    assert len(loaded.submodels) == 1, "the part behind the broken one went unread"
+
+
+def test_a_file_this_reader_cannot_identify_is_the_callers_mistake(tmp_path):
+    """Three suffixes are read and everything else is refused before a
+    byte is opened. Falling through to the XML branch instead would judge
+    a file by a reading nobody chose -- and report a defect in a document
+    that was never claimed to be one."""
+    path = tmp_path / "notes.txt"
+    path.write_bytes(env_json())
+    with pytest.raises(UnreadablePath, match="cannot tell what"):
+        load(path)
+
+
+@pytest.mark.parametrize("suffix", (".xml", ".json"))
+def test_a_document_over_the_bound_is_not_parsed_anyway(tmp_path, monkeypatch, suffix):
+    """`_read_bounded` answers None when it refused, and each caller has
+    to stop there. Carrying None into the parser is not a different
+    verdict, it is a crash inside a reader whose one promise about hostile
+    input is that there is not one.
+
+    Both branches, because each asks the question separately and only one
+    of them was being asked."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+    path = tmp_path / ("big" + suffix)
+    path.write_bytes(b" " * 600)
+    loaded = load(path)
+    assert [error.stage for error in loaded.errors] == ["bounds"]
+
+
+def test_json_that_is_not_an_object_is_a_finding_not_a_crash(tmp_path):
+    """Whether the document is a bare Submodel is asked of a mapping, and
+    JSON offers four other things it could be. A list reaching `.get` is
+    an AttributeError from inside the loader, which is the shape this
+    project reports rather than raises."""
+    path = tmp_path / "list.json"
+    path.write_bytes(b"[1, 2, 3]")
+    loaded = load(path)
+    assert [error.stage for error in loaded.errors] == ["payload"]
+    assert not loaded.submodels
