@@ -8,6 +8,8 @@ rather than the file's.
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 from aas_core3 import jsonization, xmlization
 
@@ -113,3 +115,26 @@ def test_an_environment_json_is_read_from_disk_once(tmp_path, monkeypatch):
                                                 original(self, *a, **kw))[1])
     load(path)
     assert opens.count(str(path)) == 1
+
+
+def test_an_environment_json_is_parsed_once(tmp_path, monkeypatch):
+    """Read once and parsed twice.
+
+    The JSON branch has to parse the document to learn whether it is an
+    environment or a bare submodel, and then handed the *bytes* on -- so
+    the environment case built the same tree a second time, and held both
+    at once while it did. Measured on a 10.2 MiB environment: 0.22 s and
+    58 MiB on top of a reader whose entire bound is 64 MiB of bytes, and
+    the tree is several times the bytes it came from. Nothing saw it: the
+    read-once test above counts opens, and one open was all there was."""
+    path = tmp_path / "env.json"
+    path.write_bytes(env_json())
+    parsed = []
+    original = json.loads
+    monkeypatch.setattr(json, "loads",
+                        lambda text, *a, **kw: (parsed.append(len(text)),
+                                                original(text, *a, **kw))[1])
+    loaded = load(path)
+    assert not loaded.errors
+    assert loaded.environment is not None, "the environment branch was not taken"
+    assert len(parsed) == 1, "parsed %d times, on %r characters" % (len(parsed), parsed)

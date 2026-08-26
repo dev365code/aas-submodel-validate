@@ -112,8 +112,16 @@ def _read_bounded(loaded: Loaded, path: Path):
     return raw
 
 
-def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form: str) -> None:
-    """One environment document (JSON or XML) into loaded.submodels."""
+def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form: str,
+                       document=None) -> None:
+    """One environment document (JSON or XML) into loaded.submodels.
+
+    `document` is the already-parsed JSON, for the one caller that had to
+    parse it to decide what it was. Without it that caller handed the
+    bytes on and this function built the same tree again, holding two at
+    once -- on a reader whose whole bound is 64 MiB of bytes, and whose
+    trees are several times the bytes they came from.
+    """
     if not form.endswith("json"):
         # Decoded the way the parser will read it, before the guard reads a
         # byte of it. The refusal matched bytes, and a byte pattern finds
@@ -133,7 +141,9 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
             return
     try:
         if form.endswith("json"):
-            environment = jsonization.environment_from_jsonable(json.loads(_decode(raw)))
+            if document is None:
+                document = json.loads(_decode(raw))
+            environment = jsonization.environment_from_jsonable(document)
         else:
             environment = xmlization.environment_from_str(_decode(raw))
     except Exception as exc:
@@ -198,7 +208,8 @@ def _load_json(path: Path) -> Loaded:
                                            detail="%s: %s" % (type(exc).__name__, exc)))
         return loaded
 
-    _parse_environment(loaded, raw, part=None, form="environment-json")
+    _parse_environment(loaded, raw, part=None, form="environment-json",
+                       document=document)
     return loaded
 
 
