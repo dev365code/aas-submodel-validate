@@ -221,6 +221,33 @@ class ContainerError(Exception):
     """The file is not something this reader can follow as an AASX."""
 
 
+class RefusedContent(ContainerError):
+    """This reader will not read this part, and nothing about it is wrong.
+
+    A sibling of `PartTooLarge` in the one way that matters: it is this
+    tool's decision, not a claim about the file, so the remedy is not a
+    repair. Kept apart from its parent because the chain is intact -- it
+    names the parts it should -- and telling an author to fix it is the
+    kind of remedy this project promised not to write.
+    """
+
+
+class NoRelationships(ContainerError):
+    """The archive holds no relationships part for this source.
+
+    Kept apart because it means two different things depending on who
+    asked. Walking the chain, a missing `.rels` is the chain going
+    nowhere and X2's business. Asking one payload part what it declares,
+    it means the part declares nothing -- which is ordinary, and the
+    reason that call is allowed to fail quietly.
+
+    Its siblings were failing quietly there too, sharing this type: a
+    `.rels` refused for declaring a DTD, and one that would not parse,
+    both came back as "declares nothing" and left a defective container
+    reporting `ok` with no findings at all.
+    """
+
+
 class PartTooLarge(ContainerError):
     """The archive is well-formed and this reader will not read it all.
 
@@ -321,6 +348,16 @@ class AasxPackage:
         # can also happen a layer below zipfile, in the decompressor,
         # where nothing wraps it -- which the first version of this
         # tuple missed.
+        # Asked before the decompressor runs, not only after. A container
+        # already past its total went on paying a part's worth of work
+        # for every part still to come, because the refusal was raised
+        # after the read it exists to avoid -- and the caller walks all
+        # of them. This changes no boundary: it is the same comparison,
+        # reached earlier.
+        if self._read_total > MAX_TOTAL_PART_BYTES:
+            raise PartTooLarge(
+                "%s: its parts come to more than %d bytes together"
+                % (self.path, MAX_TOTAL_PART_BYTES))
         try:
             # Asking for a bounded number is what bounds the
             # decompressor: an unbounded read hands it the whole stream
@@ -366,7 +403,7 @@ class AasxPackage:
         """
         rels = _rels_name(source)
         if rels not in self._names:
-            raise ContainerError("%s has no %s, so the chain from %r goes nowhere"
+            raise NoRelationships("%s has no %s, so the chain from %r goes nowhere"
                                  % (self.path, rels, source or "the package root"))
         raw = xml_as_utf8(self.read(rels))
         # A relationships part has no legitimate use for a DTD, and a
@@ -374,7 +411,7 @@ class AasxPackage:
         # (billion laughs; the parser expands it before any handler runs).
         # Refuse the declaration rather than try to bound the expansion.
         if declares_doctype(raw):
-            raise ContainerError("%s: %s declares a DOCTYPE, which is refused"
+            raise RefusedContent("%s: %s declares a DOCTYPE, which is refused"
                                  % (self.path, rels))
         try:
             root = ElementTree.fromstring(raw)
@@ -413,8 +450,16 @@ class AasxPackage:
     @property
     def spec_parts(self) -> List[str]:
         """Every aas-spec payload the origin's relationships name."""
-        targets = [target for rel_type, target in self.relationships(self.origin)
-                   if rel_type == SPEC_REL]
+        # Once each, in the order first named. A part is a part however
+        # many relationships point at it, and the total is bounded per
+        # part -- so a repeated target bought a part's worth of work for
+        # a relationship's worth of bytes and was counted once, which is
+        # a bound that never arrives. Measured before this: sixty-four
+        # declarations of a one-megabyte part reached sixteen times the
+        # total from an archive of two kilobytes.
+        targets = list(dict.fromkeys(
+            target for rel_type, target in self.relationships(self.origin)
+            if rel_type == SPEC_REL))
         if not targets:
             raise ContainerError("%s declares no aas-spec relationship on its origin"
                                  % self.path)

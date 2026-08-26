@@ -21,7 +21,9 @@ from . import container
 from .container import (
     AasxPackage,
     ContainerError,
+    NoRelationships,
     PartTooLarge,
+    RefusedContent,
     UnreadablePart,
     declares_doctype,
     xml_as_utf8,
@@ -45,6 +47,11 @@ class LoadError:
     message: str
     subject: Optional[str] = None
     detail: Optional[str] = None
+    #: What to do about *this* one, where the rule's standing advice
+    #: would be wrong. The payload stage carries both a document that
+    #: would not parse and one this reader refused to read, and "fix the
+    #: syntax" is false of the second.
+    fix: Optional[str] = None
 
 
 @dataclass
@@ -116,7 +123,13 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
         if declares_doctype(raw):
             loaded.errors.append(LoadError(
                 "payload", "the XML declares a DOCTYPE, which is refused",
-                subject=part or loaded.path))
+                subject=part or loaded.path,
+                fix="Remove the DTD and write out whatever it declared: a "
+                    "nested-entity DTD is a decompression-free way to exhaust "
+                    "a reader, so this one refuses the declaration rather than "
+                    "try to bound what it expands to. Nothing is wrong with "
+                    "the syntax; it is the declaration this reader will not "
+                    "take in."))
             return
     try:
         if form.endswith("json"):
@@ -210,6 +223,13 @@ def _load_aasx(path: Path) -> Loaded:
     except UnreadablePart as exc:
         loaded.errors.append(LoadError("zip", str(exc)))
         return loaded
+    except RefusedContent as exc:
+        loaded.errors.append(LoadError("chain", str(exc), fix="Remove the DTD from the named relationships part and write out "
+                    "whatever it declared. The chain itself is intact -- it "
+                    "names the parts it should -- and a nested-entity DTD is a "
+                    "decompression-free way to exhaust a reader, so this one "
+                    "refuses the declaration rather than bound what it expands to."))
+        return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("chain", str(exc)))
         return loaded
@@ -237,8 +257,19 @@ def _load_aasx(path: Path) -> Loaded:
             loaded.errors.append(LoadError("bounds", str(exc), subject=part))
         except UnreadablePart as exc:
             loaded.errors.append(LoadError("zip", str(exc), subject=part))
-        except ContainerError:
-            pass        # a spec part with no relationships declares nothing
+        except NoRelationships:
+            pass        # this part declares none, which is not a defect
+        except RefusedContent as exc:
+            loaded.errors.append(LoadError("chain", str(exc), subject=part, fix="Remove the DTD from the named relationships part and write out "
+                    "whatever it declared. The chain itself is intact -- it "
+                    "names the parts it should -- and a nested-entity DTD is a "
+                    "decompression-free way to exhaust a reader, so this one "
+                    "refuses the declaration rather than bound what it expands to."))
+        except ContainerError as exc:
+            # Would not parse. Quiet here until now for sharing an
+            # exception type with "declares none" above, which left a
+            # container this reader would not read coming back `ok`.
+            loaded.errors.append(LoadError("chain", str(exc), subject=part))
         form = "environment-json" if part.lower().endswith(".json") else "environment-xml"
         _parse_environment(loaded, raw, part=part, form=form)
     return loaded

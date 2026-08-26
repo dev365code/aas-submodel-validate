@@ -353,6 +353,120 @@ def test_a_read_that_runs_out_of_memory_could_not_run(tmp_path):
         assert main([str(path), "-q"]) == EXIT_ERROR
 
 
+def _archive_declaring_one_part_many_times(path, part_bytes: int, declarations: int):
+    body = "".join('<Relationship Type="%s" Target="/aasx/env.json" Id="R%d"/>'
+                   % (SPEC_REL, i) for i in range(declarations))
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         ('<?xml version="1.0"?><Relationships xmlns="%s">%s</Relationships>'
+                          % (RELS_NS, body)).encode("utf-8"))
+        archive.writestr("aasx/env.json", b'{"submodels":[]}' + b" " * part_bytes)
+    return path
+
+
+def _bytes_decompressed(work):
+    """What the ZIP layer actually handed out, whoever asked for it.
+
+    The cap is a promise about work done, and the only way to see work
+    done is to count it where it happens."""
+    total = [0]
+    real = zipfile.ZipExtFile.read
+
+    def counted(self, *args, **kwargs):
+        data = real(self, *args, **kwargs)
+        total[0] += len(data)
+        return data
+
+    with mock.patch.object(zipfile.ZipExtFile, "read", counted):
+        work()
+    return total[0]
+
+
+def test_one_part_declared_many_times_is_still_one_part(tmp_path, monkeypatch):
+    """The total is bounded per *part*, and a part is a part however many
+    relationships name it. Declaring one twice cost two decompressions
+    and counted one, so a few bytes of relationship bought a part's worth
+    of work each and the total never arrived: measured, sixty-four
+    declarations of a one-megabyte part reached sixteen times the cap
+    from an archive of two kilobytes, with no finding and a report
+    calling itself complete."""
+    cap, together = 64 * 1024, 4 * 64 * 1024
+    monkeypatch.setattr(container, "MAX_PART_BYTES", cap)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", together)
+    path = _archive_declaring_one_part_many_times(tmp_path / "many.aasx", cap - 64, 64)
+    read = _bytes_decompressed(lambda: runner.run(path))
+    assert read <= together + cap, "decompressed %d bytes for a %d byte cap" % (read, together)
+
+
+def test_a_container_over_the_total_stops_paying_for_the_rest(tmp_path, monkeypatch):
+    """Once the total is past, every remaining part was decompressed in
+    full before being refused -- the refusal came after the work it
+    exists to avoid. Twenty parts at the cap cost twenty parts."""
+    cap, together = 64 * 1024, 2 * 64 * 1024
+    monkeypatch.setattr(container, "MAX_PART_BYTES", cap)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", together)
+    body = "".join('<Relationship Type="%s" Target="/aasx/p%d.json" Id="R%d"/>'
+                   % (SPEC_REL, i, i) for i in range(20))
+    path = tmp_path / "wide.aasx"
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         ('<?xml version="1.0"?><Relationships xmlns="%s">%s</Relationships>'
+                          % (RELS_NS, body)).encode("utf-8"))
+        for i in range(20):
+            archive.writestr("aasx/p%d.json" % i, b'{"submodels":[]}' + b" " * (cap - 64))
+    read = _bytes_decompressed(lambda: runner.run(path))
+    assert read <= together + cap, "decompressed %d bytes for a %d byte cap" % (read, together)
+
+
+def test_a_refused_dtd_is_not_reported_as_a_syntax_error(tmp_path):
+    """X3 relays the payload stage, and that stage holds more than
+    documents which would not parse: one whose DTD this reader refuses
+    parses perfectly, as the premise below shows. Telling its author to
+    fix syntax that is not wrong is the remedy this project promised not
+    to write -- refusing to read is this tool's decision, not theirs."""
+    path = tmp_path / "env.xml"
+    path.write_bytes(_environment_xml(dtd=True))
+    ElementTree.fromstring(path.read_bytes())        # the premise: it parses
+    finding = next(f for f in runner.run(path).findings if f.id == "X3")
+    assert "fix the syntax" not in finding.fix, "told to repair syntax that is not wrong"
+    assert "DTD" in finding.fix
+
+
+def test_a_refused_rels_is_not_reported_as_a_broken_chain(tmp_path):
+    """Routing the refusal to the chain stage -- which is what stopped it
+    being swallowed -- handed it X2's remedy, and the chain is not broken:
+    it names the parts it should, and this reader declined to read one of
+    them. The same false imperative in a second place, made by the repair
+    for the first."""
+    path = build_aasx(tmp_path / "refused.aasx", payload=env_json("urn:x"))
+    with zipfile.ZipFile(path, "a") as archive:
+        archive.writestr("aasx/_rels/env.json.rels", _rels_with_dtd())
+    finding = next(f for f in runner.run(path).findings if f.id == "X2")
+    assert "Repair the chain" not in finding.fix
+    assert "DTD" in finding.fix
+
+
+def test_a_rels_this_reader_refused_is_not_a_clean_bill(tmp_path):
+    """A spec part whose relationships part declares a DTD is refused --
+    by the guard that exists for exactly that -- and the refusal was
+    swallowed with the case it shares an exception type with, "this part
+    declares no relationships". The container came back `ok`, zero
+    findings, exit 0, calling itself complete: a clean bill on something
+    this reader would not read."""
+    payload = env_json("urn:x")
+    path = build_aasx(tmp_path / "refused.aasx", payload=payload)
+    with zipfile.ZipFile(path, "a") as archive:
+        archive.writestr("aasx/_rels/env.json.rels", _rels_with_dtd())
+    report = runner.run(path)
+    assert report.as_dict()["summary"]["complete"] is False
+
+
 def test_the_security_note_names_the_caps_it_promises():
     """SECURITY.md said the bound was the same packaged or bare. It is
     not: a container may deliver four times what a bare document may,
@@ -394,8 +508,15 @@ def test_the_refusal_tells_a_bare_document_something_it_can_do(tmp_path, monkeyp
     fix = next(f for f in runner.run(path).findings if f.id == "X5").fix
     assert "container" not in fix, "a bare document was told about a container"
     assert "submodels" in fix
-    if name.endswith(".json"):
-        assert "cannot be checked here" in fix, "the indivisible case went unsaid"
+    # Every form, not just the divisible one. An environment holding a
+    # single submodel does not divide either, and telling its author to
+    # send fewer is the same impossible instruction in a second place.
+    assert "cannot be checked here" in fix, "the indivisible case went unsaid"
+    # And the remedy has to be a remedy. Both assertions above pass on a
+    # one-word string; these are what it has to carry to be worth
+    # printing -- the bound the reader hit, and whose decision it was.
+    assert "%d MiB" % (container.MAX_PART_BYTES // 1024 ** 2) in fix
+    assert "refused, not judged" in fix
 
 
 def test_the_terminal_summary_says_when_it_is_not_a_full_verdict(tmp_path, monkeypatch):
@@ -415,19 +536,49 @@ def test_the_terminal_summary_says_when_it_is_not_a_full_verdict(tmp_path, monke
     assert "not a full verdict" not in rendered
 
 
-def test_a_refused_input_says_the_verdict_is_incomplete(tmp_path, monkeypatch):
+#: The four ways content goes unread, named where the loader names them.
+#: A pin that used one of them let the other three go on claiming a full
+#: verdict: measured, narrowing the field to the bounds stage alone left
+#: every test here green.
+UNREAD_STAGES = ("zip", "chain", "payload", "bounds")
+
+
+def _input_unread_at(stage, tmp_path, monkeypatch):
+    if stage == "bounds":
+        monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+        path = tmp_path / "big.json"
+        path.write_bytes(b" " * 600)
+        return path
+    if stage == "chain":
+        return build_aasx(tmp_path / "nochain.aasx", root_rels=False)
+    if stage == "payload":
+        return build_aasx(tmp_path / "unparsable.aasx", payload=b"{ not json")
+    path = build_aasx(tmp_path / "corrupt.aasx")
+    corrupt_part(path, "aasx/env.json", "method")
+    return path
+
+
+@pytest.mark.parametrize("stage", UNREAD_STAGES)
+def test_an_input_that_went_unread_says_the_verdict_is_incomplete(stage, tmp_path,
+                                                                  monkeypatch):
     """A refused file came back `ok: false`, one error, 123 rules checked
     -- which is what a judged file that failed looks like. Nothing was
     read. A consumer had the string "X5" and nothing else to tell the two
-    apart."""
-    monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
-    path = tmp_path / "big.json"
-    path.write_bytes(b" " * 600)
-    assert runner.run(path).as_dict()["summary"]["complete"] is False
+    apart, and the same is true of an archive that would not open, a
+    chain going nowhere and a part that would not parse."""
+    path = _input_unread_at(stage, tmp_path, monkeypatch)
+    report = runner.run(path)
+    assert [e.stage for e in loader.load(path).errors] != [], "the fixture stopped failing"
+    assert report.as_dict()["summary"]["complete"] is False
+    assert "not a full verdict" in render(report)
 
+
+def test_a_report_that_read_everything_says_so(tmp_path):
     clean = tmp_path / "clean.json"
     clean.write_bytes(env_json("urn:x"))
-    assert runner.run(clean).as_dict()["summary"]["complete"] is True
+    report = runner.run(clean)
+    assert report.as_dict()["summary"]["complete"] is True
+    assert "not a full verdict" not in render(report)
 
 
 def test_the_cap_the_remedy_names_is_the_cap(monkeypatch):

@@ -29,11 +29,17 @@ def render(report: Report) -> str:
             lines.append("        fix: %s" % _safe(finding.fix))
     for note in report.notes:
         lines.append("note    %s" % _safe(note))
+    # Hoisted above the branch, not attached to one of them. Today only
+    # the second is reachable with something unread, because every load
+    # error has a rule to report it -- but that is a fact about the rules,
+    # not about the summary, and the summary is what promises to say so.
+    incomplete = "" if report.complete else " (not a full verdict: some of it was not read)"
     if report.ok and not report.findings and not report.notes:
         # "rules registered", not "rules checked": a Technical Data file
         # is not judged by 02004's fifty-two, and a run that says it
         # checked them has told the reader something it did not do.
-        lines.append("ok — %s (%d rules registered)" % (report.path, report.checked))
+        lines.append("ok — %s (%d rules registered)%s"
+                     % (report.path, report.checked, incomplete))
     else:
         # The third count is INFO findings. It said "note(s)" and the
         # report has notes of its own, printed above and not counted
@@ -45,7 +51,5 @@ def render(report: Report) -> str:
         # apart and the person at the terminal is owed the same sentence.
         lines.append("%d error(s), %d warning(s), %d info — %s%s"
                      % (report.count(Severity.ERROR), report.count(Severity.WARNING),
-                        report.count(Severity.INFO), report.path,
-                        "" if report.complete
-                        else " (not a full verdict: some of it was not read)"))
+                        report.count(Severity.INFO), report.path, incomplete))
     return "\n".join(lines)

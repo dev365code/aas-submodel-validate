@@ -6,11 +6,12 @@ broken file three ways.
 """
 from __future__ import annotations
 
+from .. import container
 from ..container import MAX_PART_BYTES, MAX_TOTAL_PART_BYTES
 from ..model import Violation
 from ..registry import rule
 
-#: What X5 says to an input that is not a container. Absent means the
+#: What X5 says to an input that is not a container. `None` means the
 #: rule's standing advice, which is the container's: it names a part to
 #: send and a container to split, and an author who sent neither is being
 #: told to do something they cannot.
@@ -22,20 +23,24 @@ from ..registry import rule
 #: could still be either an environment or a bare Submodel, and the
 #: sentence says both rather than guessing about a document this reader
 #: has just declined to read.
-_ONE_DOCUMENT = "This reader takes in no single document over %d MiB." % (
-    MAX_PART_BYTES // 1024 ** 2)
+_DIVIDES = ("An environment divides along its submodels, so fewer of them per "
+            "file is the way through; one holding a single submodel does not "
+            "divide, and a file that large cannot be checked here.")
 _NOT_YOUR_FAULT = "Nothing is wrong with what you sent; it was refused, not judged."
 
-_BOUNDS_REMEDY = {
-    "environment-json": "%s An environment divides along its submodels, so "
-                        "fewer of them per file is the way through; one "
-                        "Submodel on its own does not divide, and a file that "
-                        "large cannot be checked here. %s"
-                        % (_ONE_DOCUMENT, _NOT_YOUR_FAULT),
-    "environment-xml": "%s An environment divides along its submodels, so "
-                       "fewer of them per file is the way through. %s"
-                       % (_ONE_DOCUMENT, _NOT_YOUR_FAULT),
-}
+
+def _bounds_remedy(form: str):
+    """Built when the finding is, not when this module was imported.
+
+    The message names the bound the run actually applied. A remedy frozen
+    at import time says a different number the moment anything moves the
+    cap, and a report whose two sentences disagree about the limit is
+    worse than one that only says it once.
+    """
+    if form == "aasx":
+        return None
+    return "This reader takes in no single document over %d MiB. %s %s" % (
+        container.MAX_PART_BYTES // 1024 ** 2, _DIVIDES, _NOT_YOUR_FAULT)
 
 
 @rule("X1", kind="container", prio="MUST",
@@ -57,22 +62,30 @@ def x1_is_a_zip(ctx):
           ".rels names the aas-spec payload. AAS packaging tools write this "
           "automatically; hand-built ZIPs almost never do.")
 def x2_chain_resolves(ctx):
+    """A chain that goes nowhere is repaired by fixing the relationships.
+    A relationships part this reader refused is not: the chain names what
+    it should, and the decision was this tool's -- so it brings its own
+    remedy rather than being told to repair what is not broken."""
     for error in ctx.loaded.errors:
         if error.stage == "chain":
-            yield Violation(error.message, subject=error.subject, detail=error.detail)
+            yield Violation(error.message, subject=error.subject,
+                            detail=error.detail, fix=error.fix)
 
 
 @rule("X3", kind="container", prio="MUST",
       title="the payload must parse as an AAS environment",
       spec="IDTA 01001 (metamodel) and its published JSON/XML schemas",
       fix="Open the named document and fix the syntax its parser rejects; "
-          "the extension decides the format (.json as AAS JSON, otherwise AAS "
-          "XML). Packaged or bare: a part of a container and a file on its "
-          "own reach this the same way.")
+          "the extension decides the format (.json as AAS JSON, otherwise "
+          "AAS XML).")
 def x3_payload_parses(ctx):
+    """The standing advice is for a document that would not parse, and
+    this stage carries one more thing: a document this reader refused to
+    read, whose syntax is perfect. That one brings its own remedy."""
     for error in ctx.loaded.errors:
         if error.stage == "payload":
-            yield Violation(error.message, subject=error.subject, detail=error.detail)
+            yield Violation(error.message, subject=error.subject,
+                            detail=error.detail, fix=error.fix)
 
 
 @rule("X5", kind="container", prio="MUST",
@@ -100,7 +113,7 @@ def x5_within_the_readers_bounds(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "bounds":
             yield Violation(error.message, subject=error.subject, detail=error.detail,
-                            fix=_BOUNDS_REMEDY.get(ctx.loaded.form))
+                            fix=_bounds_remedy(ctx.loaded.form))
 
 
 @rule("X4", kind="container", prio="SHOULD",

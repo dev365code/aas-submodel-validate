@@ -16,7 +16,7 @@ from aas_submodel_validate import (
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.report import render
 from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
-from builders import env_json
+from builders import build_aasx, env_json
 
 ROOT = Path(__file__).resolve().parents[1]
 README = (ROOT / "README.md").read_text("utf-8")
@@ -37,21 +37,63 @@ def test_the_rule_counts_are_the_registrys():
     assert "| 22 |" in README
 
 
-def _x_rules_a_bare_document_can_draw(tmp_path, monkeypatch):
-    """Measured, not read off the code: run documents with no container
-    around them and collect the X findings they draw."""
-    from aas_submodel_validate import container
-
+def _x_rules_drawn_by(paths):
     drawn = set()
-    for name, data in (("bad.json", b"{ not json"), ("bad.xml", b"<nope")):
+    for path in paths:
+        drawn |= {f.id for f in runner.run(path).findings if f.id.startswith("X")}
+    return drawn
+
+
+def _bare_documents(tmp_path):
+    """Documents with no container around them, of every shape this reader
+    reads and several it does not.
+
+    Broken input alone is not a measurement. A rule that answers for bare
+    files might do it on a *well-formed* one, or on one that carries a
+    File element, or on bytes that happen to be a ZIP -- and a corpus of
+    three broken files would go on reporting the same answer while the
+    front page went stale. Each of these was chosen for something a
+    packaging rule might key on."""
+    written = []
+    for name, data in (
+            ("bad.json", b"{ not json"),
+            ("bad.xml", b"<nope"),
+            ("valid.json", env_json("urn:x")),
+            ("valid.xml", b'<?xml version="1.0"?>'
+                          b'<environment xmlns="https://admin-shell.io/aas/3/0">'
+                          b"<submodels /></environment>"),
+            ("submodel.json", b'{"modelType": "Submodel", "id": "urn:x"}'),
+            ("empty.json", b""),
+            # Bytes that are an archive, under a name that is not.
+            ("zip.json", b"PK\x03\x04" + b"\x00" * 60),
+    ):
         path = tmp_path / name
         path.write_bytes(data)
-        drawn |= {f.id for f in runner.run(path).findings if f.id.startswith("X")}
+        written.append(path)
+    return written
+
+
+def _packaged_documents(tmp_path):
+    """The positive control. Without it, "X1 never answers for a bare
+    file" cannot be told from "this measurement cannot see X1 at all"."""
+    broken_zip = tmp_path / "notazip.aasx"
+    broken_zip.write_bytes(b"not a zip at all")
+    return [
+        broken_zip,
+        build_aasx(tmp_path / "nochain.aasx", root_rels=False),
+        build_aasx(tmp_path / "suppl.aasx", suppl_targets=("aasx/files/absent.png",)),
+    ]
+
+
+def _x_rules_a_bare_document_can_draw(tmp_path, monkeypatch):
+    """Measured, not read off the code."""
+    from aas_submodel_validate import container
+
+    drawn = _x_rules_drawn_by(_bare_documents(tmp_path))
     monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
     over = tmp_path / "big.json"
     over.write_bytes(b" " * 600)
-    drawn |= {f.id for f in runner.run(over).findings if f.id.startswith("X")}
-    return drawn
+    return drawn | _x_rules_drawn_by([over])
 
 
 def test_the_readme_names_the_rules_that_are_about_packaging(tmp_path, monkeypatch):
@@ -65,8 +107,15 @@ def test_the_readme_names_the_rules_that_are_about_packaging(tmp_path, monkeypat
     packaging rules, and the README says so in those words."""
     every_x = sorted(rule.id for rule in all_rules() if re.fullmatch(r"X\d+", rule.id))
     bare = _x_rules_a_bare_document_can_draw(tmp_path, monkeypatch)
-    assert bare, "no bare input drew an X rule; the measurement stopped measuring"
     packaging = [rule_id for rule_id in every_x if rule_id not in bare]
+    # The control, and the reason the sentence means anything: every id
+    # the README calls a packaging rule is one this measurement has seen
+    # fire, from a container. "Never drawn bare" is only interesting
+    # about a rule the instrument can draw at all.
+    packaged = _x_rules_drawn_by(_packaged_documents(tmp_path))
+    assert set(packaging) <= packaged, (
+        "the front page names %s as packaging rules and this measurement "
+        "never saw them fire at all" % sorted(set(packaging) - packaged))
     # Whitespace-normalised: the README wraps at seventy-two columns and a
     # sentence straddles the break wherever it happens to fall. What is
     # pinned is what it says.
@@ -103,3 +152,11 @@ def test_the_changelog_counts_what_it_would_ship():
     generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
+    # The bounds are on this page too, and were the only prose numbers on
+    # it with nothing watching them: SECURITY.md derives its copy and this
+    # one would have gone quietly stale beside it.
+    from aas_submodel_validate import container
+    assert ("one document at %d MiB, a container's parts at %d MiB each and %d MiB"
+            % (container.MAX_PART_BYTES // 1024 ** 2,
+               container.MAX_PART_BYTES // 1024 ** 2,
+               container.MAX_TOTAL_PART_BYTES // 1024 ** 2)) in " ".join(unreleased.split())
