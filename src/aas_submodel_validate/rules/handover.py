@@ -87,7 +87,9 @@ def _d2(tables):
     def check(ctx):
         """§2.3: "The classification according to VDI 2770 Blatt 1:2020 is
         mandatory in the Submodel Handover Documentation," identified by
-        exactly that ClassificationSystem value."""
+        that ClassificationSystem value -- which this project reads as
+        either of the two spellings the official material uses, not only
+        the one this sentence quotes (docs/divergences.md #9)."""
         for subject, document in instances_of(ctx, "Document", tables):
             if not _vdi_classifications(document, tables):
                 yield Violation("no DocumentClassification declares the mandatory "
@@ -215,7 +217,16 @@ def _d9(tables):
                             "the reference walks to nothing in this submodel",
                             subject=subject,
                             detail="no element at key path %s"
-                                   % " / ".join(key.value for key in keys[1:]))
+                                   % " / ".join(key.value for key in keys[1:]),
+                            # Per label, because the rule reads four and only
+                            # one of them is about Entities. The standing
+                            # sentence told the author of a dangling `BasedOn`
+                            # -- a document-to-document reference -- to add an
+                            # Entity to a list that has nothing to do with it.
+                            fix="Add the element this %s names to the submodel, "
+                                "or correct the reference's key path; a "
+                                "reference that resolves to nothing points the "
+                                "document at nothing." % label)
     return check
 
 
@@ -262,7 +273,12 @@ def _l3(tables):
                 subject=subject, detail="%s, where the template uses %s" % (seen, expected),
                 fix="Use %s %s here, as the template does; the value matched, "
                     "so this is interoperability polish, not a failure."
-                    % ("an" if expected[:1] in "AEIOU" else "a", expected))
+                    # `"" in "AEIOU"` is True, so an empty type would read
+                    # "an ". Unreachable while the walk reports drift only
+                    # against a row that declares a type, and one character
+                    # of arithmetic either way.
+                    % ("an" if expected[:1].upper() in tuple("AEIOU") else "a",
+                       expected))
     return check
 
 
@@ -322,8 +338,11 @@ ROSTER = (
       "ClassificationSystem", "ClassName"), _d4),
     ("-D5", "template", "SHOULD", "one of several DocumentIds is marked primary",
      "IDTA 02004-2-0 §2.6 (DocumentIsPrimary)",
-     "Set DocumentIsPrimary = true on exactly one DocumentId, so "
-     "consumers know which identifier to file the document under.",
+     "Mark one of these DocumentIds with DocumentIsPrimary = true, so "
+     "consumers know which identifier to file the document under. This "
+     "rule asks only that one is marked: the template bounds "
+     "DocumentIsPrimary at one per DocumentId, and says nothing this "
+     "project has vendored about several being marked at once.",
      ("Document", "DocumentIds", "DocumentId", "DocumentIsPrimary"), _d5),
     ("-D6", "template", "SHOULD", "StatusValue uses the two-word vocabulary",
      "IDTA 02004-2-0 §2.8",
@@ -332,8 +351,9 @@ ROSTER = (
      ("DocumentVersion", "StatusValue"), _d6),
     ("-D7", "template", "MUST", "files named by %s exist in the container",
      "IDTA 02004-2-0 §2.8; IDTA 01005 (AASX)",
-     "Add the file to the .aasx (with a matching aas-suppl "
-     "relationship) or correct the File value's path.",
+     "Add the file to the .aasx under the name this File value gives, or "
+     "correct the value's path. (Declaring an aas-suppl relationship for "
+     "it is X4's question, not this one's.)",
      (), _d7),
     ("-D8", "template", "MUST", "StatusSetDate is a calendar date",
      "IDTA 02004-2-0 §2.8 (xs:date)",
@@ -351,6 +371,10 @@ ROSTER = (
      "element silently stops applying.", (), _l2),
     ("L3", "lint", "MAY", "reference types match the template's",
      "IDTA 02004-2-0 Annex A",
+     # Unreachable: `_l3` gives every violation its own remedy, naming the
+     # type, and `Finding.fix` prefers the violation's. This exists because
+     # registration refuses a rule that names no remedy at all, and it says
+     # the same thing so the two cannot drift into disagreeing.
      "Use the reference type the template declares here; the value "
      "matched, so this is interoperability polish, not a failure.", (), _l3),
     ("L4", "lint", "SHOULD", "(DocumentDomainId, DocumentIdentifier) pairs are unique",
@@ -360,10 +384,13 @@ ROSTER = (
      ("Document", "DocumentIds", "DocumentId", "DocumentDomainId",
       "DocumentIdentifier"), _l4),
     ("-D9", "template", "SHOULD", "document/entity references resolve to an element that exists",
-     "IDTA 02004-2-0 §2.2 (\"the creation of an Entity element is required\")",
-     "Add the referenced Entity to the Entities list (or fix the "
-     "reference's key path); a documented entity that does not exist "
-     "leaves the document pointing at nothing.",
+     "IDTA 02004-2-0 §2.2 (DocumentedEntity: \"the creation of an Entity "
+     "element is required\"); §2.8 for the DocumentVersion reference lists, "
+     "where the same integrity question is asked of document-to-document "
+     "references",
+     "Add the element the reference names to the submodel, or correct its "
+     "key path; a reference that resolves to nothing points the document "
+     "at nothing.",
      ("DocumentedEntity", "RefersTo", "BasedOn", "TranslationOf"), _d9),
     ("L5", "lint", "SHOULD", "the VDI classification system uses §2.3's identifying value",
      "IDTA 02004-2-0 §2.3",

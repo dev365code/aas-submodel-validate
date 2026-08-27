@@ -414,3 +414,72 @@ def test_a_version_carrying_more_than_the_pdf_still_has_its_pdf(tmp_path):
     native["value"] = "/aasx/files/model.step"
     files["value"].append(native)
     assert "HD-D10" not in _findings(tmp_path, env)
+
+
+# -- the remedy a finding carries has to be about the finding ----------------
+#
+# Every one of these sentences ships to a user and none of them was read
+# by a test, so each was free to describe a rule other than the one it
+# sits on. Three did.
+
+
+def test_a_dangling_document_reference_is_not_told_to_add_an_entity(tmp_path):
+    """HD-D9 reads four labels and only one of them is about Entities.
+    `BasedOn` is a document-to-document reference -- the rule's own
+    docstring says so -- and its author was being told to add an Entity
+    to a list that has nothing to do with it.
+
+    The remedy names the label now, which is the only thing that can be
+    right for all four."""
+    env = copy.deepcopy(hd_env())
+    version = _document_version(env)
+    version["value"].append({
+        "idShort": "BasedOnReferences", "modelType": "SubmodelElementList",
+        "typeValueListElement": "ReferenceElement",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+        "value": [{"modelType": "ReferenceElement",
+                   "semanticId": {"type": "ExternalReference", "keys": [
+                       {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+                   "value": {"type": "ModelReference", "keys": [
+                       {"type": "Submodel", "value": "urn:example:handover"},
+                       {"type": "SubmodelElementList", "value": "Documents"},
+                       {"type": "SubmodelElementCollection", "value": "77"}]}}]})
+    remedy = _findings(tmp_path, env)["HD-D9"].fix
+    assert "BasedOn" in remedy
+    assert "Entity" not in remedy and "Entities" not in remedy
+
+
+def test_the_primary_remedy_asks_for_what_the_rule_asks_for(tmp_path):
+    """HD-D5 fires on several DocumentIds and none marked primary. It
+    says nothing about several being marked -- measured: a file with two
+    primaries draws no finding -- and the template bounds
+    DocumentIsPrimary per DocumentId, not per Document.
+
+    The remedy used to say "set it on exactly one", which is a check this
+    rule does not make and a requirement this project has not vendored."""
+    env = copy.deepcopy(hd_env())
+    document_ids = next(child for child in _first_document(env)["value"]
+                        if child.get("idShort") == "DocumentIds")
+    second = copy.deepcopy(document_ids["value"][0])
+    _set_property(second, "DocumentIdentifier", "OTHER-1")
+    _set_property(second, "DocumentIsPrimary", "true")
+    document_ids["value"].append(second)
+    assert "HD-D5" not in _findings(tmp_path, env), "two primaries is not this rule"
+
+    _set_property(document_ids["value"][0], "DocumentIsPrimary", "false")
+    _set_property(second, "DocumentIsPrimary", "false")
+    remedy = _findings(tmp_path, env)["HD-D5"].fix
+    assert "exactly one" not in remedy
+    assert "per DocumentId" in remedy
+
+
+def test_the_missing_file_remedy_does_not_borrow_x4s_requirement(tmp_path):
+    """HD-D7 asks whether the container holds the entry the File value
+    names. Whether an aas-suppl relationship declares it is X4's
+    question, and a package can satisfy both without D7 requiring one --
+    the remedy said otherwise as though it were this rule's demand."""
+    packed = build_aasx(tmp_path / "p.aasx",
+                        payload=json.dumps(hd_env()).encode("utf-8"))
+    remedy = next(f.fix for f in runner.run(packed).findings if f.id == "HD-D7")
+    assert "X4" in remedy, remedy
