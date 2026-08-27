@@ -54,6 +54,17 @@ def test_a_calendar_date_is_accepted(tmp_path):
     assert "TD-D1" not in _ids(tmp_path, td_env())
 
 
+def test_a_missing_valid_date_is_the_tables_business_not_this_rules(tmp_path):
+    """Absence is the cardinality row's finding; this rule reads the
+    spelling of a value that exists. Dropping the `is not None` guard
+    makes every absent date a spelling complaint about `None`."""
+    env = copy.deepcopy(td_env())
+    _further(env)["value"] = [child for child in _further(env)["value"]
+                              if child.get("idShort") != "ValidDate"]
+    assert "TD-D1" not in _ids(tmp_path, env)
+
+
+
 # -- TD-D2: a File names a part the container holds --------------------------
 
 def _td_container(tmp_path, env, parts):
@@ -166,3 +177,121 @@ def test_a_date_written_in_other_digits_is_not_a_date(tmp_path):
     env = copy.deepcopy(td_env())
     _further(env)["value"][1]["value"] = "٢٠٢٥-٠٣-١٥"
     assert "TD-D1" in _ids(tmp_path, env)
+
+
+def _find_with_parent(env, label):
+    """The element and the list that holds it, so a twin lands where the
+    table's row actually looks -- appended at the top level it matches no
+    row and the walk never sees it."""
+    out = []
+
+    def walk(node, parent):
+        if isinstance(node, dict):
+            if node.get("idShort") == label:
+                out.append((parent, node))
+            for child in node.values():
+                walk(child, None)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child, node)
+
+    walk(env, None)
+    ((parent, element),) = out
+    assert parent is not None
+    return parent, element
+
+
+def _company_logo(env):
+    return _find_with_parent(env, "CompanyLogo")[1]
+
+
+def _area_reference(env):
+    return _find_with_parent(env, "ReferenceToTechnicalPropertyArea")[1]
+
+
+def test_conformant_file_shapes_leave_the_file_rule_silent(tmp_path):
+    """Three values the guard exists to pass over -- no value at all, a
+    blank one, an external URL -- inside a container, where the rule is
+    live. None is a defect this rule owns: the empty ones are the
+    cardinality table's business, and a URL is not a part name. The
+    guard's terms each carry one of the three; losing `isinstance` is a
+    crash, losing `strip` reports a blank as climbing out of the
+    package, and losing `://` reports every external logo as a missing
+    part."""
+    for value in (None, "   ", "http://example.com/logo.png"):
+        env = copy.deepcopy(td_env())
+        logo = _company_logo(env)
+        if value is None:
+            logo.pop("value", None)
+        else:
+            logo["value"] = value
+        path = _td_container(tmp_path, env, [(IMAGE, b"\x89PNG")])
+        findings = _container_ids(path)
+        offending = [f for f in findings.values()
+                     if f.id == "TD-D2"
+                     and "logo" in ((f.violation.detail or "") + f.violation.message)]
+        assert not offending, (value, [f.violation.message for f in offending])
+        assert not any("could not run" in f.violation.message
+                       for f in findings.values()), value
+
+
+def test_a_defect_after_a_skipped_file_is_still_reported(tmp_path):
+    """Two CompanyLogos -- the count rule will mind, this one must not
+    be distracted: the first is an external URL the guard passes over,
+    and the second names a part the archive does not hold. Skipping is
+    `continue`; a `break` loses every file after the first skip."""
+    env = copy.deepcopy(td_env())
+    parent, logo = _find_with_parent(env, "CompanyLogo")
+    twin = copy.deepcopy(logo)
+    logo["value"] = "http://example.com/logo.png"
+    twin["value"] = "/aasx/files/ghost.png"
+    parent.append(twin)
+    path = _td_container(tmp_path, env, [(IMAGE, b"\x89PNG")])
+    findings = [f for f in _container_ids(path).values()
+                if f.id == "TD-D2" and "ghost" in (f.violation.detail or "")]
+    assert findings, "the defect behind the skipped file went unreported"
+
+
+def test_references_the_resolver_must_pass_over(tmp_path):
+    """Three reference shapes TD-D3 deliberately does not judge: an
+    ExternalReference (a promise about another AAS), a ModelReference
+    with no keys at all (the metamodel's complaint, not this rule's),
+    and a first key that is not this submodel even though its value
+    matches. Each guard term carries one; the empty-keys case is a crash
+    with the guard gone."""
+    shapes = (
+        {"type": "ExternalReference",
+         "keys": [{"type": "Submodel", "value": "urn:example:technicaldata"},
+                  {"type": "SubmodelElementList", "value": "Nowhere"}]},
+        {"type": "ModelReference", "keys": []},
+        {"type": "ModelReference",
+         "keys": [{"type": "AssetAdministrationShell",
+                   "value": "urn:example:technicaldata"},
+                  {"type": "SubmodelElementList", "value": "Nowhere"}]},
+    )
+    for reference in shapes:
+        env = copy.deepcopy(td_env())
+        _area_reference(env)["value"] = reference
+        findings = _ids(tmp_path, env)
+        assert "TD-D3" not in findings, reference["type"]
+        assert not any("could not run" in f.violation.message
+                       for f in findings.values()), reference
+
+
+def test_a_dangling_reference_after_a_foreign_one_is_still_reported(tmp_path):
+    """Two references: the first points into another AAS and is passed
+    over, the second dangles in this submodel and must still be found --
+    the pass-over is a `continue`, and a `break` would end the walk at
+    the first foreign reference."""
+    env = copy.deepcopy(td_env())
+    parent, reference = _find_with_parent(env, "ReferenceToTechnicalPropertyArea")
+    twin = copy.deepcopy(reference)
+    reference["value"] = {"type": "ExternalReference",
+                          "keys": [{"type": "GlobalReference", "value": "urn:other"}]}
+    twin["value"] = {"type": "ModelReference",
+                     "keys": [{"type": "Submodel", "value": "urn:example:technicaldata"},
+                              {"type": "SubmodelElementList", "value": "Nowhere"}]}
+    parent.append(twin)
+    finding = _ids(tmp_path, env)["TD-D3"]
+    assert finding.violation.detail == "no element at key path Nowhere"
+
