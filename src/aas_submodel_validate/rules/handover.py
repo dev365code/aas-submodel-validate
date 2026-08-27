@@ -337,8 +337,9 @@ ROSTER = (
     ("-D2", "template", "MUST", "every Document carries a VDI 2770 classification",
      "IDTA 02004-2-0 §2.3",
      "Add a DocumentClassification whose ClassificationSystem property "
-     "holds exactly '%s'; pick its ClassId from the twelve VDI 2770 "
-     "classes (e.g. 03-02, Operation)." % VDI2770_SYSTEM,
+     "names VDI 2770 -- '%s' is the spelling to prefer, and the 2018 one "
+     "is accepted too (docs/divergences.md #9). Pick its ClassId from "
+     "the twelve VDI 2770 classes (e.g. 03-02, Operation)." % VDI2770_SYSTEM,
      ("Document", "DocumentClassifications", "DocumentClassification",
       "ClassificationSystem"), _d2),
     ("-D3", "template", "MUST", "VDI 2770 ClassId comes from the twelve published classes",
@@ -358,9 +359,10 @@ ROSTER = (
      "IDTA 02004-2-0 §2.6 (DocumentIsPrimary)",
      "Mark one of these DocumentIds with DocumentIsPrimary = true, so "
      "consumers know which identifier to file the document under. This "
-     "rule asks only that one is marked: the template bounds "
-     "DocumentIsPrimary at one per DocumentId, and says nothing this "
-     "project has vendored about several being marked at once.",
+     "rule asks only that one is marked. The template states no "
+     "cardinality on how many may carry the flag -- its own definition "
+     "calls it 'the preferred ID', singular -- so several primaries are "
+     "not reported here.",
      ("Document", "DocumentIds", "DocumentId", "DocumentIsPrimary"), _d5),
     ("-D6", "template", "SHOULD", "StatusValue uses the two-word vocabulary",
      "IDTA 02004-2-0 §2.8",

@@ -84,6 +84,20 @@ def test_without_a_container_the_file_rule_is_silent(tmp_path):
     assert "TD-D2" not in _ids(tmp_path, td_env())
 
 
+def test_a_file_the_archive_holds_needs_no_suppl_relationship(tmp_path):
+    """This rule asks one question -- does the container hold the entry
+    the value names -- and its remedy demanded a second one, an
+    `aas-suppl` relationship declaring it. That is X4's question. A
+    package with the parts and no relationships at all satisfies this
+    rule, and the sentence a user reads sent them to fix something that
+    was not broken."""
+    path = build_aasx(tmp_path / "p.aasx",
+                      payload=json.dumps(td_env()).encode("utf-8"),
+                      files=[(LOGO, b"\x89PNG"), (IMAGE, b"\x89PNG")],
+                      suppl_targets=[])
+    assert "TD-D2" not in _container_ids(path)
+
+
 # -- TD-D3: a reference walks to something -----------------------------------
 
 def test_a_reference_to_a_property_area_that_is_not_there_is_reported(tmp_path):

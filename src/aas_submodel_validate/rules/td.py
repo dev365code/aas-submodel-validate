@@ -71,8 +71,9 @@ def td_d1_valid_date(ctx):
 @rule("TD-D2", kind="template", prio="MUST",
       title="files named by CompanyLogo/ImageFile exist in the container",
       spec="IDTA 02003-2-0-1 §3.2, §3.3; IDTA 01005 (AASX)",
-      fix="Add the file to the .aasx (with a matching aas-suppl "
-          "relationship) or correct the File value's path.")
+      fix="Add the file to the .aasx under the name this File value "
+          "gives, or correct the value's path. (Declaring an aas-suppl "
+          "relationship for it is X4's question, not this one's.)")
 def td_d2_files_exist(ctx):
     """Only answerable when the input is a container; an environment JSON
     names files this rule cannot see, and silence there is honesty rather

@@ -479,6 +479,25 @@ def test_a_dangling_reference_is_reported_and_names_its_own_label(
         assert "Entity" not in remedy and "Entities" not in remedy
 
 
+
+def _file_values(env):
+    """Every File value the environment names, canonicalised the way the
+    container does."""
+    found = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("modelType") == "File" and isinstance(node.get("value"), str):
+                found.add(node["value"].lstrip("/"))
+            for child in node.values():
+                walk(child)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child)
+
+    walk(env)
+    return found
+
 def test_the_primary_remedy_asks_for_what_the_rule_asks_for(tmp_path):
     """HD-D5 fires on several DocumentIds and none marked primary. It
     says nothing about several being marked -- measured: a file with two
@@ -498,20 +517,27 @@ def test_the_primary_remedy_asks_for_what_the_rule_asks_for(tmp_path):
 
     _set_property(document_ids["value"][0], "DocumentIsPrimary", "false")
     _set_property(second, "DocumentIsPrimary", "false")
-    remedy = _findings(tmp_path, env)["HD-D5"].fix
-    assert "exactly one" not in remedy
-    assert "per DocumentId" in remedy
+    assert "HD-D5" in _findings(tmp_path, env), "none marked is what it asks"
 
 
-def test_the_missing_file_remedy_does_not_borrow_x4s_requirement(tmp_path):
+def test_a_file_the_archive_holds_needs_no_suppl_relationship(tmp_path):
     """HD-D7 asks whether the container holds the entry the File value
-    names. Whether an aas-suppl relationship declares it is X4's
-    question, and a package can satisfy both without D7 requiring one --
-    the remedy said otherwise as though it were this rule's demand."""
+    names. Whether an `aas-suppl` relationship declares it is X4's
+    question, and its remedy demanded one as though it were this rule's.
+
+    Measured rather than read off the sentence: a package holding the
+    parts and declaring no relationships at all draws nothing from this
+    rule. The sentence itself is held in the remedy census, because an
+    assertion that the word "X4" appears in it passes for the borrowing
+    it was written to forbid."""
+    env = copy.deepcopy(hd_env())
+    named = sorted(_file_values(env))
+    assert named, "the fixture stopped naming files"
     packed = build_aasx(tmp_path / "p.aasx",
-                        payload=json.dumps(hd_env()).encode("utf-8"))
-    remedy = next(f.fix for f in runner.run(packed).findings if f.id == "HD-D7")
-    assert "X4" in remedy, remedy
+                        payload=json.dumps(env).encode("utf-8"),
+                        files=[(name, b"%PDF-1.4") for name in named],
+                        suppl_targets=[])
+    assert "HD-D7" not in {f.id for f in runner.run(packed).findings}
 
 
 # -- a defect in the second of several -------------------------------------
