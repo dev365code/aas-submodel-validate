@@ -49,6 +49,9 @@ table is read from the ruling lines the page draws, not from its text stream).
 
 sources.sha256 is a static pin and is not regenerated here.
 
---public on the longlist extractor omits two fields that point into a separately
-licensed document. It is a variant of the same parse, not a trimmed copy of the
-output, so the file above is reproducible exactly as published.
+--public on the longlist extractor selects the redistribution profile. That
+profile currently omits nothing: PUBLIC_PROFILE_OMITS in the script is empty, and
+the script states the rule that keeps it so (a value the spreadsheet prints in its
+own columns is the spreadsheet's). The flag stays so that wording lifted from a
+document under other terms could be left out without changing the parse. The file
+above is reproducible exactly as published.

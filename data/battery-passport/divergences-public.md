@@ -13,7 +13,9 @@ claims that any publisher made a mistake.
 Every file was read at the hash recorded in `sources.sha256`. The submodel
 templates were read at one commit of the public template repository,
 `a9664731a903b29ac5f45e23ab3a25c581f3d92f`, so "the template says" means those
-bytes. Counts come from the index files beside this one; none are typed by hand.
+bytes. Counts come from the index files beside this one, with one exception
+stated where it occurs: the package member listing in entry 5 was read directly
+from the packages pinned in `sources.sha256`.
 
 ---
 
@@ -94,11 +96,13 @@ example values and once without, together with a README. Part 5 V1.0.2 ships
 neither the file without example values nor a README.
 
 **Package sizes, checked:** All three Part 5 packages were opened far enough to
-list their members without extracting them. V1.0 holds seven members including a
-124,110-byte cover image; V1.0.1 and V1.0.2 hold five and no image. The document
-inside grew across the three: 160,908, then 163,838, then 166,758 bytes of AAS
-XML. The smaller packages are smaller because a cover picture is absent, not
-because content is missing.
+list their members without extracting them. The numbers in this paragraph are
+that listing — the one set of figures in this file not taken from an index — and
+`python -m zipfile -l <package>` reproduces them from the pinned files. V1.0
+holds seven members including a 124,110-byte cover image; V1.0.1 and V1.0.2 hold
+five and no image. The document inside grew across the three: 160,908, then
+163,838, then 166,758 bytes of AAS XML. The smaller packages are smaller because
+a cover picture is absent, not because content is missing.
 
 **Where:** `requirements-idta.json` note for Part 5 V1.0.2; packages `6d637644`,
 `3300dc71`, `151e1210` in `sources.sha256`.
@@ -131,12 +135,19 @@ restatement that does not resolve, and it carries a substantive obligation.
 
 ## 7. The guidance and the longlist read ten provisions differently
 
-**Read:** For ten provisions, the two restatements differ, and in one direction.
-The guidance marks data points as not to be filled or displayed as of February
-2027 — variously because a format awaits an implementing act, because
-application is on hold, or because another article moves the date to August 2027
-— while the longlist marks rows citing the same provision as required.
-Provisions affected include Annex XIII 1(b), 1(c), 1(e), 1(g) and Annex VI A (1).
+**Read:** For ten provisions, the two restatements differ. The longlist marks
+every row citing them as required; the guidance reads them in two ways. For five
+— Annex XIII 1(b), 1(c), 1(d), 1(e) and 1(g) — it marks the data point as not to
+be filled or displayed: because the same data is already required under another
+data point (1(b), 1(g)), because the format is still to be specified in the
+implementing act (1(c)), because Article 48(1) makes it required from August
+2027 (1(d)), or because it is to be applied in line with Article 8 and the
+relevant delegated act (1(e)). For the other five — Annex VI A (1) and Annex
+XIII 1(m), 1(q), 4(a), 4(d) — it reads at least one data point as conditional or
+optional ("if applicable", "optional, to be filled if such data is available")
+where the longlist reads required; for three of them, Annex VI A (1), 1(q) and
+4(a), the guidance also carries mandatory data points under the same provision,
+so the two documents differ on part of the provision, not all of it.
 
 **Where:** `requirements-join.json`, `readings_that_differ_by_citation`; each
 document's own wording is preserved per record in
@@ -145,8 +156,8 @@ document's own wording is preserved per record in
 
 **What a checker has to decide:** Which question it is answering. The longlist
 answers what the regulation requires; the guidance answers what has to be filled
-in as of February 2027. Both are right about their own question, and a checker
-cannot infer which one its user means. It has to be told.
+in as of February 2027, and for which batteries. Both are right about their own
+question, and a checker cannot infer which one its user means. It has to be told.
 
 ## 8. Nine template elements are optional where the restatements call the data required
 
