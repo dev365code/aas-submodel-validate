@@ -12,6 +12,7 @@ docs/divergences.md #30.
 """
 from __future__ import annotations
 
+import copy
 import json
 
 import pytest
@@ -57,10 +58,40 @@ def test_the_dropped_elements_are_ones_the_table_agrees_are_dropped():
 
 
 def test_a_conformant_02004_file_is_conformant_to_02035_2_too(tmp_path):
-    """02035-2 asks for a subset and relaxes two rows; it makes nothing
-    stricter. So the implication runs one way and the suite should be
-    able to say so."""
+    """02035-2 asks for a subset of the rows and relaxes two of them, so
+    the golden environment passes under either template.
+
+    That is a fact about this file, not an implication. The docstring
+    here used to draw one -- "it makes nothing stricter, so the
+    implication runs one way" -- and the test below is the
+    counter-example (docs/divergences.md #32)."""
     assert _ids(tmp_path, hd_env(), profile="02035-2") == {"SMT-D2"}
+
+
+def test_a_wider_match_set_is_a_tightening_where_a_row_is_bounded(tmp_path):
+    """Every 02035-2 match set is a strict superset of 02004's, and a
+    superset admits *more* elements to the same row. Where the row has an
+    upper bound, admitting more is stricter, not looser.
+
+    A `Documents` under 02004's ECLASS identifier with a sibling under
+    the SAMM URN 02035-2 adds: one row filled under 02004, two under
+    02035-2, against a bound of exactly one. Neither verdict is wrong --
+    a battery passport carrying both spellings really has declared the
+    list twice, and a 02004 file has one list and a stranger's element
+    beside it, which this project does not refuse. What was wrong was
+    believing this could not happen."""
+    env = copy.deepcopy(hd_env())
+    documents = env["submodels"][0]["submodelElements"][0]
+    samm = sorted(set(dbp_tables.BY_LABEL["Documents"]["match"])
+                  - set(hd_tables.BY_LABEL["Documents"]["match"]))
+    assert len(samm) == 1, samm
+    sibling = copy.deepcopy(documents)
+    sibling["idShort"] = "DocumentsUnderTheOtherSpelling"
+    sibling["semanticId"] = {"type": "ExternalReference",
+                             "keys": [{"type": "GlobalReference", "value": samm[0]}]}
+    env["submodels"][0]["submodelElements"].append(sibling)
+    assert "DBP2-E01" not in _ids(tmp_path, env, profile="02004")
+    assert "DBP2-E01" in _ids(tmp_path, env, profile="02035-2")
 
 
 @pytest.mark.parametrize("row", dbp_tables.ROWS, ids=[r["id"] for r in dbp_tables.ROWS])
