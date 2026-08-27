@@ -41,7 +41,7 @@ PRIO_SEVERITY = {
 #: What a rule is about, in the order a report is read: the container the
 #: submodel arrived in, then the template it claims to be, then this
 #: project's informational lints, then the metamodel channel relayed from
-#: aas-core3.0 -- 77 relayed messages must not bury the two template
+#: aas-core3.0 -- 77 relayed messages must not bury the template
 #: findings the reader came for.
 #:
 #: One list, because it was two and neither could see the other: the

@@ -68,8 +68,12 @@ class Profile:
         Derived from the two generated tables rather than written down: the
         value is upstream's, it is hash-verified where it lives, and a copy
         here would be a second place for it to be right. Today it is one
-        SAMM URN. If upstream drops it the set empties, this rule stops
-        firing, and `make exercised` says so -- the gate is already wired.
+        SAMM URN. If upstream drops it the set empties and the
+        marked-submodel fixtures in `test_profiles` go red -- coverage
+        alone would not notice, because the rule still fires under
+        `--profile`. (This sentence first named `make exercised` as the
+        gate, which was the wrong one: measured, emptying the set leaves
+        that gate green.)
         """
         return (frozenset(self.alternative.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS)
                 - frozenset(self.default.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS))

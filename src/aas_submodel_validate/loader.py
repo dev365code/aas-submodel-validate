@@ -78,8 +78,9 @@ class LoadError:
     """One thing that went wrong on the way in, as data.
 
     `stage` says which link failed -- "zip" (not a container), "chain"
-    (the OPC relationships), "payload" (a part that would not parse) --
-    and the container rules map stages to findings.
+    (the OPC relationships), "payload" (a part that would not parse),
+    "bounds" (refused for size, X5's stage) -- and the container rules
+    map stages to findings.
     """
 
     stage: str

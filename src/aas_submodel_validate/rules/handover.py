@@ -5,7 +5,8 @@ IDTA 02004 and IDTA 02035-2 publish the same submodel semanticId over the
 same vocabulary of elements (docs/divergences.md #26), so what a template
 file cannot say is the same sentence for both: the VDI 2770
 classification is mandatory, its ClassId comes from twelve published
-classes, a date is a date, a File names a part the container holds.
+classes, a File names a part the container holds. (Not every row: the
+date, status and reference rules are among the three 02035-2 drops.)
 Copying those bodies into a second module would put the same requirement
 in two places to be right, which is the failure the generated tables
 exist to avoid.
@@ -129,7 +130,10 @@ def _d3(tables):
 #: agreement, and this project has already reversed itself once here on
 #: the strength of a wider reading it had not checked against this
 #: function (docs/divergences.md #35). If aas-core3's answer moves, this
-#: moves with it, and the fixtures below say what the answer is today.
+#: moves with it, and the tag fixture in the suite says what the answer
+#: is today -- including its costs: the pattern is case-exact on the
+#: primary subtag, so `eN` and `En`, legal case-insensitive BCP 47, draw
+#: the MUST. The remedy names the two spellings it takes.
 #:
 #: Note this is *narrower* than `matches_bcp_47`, which is
 #: well-formedness only and admits `eng`, `enm` and `english` alike --
@@ -369,9 +373,9 @@ ROSTER = (
       "ClassificationSystem", "ClassId"), _d3),
     ("-D4", "template", "MUST", "the VDI 2770 ClassName speaks English",
      "IDTA 02004-2-0 §2.3 (\"EN is mandatory\")",
-     "Add an entry to ClassName tagged 'en' (a region subtag is fine, "
-     "and case does not matter); Table 1 names each class in English "
-     "(for 03-02 it is 'Operation').",
+     "Add an entry to ClassName tagged 'en' or 'EN' (a region subtag "
+     "is fine); Table 1 names each class in English (for 03-02 it is "
+     "'Operation').",
      ("Document", "DocumentClassifications", "DocumentClassification",
       "ClassificationSystem", "ClassName"), _d4),
     ("-D5", "template", "SHOULD", "one of several DocumentIds is marked primary",

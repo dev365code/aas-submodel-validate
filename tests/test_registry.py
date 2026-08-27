@@ -354,9 +354,9 @@ REMEDIES = {
         "Replace the ClassId with one of the twelve VDI 2770 Blatt "
         "1:2020 ids: 01-01, 02-01..02-04, 03-01..03-06 or 04-01.",
     "DBP2-D4":
-        "Add an entry to ClassName tagged 'en' (a region subtag is fine, "
-        "and case does not matter); Table 1 names each class in English "
-        "(for 03-02 it is 'Operation').",
+        "Add an entry to ClassName tagged 'en' or 'EN' (a region "
+        "subtag is fine); Table 1 names each class in English (for "
+        "03-02 it is 'Operation').",
     "DBP2-D5":
         "Mark one of these DocumentIds with DocumentIsPrimary = true, "
         "so consumers know which identifier to file the document under. "
@@ -402,9 +402,9 @@ REMEDIES = {
         "Replace the ClassId with one of the twelve VDI 2770 Blatt "
         "1:2020 ids: 01-01, 02-01..02-04, 03-01..03-06 or 04-01.",
     "HD-D4":
-        "Add an entry to ClassName tagged 'en' (a region subtag is fine, "
-        "and case does not matter); Table 1 names each class in English "
-        "(for 03-02 it is 'Operation').",
+        "Add an entry to ClassName tagged 'en' or 'EN' (a region "
+        "subtag is fine); Table 1 names each class in English (for "
+        "03-02 it is 'Operation').",
     "HD-D5":
         "Mark one of these DocumentIds with DocumentIsPrimary = true, "
         "so consumers know which identifier to file the document under. "
@@ -462,9 +462,10 @@ REMEDIES = {
         "gives, or correct the value's path. (Declaring an aas-suppl "
         "relationship for it is X4's question, not this one's.)",
     "TD-D3":
-        "Point the reference at a TechnicalPropertyArea this submodel "
-        "holds, or add the area it names; the list's children are "
-        "addressed by position, so the last key is an index.",
+        "Add the element this reference names to the submodel, or "
+        "correct its key path; a key into the property-area list may "
+        "be a position counted from zero, or an idShort where one "
+        "exists.",
     "TDL1":
         "Correct the semanticId to the template's spelling; a near-miss "
         "matches nothing, and every rule that would have applied to the "

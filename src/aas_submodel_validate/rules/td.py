@@ -101,9 +101,10 @@ def td_d2_files_exist(ctx):
 @rule("TD-D3", kind="template", prio="SHOULD",
       title="ReferenceToTechnicalPropertyArea resolves to an element that exists",
       spec="IDTA 02003-2-0-1 §3.4, Table 6",
-      fix="Point the reference at a TechnicalPropertyArea this submodel "
-          "holds, or add the area it names; the list's children are "
-          "addressed by position, so the last key is an index.")
+      fix="Add the element this reference names to the submodel, or "
+          "correct its key path; a key into the property-area list may "
+          "be a position counted from zero, or an idShort where one "
+          "exists.")
 def td_d3_area_references_resolve(ctx):
     """Resolution is attempted only for a ModelReference whose first key
     names *this* submodel: a reference into another AAS is a promise this

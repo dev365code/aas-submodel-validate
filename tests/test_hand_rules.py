@@ -14,6 +14,7 @@ import aas_core3.verification as verification
 import pytest
 
 from aas_submodel_validate import runner
+from aas_submodel_validate.rules import handover as handover_rules
 from aas_submodel_validate.rules import handover as rules_handover
 from builders import build_aasx, hd_env
 
@@ -712,9 +713,10 @@ def test_a_defect_past_the_first_of_several_is_still_reported(tmp_path, rule_id,
 
 
 def test_the_class_vocabulary_is_the_twelve_vdi_publishes():
-    """VDI 2770 Blatt 1:2020 Table 1. The vendored template carries only
-    an ExampleValue (`03-02`), not the list, so this set is read from the
-    standard's own table and cannot be re-derived from bytes this project
+    """IDTA 02004-2-0 §2.3, Table 1 -- the freely published table this
+    project validates against; VDI 2770 Blatt 1:2020 itself was not
+    opened. The vendored template carries only an ExampleValue (`03-02`),
+    not the list, so the set cannot be re-derived from bytes this project
     hash-verifies (docs/divergences.md #33).
 
     A thirteenth would be accepted silently, and the rule that exists to
@@ -816,11 +818,21 @@ def test_a_class_id_under_another_system_is_not_this_rules_business(tmp_path):
     classification = _classification(env)
     _set_property(classification, "ClassificationSystem", "VDI 2770 Blatt 1:2027")
     _set_property(classification, "ClassId", "05-01")
-    assert "HD-D3" not in _findings(tmp_path, env)
+    findings = _findings(tmp_path, env)
+    assert "HD-D3" not in findings
+    # Escaping D3 is not passing. With no classification in the accepted
+    # spellings the mandatory-classification rule fires, at MUST: a
+    # later-edition file fails *as not being this template*, which is
+    # the template's verdict and the honest reading of what the pinned
+    # twelve cost (docs/divergences.md #33). The first version of this
+    # test asserted the silence alone, which read as "such a file is
+    # fine" -- it is not, and saying so is the point.
+    assert "HD-D2" in findings
 
 
 @pytest.mark.parametrize("tag,is_english", (
     ("en", True), ("EN", True), ("en-GB", True), ("EN-GB", True),
+    ("eN", False), ("En", False),
     ("eng", False), ("enm", False), ("english", False), ("de", False),
     ("", False),
 ))
@@ -843,5 +855,10 @@ def test_which_language_tags_count_as_english(tmp_path, tag, is_english):
             child["value"] = [{"language": tag, "text": "Operation"}]
     assert ("HD-D4" not in _findings(tmp_path, env)) is is_english
     # And it is the metamodel's verdict, not a copy that agreed on the
-    # day it was written.
+    # day it was written: the rule holds the function itself, so an
+    # aas-core3 upgrade that moves the answer moves the rule and turns
+    # these rows red together. Asserting only the function's behaviour
+    # was measured insufficient -- a hand-rolled copy inside the rule
+    # passed it.
+    assert handover_rules._english is verification.is_bcp_47_for_english
     assert verification.is_bcp_47_for_english(tag) is is_english

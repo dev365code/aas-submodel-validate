@@ -88,7 +88,7 @@ def _meta_findings(loaded: Loaded, strict: bool):
 
 #: Reading order: errors before warnings before notes; within a severity
 #: our own channels before the relayed metamodel one, because 77 relayed
-#: constraint messages must not bury the two template findings the
+#: constraint messages must not bury the template findings the
 #: reader came for. Total down to the message, so two runs cannot differ.
 #: Derived from `model.KINDS`, not restated: this was a second copy, and
 #: a kind missing from it sorted as if it were a lint -- into the middle

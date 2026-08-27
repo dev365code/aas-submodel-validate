@@ -2,7 +2,10 @@
 
 A second published template answering to IDTA 02004's submodel
 semanticId, over twenty-two of that template's thirty-eight rows, with
-two of them relaxed and none made stricter (docs/divergences.md #26).
+two of them relaxed -- and sixteen made stricter by the same edit,
+because a wider match set tightens every row with an upper bound. #26
+first read this table as "nothing stricter", and #32 records why that
+was false and what it costs (docs/divergences.md #26, #32).
 Because the identifier cannot say which of the two a file means, which
 one answers is decided in `profiles.py` and reported by `SMT-D2`; this
 module only says what is asked once 02035-2 is the answer.

@@ -120,5 +120,6 @@ differ.
 `kind` is `meta` for findings relayed from
 [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s
 metamodel verification, which this project delegates to and never
-re-implements. Those carry the rule id `META` and the constraint's own
-name in the message.
+re-implements. Those carry the rule id `META`, with the constraint's own
+name in the message where aas-core3.0's sentence states one -- not every
+sentence does, so match on the rule id, never on the prose.
