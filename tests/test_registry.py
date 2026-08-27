@@ -118,22 +118,51 @@ def test_every_kind_in_the_vocabulary_has_a_user():
 #:   conformance tool agreeing with a file it has just failed.
 #: - `SHOULD` -> `MUST` fails a file that was conformant.
 #:
-#: Measured before this list existed: the *promotions* were caught, and
-#: only because the official published example draws those warnings and
-#: is pinned as `ok`. The *demotions* were not caught at all -- every
-#: fixture that fires a rule asserts its id and never its severity. The
-#: direction this project calls worst was the one accidentally guarded.
+#: Measured with this list deselected, one rule's word at a time, whole
+#: suite each time: **11 of the 16 MUSTs could become warnings and 9 of
+#: the 21 others could become errors, all green.**
 #:
-#: Read down the columns rather than the rows: MUST is what the template
-#: obliges (the mandatory classification, its English name, its class
-#: from the published twelve, files that exist, dates that are dates) and
-#: what leaves nothing judged at all (X1-X3, X5, SMT-D1). SHOULD is
-#: interoperability and the readings this project prefers without
-#: insisting -- a PDF/A rendition, a primary identifier, the status
-#: vocabulary, references that resolve, near-misses, duplicates, the
-#: canonical spelling, declared supplementary parts. MAY is tidiness
-#: alone: idShort patterns, reference types, and the sentence naming
-#: which of two templates answered.
+#: An earlier note here said the promotions were caught and the demotions
+#: were not, and said it from a glance rather than a run. Both halves are
+#: wrong. Five demotions were caught (HD-D2, HD-D8, SMT-D1, X1, X5) and
+#: nine promotions were not (DBP2-D10, DBP2L2, DBP2L3, DBP2L4, DBP2L5,
+#: HDL4, TD-D3, TDL1, TDL2). Neither direction was guarded; promotions
+#: were guarded better, not caught. And "no fixture asserts a severity"
+#: was false when it was written -- eleven did, and two of them are what
+#: caught HD-D5 and HD-D9. The lesson is not about severities. Counting
+#: what a suite covers by reading it, rather than by breaking the thing
+#: and watching, is how all three sentences came out wrong at once.
+#:
+#: The pattern in what survived is worth keeping: **nine of the twenty
+#: holes are the DBP2 pack**, which is a third of the rules. Its fixtures
+#: were built to prove the pack answers at all, and a rule that fires
+#: proves nothing about the column it fires in.
+#:
+#: Read down the columns rather than the rows, and note that the two
+#: kinds of rule are graded on different questions:
+#:
+#: - **Template MUST** is what the template obliges: the mandatory
+#:   classification, its English name, its class from the published
+#:   twelve, files that exist, dates that are dates.
+#: - **Container MUST** is what leaves nothing judged at all -- X1-X3 and
+#:   X5 stop the read, SMT-D1 leaves no table able to answer. X4 sits at
+#:   SHOULD under that same question and not by oversight: a dangling
+#:   aas-suppl relationship is a broken promise about packaging, and
+#:   every template verdict still stands. It reads as an asymmetry
+#:   against HD-D7/TD-D2, which are MUST for a file the archive does not
+#:   hold; the difference is which question goes unanswered, not which
+#:   byte-stream is missing.
+#: - **SHOULD** is interoperability and the readings this project prefers
+#:   without insisting: a PDF/A rendition, a primary identifier, the
+#:   status vocabulary, references that resolve, near-misses, duplicates,
+#:   the canonical spelling, declared supplementary parts.
+#: - **MAY** is idShort patterns and reference types -- tidiness -- plus
+#:   SMT-D2, which is not tidiness and is not a defect finding either.
+#:   It names which of two templates answered, and that sentence moves
+#:   21 rule ids and flips 19 verdicts (docs/divergences.md #30). It is
+#:   provenance wearing a finding's shape because every rule must carry a
+#:   remedy, and it is at `info` so the exit code stays the answering
+#:   template's business (#28).
 MUST_RULES = {
     "DBP2-D2", "DBP2-D3", "DBP2-D4", "DBP2-D7",
     "HD-D2", "HD-D3", "HD-D4", "HD-D7", "HD-D8",
@@ -146,11 +175,32 @@ SHOULD_RULES = {
 }
 MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 
-#: The generated rules are not listed one by one: a row's rule reports a
-#: cardinality the vendored template states, so all of them are `MUST`
-#: and the byte-compare gate holds the table they come from. What is
-#: asserted is that none of them has drifted off it.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2)-E\d\d$")
+#: The generated rules are not listed one by one: a row's rule reports
+#: what the vendored template states about that element -- how many, what
+#: kind, and which valueType -- so all of them are `MUST` and the
+#: byte-compare gate holds the table they come from. What is asserted is
+#: that none of them has drifted off it.
+#:
+#: Two things that blanket word is quiet about, kept here because the
+#: place to argue a severity is beside the list of them:
+#:
+#: - Four 02003 rows (TD-E08, TD-E12, TD-E21, TD-E26) come from elements
+#:   the template gives no `SMT/Cardinality` at all. Their `0..*` is read
+#:   from the PDF's element tables (#20), so their rules can report a
+#:   kind and never a count, and the generated remedy asks for "any
+#:   number" of something at MUST severity. `rules/td.py` says so in the
+#:   spec string; this says so beside the severity.
+#: - 24 of the 86 rows are `0..1`, where the rule can only ever fire on
+#:   the *upper* bound -- two of something the template allows one of.
+#:   That is where divergence #32 lives: a wider match set makes a capped
+#:   row stricter, and one profile's error is the other's clean file. At
+#:   MUST it exits 1.
+#:
+#: `\d+`, not `\d\d`: the generator formats ids with `%02d`, a minimum
+#: width, so an 87th row in a pack would be `HD-E087` but a 100th would
+#: be `HD-E100` -- which `\d\d` sorts into the hand-written rules, where
+#: it surfaces as an arity mismatch naming nothing.
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -168,10 +218,15 @@ def test_the_hand_rules_have_the_severities_that_were_decided():
     Both directions matter and neither was held: promotions only by
     accident, demotions not at all."""
     hand = [rule for rule in all_rules() if not GENERATED_ID.match(rule.id)]
-    assert len(hand) == len(MUST_RULES | SHOULD_RULES | MAY_RULES)
+    # The set comparisons first, because they name the rule: a new id
+    # prints as `{'HDZ9'}` against an empty diff. The count last, where
+    # it can only report a duplicate -- when it ran first it printed
+    # `assert 38 == 37` above a truncated repr of every Rule object, and
+    # a reader had to go and find which one was new.
     assert {r.id for r in hand if r.severity is Severity.ERROR} == MUST_RULES
     assert {r.id for r in hand if r.severity is Severity.WARNING} == SHOULD_RULES
     assert {r.id for r in hand if r.severity is Severity.INFO} == MAY_RULES
+    assert len(hand) == len(MUST_RULES | SHOULD_RULES | MAY_RULES)
 
 
 #: Every rule-id namespace this tool registers, as the whole shape of an

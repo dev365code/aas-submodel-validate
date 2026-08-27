@@ -19,7 +19,7 @@ from pathlib import Path
 
 from aas_submodel_validate import runner
 from aas_submodel_validate.loader import load
-from aas_submodel_validate.rules import engine, hd_tables
+from aas_submodel_validate.rules import dbp_tables, engine, hd_tables, td_tables
 from builders import hd_env, inject, strip_row
 
 
@@ -514,21 +514,79 @@ def test_a_submodel_with_no_elements_at_all_is_judged_not_crashed(tmp_path):
                 if "could not run" in f.violation.message]
 
 
-#: Conjuncts of the walk's guards that survive everything above, measured
-#: and left alone:
+#: Conjuncts of the walk's guards that survive everything above. They are
+#: dead against the tables as generated today, and none of them is dead
+#: against a table the generator could produce -- which is a different
+#: claim from the one first written here, and the reason they stay.
 #:
-#: *`expected` in the submodel reference-type check.* All three vendored
-#: tables declare `TEMPLATE_SUBMODEL_SID_TYPE = "ModelReference"`, so the
-#: term is never false.
+#: *`reference is not None` and `expected` in the submodel reference-type
+#: check.* `matched_submodels` reaches a submodel through
+#: `candidate_values(submodel.semantic_id)`, and that is the empty set for
+#: `None`, so a submodel with no semanticId never arrives. All three
+#: vendored tables declare `TEMPLATE_SUBMODEL_SID_TYPE =
+#: "ModelReference"` -- asserted for each of them now; two were pinned
+#: and the pack this file exercises was not.
 #:
-#: *`row["sid_type"]`.* Every one of the 86 generated rows carries one.
+#: *`row["sid_type"]`.* All 86 generated rows carry one, and all 86 say
+#: `ExternalReference`. Not "cannot be otherwise": the generator reads
+#: `semanticId.type` off the element and writes what it finds, the
+#: vendoring gate is a hash and an undeclared-file sweep with no
+#: structural check in it, and `semanticId` is optional on a
+#: SubmodelElement. A future template may omit one.
 #:
-#: *`row["value_type"]` and `declared is not None`.* The 59 rows without a
-#: value type are all containers, files, references and
-#: multi-language properties -- none of which carries a `value_type`
-#: attribute at all -- so `declared` is `None` exactly where the row is
-#: silent, and either term alone decides the same thing.
+#: *`row["value_type"]` and `declared is not None`.* The first note here
+#: argued this from a census of which kinds lack a `value_type`
+#: attribute, got the census wrong (`Entity` was the 59th row, left out
+#: of a list of four kinds that came to 58), and argued only the
+#: direction that licenses dropping one of the two terms. The evidence
+#: that actually holds is the kind guard above, which has already forced
+#: the element's class to match the row's:
+#:
+#:   - All 27 rows that name a `value_type` are kind `Property`, and
+#:     aas-core3 refuses a Property with no `valueType` on every loader
+#:     path -- measured, JSON-missing, JSON-null and XML. So `declared`
+#:     is never `None` where the row speaks.
+#:   - Every row that names none is a kind whose class has no
+#:     `value_type` attribute at all. So `declared` is always `None`
+#:     where the row is silent.
+#:
+#: Both terms are therefore dead, and dead *because of an invariant of a
+#: dependency*, which is the kind of thing this project has been wrong
+#: about twice already (#17, #31). If aas-core3 ever admits a Property
+#: without a valueType, dropping `declared is not None` turns a
+#: conformant file into a `could not run` finding at the rule's own MUST.
 #:
 #: *`not candidates` in the near-miss sweep.* An element with no
 #: identifiers reaches `_near_miss` with an empty set, which matches
-#: nothing; skipping it early is a saving, not a decision.
+#: nothing -- checked against every match set of all 86 rows in all three
+#: tables. Skipping it early is a saving, not a decision.
+
+
+def test_all_three_tables_expect_a_model_reference_to_the_template():
+    """The walk reports a submodel whose semanticId is an
+    ExternalReference where the table says ModelReference. Two packs
+    pinned the value they compare against and this one did not, in a note
+    that asserted it about all three."""
+    for tables in (hd_tables, td_tables, dbp_tables):
+        assert tables.TEMPLATE_SUBMODEL_SID_TYPE == "ModelReference"
+
+
+def test_every_generated_row_says_which_reference_type_it_expects():
+    """`sid_type` gates the reference-type lint. A row without one is
+    what the generator writes for an element carrying no semanticId --
+    which the metamodel permits and the vendoring gate, being a hash,
+    would not notice."""
+    for tables in (hd_tables, td_tables, dbp_tables):
+        for row in tables.ROWS:
+            assert row["sid_type"] == "ExternalReference", row["id"]
+
+
+def test_only_properties_declare_a_value_type():
+    """The valueType lint dereferences the element's own `value_type`
+    once the row names one. It is safe because every row that names one
+    is a Property row and the kind guard has already run -- not because
+    of which kinds happen to lack the attribute."""
+    for tables in (hd_tables, td_tables, dbp_tables):
+        for row in tables.ROWS:
+            if row["value_type"]:
+                assert row["kind"] == "Property", row["id"]
