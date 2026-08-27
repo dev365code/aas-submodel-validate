@@ -757,9 +757,15 @@ def test_the_class_vocabulary_is_the_twelve_vdi_publishes():
 def test_which_spellings_mark_a_document_id_primary(tmp_path, value, is_primary):
     """`xs:boolean` writes true as `true` or `1`. This rule folds case
     and trims first, so `TRUE` and a padded value are read as the author
-    meant them -- the metamodel refuses both spellings and the relayed
-    channel says so, which is the second opinion that makes the leniency
-    safe (docs/divergences.md #34).
+    meant them.
+
+    The metamodel refuses both spellings and the relayed channel reports
+    that -- asserted below, because a divergence resting on a second
+    opinion has to notice the second opinion going away, and this one
+    did not. It is a weaker backstop than the word suggests: `META` is a
+    `SHOULD`, so it reaches a reader and not an exit code (#17, and
+    `tests/test_values.py`). What makes the leniency cost nothing here is
+    that HD-D5 is a `SHOULD` too (docs/divergences.md #34).
 
     `yes` is not a boolean in any reading and is not accepted."""
     env = copy.deepcopy(hd_env())
@@ -770,7 +776,29 @@ def test_which_spellings_mark_a_document_id_primary(tmp_path, value, is_primary)
     document_ids["value"].append(second)
     for entry in document_ids["value"]:
         _set_property(entry, "DocumentIsPrimary", value)
-    assert ("HD-D5" not in _findings(tmp_path, env)) is is_primary
+    findings = _findings(tmp_path, env)
+    assert ("HD-D5" not in findings) is is_primary
+    if value in ("TRUE", " true "):
+        assert "META" in findings, "the second opinion went away"
+
+
+
+def test_a_class_id_under_another_system_is_not_this_rules_business(tmp_path):
+    """The twelve are the twelve of a *published edition*, and this rule
+    only ever looks at a classification whose system the file has already
+    declared to be that edition.
+
+    Which decides what a thirteenth class would cost. A later VDI 2770
+    naming more classes names itself differently, and a classification
+    declaring that system is not one this rule reads -- so the set going
+    stale is not how a conformant file gets failed here. What would do it
+    is the set being wrong about the edition it claims, which is a
+    question about where the twelve were read, not about when."""
+    env = copy.deepcopy(hd_env())
+    classification = _classification(env)
+    _set_property(classification, "ClassificationSystem", "VDI 2770 Blatt 1:2027")
+    _set_property(classification, "ClassId", "05-01")
+    assert "HD-D3" not in _findings(tmp_path, env)
 
 
 @pytest.mark.parametrize("tag,is_english", (

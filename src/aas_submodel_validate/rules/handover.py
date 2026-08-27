@@ -40,9 +40,8 @@ from .engine import (
 )
 from .values import valid_xs_date
 
-#: VDI 2770 Blatt 1:2020, Table 1 -- the exact spelling the specification
-#: says identifies the mandatory classification system, and its twelve
-#: document classes.
+#: The exact spelling IDTA 02004-2-0 §2.3 says identifies the mandatory
+#: classification system.
 VDI2770_SYSTEM = "VDI 2770 Blatt 1:2020"
 #: The template's own ExampleValue -- and therefore the official example --
 #: spells it "VDI2770:2020", contradicting §2.3's identifying value. Both
@@ -51,6 +50,15 @@ VDI2770_SYSTEM = "VDI 2770 Blatt 1:2020"
 #: carries the same ExampleValue, which is one of the three ways its own
 #: bytes say it keeps the VDI 2770 classification (divergences #29).
 VDI2770_SPELLINGS = frozenset((VDI2770_SYSTEM, "VDI2770:2020"))
+#: The twelve document classes of that edition, read from IDTA 02004-2-0
+#: §2.3, Table 1 -- freely published, and the document this validates
+#: against -- and cross-checked against the DDC reference implementation.
+#: VDI 2770 Blatt 1:2020-04 itself is sold by DIN Media and was not
+#: opened; the comment here used to name it as the source, which claimed
+#: a primary reading for a secondary one. docs/divergences.md #33, which
+#: also records why a thirteenth class in a later edition is not how this
+#: fails a conformant file: `_vdi_classifications` reads only what the
+#: file has already declared to be *this* edition.
 VDI2770_CLASS_IDS = frozenset((
     "01-01", "02-01", "02-02", "02-03", "02-04",
     "03-01", "03-02", "03-03", "03-04", "03-05", "03-06", "04-01"))
@@ -143,6 +151,10 @@ def _d4(tables):
     return check
 
 
+#: Case-folded and trimmed before reading, so `TRUE` and a padded value
+#: are taken as the author meant them. What makes that safe is not a
+#: backstop -- docs/divergences.md #34, which records the argument that
+#: was tried and does not hold.
 def _d5(tables):
     def check(ctx):
         """§2.6 defines the flag against "a collection of at least two
@@ -408,6 +420,10 @@ ROSTER = (
      "element is required\"); §2.8 for the DocumentVersion reference lists, "
      "where the same integrity question is asked of document-to-document "
      "references",
+     # Unreachable: `_d9` gives every violation its own remedy, naming the
+     # label that dangled, and `Finding.fix` prefers that one. Kept and
+     # pinned rather than deleted -- standing advice that has stopped
+     # shipping is worth being able to see. Same state as `-L3`.
      "Add the element the reference names to the submodel, or correct its "
      "key path; a reference that resolves to nothing points the document "
      "at nothing.",
