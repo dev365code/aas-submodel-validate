@@ -93,6 +93,23 @@ def _analyze(ctx, tables) -> Dict:
     return result
 
 
+
+def reftype_remedy(expected: str) -> str:
+    """The sentence a reference-type lint ships, in one place.
+
+    Three packs raise this lint and two of them had a copy of the
+    sentence. The copies drifted: one grew `.upper()` and a tuple so that
+    an empty type would not read "an " -- `"" in "AEIOU"` is True -- and
+    the other kept the arithmetic that was fixed. Neither drift was
+    reachable and both would have shipped the moment it became so, which
+    is what a second copy is for.
+    """
+    article = "an" if expected[:1].upper() in tuple("AEIOU") else "a"
+    return ("Use %s %s here, as the template does; the value matched, "
+            "so this is interoperability polish, not a failure."
+            % (article, expected))
+
+
 def _subject(path: str, element, index: int) -> str:
     return "%s/%s" % (path, element.id_short or "[%d]" % index)
 

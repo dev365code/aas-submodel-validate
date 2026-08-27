@@ -23,6 +23,7 @@ from .engine import (
     instances_of,
     matched_submodels,
     property_value,
+    reftype_remedy,
     resolve_in_submodel,
 )
 from .values import valid_xs_date
@@ -147,6 +148,4 @@ def tdl2_reference_type(ctx):
         yield Violation(
             "the reference type differs from the template's",
             subject=subject, detail="%s, where the template uses %s" % (seen, expected),
-            fix="Use %s %s here, as the template does; the value matched, "
-                "so this is interoperability polish, not a failure."
-                % ("an" if expected[:1] in "AEIOU" else "a", expected))
+            fix=reftype_remedy(expected))

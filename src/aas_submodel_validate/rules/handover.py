@@ -38,6 +38,7 @@ from .engine import (
     instances_of,
     matched_submodels,
     property_value,
+    reftype_remedy,
     resolve_in_submodel,
 )
 from .values import valid_xs_date
@@ -224,6 +225,18 @@ def _d8(tables):
     return check
 
 
+
+def dangling_remedy(label: str) -> str:
+    """Per label, because the rule reads four and only one of them is
+    about Entities. The standing sentence told the author of a dangling
+    `BasedOn` -- a document-to-document reference -- to add an Entity to
+    a list that has nothing to do with it.
+    """
+    return ("Add the element this %s names to the submodel, or correct "
+            "the reference's key path; a reference that resolves to "
+            "nothing points the document at nothing." % label)
+
+
 def _d9(tables):
     def check(ctx):
         """§2.2 requires the creation of an Entity element for DocumentedEntity;
@@ -249,15 +262,7 @@ def _d9(tables):
                             subject=subject,
                             detail="no element at key path %s"
                                    % " / ".join(key.value for key in keys[1:]),
-                            # Per label, because the rule reads four and only
-                            # one of them is about Entities. The standing
-                            # sentence told the author of a dangling `BasedOn`
-                            # -- a document-to-document reference -- to add an
-                            # Entity to a list that has nothing to do with it.
-                            fix="Add the element this %s names to the submodel, "
-                                "or correct the reference's key path; a "
-                                "reference that resolves to nothing points the "
-                                "document at nothing." % label)
+                            fix=dangling_remedy(label))
     return check
 
 
@@ -302,14 +307,7 @@ def _l3(tables):
             yield Violation(
                 "the reference type differs from the template's",
                 subject=subject, detail="%s, where the template uses %s" % (seen, expected),
-                fix="Use %s %s here, as the template does; the value matched, "
-                    "so this is interoperability polish, not a failure."
-                    # `"" in "AEIOU"` is True, so an empty type would read
-                    # "an ". Unreachable while the walk reports drift only
-                    # against a row that declares a type, and one character
-                    # of arithmetic either way.
-                    % ("an" if expected[:1].upper() in tuple("AEIOU") else "a",
-                       expected))
+                fix=reftype_remedy(expected))
     return check
 
 
@@ -351,9 +349,10 @@ ROSTER = (
     ("-D2", "template", "MUST", "every Document carries a VDI 2770 classification",
      "IDTA 02004-2-0 §2.3",
      "Add a DocumentClassification whose ClassificationSystem property "
-     "names VDI 2770 -- '%s' is the spelling to prefer, and the 2018 one "
-     "is accepted too (docs/divergences.md #9). Pick its ClassId from "
-     "the twelve VDI 2770 classes (e.g. 03-02, Operation)." % VDI2770_SYSTEM,
+     "names VDI 2770 -- '%s' is the spelling to prefer, and the "
+     "template's own '%s' is accepted too (docs/divergences.md #9). "
+     "Pick its ClassId from the twelve VDI 2770 classes "
+     "(e.g. 03-02, Operation)." % (VDI2770_SYSTEM, "VDI2770:2020"),
      ("Document", "DocumentClassifications", "DocumentClassification",
       "ClassificationSystem"), _d2),
     ("-D3", "template", "MUST", "VDI 2770 ClassId comes from the twelve published classes",

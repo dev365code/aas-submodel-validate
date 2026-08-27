@@ -30,6 +30,16 @@ from .container import (
     xml_as_utf8,
 )
 
+#: One sentence, two raise sites: a DTD in the package's own relationships
+#: part and a DTD in a part's. They were copies, and a copy of a sentence
+#: this project ships is a sentence that drifts (the reference-type lint
+#: had the same shape and the copies had already diverged).
+RELATIONSHIP_DOCTYPE_REMEDY = (
+    "Remove the DTD from the named relationships part and write out "
+    "whatever it declared. The chain itself is intact -- it names the "
+    "parts it should -- and a nested-entity DTD is a decompression-free "
+    "way to exhaust a reader, so this one refuses the declaration rather "
+    "than bound what it expands to.")
 
 class UnreadablePath(Exception):
     """Nothing could be read from the path at all: absent, or not permitted."""
@@ -266,11 +276,7 @@ def _load_aasx(path: Path) -> Loaded:
         loaded.errors.append(LoadError("zip", str(exc)))
         return loaded
     except RefusedContent as exc:
-        loaded.errors.append(LoadError("chain", str(exc), fix="Remove the DTD from the named relationships part and write out "
-                    "whatever it declared. The chain itself is intact -- it "
-                    "names the parts it should -- and a nested-entity DTD is a "
-                    "decompression-free way to exhaust a reader, so this one "
-                    "refuses the declaration rather than bound what it expands to."))
+        loaded.errors.append(LoadError("chain", str(exc), fix=RELATIONSHIP_DOCTYPE_REMEDY))
         return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("chain", str(exc)))
@@ -302,11 +308,7 @@ def _load_aasx(path: Path) -> Loaded:
         except NoRelationships:
             pass        # this part declares none, which is not a defect
         except RefusedContent as exc:
-            loaded.errors.append(LoadError("chain", str(exc), subject=part, fix="Remove the DTD from the named relationships part and write out "
-                    "whatever it declared. The chain itself is intact -- it "
-                    "names the parts it should -- and a nested-entity DTD is a "
-                    "decompression-free way to exhaust a reader, so this one "
-                    "refuses the declaration rather than bound what it expands to."))
+            loaded.errors.append(LoadError("chain", str(exc), subject=part, fix=RELATIONSHIP_DOCTYPE_REMEDY))
         except ContainerError as exc:
             # Would not parse. Quiet here until now for sharing an
             # exception type with "declares none" above, which left a
