@@ -405,16 +405,21 @@ def test_a_content_type_is_matched_without_regard_to_case(tmp_path):
     assert "HD-D10" not in _findings(tmp_path, env)
 
 
-def test_a_version_carrying_more_than_the_pdf_still_has_its_pdf(tmp_path):
+@pytest.mark.parametrize("pdf_first", (True, False), ids=("pdf first", "pdf second"))
+def test_a_version_carrying_more_than_the_pdf_still_has_its_pdf(tmp_path, pdf_first):
     """HD-D10 asks whether a PDF/A is *among* the renditions, not whether
     it is the only one -- and a native file beside it is what VDI 2770
-    recommends, not a defect."""
+    recommends, not a defect.
+
+    Both orders, because the rule walks the files and only one order can
+    see it stopping after the first: with the PDF second, reading one
+    file reports a conformant version as having no rendition at all."""
     env = copy.deepcopy(hd_env())
     files = _digital_files(env)
     native = copy.deepcopy(files["value"][0])
     native["contentType"] = "application/step"
     native["value"] = "/aasx/files/model.step"
-    files["value"].append(native)
+    files["value"].append(native) if pdf_first else files["value"].insert(0, native)
     assert "HD-D10" not in _findings(tmp_path, env)
 
 
@@ -425,31 +430,52 @@ def test_a_version_carrying_more_than_the_pdf_still_has_its_pdf(tmp_path):
 # sits on. Three did.
 
 
-def test_a_dangling_document_reference_is_not_told_to_add_an_entity(tmp_path):
-    """HD-D9 reads four labels and only one of them is about Entities.
-    `BasedOn` is a document-to-document reference -- the rule's own
-    docstring says so -- and its author was being told to add an Entity
-    to a list that has nothing to do with it.
+#: The four reference labels HD-D9 reads, with the list each lives in.
+#: Only the first is about Entities; the walk's own docstring says the
+#: other three are document-to-document references and that §2.2's
+#: Entity-creation wording is not their clause. Every fixture in the
+#: suite used the first, so the loop could have read one label and the
+#: remedy could go on telling all four to add an Entity.
+D9_LABELS = (
+    ("DocumentedEntity", "DocumentedEntities",
+     "https://admin-shell.io/vdi/2770/1/0/Document/DocumentedEntity",
+     "https://admin-shell.io/vdi/2770/1/0/Document/DocumentedEntities", False),
+    ("RefersTo", "RefersToEntities", "0173-1#02-ABK288#002",
+     "0173-1#02-ABK288#002", True),
+    ("BasedOn", "BasedOnReferences", "0173-1#02-ABK289#002",
+     "0173-1#02-ABK289#002", True),
+    ("TranslationOf", "TranslationOfEntities", "0173-1#02-ABK290#002",
+     "0173-1#02-ABK290#002", True),
+)
 
-    The remedy names the label now, which is the only thing that can be
-    right for all four."""
+
+@pytest.mark.parametrize("label,list_name,item_sid,list_sid,under_version",
+                         D9_LABELS, ids=[row[0] for row in D9_LABELS])
+def test_a_dangling_reference_is_reported_and_names_its_own_label(
+        tmp_path, label, list_name, item_sid, list_sid, under_version):
+    """Each of the four, and the remedy naming the one it is about.
+
+    `BasedOn` is where it showed: its author was being told to add an
+    Entity to a list that has nothing to do with the reference. Only
+    `DocumentedEntity` may say Entity, and it is the only one that does."""
     env = copy.deepcopy(hd_env())
-    version = _document_version(env)
-    version["value"].append({
-        "idShort": "BasedOnReferences", "modelType": "SubmodelElementList",
+    parent = _document_version(env) if under_version else _first_document(env)
+    parent["value"].append({
+        "idShort": list_name, "modelType": "SubmodelElementList",
         "typeValueListElement": "ReferenceElement",
         "semanticId": {"type": "ExternalReference", "keys": [
-            {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+            {"type": "GlobalReference", "value": list_sid}]},
         "value": [{"modelType": "ReferenceElement",
                    "semanticId": {"type": "ExternalReference", "keys": [
-                       {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+                       {"type": "GlobalReference", "value": item_sid}]},
                    "value": {"type": "ModelReference", "keys": [
                        {"type": "Submodel", "value": "urn:example:handover"},
                        {"type": "SubmodelElementList", "value": "Documents"},
                        {"type": "SubmodelElementCollection", "value": "77"}]}}]})
     remedy = _findings(tmp_path, env)["HD-D9"].fix
-    assert "BasedOn" in remedy
-    assert "Entity" not in remedy and "Entities" not in remedy
+    assert label in remedy
+    if label != "DocumentedEntity":
+        assert "Entity" not in remedy and "Entities" not in remedy
 
 
 def test_the_primary_remedy_asks_for_what_the_rule_asks_for(tmp_path):
@@ -592,3 +618,79 @@ def test_a_defect_in_the_second_of_several_is_still_reported(tmp_path, rule_id,
     else:
         found = set(_findings(tmp_path, env))
     assert rule_id in found
+
+
+def _a_second_reference_that_dangles(env):
+    """One list, two references, the first resolving. The label loop and
+    the element loop inside it are separate decisions."""
+    def reference(target):
+        return {"modelType": "ReferenceElement",
+                "semanticId": {"type": "ExternalReference", "keys": [
+                    {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+                "value": {"type": "ModelReference", "keys": [
+                    {"type": "Submodel", "value": "urn:example:handover"},
+                    {"type": "SubmodelElementList", "value": "Documents"},
+                    {"type": "SubmodelElementCollection", "value": target}]}}
+
+    _document_version(env)["value"].append({
+        "idShort": "BasedOnReferences", "modelType": "SubmodelElementList",
+        "typeValueListElement": "ReferenceElement",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+        "value": [reference("0"), reference("77")]})
+
+
+def _a_second_submodel_with_a_dangling_reference(env):
+    """A second Handover submodel whose reference goes nowhere. HD-D9
+    walks submodels through a different helper from the rules that read
+    `instances_of`, so covering one says nothing about the other."""
+    second = copy.deepcopy(env["submodels"][0])
+    second["id"] = "urn:example:handover:2"
+    second["idShort"] = "HandoverDocumentation2"
+    version = second["submodelElements"][0]["value"][0]
+    version = next(child for child in version["value"]
+                   if child.get("idShort") == "DocumentVersions")["value"][0]
+    version["value"].append({
+        "idShort": "BasedOnReferences", "modelType": "SubmodelElementList",
+        "typeValueListElement": "ReferenceElement",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+        "value": [{"modelType": "ReferenceElement",
+                   "semanticId": {"type": "ExternalReference", "keys": [
+                       {"type": "GlobalReference", "value": "0173-1#02-ABK289#002"}]},
+                   "value": {"type": "ModelReference", "keys": [
+                       {"type": "Submodel", "value": "urn:example:handover:2"},
+                       {"type": "SubmodelElementList", "value": "Documents"},
+                       {"type": "SubmodelElementCollection", "value": "77"}]}}]})
+    env["submodels"].append(second)
+
+
+def _a_second_submodel_missing_the_classification(env):
+    """A second Handover submodel in the same environment. Every rule
+    that walks submodels reads them through the same helper, and nothing
+    anywhere gave it more than one to read."""
+    second = copy.deepcopy(env["submodels"][0])
+    second["id"] = "urn:example:handover:2"
+    second["idShort"] = "HandoverDocumentation2"
+    document = second["submodelElements"][0]["value"][0]
+    for classification in _classifications_of(document):
+        _set_property(classification, "ClassificationSystem", "SomethingElse")
+    env["submodels"].append(second)
+
+
+@pytest.mark.parametrize("rule_id,bend", (
+    ("HD-D9", _a_second_reference_that_dangles),
+    ("HD-D2", _a_second_submodel_missing_the_classification),
+    ("HD-D9", _a_second_submodel_with_a_dangling_reference),
+))
+def test_a_defect_past_the_first_of_several_is_still_reported(tmp_path, rule_id, bend):
+    """Two more loops of the same shape as the six above, one level out.
+
+    HD-D9 walks the references inside each label as well as the labels
+    themselves. And every rule that walks *submodels* had only ever been
+    handed one: the golden environment carries a single Handover
+    submodel, so reading the first and stopping was invisible for all of
+    them."""
+    env = copy.deepcopy(hd_env())
+    bend(env)
+    assert rule_id in _findings(tmp_path, env)
