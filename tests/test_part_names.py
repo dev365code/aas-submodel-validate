@@ -184,3 +184,43 @@ def test_a_payload_whose_entry_name_holds_an_escape_is_still_read(tmp_path):
     ids = {f.id for f in runner.run(path).findings}
     assert "X2" not in ids
     assert "SMT-D1" not in ids, "the payload was never read, so no template ran"
+
+
+def test_a_part_stored_under_a_non_canonical_name_is_still_found(tmp_path):
+    """The archive's own entry names are written by tools that were not
+    all reading ECMA-376, so an entry may be stored as `aasx/./files/x`
+    while the File value spells the same part `/aasx/files/x`.
+
+    `part` tries the literal, then the literal without OPC's leading
+    slash, then the value normalised -- and only then an index of every
+    entry name normalised, which is the branch this reaches. Losing it
+    reports a file as missing from a container that holds it, which is
+    the direction this project treats as worst."""
+    path = tmp_path / "odd.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/./files/manual.pdf", b"%PDF-1.4")
+    with AasxPackage(path) as package:
+        assert package.part("/aasx/files/manual.pdf") == "aasx/./files/manual.pdf"
+    assert "HD-D7" not in {f.id for f in runner.run(path).findings}
+
+
+def test_closing_a_package_closes_the_archive(tmp_path):
+    """`close` and `__exit__` exist so a reader does not hold the file
+    open, and nothing asked whether they do. On Windows an unclosed
+    handle keeps the file locked -- which is why that platform is in the
+    matrix -- and everywhere else it is invisible."""
+    path = build_aasx(tmp_path / "p.aasx", payload=json.dumps(hd_env()).encode("utf-8"))
+    package = AasxPackage(path)
+    assert package._zip.fp is not None
+    package.close()
+    assert package._zip.fp is None
+
+    with AasxPackage(path) as package:
+        assert package._zip.fp is not None
+    assert package._zip.fp is None, "the context manager did not close it"
