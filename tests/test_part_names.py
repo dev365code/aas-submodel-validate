@@ -279,3 +279,43 @@ def test_a_whitespace_only_value_names_no_part():
     assert canonical_part_name("\t") is None
     assert canonical_part_name("") is None
 
+
+def test_dot_only_and_root_values_name_no_part():
+    """Both collapse to nothing once the dot segments go: `/` names the
+    root and `/.` names it with a step, and a part is a file, not the
+    package. The empty join falls back to None explicitly -- a caller
+    comparing `is None` must not meet `""`."""
+    assert canonical_part_name("/") is None
+    assert canonical_part_name("/.") is None
+
+
+def test_a_doubled_separator_finds_the_canonical_entry_not_its_cousin(tmp_path):
+    """`aasx//x` is a sloppy spelling of `aasx/x`, and the archive holds
+    both `aasx/x` and `aasx/./x` -- with the odd one stored first, so the
+    normalised index maps their shared canonical name to the odd one.
+    The direct canonical lookup answers before the index does, and the
+    order is the verdict: lose it and the sloppy spelling is handed the
+    cousin's bytes."""
+    path = tmp_path / "cousins.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/./files/x.pdf", b"%PDF odd first")
+        archive.writestr("aasx/files/x.pdf", b"%PDF canonical")
+    with AasxPackage(path) as package:
+        assert package.part("aasx//files/x.pdf") == "aasx/files/x.pdf"
+
+
+def test_the_repr_names_the_package(tmp_path):
+    """`repr` is what lands in a log line or a debugger, and nothing else
+    ever calls it -- so it could return None, or divide a string by a
+    string, with everything green."""
+    path = build_aasx(tmp_path / "p.aasx", payload=json.dumps(hd_env()).encode("utf-8"))
+    with AasxPackage(path) as package:
+        assert "AasxPackage" in repr(package)
+        assert "p.aasx" in repr(package)
+

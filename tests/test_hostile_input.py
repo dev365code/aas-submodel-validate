@@ -28,6 +28,7 @@ from builders import (
     build_aasx,
     corrupt_part,
     env_json,
+    hd_env,
     rels,
 )
 
@@ -99,6 +100,82 @@ def test_a_directory_declaring_exactly_the_cap_still_opens(tmp_path, monkeypatch
     monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", declared - 1)
     with pytest.raises(container.DirectoryTooLarge):
         AasxPackage(path)
+
+
+
+
+def test_a_missing_package_rels_is_reported_as_the_package_root(tmp_path):
+    """The chain message names its source, and the package's own rels
+    has none to name -- `source` is the empty string there, so the
+    sentence falls back to "the package root". Losing the fallback ships
+    `from ''`, which reads as the tool losing a variable."""
+    path = tmp_path / "norels.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("aasx/aasx-origin", b"")
+    findings = {f.id: f for f in runner.run(path).findings}
+    assert "X2" in findings
+    assert "the package root" in findings["X2"].violation.message
+
+
+def test_a_thumbnail_relationship_does_not_become_the_payload(tmp_path):
+    """The origin's relationships are filtered to the aas-spec type, and
+    every fixture's origin declared nothing else -- so the filter could
+    admit everything and no verdict would move. A real package also
+    declares a thumbnail; listed before the payload, an unfiltered read
+    tries to parse PNG bytes as an environment and fails the file for
+    carrying a picture."""
+    thumb = ("http://schemas.openxmlformats.org/package/2006/"
+             "relationships/metadata/thumbnail")
+    path = tmp_path / "thumb.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(thumb, "/aasx/thumb.png"),
+                               (SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/thumb.png", b"\x89PNG not an environment")
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/files/manual.pdf", b"%PDF-1.4")
+    report = runner.run(path)
+    assert report.ok, [f.id for f in report.findings]
+
+
+def test_bytes_the_declared_encoding_cannot_decode_come_back_untouched():
+    """A UTF-16 byte order mark over bytes UTF-16 refuses -- a lone
+    surrogate. The promise is the docstring's: refused bytes come back
+    untouched, because the parser will refuse them too and refusing here
+    would be this reader inventing a verdict."""
+    raw = b"\xff\xfe\x00\xd8"
+    assert container.xml_as_utf8(raw) == raw
+
+
+def test_only_the_prolog_declaration_is_rewritten():
+    """`count=1`, and the count is the decision: a document's *content*
+    may mention `encoding="..."` -- an attribute value, a page about XML
+    -- and a rewrite that strips every match edits the document instead
+    of its prolog. Only a UTF-16 document reaches the rewrite at all, so
+    the fixture is one."""
+    doc = '<?xml version="1.0" encoding="UTF-16"?><x note=\'encoding="keep"\'/>'
+    out = container.xml_as_utf8(b"\xff\xfe" + doc.encode("utf-16-le"))
+    assert b'encoding="keep"' in out
+    assert b'encoding="UTF-16"' not in out
+
+
+@pytest.mark.parametrize("raw", (
+    b"<!--<x--><!DOCTYPE r><r/>",
+    b"<?pi <?><!DOCTYPE r><r/>",
+))
+def test_a_declaration_behind_a_lookalike_is_still_found(raw):
+    """The skipped stretch may itself contain `<`. Every fixture that
+    walked past a comment or a processing instruction had plain text
+    inside it, so a scan that resumed anywhere vaguely after the opener
+    still landed on the declaration -- including one that stepped
+    *backwards* from the close and found the lookalike tag instead. With
+    a `<` inside, resuming anywhere but past the close reads the inside
+    as the prolog and calls the document clean."""
+    assert container.declares_doctype(raw)
 
 
 def test_a_four_byte_utf16_document_is_still_recognised(tmp_path):

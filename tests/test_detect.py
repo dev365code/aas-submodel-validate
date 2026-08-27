@@ -122,3 +122,36 @@ def test_the_handover_rule_no_longer_exists_under_its_old_id():
     which question it answered."""
     from aas_submodel_validate.registry import all_rules
     assert "HD-D1" not in {rule.id for rule in all_rules()}
+
+
+def test_a_reference_stacking_keys_also_matches_as_the_joined_path():
+    """`candidate_values` adds the "/"-join when a reference stacks
+    several keys, in both spellings of the function -- the aas-core3 one
+    the walk reads and the dict one the builders read. Losing the join
+    silently unmatches any file that spells one identifier across two
+    keys, which is the quiet direction; losing it in only one spelling
+    splits the builders' idea of "matches" from the walk's."""
+    from aas_core3 import types as aas
+
+    from aas_submodel_validate.semantics import (
+        candidate_values,
+        candidate_values_from_dict,
+    )
+    reference = aas.Reference(
+        type=aas.ReferenceTypes.EXTERNAL_REFERENCE,
+        keys=[aas.Key(type=aas.KeyTypes.GLOBAL_REFERENCE, value="a"),
+              aas.Key(type=aas.KeyTypes.GLOBAL_REFERENCE, value="b")])
+    assert "a/b" in candidate_values(reference)
+    assert "a/b" in candidate_values_from_dict(
+        {"type": "ExternalReference",
+         "keys": [{"type": "GlobalReference", "value": "a"},
+                  {"type": "GlobalReference", "value": "b"}]})
+
+
+def test_an_absent_reference_yields_an_empty_set_not_none():
+    """The empty frozenset is load-bearing: callers ask `anchor in ...`
+    and membership in None is a crash wearing a helper's name."""
+    from aas_submodel_validate.semantics import candidate_values_from_dict
+    assert candidate_values_from_dict(None) == frozenset()
+    assert candidate_values_from_dict({}) == frozenset()
+

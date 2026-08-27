@@ -197,3 +197,40 @@ def test_a_findings_severity_and_priority_are_both_published(prio, severity):
     entry = Finding(_rule(prio), Violation("m")).as_dict()
     assert entry["severity"] == severity
     assert entry["priority"] == prio
+
+
+def test_a_fresh_reports_defaults_are_the_documented_ones():
+    """What a report says when nobody set anything: zero rules checked
+    -- a refused input reaches serialisation with this default, so `-1`
+    here would ship -- and both flags off, which is what the README says
+    a bare run means."""
+    document = Report(path="p").as_dict()
+    assert document["summary"]["rulesChecked"] == 0
+    assert document["options"] == {"profile": None, "strictMeta": False,
+                                   "allowUnmatched": False}
+
+
+def test_a_run_with_warnings_does_not_wear_the_clean_banner():
+    """`render`'s clean line is guarded three ways -- ok, no findings, no
+    notes. The first is implied by the second (a failing run has the
+    error finding that failed it), so the guard that can actually decide
+    is "no findings": a warnings-only run is `ok` and must still show its
+    findings, not the sentence that says there were none."""
+    from aas_submodel_validate.report import render
+    report = _report()   # one error, two warnings, three info
+    report.findings = [f for f in report.findings
+                       if str(f.severity) != "error"]
+    report.notes = []    # or the notes guard hides the findings guard
+    text = render(report)
+    assert "ok —" not in text
+    assert "warning" in text
+
+
+def test_a_tab_in_a_message_stays_a_tab():
+    """`_safe` keeps tabs and escapes the rest of the control range: a
+    message quoting a tab-indented value should render the value, and a
+    message carrying a bell must not ring it."""
+    from aas_submodel_validate.report import _safe
+    assert _safe("a\tb") == "a\tb"
+    assert _safe("a\x07b") == "a\\x07b"
+
