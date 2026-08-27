@@ -224,3 +224,58 @@ def test_closing_a_package_closes_the_archive(tmp_path):
     with AasxPackage(path) as package:
         assert package._zip.fp is not None
     assert package._zip.fp is None, "the context manager did not close it"
+
+
+def test_an_exact_entry_beats_its_canonical_cousin(tmp_path):
+    """`part` tries the value exactly before it interprets anything, and
+    the order is the answer when an archive holds both spellings: an
+    entry named `aasx/./files/m.pdf` beside `aasx/files/m.pdf`. The
+    normalised index maps both to whichever it met first, so a value
+    spelling the odd one exactly must win on the exact step or it is
+    handed the cousin's bytes."""
+    path = tmp_path / "clash.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/files/m.pdf", b"%PDF-1.4 canonical")
+        archive.writestr("aasx/./files/m.pdf", b"%PDF-1.4 odd")
+    with AasxPackage(path) as package:
+        assert package.part("/aasx/./files/m.pdf") == "aasx/./files/m.pdf"
+        assert package.part("aasx/./files/m.pdf") == "aasx/./files/m.pdf"
+        assert package.part("/aasx/files/m.pdf") == "aasx/files/m.pdf"
+
+
+def test_an_entry_only_the_exact_step_can_name(tmp_path):
+    """The exact step looked redundant with the literal step below it --
+    stripping a leading slash from a value that has none changes nothing
+    -- until the archive holds `//odd.pdf` *and* `odd.pdf`. A value
+    spelling the doubled one exactly must reach it on the exact step:
+    the literal step strips both slashes and hands back the plain
+    cousin's name instead."""
+    path = tmp_path / "abs.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("odd.pdf", b"%PDF-1.4 plain")
+        archive.writestr("//odd.pdf", b"%PDF-1.4 doubled")
+    with AasxPackage(path) as package:
+        assert package.part("//odd.pdf") == "//odd.pdf"
+        assert package.part("odd.pdf") == "odd.pdf"
+
+
+def test_a_whitespace_only_value_names_no_part():
+    """`" "` is not a name and not the empty string either -- the guard
+    reads `not value or not value.strip()`, and each half alone lets one
+    of the two through."""
+    assert canonical_part_name(" ") is None
+    assert canonical_part_name("\t") is None
+    assert canonical_part_name("") is None
+

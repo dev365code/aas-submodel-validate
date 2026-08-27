@@ -63,6 +63,51 @@ def test_a_part_at_the_cap_is_still_read(tmp_path, monkeypatch):
         assert len(package.read("aasx/env.xml")) == container.MAX_PART_BYTES
 
 
+
+def test_parts_summing_exactly_to_the_total_cap_are_all_read(tmp_path, monkeypatch):
+    """The total is a cap on *over*, like the part cap: X5's sentence
+    says "come to over %d bytes together", so parts summing to exactly
+    the cap are all served, and the read that crosses the line is the
+    one refused. Both caps had their lower edge pinned and this one did
+    not -- the comparison could grow an `=` and no fixture would say so.
+    """
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 40)
+    path = tmp_path / "attotal.aasx"
+    build_aasx(path, payload=b"<x/>" + b" " * 16, payload_name="aasx/env.xml",
+               files=[("aasx/a.bin", b"y" * 20), ("aasx/b.bin", b"z" * 30)])
+    with AasxPackage(path) as package:
+        assert len(package.read("aasx/env.xml")) == 20
+        assert len(package.read("aasx/a.bin")) == 20   # exactly at the cap
+        # Re-reading a counted part does not grow the total (X4 re-walks
+        # the chain), so this stays legal too.
+        assert len(package.read("aasx/a.bin")) == 20
+        with pytest.raises(container.PartTooLarge):
+            package.read("aasx/b.bin")                 # the crossing read
+
+
+def test_a_directory_declaring_exactly_the_cap_still_opens(tmp_path, monkeypatch):
+    """Same edge, third cap. The directory bound reads the size the
+    archive itself declares, so the fixture asks the file what it
+    declares and pins the cap right there."""
+    path = tmp_path / "atdir.aasx"
+    build_aasx(path, payload=b"{}")
+    declared = container._directory_bytes(path)
+    assert declared is not None and declared > 0
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", declared)
+    with AasxPackage(path) as package:
+        assert package.names()
+    monkeypatch.setattr(container, "MAX_DIRECTORY_BYTES", declared - 1)
+    with pytest.raises(container.DirectoryTooLarge):
+        AasxPackage(path)
+
+
+def test_a_four_byte_utf16_document_is_still_recognised(tmp_path):
+    """`_sniff` needs four bytes to tell UTF-16 from UTF-32, and four
+    bytes is enough: the guard is `< 4`, not `<= 4`, so a document of
+    exactly four bytes is decided rather than passed through opaque."""
+    assert container.xml_as_utf8(b"<\x00a\x00") == b"<a"
+
+
 def test_the_oversized_part_is_a_finding_end_to_end(tmp_path, monkeypatch):
     monkeypatch.setattr(container, "MAX_PART_BYTES", 256 * 1024)
     path = tmp_path / "big.aasx"
