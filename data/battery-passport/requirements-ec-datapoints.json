@@ -1,0 +1,2272 @@
+{
+ "source": "ec-datapoints",
+ "provenance": [
+  {
+   "file": "ec-dg-grow/digital-batteries-passport-data-point-by-category_v2.0.pdf",
+   "sha256": "e045a7668015520f4c353e72fb57a89bdd62baaf0a98e6f4aefc7f5f42819eb7",
+   "version": "Version 2.0",
+   "url": "https://single-market-economy.ec.europa.eu/single-market/digital-product-passport/batteries_en"
+  }
+ ],
+ "counts": {
+  "records": 71,
+  "by_kind": {
+   "attribute": 71
+  },
+  "by_mandatory": {
+   "conditional": 9,
+   "no": 11,
+   "yes": 51
+  },
+  "by_access": {
+   "n/a": 71
+  },
+  "by_applicability_wording": {
+   "Mandatory": 127,
+   "Not to be filled/displayed": 9,
+   "Not to be filled/displayed - repetition, same data already required under previous data points": 3,
+   "Not to be filled/displayed - repetition, same data required under data point 11": 3,
+   "Not to be filled/displayed as of February 2027 - application provisions on hold pending Omnibus adoption": 3,
+   "Not to be filled/displayed as of February 2027- as provided in Article 48(1), required from August 2027": 3,
+   "Not to be filled/displayed as of February 2027- format still to be specified in the upcoming implementing act": 6,
+   "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act": 12,
+   "applicable2 if": 1,
+   "cadmium or lead symbol if applicable": 3,
+   "if applicable": 29,
+   "if applicable (if commercial warranty envisaged)": 3,
+   "if applicable, but now dynamic": 1,
+   "only applicable for some industrial batteries": 3,
+   "only applicable for some industrial batteries where lifetime can be expressed in cycles": 2,
+   "optional, to be filled if such data is available": 3,
+   "same as data point 11 (capacity). but now dynamic": 2
+  },
+  "data_point_range": "1-71",
+  "words_outside_the_grid": 42,
+  "footnotes": {
+   "11": "2 ‘if applicable’ - to take into account the applicable provisions of Regulation 2023/1542 and relevant implementing legislation and to consider if the technical parameter in question is relevant for the battery"
+  }
+ },
+ "notes": [
+  "data point 51, EV: wording outside the guidance's own vocabulary -- 'same as data point 11 (capacity). but now dynamic'",
+  "data point 51, LMT: wording outside the guidance's own vocabulary -- 'same as data point 11 (capacity). but now dynamic'"
+ ],
+ "records": [
+  {
+   "id": "ec-datapoints:1",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 1",
+   "text": "Unique identifier",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "1",
+   "legal_source": "BR Article 77 (3)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:2",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 2",
+   "text": "Identity of who is registering and/or is responsible for the battery passport",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "2",
+   "legal_source": "BR Article 77 (3)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:3",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 3",
+   "text": "Manufacturer name, registered trade name or registered trademark",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "3",
+   "legal_source": "BR Annex VI A (1)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:4",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 4",
+   "text": "Manufacturer postal address, indicating a single contact point",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "4",
+   "legal_source": "BR Annex VI A (1)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:5",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 5",
+   "text": "If available, manufacturer web and email address",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "5",
+   "legal_source": "BR Annex VI A (1)",
+   "applicability": {
+    "EV": {
+     "as_written": "optional, to be filled if such data is available",
+     "reading": "optional"
+    },
+    "LMT": {
+     "as_written": "optional, to be filled if such data is available",
+     "reading": "optional"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "optional, to be filled if such data is available",
+     "reading": "optional"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:6",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 6",
+   "text": "Battery category",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "6",
+   "legal_source": "BR Annex VI A (2)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:7",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 7",
+   "text": "Model identification and batch or serial number, or product number or another element allowing their identification",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "7",
+   "legal_source": "BR Annex VI A (2)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:8",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 8",
+   "text": "The place of manufacturer (geographical location of a battery manufacturing plant)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "8",
+   "legal_source": "BR Annex VI A (3)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:9",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 9",
+   "text": "The date of manufacturing (month and year)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "9",
+   "legal_source": "BR Annex VI A (4)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 5
+  },
+  {
+   "id": "ec-datapoints:10",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 10",
+   "text": "The weight",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "10",
+   "legal_source": "BR Annex VI A (5)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:11",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 11",
+   "text": "The capacity",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "11",
+   "legal_source": "BR Annex VI A (6)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:12",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 12",
+   "text": "The chemistry",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "12",
+   "legal_source": "BR Annex VI A (7)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:13",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 13",
+   "text": "The hazardous substances present in the battery, other than mercury, cadmium or lead",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "13",
+   "legal_source": "BR Annex VI A (8)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:14",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 14",
+   "text": "Usable extinguishing agent",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "14",
+   "legal_source": "BR Annex VI A (9)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:15",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 15",
+   "text": "Critical raw materials present in the battery in a concentration of more than 0,1 % weight by weight",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "15",
+   "legal_source": "BR Annex VI A (10)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:16",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 16",
+   "text": "The material composition of the battery, including its chemistry, hazardous substances present in the battery, other than mercury, cadmium or lead, and critical raw materials present in the battery",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "16",
+   "legal_source": "BR Annex XIII 1 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed - repetition, same data already required under previous data points",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed - repetition, same data already required under previous data points",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed - repetition, same data already required under previous data points",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:17",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 17",
+   "text": "The carbon footprint declaration",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "17",
+   "legal_source": "BR Annex XIII 1 (c)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027- format still to be specified in the upcoming implementing act",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027- format still to be specified in the upcoming implementing act",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027- format still to be specified in the upcoming implementing act",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 6
+  },
+  {
+   "id": "ec-datapoints:18",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 18",
+   "text": "The carbon footprint label",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "18",
+   "legal_source": "BR Annex XIII 1 (c)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027- format still to be specified in the upcoming implementing act",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027- format still to be specified in the upcoming implementing act",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027- format still to be specified in the upcoming implementing act",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 7
+  },
+  {
+   "id": "ec-datapoints:19",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 19",
+   "text": "Information on responsible sourcing as indicated in the report on battery due diligence policy referred to in Article 52(3)",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "19",
+   "legal_source": "BR Annex XIII 1 (d)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027- as provided in Article 48(1), required from August 2027",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027- as provided in Article 48(1), required from August 2027",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027- as provided in Article 48(1), required from August 2027",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 7
+  },
+  {
+   "id": "ec-datapoints:20",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 20",
+   "text": "Percentage share of cobalt that is present in active materials and that has been recovered from battery manufacturing waste or post-consumer waste",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "20",
+   "legal_source": "BR Annex XIII 1 (e)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 7
+  },
+  {
+   "id": "ec-datapoints:21",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 21",
+   "text": "Percentage share of lithium that is present in active materials and that has been recovered from battery manufacturing waste or post-consumer waste",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "21",
+   "legal_source": "BR Annex XIII 1 (e)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 7
+  },
+  {
+   "id": "ec-datapoints:22",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 22",
+   "text": "Percentage share of nickel that is present in active materials and that has been recovered from battery manufacturing waste or post-consumer waste",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "22",
+   "legal_source": "BR Annex XIII 1 (e)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 7
+  },
+  {
+   "id": "ec-datapoints:23",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 23",
+   "text": "The percentage share of lead that is present in the battery and that has been recovered from waste",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "23",
+   "legal_source": "BR Annex XIII 1 (e)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027- to be applied in line with Article 8 and the relevant delegated act",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:24",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 24",
+   "text": "The share of renewable content",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "24",
+   "legal_source": "BR Annex XIII 1 (f)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:25",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 25",
+   "text": "Rated capacity (in Ah)",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "25",
+   "legal_source": "BR Annex XIII 1 (g)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed - repetition, same data required under data point 11",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed - repetition, same data required under data point 11",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed - repetition, same data required under data point 11",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:26",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 26",
+   "text": "Minimal voltage, with temperature range when relevant",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "26",
+   "legal_source": "BR Annex XIII 1 (h)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:27",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 27",
+   "text": "Nominal voltage, with temperature range when relevant",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "27",
+   "legal_source": "BR Annex XIII 1 (h)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:28",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 28",
+   "text": "Maximum voltage, with temperature range when relevant",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "28",
+   "legal_source": "BR Annex XIII 1 (h)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:29",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 29",
+   "text": "Original power capability (in Watts)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "29",
+   "legal_source": "BR Annex XIII 1 (i)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:30",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 30",
+   "text": "Power limits, with temperature range when relevant",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "30",
+   "legal_source": "BR Annex XIII 1 (i)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:31",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 31",
+   "text": "Expected battery lifetime expressed in cycles",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "31",
+   "legal_source": "BR Annex XIII 1 (j)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "only applicable for some industrial batteries where lifetime can be expressed in cycles",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 8
+  },
+  {
+   "id": "ec-datapoints:32",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 32",
+   "text": "Reference test used for expected battery lifetime expressed in cycles",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "32",
+   "legal_source": "BR Annex XIII 1 (j)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "only applicable for some industrial batteries where lifetime can be expressed in cycles",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:33",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 33",
+   "text": "Capacity threshold for exhaustion",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV"
+   ],
+   "joins": [],
+   "number": "33",
+   "legal_source": "BR Annex XIII 1 (k)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:34",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 34",
+   "text": "Temperature range the battery can withstand when not in use (reference test)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "34",
+   "legal_source": "BR Annex XIII 1 (l)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:35",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 35",
+   "text": "Period for which the commercial warranty for the calendar life applies",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "35",
+   "legal_source": "BR Annex XIII 1 (m)",
+   "applicability": {
+    "EV": {
+     "as_written": "if applicable (if commercial warranty envisaged)",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "if applicable (if commercial warranty envisaged)",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable (if commercial warranty envisaged)",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:36",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 36",
+   "text": "Initial round trip energy efficiency",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "36",
+   "legal_source": "BR Annex XIII 1 (n)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "only applicable for some industrial batteries",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:37",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 37",
+   "text": "Round trip energy efficiency at 50 % of cycle-life",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "37",
+   "legal_source": "BR Annex XIII 1 (n)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "only applicable for some industrial batteries",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:38",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 38",
+   "text": "Internal battery cell and pack resistance",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "38",
+   "legal_source": "BR Annex XIII 1 (o)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:39",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 39",
+   "text": "C-rate of relevant cycle- life test",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "39",
+   "legal_source": "BR Annex XIII 1 (p)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "only applicable for some industrial batteries",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:40",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 40",
+   "text": "The marking requirements laid down in Article 13(4)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "40",
+   "legal_source": "BR Annex XIII 1 (q)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 9
+  },
+  {
+   "id": "ec-datapoints:41",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 41",
+   "text": "The marking requirements laid down in Article 13(5)",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "41",
+   "legal_source": "BR Annex XIII 1 (q)",
+   "applicability": {
+    "EV": {
+     "as_written": "cadmium or lead symbol if applicable",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "cadmium or lead symbol if applicable",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "cadmium or lead symbol if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 10
+  },
+  {
+   "id": "ec-datapoints:42",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 42",
+   "text": "The EU declaration of conformity referred to in Article 18",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "42",
+   "legal_source": "BR Annex XIII 1 (r)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 10
+  },
+  {
+   "id": "ec-datapoints:43",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 43",
+   "text": "The information regarding the prevention and management of waste batteries laid down in Article 74(1), points (a) to (f).",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "43",
+   "legal_source": "BR Annex XIII 1 (s)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 10
+  },
+  {
+   "id": "ec-datapoints:44",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 44",
+   "text": "Clear, understandable and readable instructions for use in a format that makes it possible to print, download and save them on an electronic device so that the user can access them at all times, in particular during a breakdown of the battery",
+   "mandatory": "no",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [],
+   "joins": [],
+   "number": "44",
+   "legal_source": "BR Annex XIII 1 (t)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed as of February 2027 - application provisions on hold pending Omnibus adoption",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed as of February 2027 - application provisions on hold pending Omnibus adoption",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed as of February 2027 - application provisions on hold pending Omnibus adoption",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 10
+  },
+  {
+   "id": "ec-datapoints:45",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 45",
+   "text": "Detailed composition, including materials used in the cathode, anode and electrolyte",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "45",
+   "legal_source": "BR Annex XIII 2 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 10
+  },
+  {
+   "id": "ec-datapoints:46",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 46",
+   "text": "Part numbers for components",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "46",
+   "legal_source": "BR Annex XIII 2 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 10
+  },
+  {
+   "id": "ec-datapoints:47",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 47",
+   "text": "Contact details of sources for replacement spares",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "47",
+   "legal_source": "BR Annex XIII 2 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 10
+  },
+  {
+   "id": "ec-datapoints:48",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 48",
+   "text": "Dismantling information, including at least: - exploded diagrams of the battery system/pack showing the location of battery cells, - disassembly sequences, - type and number of fastening techniques to be unlocked, - tools required for disassembly, - warnings if risk of damaging parts exist, - amount of cells used and layout",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "48",
+   "legal_source": "BR Annex XIII 2 (c)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 11
+  },
+  {
+   "id": "ec-datapoints:49",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 49",
+   "text": "Safety measures",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "49",
+   "legal_source": "BR Annex XIII 2 (d)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 11
+  },
+  {
+   "id": "ec-datapoints:50",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 50",
+   "text": "Results of test reports proving compliance with the requirements laid down in this Regulation or any delegated or implementing act adopted pursuant to this Regulation",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "50",
+   "legal_source": "BR Annex XIII 3",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 11
+  },
+  {
+   "id": "ec-datapoints:51",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 51",
+   "text": "Rated capacity (in Ah)",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "51",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "same as data point 11 (capacity). but now dynamic",
+     "reading": "unrecognised"
+    },
+    "LMT": {
+     "as_written": "same as data point 11 (capacity). but now dynamic",
+     "reading": "unrecognised"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable, but now dynamic",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 11
+  },
+  {
+   "id": "ec-datapoints:52",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 52",
+   "text": "Capacity fade (in %)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "52",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "applicable2 if",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 11
+  },
+  {
+   "id": "ec-datapoints:53",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 53",
+   "text": "Power (in W)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "53",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:54",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 54",
+   "text": "Power fade (in %)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "54",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:55",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 55",
+   "text": "Internal resistance (in Ω)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "55",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:56",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 56",
+   "text": "Internal resistance increase (in %)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "56",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:57",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 57",
+   "text": "Where applicable, energy round trip efficiency (in %)",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "57",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:58",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 58",
+   "text": "Where applicable, energy round trip efficiency fade (in %)",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "58",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:59",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 59",
+   "text": "The expected life-time of the battery under the reference conditions for which it has been designed, in terms of cycles, except for non- cycle applications",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "59",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:60",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 60",
+   "text": "The expected life-time of the battery under the reference conditions for which it has been designed, in terms of calendar years",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "60",
+   "legal_source": "BR Annex XIII 4 (a)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 12
+  },
+  {
+   "id": "ec-datapoints:61",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 61",
+   "text": "Information on the state of health of the battery pursuant to Article 14: state of certified energy (SOCE)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV"
+   ],
+   "joins": [],
+   "number": "61",
+   "legal_source": "BR Annex XIII 4 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    }
+   },
+   "page": 13
+  },
+  {
+   "id": "ec-datapoints:62",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 62",
+   "text": "Information on the state of health of the battery pursuant to Article 14: remaining capacity",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "62",
+   "legal_source": "BR Annex XIII 4 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 13
+  },
+  {
+   "id": "ec-datapoints:63",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 63",
+   "text": "Information on the state of health of the battery pursuant to Article 14: where possible, the remaining power capability",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "63",
+   "legal_source": "BR Annex XIII 4 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 13
+  },
+  {
+   "id": "ec-datapoints:64",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 64",
+   "text": "Information on the state of health of the battery pursuant to Article 14: where possible, the remaining round trip efficiency",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "64",
+   "legal_source": "BR Annex XIII 4 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 13
+  },
+  {
+   "id": "ec-datapoints:65",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 65",
+   "text": "Information on the state of health of the battery pursuant to Article 14: [where possible,] the evolution of self- discharging rates",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "65",
+   "legal_source": "BR Annex XIII 4 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 13
+  },
+  {
+   "id": "ec-datapoints:66",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 66",
+   "text": "Information on the state of health of the battery pursuant to Article 14: where possible, the ohmic resistance",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "66",
+   "legal_source": "BR Annex XIII 4 (b)",
+   "applicability": {
+    "EV": {
+     "as_written": "Not to be filled/displayed",
+     "reading": "not-to-be-filled"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 13
+  },
+  {
+   "id": "ec-datapoints:67",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 67",
+   "text": "Information on the status of the battery, defined as ‘original’, ‘repurposed’, ‘re-used’, ‘remanufactured’ or ‘waste’;",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "67",
+   "legal_source": "BR Annex XIII 4 (c)",
+   "applicability": {
+    "EV": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "LMT": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "Mandatory",
+     "reading": "required"
+    }
+   },
+   "page": 14
+  },
+  {
+   "id": "ec-datapoints:68",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 68",
+   "text": "The number of charging and discharging cycles",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "68",
+   "legal_source": "BR Annex XIII 4 (d)",
+   "applicability": {
+    "EV": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 14
+  },
+  {
+   "id": "ec-datapoints:69",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 69",
+   "text": "Negative events, such as accidents",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "69",
+   "legal_source": "BR Annex XIII 4 (d)",
+   "applicability": {
+    "EV": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 14
+  },
+  {
+   "id": "ec-datapoints:70",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 70",
+   "text": "Periodically recorded information on the operating environmental conditions, including temperature",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "70",
+   "legal_source": "BR Annex XIII 4 (d)",
+   "applicability": {
+    "EV": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 14
+  },
+  {
+   "id": "ec-datapoints:71",
+   "kind": "attribute",
+   "section": "Version 2.0, data point 71",
+   "text": "Periodically recorded information on the state of charge",
+   "mandatory": "conditional",
+   "condition": "",
+   "access": "n/a",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-above-2kWh"
+   ],
+   "joins": [],
+   "number": "71",
+   "legal_source": "BR Annex XIII 4 (d)",
+   "applicability": {
+    "EV": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "LMT": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    },
+    "industrial-above-2kWh": {
+     "as_written": "if applicable",
+     "reading": "certain-cases"
+    }
+   },
+   "page": 14
+  }
+ ]
+}

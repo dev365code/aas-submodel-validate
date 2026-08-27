@@ -1,0 +1,1488 @@
+{
+ "join": "battery passport obligations, four indexes",
+ "consolidated_text": "CELEX 02023R1542-20250731",
+ "indexes": {
+  "annex-xiii": {
+   "records": 34,
+   "provenance": [
+    {
+     "file": "eurlex/02023R1542-20250731_EN.html",
+     "sha256": "a90c0055d949b7583c1c3161e49d1b413dd9d457c1189e578dfeaedaa2882409",
+     "version": "consolidated text 02023R1542-20250731"
+    }
+   ]
+  },
+  "ec-datapoints": {
+   "records": 71,
+   "provenance": [
+    {
+     "file": "ec-dg-grow/digital-batteries-passport-data-point-by-category_v2.0.pdf",
+     "sha256": "e045a7668015520f4c353e72fb57a89bdd62baaf0a98e6f4aefc7f5f42819eb7",
+     "version": "Version 2.0"
+    }
+   ]
+  },
+  "longlist": {
+   "records": 100,
+   "provenance": [
+    {
+     "file": "batterypass/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx",
+     "sha256": "2be2585bb29be1378807d6c5b829fc67414797542d32e5e014c5fe05bd13d8ba",
+     "version": "v1.3"
+    }
+   ]
+  },
+  "idta-smt": {
+   "records": 221,
+   "provenance": [
+    {
+     "file": "idta/02035-1_v1.0/IDTA 02035-1_DBP-Part-1_Digital Nameplate.json",
+     "sha256": "0eec79b05fde3d62a287248d6dd8d17643bfa2b0bb8e2e4cecad04a28b90ccfe",
+     "version": "IDTA 02035-1 V1.0"
+    },
+    {
+     "file": "idta/02035-2_v1.0/IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json",
+     "sha256": "c7124116bd1011be696e0848c17001fe77026ec0d35266bc958feaca0d2336e5",
+     "version": "IDTA 02035-2 V1.0"
+    },
+    {
+     "file": "idta/02035-3_v1.0/IDTA 02035-3_DBP-Part-3_ProductCarbonFootprint.json",
+     "sha256": "1555443c771bf427a459081b57106b4d3426176a074d1864c04f646f33154b85",
+     "version": "IDTA 02035-3 V1.0"
+    },
+    {
+     "file": "idta/02035-4_v1.0.1/IDTA 02035-4_DBP-Part-4_TechnicalData.json",
+     "sha256": "a90774b959c766efe596243c39934df266ee34ce1132ba85f4b382efff842cb0",
+     "version": "IDTA 02035-4 V1.0.1"
+    },
+    {
+     "file": "idta/02035-5_v1.0.1/IDTA 02035-5_DBP-Part-5_ProductCondition.json",
+     "sha256": "62f5dc99b7f0894557e4418bef791f5770258872a0651e18b5f79537d4bd33fc",
+     "version": "IDTA 02035-5 V1.0.1"
+    },
+    {
+     "file": "idta/02035-5_v1.0.2/IDTA 02035-5_DBP-Part-5_ProductCondition_V1.0.2.json",
+     "sha256": "fc3c81609ca4f923b77ca14d21c8dcf5202e385c94b5090b65148fcec870ab75",
+     "version": "IDTA 02035-5 V1.0.2"
+    },
+    {
+     "file": "idta/02035-6_v1.0.1/IDTA 02035-6_DBP-Part-6_MaterialComposition.json",
+     "sha256": "e9197b3a2a3e7231d8943609a46359119a0dbd92bd7dd5e5b32c34c02f8aac10",
+     "version": "IDTA 02035-6 V1.0.1"
+    },
+    {
+     "file": "idta/02035-7_v1.0.1/IDTA 02035-7_DBP-Part-7_Circularity.json",
+     "sha256": "f3dd40ec1b8fa8ccc061cb82e93f8554d228eb49e04484d511407481d1b79cf1",
+     "version": "IDTA 02035-7 V1.0.1"
+    },
+    {
+     "file": "idta/02099-1_v1.0.0/IDTA 02099-1_Template Digital Product Passport - Part 1.json",
+     "sha256": "541cfd526ead764b6209eed96bf991d65c8e286a45be5ca3a6513e1a66ea5721",
+     "version": "IDTA 02099-1 V1.0"
+    },
+    {
+     "file": "idta/02099-1_v1.0.1/IDTA 02099-1_Template Digital Product Passport - Part 1.json",
+     "sha256": "541cfd526ead764b6209eed96bf991d65c8e286a45be5ca3a6513e1a66ea5721",
+     "version": "IDTA 02099-1 V1.0.1"
+    },
+    {
+     "file": "idta/_base_02004_v2.0/IDTA 02004-2-0_Template_HandoverDocumentation.json",
+     "sha256": "1be559fbf04c964743c0308fd4227aa11a562aa6152959e2c9f23d55013f5d94",
+     "version": "IDTA 02004 V2.0"
+    },
+    {
+     "file": "idta/_base_02023_v1.0/IDTA 02023 _Template_CarbonFootprint.json",
+     "sha256": "a6f19f6e13759e1a9c1930a3d4074ca2d1be68441547ab4c85b1d2afdc52faae",
+     "version": "IDTA 02023 V1.0"
+    }
+   ]
+  }
+ },
+ "counts": {
+  "annex_points": 34,
+  "annex_points_with_a_guidance_data_point": 27,
+  "annex_points_with_a_longlist_row": 27,
+  "annex_points_with_neither": 6,
+  "annex_points_named_only_through_their_parent": 6,
+  "citations_unresolved_in_consolidated_text": 1,
+  "template_elements": 221,
+  "template_elements_matched_by_name": 42,
+  "template_elements_matched_by_nothing": 179,
+  "guidance_data_points_matched_by_name": 8,
+  "guidance_data_points_unmatched": 63,
+  "longlist_rows_matched_by_name": 37,
+  "longlist_rows_unmatched": 63,
+  "name_matches_where_the_readings_differ": 9,
+  "citations_where_the_readings_differ": 10
+ },
+ "coverage_is_a_floor": "The templates carry no citation of the law, so a template element can only be matched to an attribute by name. Name matching is weak: it misses every element whose label differs from the prose attribute name, and it cannot match a nested element to an attribute at all. Every coverage figure below is therefore a lower bound on what is actually covered, not a measurement of it, and must be reported as such until a citation-bearing bridge exists.",
+ "annex_coverage": [
+  {
+   "annex_point": "annex-xiii:1.a",
+   "text": "the information specified in Part A of Annex VI;",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:14",
+    "longlist:15",
+    "longlist:18",
+    "longlist:19",
+    "longlist:83",
+    "longlist:84",
+    "longlist:9"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.b",
+   "text": "the material composition of the battery, including its chemistry, hazardous substances present in the battery,",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:16"
+   ],
+   "longlist_rows": [
+    "longlist:39",
+    "longlist:40",
+    "longlist:42",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.c",
+   "text": "the carbon footprint information referred to in Article 7(1) and (2);",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:17",
+    "ec-datapoints:18"
+   ],
+   "longlist_rows": [
+    "longlist:23",
+    "longlist:28",
+    "longlist:29",
+    "longlist:30",
+    "longlist:31",
+    "longlist:32",
+    "longlist:33",
+    "longlist:34",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.d",
+   "text": "information on responsible sourcing as indicated in the report on battery due diligence policy referred to in ",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:19"
+   ],
+   "longlist_rows": [
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.e",
+   "text": "recycled content information as contained in the documentation referred to in Article 8(1);",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:20",
+    "ec-datapoints:21",
+    "ec-datapoints:22",
+    "ec-datapoints:23"
+   ],
+   "longlist_rows": [
+    "longlist:48",
+    "longlist:49",
+    "longlist:50",
+    "longlist:51",
+    "longlist:52",
+    "longlist:53",
+    "longlist:54",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.f",
+   "text": "the share of renewable content;",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:24"
+   ],
+   "longlist_rows": [
+    "longlist:55",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.g",
+   "text": "rated capacity (in Ah);",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:25"
+   ],
+   "longlist_rows": [
+    "longlist:59",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.h",
+   "text": "minimal, nominal and maximum voltage, with temperature ranges when relevant;",
+   "access": "public",
+   "mandatory": "unclear",
+   "ec_datapoints": [
+    "ec-datapoints:26",
+    "ec-datapoints:27",
+    "ec-datapoints:28"
+   ],
+   "longlist_rows": [
+    "longlist:66",
+    "longlist:67",
+    "longlist:68",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.i",
+   "text": "original power capability (in Watts) and limits, with temperature range when relevant;",
+   "access": "public",
+   "mandatory": "unclear",
+   "ec_datapoints": [
+    "ec-datapoints:29",
+    "ec-datapoints:30"
+   ],
+   "longlist_rows": [
+    "longlist:69",
+    "longlist:72",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.j",
+   "text": "expected battery lifetime expressed in cycles, and reference test used;",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:31",
+    "ec-datapoints:32"
+   ],
+   "longlist_rows": [
+    "longlist:83",
+    "longlist:84",
+    "longlist:86"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.k",
+   "text": "capacity threshold for exhaustion (only for electric vehicle batteries);",
+   "access": "public",
+   "mandatory": "conditional",
+   "ec_datapoints": [
+    "ec-datapoints:33"
+   ],
+   "longlist_rows": [
+    "longlist:83",
+    "longlist:84",
+    "longlist:90"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.l",
+   "text": "temperature range the battery can withstand when not in use (reference test);",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:34"
+   ],
+   "longlist_rows": [
+    "longlist:83",
+    "longlist:84",
+    "longlist:92",
+    "longlist:93"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.m",
+   "text": "period for which the commercial warranty for the calendar life applies;",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:35"
+   ],
+   "longlist_rows": [
+    "longlist:17",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.n",
+   "text": "initial round trip energy efficiency and at 50 % of cycle-life;",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:36",
+    "ec-datapoints:37"
+   ],
+   "longlist_rows": [
+    "longlist:74",
+    "longlist:75",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.o",
+   "text": "internal battery cell and pack resistance;",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:38"
+   ],
+   "longlist_rows": [
+    "longlist:81",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.p",
+   "text": "c-rate of relevant cycle-life test.",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:39"
+   ],
+   "longlist_rows": [
+    "longlist:83",
+    "longlist:84",
+    "longlist:87"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.q",
+   "text": "the marking requirements laid down in Article 13(4) and (5);",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:40",
+    "ec-datapoints:41"
+   ],
+   "longlist_rows": [
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.r",
+   "text": "the EU declaration of conformity referred to in Article 18;",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:42"
+   ],
+   "longlist_rows": [
+    "longlist:26",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:1.s",
+   "text": "the information regarding the prevention and management of waste batteries laid down in Article 74(1), points ",
+   "access": "public",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:43"
+   ],
+   "longlist_rows": [
+    "longlist:21",
+    "longlist:22",
+    "longlist:25",
+    "longlist:43",
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:2.a",
+   "text": "detailed composition, including materials used in the cathode, anode and electrolyte;",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:45"
+   ],
+   "longlist_rows": [
+    "longlist:41"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:2.b",
+   "text": "part numbers for components and contact details of sources for replacement spares;",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:46",
+    "ec-datapoints:47"
+   ],
+   "longlist_rows": [
+    "longlist:45",
+    "longlist:46"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:2.c",
+   "text": "dismantling information, including at least:",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:48"
+   ],
+   "longlist_rows": [
+    "longlist:44"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:2.c.1",
+   "text": "exploded diagrams of the battery system/pack showing the location of battery cells,",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [],
+   "cited_only_through_its_parent": true
+  },
+  {
+   "annex_point": "annex-xiii:2.c.2",
+   "text": "disassembly sequences,",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [],
+   "cited_only_through_its_parent": true
+  },
+  {
+   "annex_point": "annex-xiii:2.c.3",
+   "text": "type and number of fastening techniques to be unlocked,",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [],
+   "cited_only_through_its_parent": true
+  },
+  {
+   "annex_point": "annex-xiii:2.c.4",
+   "text": "tools required for disassembly,",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [],
+   "cited_only_through_its_parent": true
+  },
+  {
+   "annex_point": "annex-xiii:2.c.5",
+   "text": "warnings if risk of damaging parts exist,",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [],
+   "cited_only_through_its_parent": true
+  },
+  {
+   "annex_point": "annex-xiii:2.c.6",
+   "text": "amount of cells used and layout;",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [],
+   "cited_only_through_its_parent": true
+  },
+  {
+   "annex_point": "annex-xiii:2.d",
+   "text": "safety measures.",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:49"
+   ],
+   "longlist_rows": [
+    "longlist:47"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:3.1",
+   "text": "results of test reports proving compliance with the requirements laid down in this Regulation or any delegated",
+   "access": "authorities",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:50"
+   ],
+   "longlist_rows": [
+    "longlist:27"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:4.a",
+   "text": "the values for performance and durability parameters referred to in Article 10(1), when the battery is placed ",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:51",
+    "ec-datapoints:52",
+    "ec-datapoints:53",
+    "ec-datapoints:54",
+    "ec-datapoints:55",
+    "ec-datapoints:56",
+    "ec-datapoints:57",
+    "ec-datapoints:58",
+    "ec-datapoints:59",
+    "ec-datapoints:60"
+   ],
+   "longlist_rows": [
+    "longlist:83",
+    "longlist:84"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:4.b",
+   "text": "information on the state of health of the battery pursuant to Article 14;",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:61",
+    "ec-datapoints:62",
+    "ec-datapoints:63",
+    "ec-datapoints:64",
+    "ec-datapoints:65",
+    "ec-datapoints:66"
+   ],
+   "longlist_rows": [],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:4.c",
+   "text": "information on the status of the battery, defined as ‘original’, ‘repurposed’, ‘re-used’, ‘remanufactured’ or ",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:67"
+   ],
+   "longlist_rows": [
+    "longlist:20"
+   ],
+   "cited_only_through_its_parent": false
+  },
+  {
+   "annex_point": "annex-xiii:4.d",
+   "text": "information and data resulting from its use, including the number of charging and discharging cycles and negat",
+   "access": "legitimate-interest",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:68",
+    "ec-datapoints:69",
+    "ec-datapoints:70",
+    "ec-datapoints:71"
+   ],
+   "longlist_rows": [
+    "longlist:100",
+    "longlist:65",
+    "longlist:85",
+    "longlist:91"
+   ],
+   "cited_only_through_its_parent": false
+  }
+ ],
+ "citations_without_a_matching_annex_point": [
+  {
+   "citation": "annex-xiii:1.t",
+   "cited_by": "ec-datapoints:44",
+   "as_written": "BR Annex XIII 1 (t)",
+   "source": "ec-datapoints"
+  }
+ ],
+ "name_matches": [
+  {
+   "element": "idta-smt:idta-02035-1:BatteryNameplate/SerialNumber",
+   "template": "IDTA 02035-1",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:8"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-1:BatteryNameplate/DateOfPuttingIntoService",
+   "template": "IDTA 02035-1",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:16"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-1:BatteryNameplate/UniqueFacilityIdentifier",
+   "template": "IDTA 02035-1",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:11"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-1:BatteryNameplate/EUDeclarationOfConformity",
+   "template": "IDTA 02035-1",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:26"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-1:BatteryNameplate/ResultsOfTestReportsProvingCompliance",
+   "template": "IDTA 02035-1",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:27"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/WebLinkToPublicCarbonFootprintStudy",
+   "template": "IDTA 02035-3",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:34"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/BatteryCategory",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:6"
+   ],
+   "longlist_rows": [
+    "longlist:18"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/BatteryMass",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:19"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/WarrantyInformation/WarrantyPeriod",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:17"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/NominalVoltage",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:68"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/RatedCapacity",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:59"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/CapacityFade",
+   "template": "IDTA 02035-4",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [
+    "ec-datapoints:52"
+   ],
+   "longlist_rows": [
+    "longlist:61"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/CertifiedUsableBatteryEnergy",
+   "template": "IDTA 02035-4",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:62"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/InitialRoundTripEnergyEfficiency",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:36"
+   ],
+   "longlist_rows": [
+    "longlist:74"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade",
+   "template": "IDTA 02035-4",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:77"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability/MaximumPermittedBatteryPower",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:72"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability/PowerFade",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:54"
+   ],
+   "longlist_rows": [
+    "longlist:71"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability/OriginalPowerCapability",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:69"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Temperature",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:91"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Temperature/TemperatureRangeIdleState_LowerBoundary",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:92"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Temperature/TemperatureRangeIdleState_UpperBoundary",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:93"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/ExpectedLifetimeInCalendarYears",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:83"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/CapacityThresholdExhaustion",
+   "template": "IDTA 02035-4",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [
+    "ec-datapoints:33"
+   ],
+   "longlist_rows": [
+    "longlist:90"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/CRateOfRelevantCycleLifeTest",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:39"
+   ],
+   "longlist_rows": [
+    "longlist:87"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/EnergyThroughput",
+   "template": "IDTA 02035-5",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:88"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/EnergyThroughput/EnergyThroughputValue",
+   "template": "IDTA 02035-5",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:88"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/CapacityThroughput",
+   "template": "IDTA 02035-5",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:89"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/CapacityThroughput/CapacityThroughputValue",
+   "template": "IDTA 02035-5",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:89"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingCapacity",
+   "template": "IDTA 02035-5",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:60"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingCapacity/RemainingCapacityValue",
+   "template": "IDTA 02035-5",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:60"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/InformationOnAccidents",
+   "template": "IDTA 02035-5",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:100"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/TemperatureInformation",
+   "template": "IDTA 02035-5",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:91"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability",
+   "template": "IDTA 02035-5",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:70"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingRoundTripEnergyEfficiency",
+   "template": "IDTA 02035-5",
+   "cardinality": "ZeroToOne",
+   "mandatory": "no",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:76"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingRoundTripEnergyEfficiency/RemainingRoundTripEnergyEfficiencyValue",
+   "template": "IDTA 02035-5",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:76"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-6:MaterialComposition/BatteryChemistry",
+   "template": "IDTA 02035-6",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:12"
+   ],
+   "longlist_rows": [
+    "longlist:39"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances",
+   "template": "IDTA 02035-6",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:42"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-7:Circularity/SafetyMeasures",
+   "template": "IDTA 02035-7",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:49"
+   ],
+   "longlist_rows": [
+    "longlist:47"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02035-7:Circularity/SafetyMeasures/ExtinguishingAgents/ExtinguishingAgent",
+   "template": "IDTA 02035-7",
+   "cardinality": "OneToMany",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:24"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02099-1:DppMetadata/uniqueProductIdentifier",
+   "template": "IDTA 02099-1",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:6"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02099-1:DppMetadata/dppSchemaVersion",
+   "template": "IDTA 02099-1",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:1"
+   ]
+  },
+  {
+   "element": "idta-smt:idta-02099-1:DppMetadata/dppStatus",
+   "template": "IDTA 02099-1",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [],
+   "longlist_rows": [
+    "longlist:2"
+   ]
+  }
+ ],
+ "template_elements_matched_by_nothing": [
+  "idta-smt:idta-02035-1:BatteryNameplate/URIOfTheProduct",
+  "idta-smt:idta-02035-1:BatteryNameplate/ManufacturerName",
+  "idta-smt:idta-02035-1:BatteryNameplate/AddressInformation",
+  "idta-smt:idta-02035-1:BatteryNameplate/DateOfManufacture",
+  "idta-smt:idta-02035-1:BatteryNameplate/LifeCycleStage",
+  "idta-smt:idta-02035-1:BatteryNameplate/OperatorIdentifier",
+  "idta-smt:idta-02035-1:BatteryNameplate/ManufacturerIdentifier",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings/Markings__00__",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings/Markings__00__/MarkingName",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings/Markings__00__/DesignationOfCertificateOrApproval",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings/Markings__00__/IssueDate",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings/Markings__00__/ExpiryDate",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings/Markings__00__/MarkingFile",
+  "idta-smt:idta-02035-1:BatteryNameplate/Markings/Markings__00__/MarkingAdditionalText",
+  "idta-smt:idta-02035-1:BatteryNameplate/EUDeclarationOfConformity/DocumentIdentifier",
+  "idta-smt:idta-02035-1:BatteryNameplate/ResultsOfTestReportsProvingCompliance/DocumentIdentifier",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentClassifications",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentClassifications/DocumentClassification",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentClassifications/DocumentClassification/ClassName",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentClassifications/DocumentClassification/ClassId",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentClassifications/DocumentClassification/ClassificationSystem",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentIds",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentIds/DocumentId",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentIds/DocumentId/DocumentDomainId",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentIds/DocumentId/DocumentIdentifier",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentIds/DocumentId/DocumentIsPrimary",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/Language",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/Language/[15]",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/Version",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/Title",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/Subtitle",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/Description",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/DigitalFiles",
+  "idta-smt:idta-02035-2:HandoverDocumentation/Documents/Document/DocumentVersions/DocumentVersion/DigitalFiles/[21]",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/PcfCalculationMethods",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/PcfCalculationMethods/PcfCalculationMethod",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/PcfCO2eq",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/ReferenceImpactUnitForCalculation",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/QuantityOfMeasureForCalculation",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/LifeCyclePhases",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/LifeCyclePhases/LifeCyclePhase",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/PerformanceClass",
+  "idta-smt:idta-02035-3:CarbonFootprint/ProductCarbonFootprints/ProductCarbonFootprint/WebLinkToPublicCarbonFootprintStudy/DocumentIdentifier",
+  "idta-smt:idta-02035-4:TechnicalData/GeneralInformation",
+  "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/ManufacturerName",
+  "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/CompanyLogo",
+  "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/ManufacturerIdentifier",
+  "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/ProductImages",
+  "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/ProductImages/ProductImage",
+  "idta-smt:idta-02035-4:TechnicalData/GeneralInformation/WarrantyInformation",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/MinVoltage",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/MaxVoltage",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/RoundTripEnergyEfficiencyAt50PercentOfCycleLife",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/InitialSelfDischargingRate",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance/InitialInternalResistanceOnBatteryCellLevel",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance/InitialInternalResistanceOnBatteryPackLevel",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance/InitialInternalResistanceOnBatteryModuleLevel",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance/InternalResistanceIncreaseOfBatteryCellLevel",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance/InternalResistanceIncreaseOfBatteryPackLevel",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance/InternalResistanceIncreaseOfBatteryModuleLevel",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability/RatioNorminalBatteryPowerAndBatteryEnergy",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability/OriginalPowerCapability/PowerCapabilityAt",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability/OriginalPowerCapability/PowerCapabilityAt/atSoc",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/PowerCapability/OriginalPowerCapability/PowerCapabilityAt/powerCapabilityAt",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime",
+  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/ExpectedNumberOfCycles",
+  "idta-smt:idta-02035-5:ProductCondition/EnergyThroughput/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/StateOfCharge",
+  "idta-smt:idta-02035-5:ProductCondition/StateOfCharge/StateOfChargeValue",
+  "idta-smt:idta-02035-5:ProductCondition/StateOfCharge/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/CapacityThroughput/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/NumberOfFullCycles",
+  "idta-smt:idta-02035-5:ProductCondition/NumberOfFullCycles/NumberOfFullCyclesValue",
+  "idta-smt:idta-02035-5:ProductCondition/NumberOfFullCycles/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/StateOfCertifiedEnergy",
+  "idta-smt:idta-02035-5:ProductCondition/StateOfCertifiedEnergy/StateOfCertifiedEnergyValue",
+  "idta-smt:idta-02035-5:ProductCondition/StateOfCertifiedEnergy/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingEnergy",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingEnergy/RemainingEnergyValue",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingEnergy/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingCapacity/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/NegativeEvents",
+  "idta-smt:idta-02035-5:ProductCondition/NegativeEvents/NegativeEvent",
+  "idta-smt:idta-02035-5:ProductCondition/NegativeEvents/NegativeEvent/NegativeEventValue",
+  "idta-smt:idta-02035-5:ProductCondition/NegativeEvents/NegativeEvent/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/InformationOnAccidents/DocumentIdentifier",
+  "idta-smt:idta-02035-5:ProductCondition/TemperatureInformation/MeasuredTemp",
+  "idta-smt:idta-02035-5:ProductCondition/TemperatureInformation/TimeExtremeHighTemp",
+  "idta-smt:idta-02035-5:ProductCondition/TemperatureInformation/TimeExtremeLowTemp",
+  "idta-smt:idta-02035-5:ProductCondition/TemperatureInformation/TimeExtremeHighTempCharging",
+  "idta-smt:idta-02035-5:ProductCondition/TemperatureInformation/TimeExtremeLowTempCharging",
+  "idta-smt:idta-02035-5:ProductCondition/TemperatureInformation/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability/RemainingPowerCapabilityDynamicAt",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability/RemainingPowerCapabilityDynamicAt/RPCLastUpdated",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability/RemainingPowerCapabilityDynamicAt/AtSoC",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability/RemainingPowerCapabilityDynamicAt/PowerCapabilityAt",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/EvolutionOfSelfDischarge",
+  "idta-smt:idta-02035-5:ProductCondition/EvolutionOfSelfDischarge/EvolutionOfSelfDischargeValue",
+  "idta-smt:idta-02035-5:ProductCondition/EvolutionOfSelfDischarge/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/CurrentSelfDischargingRate",
+  "idta-smt:idta-02035-5:ProductCondition/CurrentSelfDischargingRate/CurrentSelfDischargingRateValue",
+  "idta-smt:idta-02035-5:ProductCondition/CurrentSelfDischargingRate/LastUpdate",
+  "idta-smt:idta-02035-5:ProductCondition/RemainingRoundTripEnergyEfficiency/LastUpdate",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryChemistry/ShortName",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryChemistry/ClearName",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial/BatteryMaterialLocation",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial/BatteryMaterialLocation/ComponentName",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial/BatteryMaterialLocation/ComponentId",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial/BatteryMaterialIdentifier",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial/BatteryMaterialName",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial/BatteryMaterialMass",
+  "idta-smt:idta-02035-6:MaterialComposition/BatteryMaterials/BatteryMaterial/IsCriticalRawMaterial",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceClass",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceName",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceConcentration",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceImpact",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceImpact/Impact",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceLocation",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceLocation/ComponentName",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceLocation/ComponentId",
+  "idta-smt:idta-02035-6:MaterialComposition/HazardousSubstances/HazardousSubstance/HazardousSubstanceIdentifier",
+  "idta-smt:idta-02035-7:Circularity/DismantlingAndRemovalInformation",
+  "idta-smt:idta-02035-7:Circularity/DismantlingAndRemovalInformation/DocumentIdentifier",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/NameOfSupplier",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/AddressOfSupplier",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/AddressOfSupplier/NationalCode",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/AddressOfSupplier/PostalCode",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/AddressOfSupplier/Street",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/EmailAddressOfSupplier",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/EmailAddressOfSupplier/EmailAddress",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/EmailAddressOfSupplier/PublicKey",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/EmailAddressOfSupplier/TypeOfEmailAddress",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/EmailAddressOfSupplier/TypeOfPublicKey",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/SupplierWebAddress",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/Components",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/Components/Component",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/Components/Component/PartName",
+  "idta-smt:idta-02035-7:Circularity/SparePartSources/SparePartSupplier/Components/Component/PartNumber",
+  "idta-smt:idta-02035-7:Circularity/RecycledContentInformation",
+  "idta-smt:idta-02035-7:Circularity/RecycledContentInformation/RecycledContent",
+  "idta-smt:idta-02035-7:Circularity/RecycledContentInformation/RecycledContent/PreConsumerShare",
+  "idta-smt:idta-02035-7:Circularity/RecycledContentInformation/RecycledContent/RecycledMaterial",
+  "idta-smt:idta-02035-7:Circularity/RecycledContentInformation/RecycledContent/PostConsumerShare",
+  "idta-smt:idta-02035-7:Circularity/SafetyMeasures/SafetyInstructions",
+  "idta-smt:idta-02035-7:Circularity/SafetyMeasures/SafetyInstructions/DocumentIdentifier",
+  "idta-smt:idta-02035-7:Circularity/SafetyMeasures/ExtinguishingAgents",
+  "idta-smt:idta-02035-7:Circularity/EndOfLifeInformation",
+  "idta-smt:idta-02035-7:Circularity/EndOfLifeInformation/WastePrevention",
+  "idta-smt:idta-02035-7:Circularity/EndOfLifeInformation/WastePrevention/DocumentIdentifier",
+  "idta-smt:idta-02035-7:Circularity/EndOfLifeInformation/SeparateCollection",
+  "idta-smt:idta-02035-7:Circularity/EndOfLifeInformation/SeparateCollection/DocumentIdentifier",
+  "idta-smt:idta-02035-7:Circularity/EndOfLifeInformation/InformationOnCollection",
+  "idta-smt:idta-02035-7:Circularity/EndOfLifeInformation/InformationOnCollection/DocumentIdentifier",
+  "idta-smt:idta-02035-7:Circularity/RenewableContent",
+  "idta-smt:idta-02099-1:DppMetadata/digitalProductPassportId",
+  "idta-smt:idta-02099-1:DppMetadata/granularity",
+  "idta-smt:idta-02099-1:DppMetadata/lastUpdate",
+  "idta-smt:idta-02099-1:DppMetadata/economicOperatorId",
+  "idta-smt:idta-02099-1:DppMetadata/facilityId",
+  "idta-smt:idta-02099-1:DppMetadata/contentSpecificationIds",
+  "idta-smt:idta-02099-1:DppMetadata/contentSpecificationIds/contentSpecificationId"
+ ],
+ "readings_that_differ_by_name": [
+  {
+   "element": "idta-smt:idta-02035-1:BatteryNameplate/DateOfPuttingIntoService",
+   "readings": {
+    "template(IDTA 02035-1)": "no",
+    "longlist:16": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/CapacityFade",
+   "readings": {
+    "template(IDTA 02035-4)": "no",
+    "ec-datapoints:52": "yes",
+    "longlist:61": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade",
+   "readings": {
+    "template(IDTA 02035-4)": "no",
+    "longlist:77": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/CapacityThresholdExhaustion",
+   "readings": {
+    "template(IDTA 02035-4)": "no",
+    "ec-datapoints:33": "yes",
+    "longlist:90": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/EnergyThroughput",
+   "readings": {
+    "template(IDTA 02035-5)": "no",
+    "longlist:88": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/CapacityThroughput",
+   "readings": {
+    "template(IDTA 02035-5)": "no",
+    "longlist:89": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingCapacity",
+   "readings": {
+    "template(IDTA 02035-5)": "no",
+    "longlist:60": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability",
+   "readings": {
+    "template(IDTA 02035-5)": "no",
+    "longlist:70": "yes"
+   }
+  },
+  {
+   "element": "idta-smt:idta-02035-5:ProductCondition/RemainingRoundTripEnergyEfficiency",
+   "readings": {
+    "template(IDTA 02035-5)": "no",
+    "longlist:76": "yes"
+   }
+  }
+ ],
+ "readings_that_differ_by_citation": [
+  {
+   "citation": "annex-vi-a:1",
+   "readings": {
+    "yes": [
+     "ec-datapoints:3",
+     "ec-datapoints:4",
+     "longlist:10",
+     "longlist:13"
+    ],
+    "no": [
+     "ec-datapoints:5"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:1.b",
+   "readings": {
+    "no": [
+     "ec-datapoints:16"
+    ],
+    "yes": [
+     "longlist:39",
+     "longlist:40",
+     "longlist:42",
+     "longlist:83",
+     "longlist:84"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:1.c",
+   "readings": {
+    "no": [
+     "ec-datapoints:17",
+     "ec-datapoints:18"
+    ],
+    "yes": [
+     "longlist:23",
+     "longlist:28",
+     "longlist:29",
+     "longlist:30",
+     "longlist:31",
+     "longlist:32",
+     "longlist:33",
+     "longlist:34",
+     "longlist:83",
+     "longlist:84"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:1.d",
+   "readings": {
+    "no": [
+     "ec-datapoints:19"
+    ],
+    "yes": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:1.e",
+   "readings": {
+    "no": [
+     "ec-datapoints:20",
+     "ec-datapoints:21",
+     "ec-datapoints:22",
+     "ec-datapoints:23"
+    ],
+    "yes": [
+     "longlist:48",
+     "longlist:49",
+     "longlist:50",
+     "longlist:51",
+     "longlist:52",
+     "longlist:53",
+     "longlist:54",
+     "longlist:83",
+     "longlist:84"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:1.g",
+   "readings": {
+    "no": [
+     "ec-datapoints:25"
+    ],
+    "yes": [
+     "longlist:59",
+     "longlist:83",
+     "longlist:84"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:1.m",
+   "readings": {
+    "conditional": [
+     "ec-datapoints:35"
+    ],
+    "yes": [
+     "longlist:17",
+     "longlist:83",
+     "longlist:84"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:1.q",
+   "readings": {
+    "yes": [
+     "ec-datapoints:40",
+     "longlist:83",
+     "longlist:84"
+    ],
+    "conditional": [
+     "ec-datapoints:41"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:4.a",
+   "readings": {
+    "conditional": [
+     "ec-datapoints:51",
+     "ec-datapoints:57",
+     "ec-datapoints:58"
+    ],
+    "yes": [
+     "ec-datapoints:52",
+     "ec-datapoints:53",
+     "ec-datapoints:54",
+     "ec-datapoints:55",
+     "ec-datapoints:56",
+     "ec-datapoints:59",
+     "ec-datapoints:60",
+     "longlist:83",
+     "longlist:84"
+    ]
+   }
+  },
+  {
+   "citation": "annex-xiii:4.d",
+   "readings": {
+    "conditional": [
+     "ec-datapoints:68",
+     "ec-datapoints:69",
+     "ec-datapoints:70",
+     "ec-datapoints:71"
+    ],
+    "yes": [
+     "longlist:100",
+     "longlist:65",
+     "longlist:85",
+     "longlist:91"
+    ]
+   }
+  }
+ ]
+}

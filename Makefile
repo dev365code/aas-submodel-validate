@@ -18,7 +18,7 @@ help:
 	@echo "make fix     ruff --fix, for what it can correct itself"
 	@echo "make dev     install the pinned dev tools"
 
-check: lint generated vendored test exercised
+check: lint generated vendored battery-data test exercised
 
 generated:
 	$(PYTHON) tools/extract_smt_rules.py --check
@@ -28,6 +28,9 @@ vendored:
 
 exercised:
 	$(PYTHON) tools/rule_coverage.py --check
+
+battery-data:
+	$(PYTHON) tools/battery_data_check.py
 
 lint:
 	@$(PYTHON) -m ruff --version | grep -q "$(RUFF_VERSION)" \

@@ -44,6 +44,11 @@ where = ["src"]
 aas_submodel_validate = ["data/smt/**/*.json", "data/smt/**/*.txt"]
 
 [tool.ruff]
+# data/battery-passport is a bundle copied verbatim from its own build
+# tree; the drawer copy is canonical and hand edits here are forbidden,
+# so this repo's lint has no standing over it. Its scripts still parse
+# and import -- tools/battery_data_check.py holds that.
+extend-exclude = ["data"]
 line-length = 100
 target-version = "py39"
 src = ["src", "tests", "tools"]

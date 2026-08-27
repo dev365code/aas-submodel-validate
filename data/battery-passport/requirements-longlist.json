@@ -1,0 +1,3962 @@
+{
+ "source": "longlist",
+ "provenance": [
+  {
+   "file": "batterypass/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx",
+   "sha256": "2be2585bb29be1378807d6c5b829fc67414797542d32e5e014c5fe05bd13d8ba",
+   "version": "v1.3",
+   "sheet": "Data attribute longlist_DR_v1.3"
+  }
+ ],
+ "counts": {
+  "records": 100,
+  "by_kind": {
+   "attribute": 100
+  },
+  "by_mandatory": {
+   "no": 9,
+   "yes": 91
+  },
+  "by_access": {
+   "authorities": 4,
+   "legitimate-interest": 32,
+   "public": 64
+  },
+  "by_applicability_mark": {
+   "not-stated": 32,
+   "required-by-batteries-regulation": 310,
+   "required-by-other-instrument": 24,
+   "voluntary": 34
+  },
+  "by_granularity": {
+   "Battery model": 47,
+   "Battery model per calendar year and per manufacturing site, i.e. batch level": 20,
+   "Battery model per manufacturing site": 4,
+   "Individual battery": 29
+  },
+  "by_static_or_dynamic": {
+   "Dynamic": 22,
+   "Static": 78
+  },
+  "variant": "public",
+  "rows_with_separate_spec_chapter": 94
+ },
+ "notes": [],
+ "records": [
+  {
+   "id": "longlist:1",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 1",
+   "text": "DPP Schema version",
+   "mandatory": "yes",
+   "condition": "the sheet marks this as required by another instrument (its legend: ESPR / JTC-24), not by the Batteries Regulation",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "1",
+   "category": "Identifiers and product data",
+   "sub_category": "DPP Information",
+   "definition": "The reference standard the DPP instance schema refers to",
+   "requirement_regulation": "The reference standard the DPP instance schema refers to.",
+   "legal_reference": "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)",
+   "legal_references": [
+    "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-other-instrument",
+    "LMT": "required-by-other-instrument",
+    "industrial-other-above-2kWh": "required-by-other-instrument",
+    "industrial-stationary-above-2kWh": "required-by-other-instrument"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:2",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 2",
+   "text": "DPP Status",
+   "mandatory": "yes",
+   "condition": "the sheet marks this as required by another instrument (its legend: ESPR / JTC-24), not by the Batteries Regulation",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "2",
+   "category": "Identifiers and product data",
+   "sub_category": "DPP Information",
+   "definition": "The current status of the DPP as a digital resource",
+   "requirement_regulation": "The status of the DPP instance as digital resource. Example: \"Active\", \"Archived\"",
+   "legal_reference": "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)",
+   "legal_references": [
+    "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-other-instrument",
+    "LMT": "required-by-other-instrument",
+    "industrial-other-above-2kWh": "required-by-other-instrument",
+    "industrial-stationary-above-2kWh": "required-by-other-instrument"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:3",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 3",
+   "text": "DPP Granularity",
+   "mandatory": "yes",
+   "condition": "the sheet marks this as required by another instrument (its legend: ESPR / JTC-24), not by the Batteries Regulation",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "3",
+   "category": "Identifiers and product data",
+   "sub_category": "DPP Information",
+   "definition": "The required level of information with regard to product item, batch or model",
+   "requirement_regulation": "The level of granularity of the ProductID as per ESPR: model, batch or item In the Battery passport the value shall be 'Item' as each battery will have an individual battery passport.",
+   "legal_reference": "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)",
+   "legal_references": [
+    "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-other-instrument",
+    "LMT": "required-by-other-instrument",
+    "industrial-other-above-2kWh": "required-by-other-instrument",
+    "industrial-stationary-above-2kWh": "required-by-other-instrument"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:4",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 4",
+   "text": "Date-time of latest update of DPP",
+   "mandatory": "yes",
+   "condition": "the sheet marks this as required by another instrument (its legend: ESPR / JTC-24), not by the Batteries Regulation",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "4",
+   "category": "Identifiers and product data",
+   "sub_category": "DPP Information",
+   "definition": "Date and time of the latest update of the battery passport",
+   "requirement_regulation": "The date and time of the latest update to the DPP instance.",
+   "legal_reference": "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)",
+   "legal_references": [
+    "JTC-24 prEN_18223 (4.1.3.1 Table 1) (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-other-instrument",
+    "LMT": "required-by-other-instrument",
+    "industrial-other-above-2kWh": "required-by-other-instrument",
+    "industrial-stationary-above-2kWh": "required-by-other-instrument"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "Timestamp UTC-based",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "upon any update of the battery passport",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:5",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 5",
+   "text": "Unique battery passport identifier / unique DPP identifier",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "5",
+   "category": "Identifiers and product data",
+   "sub_category": "Identifier",
+   "definition": "The unique identifier of a battery passport, equivalent to the unique DPP identifier in JTC-24 draft standards",
+   "requirement_regulation": "The unique battery passport identifier / unique DPP identifier serves distinction and identification of archived versions and should resolve to one specific version of a battery passport. Note: The JTC-24 standards foresee an archiving function for DPPs after updates (exceptions to dynamic data may apply). Note: A new battery passport version after an update will obtain a new unique battery passport identifier / unique DPP identifier. The previous unique battery passport identifier / unique DPP identifier will be archived together with its previous battery passport version. The initial unique battery passport identifier / unique DPP identifier, likely to be stored in the EU DPP registry, therefore always resolves to the first version of a battery passport.",
+   "legal_reference": "Art. 77(3) and (10); Art. 3(66); JTC-24 prEN_18222 (4.2) & prEN_18223 (4.1.3.1 Table 1 and 4.2) (draft)",
+   "legal_references": [
+    "Art. 77(3) and (10)",
+    "Art. 3(66)",
+    "JTC-24 prEN_18222 (4.2) & prEN_18223 (4.1.3.1 Table 1 and 4.2) (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "upon any update of the battery passport that includes archiving",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.1.2.1",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:6",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 6",
+   "text": "Unique battery identifier / unique product identifier",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "6",
+   "category": "Identifiers and product data",
+   "sub_category": "Identifier",
+   "definition": "The unique identifier of the battery item, equivalent to the unique product identifier in JTC-24 draft standards",
+   "requirement_regulation": "A battery passport must include information identifying the battery. The battery passport must be accessible through the QR code […] which links to a persistent unique battery identifier. The battery identifier is a unique string of characters for the identification of batteries that also enables a link to the battery passport. The battery identifier must comply with ISO/IEC 15459 1:2014, ISO/IEC 15459 2:2015, ISO/IEC 15459 3:2014, ISO/IEC 15459 4:2014, ISO/IEC 15459 5:2014, ISO/IEC 15459 6:2014, or their equivalent. It shall be based on a URI/URL structure. Note: According to JTC-24 prEN_18219 (4.) describes the unique product identifier (here: unique battery identifier shall follow the following principles: (4.1) globally uniqueness, (4.2) persistence, (4.3) syntax, (4.4) semantic, (4.5) Interoperability and (4.6) Openness. The economic operator placing the battery on the market must attribute the battery identifier to it. Note: The unique battery identifier / unique product identifier must also be provided on the battery label. Where the size or nature of the battery does not allow it, the required information must be provided on the packaging or in a document accompanying the battery.",
+   "legal_reference": "Art. 77(3); Art. 3(66); JTC-24 prEN_18219, JTC-24 prEN_18222 (4.2) & prEN_18223 (4.1.3.1 Table 1)",
+   "legal_references": [
+    "Art. 77(3)",
+    "Art. 3(66)",
+    "JTC-24 prEN_18219, JTC-24 prEN_18222 (4.2) & prEN_18223 (4.1.3.1 Table 1)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.1.2.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:7",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 7",
+   "text": "Battery model identifier",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "7",
+   "category": "Identifiers and product data",
+   "sub_category": "Identifier",
+   "definition": "The unique identifier of the battery model.",
+   "requirement_regulation": "The battery model identifier is a shared property of batteries that belong to the same battery model, which is a version of a battery all units of which share the same technical characteristics relevant for the requirements of the Battery Regulation on sustainability, safety, labelling,marking and information. Note: The model identifier is a unique string of characters and required in the Draft for the CF declaration IA.",
+   "legal_reference": "Article 3(19); CF declaration IA (draft)",
+   "legal_references": [
+    "Article 3(19)",
+    "CF declaration IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "ID (string)",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:8",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 8",
+   "text": "Battery serial number",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "8",
+   "category": "Identifiers and product data",
+   "sub_category": "Identifier",
+   "definition": "Serial number of the battery including information on the battery batch",
+   "requirement_regulation": "Note: The following requirements of the battery regulation, not directly addressing the battery passport, should be considered: Manufacturers shall ensure that batteries which they place on the market bear a model identification and batch or serial number, or product number or another element allowing their identification. Where the size or nature of the battery does not allow it, the required information shall be provided on the packaging or in a document accompanying the battery. The Declaration of Conformity requires the following information (among other information): \"Battery model (product, category, and batch or serial number):\"",
+   "legal_reference": "Article 38(6); Annex IX, 1",
+   "legal_references": [
+    "Article 38(6)",
+    "Annex IX, 1"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "ID (string)",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:9",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 9",
+   "text": "Unique economic operator identifier",
+   "mandatory": "yes",
+   "condition": "the sheet marks this as required by another instrument (its legend: ESPR / JTC-24), not by the Batteries Regulation",
+   "access": "authorities",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "9",
+   "category": "Identifiers and product data",
+   "sub_category": "Identifier",
+   "definition": "The unique identifier of the economic operator",
+   "requirement_regulation": "A battery passport must include an operator identifier. The operator identifier is a unique string of characters for the identification of actors involved in the value chain of products (see ESPR, Article 2(31)). It corresponds to the economic operator responsible for creating or updating the battery passport. Where a unique operator identifier is not yet available, “the economic operator that creates or updates the digital product passport shall request a unique operator identifier on behalf of the relevant actor.” (see ESPR, Article 12(2)). The unique operator identifier must, where relevant for the products concerned, comply with ISO/IEC 15459 1:2014, ISO/IEC 15459 2:2015, ISO/IEC 15459 3:2014, ISO/IEC 15459 4:2014, ISO/IEC 15459 5:2014, ISO/IEC 15459 6:2014, or their equivalent until referenced harmonised standards are listed in the Official Journal of European Union (OJEU). (see also ESPR Annex III)",
+   "legal_reference": "ESPR Art. 2 (31), 12 (2); Annex XIII (1a) Annex VI Part A; Art. 3(66); Art. 77 (3) JTC-24 prEN_18219 (4.1.1.1) (draft)",
+   "legal_references": [
+    "ESPR Art. 2 (31), 12 (2)",
+    "Annex XIII (1a) Annex VI Part A",
+    "Art. 3(66)",
+    "Art. 77 (3) JTC-24 prEN_18219 (4.1.1.1) (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-other-instrument",
+    "LMT": "required-by-other-instrument",
+    "industrial-other-above-2kWh": "required-by-other-instrument",
+    "industrial-stationary-above-2kWh": "required-by-other-instrument"
+   },
+   "access_as_written": "Notified bodies, market surveillance authorities and the Commission",
+   "unit": "n.a.",
+   "data_format": "ID (string)",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.1.2.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:10",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 10",
+   "text": "Unique manufacturer identifier",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "authorities",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "10",
+   "category": "Identifiers and product data",
+   "sub_category": "Identifier",
+   "definition": "The unique identifier of the manufacturer of the battery.",
+   "requirement_regulation": "The unique manufacturer identifier must, where relevant for the products concerned, comply with ISO/IEC 15459 1:2014, ISO/IEC 15459 2:2015, ISO/IEC 15459 3:2014, ISO/IEC 15459 4:2014, ISO/IEC 15459 5:2014, ISO/IEC 15459 6:2014, or equivalent European or international standards until referenced harmonised standards are listed in the OJEU (see also ESPR Annex III).",
+   "legal_reference": "Annex VI Part A (1); Art. 38(7); ESPR Art. 2(32); ESPR Art. 12(1); ESPR Annex III",
+   "legal_references": [
+    "Annex VI Part A (1)",
+    "Art. 38(7)",
+    "ESPR Art. 2(32)",
+    "ESPR Art. 12(1)",
+    "ESPR Annex III"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Notified bodies, market surveillance authorities and the Commission",
+   "unit": "n.a.",
+   "data_format": "ID (string)",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per manufacturing site",
+   "separate_spec_chapter": "6.1.2.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:11",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 11",
+   "text": "Unique facility identifier",
+   "mandatory": "yes",
+   "condition": "the sheet marks this as required by another instrument (its legend: ESPR / JTC-24), not by the Batteries Regulation",
+   "access": "authorities",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "11",
+   "category": "Identifiers and product data",
+   "sub_category": "Identifier",
+   "definition": "The unique identifier of a facility",
+   "requirement_regulation": "A unique facility identifier is a unique string of characters for the identification of locations or buildings involved in a product’s value chain or used by actors involved in a product’s value chain. (JTC-24 prEN_18219 (3.20)) The unique facility identifiers shall, where relevant for the products concerned, comply with standards ISO/IEC 15459-1:2014, ISO/IEC 15459-2:2015, ISO/IEC 15459-3:2014, ISO/IEC 15459-4:2014, ISO/IEC 15459-5:2014 and ISO/IEC 15459-6:2014. (ESPR Annex III)",
+   "legal_reference": "JTC-24 prEN_18219 (3.20) (draft); JTC-24 prEN_18219 (draft); ESPR Annex III",
+   "legal_references": [
+    "JTC-24 prEN_18219 (3.20) (draft)",
+    "JTC-24 prEN_18219 (draft)",
+    "ESPR Annex III"
+   ],
+   "applicability": {
+    "EV": "required-by-other-instrument",
+    "LMT": "required-by-other-instrument",
+    "industrial-other-above-2kWh": "required-by-other-instrument",
+    "industrial-stationary-above-2kWh": "required-by-other-instrument"
+   },
+   "access_as_written": "Notified bodies, market surveillance authorities and the Commission",
+   "unit": "n.a.",
+   "data_format": "ID (string)",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per manufacturing site",
+   "separate_spec_chapter": "6.1.3.1",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:12",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 12",
+   "text": "Economic operator information",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "12",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "Information related to the economic operator",
+   "requirement_regulation": "-",
+   "legal_reference": "Art. 3, 1(22)",
+   "legal_references": [
+    "Art. 3, 1(22)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.1.2.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:13",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 13",
+   "text": "Manufacturer information",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "13",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "Information related to the manufacturer of the battery",
+   "requirement_regulation": "A battery passport must include information identifying the manufacturer. The manufacturer information must also be provided on the battery label. Where it is not possible to indicate the required information on the battery, it must be provided on the packaging or in a document accompanying the battery. The manufacturer information must include: - name; - registered trade name or registered trademark; - postal address, indicating a single contact point; - web address, if available; and - e-mail address, if available. The contact details must be indicated in a language or languages which can be easily understood by end-users and market surveillance authorities.",
+   "legal_reference": "Annex VI Part A (1); Art. 3, 1(33); Art. 38(7)",
+   "legal_references": [
+    "Annex VI Part A (1)",
+    "Art. 3, 1(33)",
+    "Art. 38(7)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per manufacturing site",
+   "separate_spec_chapter": "6.1.2.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:14",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 14",
+   "text": "Manufacturing place",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "14",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "The place of manufacture of the battery",
+   "requirement_regulation": "A battery passport must include the manufacturing place (geographical location of a battery manufacturing plant). It must be indicated as town, region and country/jurisdiction. The manufacturing place must also be provided on the battery label.",
+   "legal_reference": "Annex XIII (1a); Annex VI, Part A(3); Labelling IA (draft)",
+   "legal_references": [
+    "Annex XIII (1a)",
+    "Annex VI, Part A(3)",
+    "Labelling IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per manufacturing site",
+   "separate_spec_chapter": "6.1.3.1",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:15",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 15",
+   "text": "Manufacturing date",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "15",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "The date of manufacture of the battery",
+   "requirement_regulation": "A battery passport must include the date of manufacture (month and year). The manufacturing date must also be provided on the battery label. The manufacturing date must consist of the month and year of the date of manufacture.",
+   "legal_reference": "Annex XIII (1a); Annex VI Part A (4); Annex VII Part B (1); Labelling IA (draft)",
+   "legal_references": [
+    "Annex XIII (1a)",
+    "Annex VI Part A (4)",
+    "Annex VII Part B (1)",
+    "Labelling IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "Date[YYYY-MM]",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.1.3.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:16",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 16",
+   "text": "Date of putting the battery into service",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "16",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "The date of first use, for its intended purpose, in the European Union, of a battery, without having been previously placed on the market",
+   "requirement_regulation": "Where appropriate, the battery passport must include information on the date of putting the battery into service.",
+   "legal_reference": "Annex VII Part B (1)",
+   "legal_references": [
+    "Annex VII Part B (1)"
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "n.a.",
+   "data_format": "Date[YYYY-MM]",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.1.3.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:17",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 17",
+   "text": "Warranty period of the battery",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "17",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "Commercial warranty period for the battery",
+   "requirement_regulation": "The battery passport must include information about the period for which the commercial warranty applies.",
+   "legal_reference": "Annex XIII (1m)",
+   "legal_references": [
+    "Annex XIII (1m)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "Date[YYYY-MM]",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.1.3.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:18",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 18",
+   "text": "Battery category",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "18",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "Description of the scope of application of a battery in terms of its use according to the battery regulation",
+   "requirement_regulation": "A battery passport must include the battery category. The battery category must be provided on the battery label. The battery must be categorised by its intended use in: - LMT battery; - electric vehicle battery; or - industrial battery (stationary battery energy storage system/other industrial batteries).",
+   "legal_reference": "Annex XIII (1a); Annex VI Part A (2)",
+   "legal_references": [
+    "Annex XIII (1a)",
+    "Annex VI Part A (2)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.1.3.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:19",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 19",
+   "text": "Battery mass",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "19",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "The mass of the battery",
+   "requirement_regulation": "A battery passport must include the battery weight. Note: In all other instances we use the term mass instead of weight, which is used in the regulation: Regulatory requirements define the unit as kg or g per regulation and the physically correct term is then mass. The battery mass must also be provided on the battery label.",
+   "legal_reference": "Annex XIII (1a); Annex VI Part A (5); Labelling IA (draft)",
+   "legal_references": [
+    "Annex XIII (1a)",
+    "Annex VI Part A (5)",
+    "Labelling IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "g or kg",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.1.3.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:20",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 20",
+   "text": "Battery status",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "20",
+   "category": "Identifiers and product data",
+   "sub_category": "Product data",
+   "definition": "Current status of the battery item in its life cycle",
+   "requirement_regulation": "A battery passport must include information on the status of the battery. The status of the battery must be defined as ‘original’, ‘repurposed’, ‘re-used’, ‘remanufactured’ or ‘waste’. A new battery passport must be issued when a battery was subject to remanufacturing, repurpose or one of the treatment operations preparing for re-use and preparing for repurpose and is placed on the market again.",
+   "legal_reference": "Annex XIII 4(c)",
+   "legal_references": [
+    "Annex XIII 4(c)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "upon placement on market and battery status change",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.1.3.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:21",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 21",
+   "text": "Separate collection symbol",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "21",
+   "category": "Symbols, labels and documentation of conformity",
+   "sub_category": "-",
+   "definition": "Symbol indicating the necessity of separate collection",
+   "requirement_regulation": "The battery passport must include the symbol for separate collection. All batteries must be marked on the label with the symbol for separate collection from 18 August 2025. The separate collection symbol must cover at least 3 % of the area of the largest side of the battery with a maximum size of (5 × 5) cm2. For Cylindrical battery cells: The symbol must cover at least 1,5 % of the surface area of the battery and with a maximum size of (5 × 5) cm2. Where the symbol would be smaller than (0,47 × 0,47) cm2, the battery does not need to be marked with it. Instead, the symbol measuring at least (1 × 1) cm2 must be printed on the packaging.",
+   "legal_reference": "Annex XIII (1s); Art. 13(4); Annex VI Part B",
+   "legal_references": [
+    "Annex XIII (1s)",
+    "Art. 13(4)",
+    "Annex VI Part B"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.2.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:22",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 22",
+   "text": "Symbols for cadmium and lead",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "22",
+   "category": "Symbols, labels and documentation of conformity",
+   "sub_category": "-",
+   "definition": "Representation of the chemical symbol “Cd” for cadmium and “Pb” for lead contained in the battery",
+   "requirement_regulation": "The battery passport must include information regarding the prevention and management of waste batteries including the meaning of the labels and symbols on batteries or printed on their packaging or in the documents accompanying batteries. Batteries containing more than 0,002 % cadmium or more than 0,004 % lead, must be marked with the chemical symbol for the metal concerned: Cd or Pb. The symbols for cadmium and lead must also be provided on the battery label. The relevant chemical symbol indicating the heavy metal content must be printed beneath the separate collection symbol and must cover an area of at least one-quarter the size of that symbol.",
+   "legal_reference": "Annex XIII (1s) Art. 13(5);",
+   "legal_references": [
+    "Annex XIII (1s) Art. 13(5)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.2.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:23",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 23",
+   "text": "Carbon footprint label",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "23",
+   "category": "Symbols, labels and documentation of conformity",
+   "sub_category": "-",
+   "definition": "Label indicating the carbon footprint and carbon footprint performance class",
+   "requirement_regulation": "EV batteries, rechargeable industrial batteries > 2 kWh and LMT batteries shall bear a conspicuous, clearly legible and indelible label indicating the carbon footprint and declaring the carbon footprint performance class to which the relevant battery model per manufacturing plant corresponds. The format of the label is described in the Labelling IA and shall include: Reference to the relevant delegated act establishing the carbon footprint performance classes according to Article 7(2), fourth subparagraph, point (a) of Regulation (EU) 2023/1542 of the relevant battery category; Declaration of the carbon footprint performance class based on the relevant delegated act establishing the carbon footprint performance classes; Declared life-cycle carbon footprint expressed in a resolution of two significant figures in accordance with the methodology set out in the relevant delegated acts; The functional unit in accordance with the methodology set out in the relevant delegated acts adopted by the Commission.",
+   "legal_reference": "Article 7(2) via Annex XIII (1c); Labelling IA (draft) Annex V",
+   "legal_references": [
+    "Article 7(2) via Annex XIII (1c)",
+    "Labelling IA (draft) Annex V"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.2.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:24",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 24",
+   "text": "Extinguishing agent",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "24",
+   "category": "Symbols, labels and documentation of conformity",
+   "sub_category": "-",
+   "definition": "Specification of the usable extinguishing agent",
+   "requirement_regulation": "A battery passport must include the usable extinguishing agent or if relevant, the fire class of that agent determined in accordance with standard EN 2:2005 The usable extinguishing agent must also be provided on the battery label.",
+   "legal_reference": "Annex VI Part A (9); Labelling IA (draft)",
+   "legal_references": [
+    "Annex VI Part A (9)",
+    "Labelling IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.2.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:25",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 25",
+   "text": "Meaning of labels and symbols",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "25",
+   "category": "Symbols, labels and documentation of conformity",
+   "sub_category": "-",
+   "definition": "Brief and easily understandable explanatory sentence conveying the meaning of symbols and labels used",
+   "requirement_regulation": "The battery passport must include information regarding the prevention and management of waste batteries including the meaning of the labels and symbols on batteries or printed on their packaging or in the documents accompanying batteries. The information must be communicated in (a) language(s) easily understood by end-users. All labels and symbols used in the battery label must be accompanied by a brief and easily understandable explanatory sentence.",
+   "legal_reference": "Annex XIII (1s);Art. 74 1(e); Labelling IA (draft)",
+   "legal_references": [
+    "Annex XIII (1s)",
+    "Art. 74 1(e)",
+    "Labelling IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.2.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:26",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 26",
+   "text": "EU declaration of conformity",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "26",
+   "category": "Symbols, labels and documentation of conformity",
+   "sub_category": "-",
+   "definition": "The document that declares compliance with requirements for placement on EU market",
+   "requirement_regulation": "A battery passport must include the EU declaration of conformity. The regulation specifies the following requirements regarding the EU declaration of conformity (see BattReg Annex XIII (1r) and BattReg Article 18 (2)): - The EU declaration of conformity has the model structure set out in Annex IX. - The EU declaration of conformity must contain the elements specified in the relevant modules set out in Annex VIII. - The EU declaration of conformity must be kept up to date. - It is translated into the language or languages required by the Member State in which the battery is placed or made available on the market or put into service. - It must be drawn up in electronic format and, where requested, it must be provided in paper format.",
+   "legal_reference": "Annex XIII (1r); Art. 18; Annex IX",
+   "legal_references": [
+    "Annex XIII (1r)",
+    "Art. 18",
+    "Annex IX"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.2.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:27",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 27",
+   "text": "Results of test reports proving compliance",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "authorities",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "27",
+   "category": "Symbols, labels and documentation of conformity",
+   "sub_category": "-",
+   "definition": "Test report results proving compliance with the requirements stated in the battery regulation",
+   "requirement_regulation": "A battery passport must include the test report results that can prove the compliance with the requirements stated in the battery regulation.",
+   "legal_reference": "Annex XIII (3); Annex VIII Part A 2(h)",
+   "legal_references": [
+    "Annex XIII (3)",
+    "Annex VIII Part A 2(h)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Notified bodies, market surveillance authorities and the Commission",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.2.8",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:28",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 28",
+   "text": "Battery carbon footprint per Functional Unit",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "28",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "The battery carbon footprint must be included as declared in terms of kg of carbon dioxide equivalent per one kWh of the total energy provided by the battery over its expected service life.",
+   "requirement_regulation": "The battery passport must contain carbon footprint per functional unit of the battery as declared in the battery carbon footprint declaration in accordance with the entry into force of the implementing acts on the format of declaration.",
+   "legal_reference": "Annex XIII (1c) → Art. 7; EV CF DA (draft); CF declaration IA (draft)",
+   "legal_references": [
+    "Annex XIII (1c) → Art. 7",
+    "EV CF DA (draft)",
+    "CF declaration IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "kgCO2eq/kWh",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:29",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 29",
+   "text": "Contribution of raw material acquisition and pre-processing lifecycle stage",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "29",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "Contribution of raw material acquisition and pre-processing lifecycle stage to the battery carbon footprint",
+   "requirement_regulation": "A battery passport must include the contribution of the lifecycle stage “Raw material acquisition and pre-processing” in the battery carbon footprint. The system boundaries and reporting requirements are specified in the delegated acts for the carbon footprint methodology outlined in \"Battery carbon footprint per Functional Unit\" The same mandatory requirements as for \"Battery carbon footprint per Functional Unit\" are required for this data point.",
+   "legal_reference": "Annex XIII (1c) → Art. 7; Annex II (4); EV CF DA (draft); CF declaration IA (draft)",
+   "legal_references": [
+    "Annex XIII (1c) → Art. 7",
+    "Annex II (4)",
+    "EV CF DA (draft)",
+    "CF declaration IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "kgCO2eq/kWh",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:30",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 30",
+   "text": "Contribution of main product production lifecycle stage",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "30",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "Contribution of the main product production lifecycle stage to the battery carbon footprint",
+   "requirement_regulation": "A battery passport must include the contribution of the lifecycle stage “Main product production” in the battery carbon footprint. The system boundaries and reporting requirements are specified in the delegated acts for the carbon footprint methodology outlined in \"Battery carbon footprint per Functional Unit\" The same mandatory requirements as for \"Battery carbon footprint per Functional Unit\" are required for this data point.",
+   "legal_reference": "Annex XIII (1c) → Art. 7; Annex II (4); EV CF DA (draft); CF declaration IA (draft)",
+   "legal_references": [
+    "Annex XIII (1c) → Art. 7",
+    "Annex II (4)",
+    "EV CF DA (draft)",
+    "CF declaration IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "kgCO2eq/kWh",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:31",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 31",
+   "text": "Contribution of distribution lifecycle stage",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "31",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "Contribution of the distribution lifecycle stage to the battery's carbon footprint",
+   "requirement_regulation": "A battery passport must include the contribution of the lifecycle stage “Distribution” in the battery carbon footprint. The system boundaries and reporting requirements are specified in the delegated acts for the carbon footprint methodology outlined in \"Battery carbon footprint per Functional Unit\" The same mandatory requirements as for \"Battery carbon footprint per Functional Unit\" are required for this data point.",
+   "legal_reference": "Annex XIII 1(c) → Art. 7; Annex II (4); EV CF DA (draft); CF declaration IA (draft)",
+   "legal_references": [
+    "Annex XIII 1(c) → Art. 7",
+    "Annex II (4)",
+    "EV CF DA (draft)",
+    "CF declaration IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "kgCO2eq/kWh",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:32",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 32",
+   "text": "Contribution of end of life and recycling lifecycle stage",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "32",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "Contribution of the end of life and recycling lifecycle stage to the battery's carbon footprint",
+   "requirement_regulation": "A battery passport must include the contribution of the lifecycle stage “End of life and Recycling” in the battery carbon footprint. The system boundaries and reporting requirements are specified in the delegated acts for the carbon footprint methodology outlined in \"Battery carbon footprint per Functional Unit\" The same mandatory requirements as for \"Battery carbon footprint per Functional Unit\" are required for this data point.",
+   "legal_reference": "Annex XIII (1c) → Art. 7; Annex II (4); EV CF DA (draft); CF declaration IA (draft)",
+   "legal_references": [
+    "Annex XIII (1c) → Art. 7",
+    "Annex II (4)",
+    "EV CF DA (draft)",
+    "CF declaration IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "kgCO2eq/kWh",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:33",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 33",
+   "text": "Carbon footprint performance class",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "33",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "Depending on the distribution of the values in the carbon footprint declarations of batteries placed on the market, a meaningful number of classes of performance shall be identified, with category A being the best class with the lowest carbon footprint life cycle impact, to enable market differentiation",
+   "requirement_regulation": "The battery passport must include the carbon footprint performance class in accordance with the entry into force of the delegated and implementing acts on the carbon footprint performance classes per Article 7 of the Battery Regulation. The carbon footprint performance class shall be indicated on the carbon footprint label.",
+   "legal_reference": "Annex XIII (1c); Art. 7(2); Labelling IA (draft) Annex V",
+   "legal_references": [
+    "Annex XIII (1c)",
+    "Art. 7(2)",
+    "Labelling IA (draft) Annex V"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:34",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 34",
+   "text": "Web link to public carbon footprint study",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "34",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "The public version of the carbon footprint study",
+   "requirement_regulation": "The battery passport must include a web link to the carbon footprint study accompanying the battery carbon footprint declaration. The information and reporting requirements are specified in the corresponding delegated acts as outlined in 6.3.2 \"Battery carbon footprint per Functional Unit\".",
+   "legal_reference": "Annex XIII (1c); Art. 7 1(g); EV CF DA (draft)",
+   "legal_references": [
+    "Annex XIII (1c)",
+    "Art. 7 1(g)",
+    "EV CF DA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.8",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:35",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 35",
+   "text": "Absolute battery carbon footprint",
+   "mandatory": "no",
+   "condition": "",
+   "access": "public",
+   "applies_to": [],
+   "joins": [],
+   "number": "35",
+   "category": "Battery carbon footprint",
+   "sub_category": "-",
+   "definition": "Battery carbon footprint as absolute number",
+   "requirement_regulation": "-",
+   "legal_reference": "n.a.",
+   "legal_references": [
+    "n.a."
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "voluntary",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "voluntary"
+   },
+   "access_as_written": "Public",
+   "unit": "kgCO2eq",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.3.10",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:36",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 36",
+   "text": "Information of due diligence report",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "36",
+   "category": "Supply chain due diligence",
+   "sub_category": "-",
+   "definition": "The report on the supply chain due diligence policy, risk management plan, and summary of third-party verification.",
+   "requirement_regulation": "The battery passport must include the “information on responsible sourcing as indicated in the report on its due diligence policy referred to in BattReg Article 52(3)”. The due diligence report must be accessible free of charge to the public via the battery passport and also on the internet. The report and hence also the information in the battery passport must provide data and information on four aspects: - Supply chain due diligence policy: steps taken by the economic operator to comply with the requirements of Article 49. - Risk management plan: steps taken by the economic operator to comply with the requirements of Article 50, including findings of significant adverse impacts. - Summary report of the third-party verification carried out (Article 51). - An elaboration on access to information, public participation in decision-making and access to justice.",
+   "legal_reference": "Art. 52(3)",
+   "legal_references": [
+    "Art. 52(3)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.4.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:37",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 37",
+   "text": "Third party assurances of recognised schemes",
+   "mandatory": "no",
+   "condition": "",
+   "access": "public",
+   "applies_to": [],
+   "joins": [],
+   "number": "37",
+   "category": "Supply chain due diligence",
+   "sub_category": "-",
+   "definition": "Information on supply chain scheme assurances granted by third-party actors",
+   "requirement_regulation": "-",
+   "legal_reference": "Art. 49(d)",
+   "legal_references": [
+    "Art. 49(d)"
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "voluntary",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "voluntary"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.4.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:38",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 38",
+   "text": "Supply chain indices",
+   "mandatory": "no",
+   "condition": "",
+   "access": "public",
+   "applies_to": [],
+   "joins": [],
+   "number": "38",
+   "category": "Supply chain due diligence",
+   "sub_category": "-",
+   "definition": "Information on relevant supply chain indices",
+   "requirement_regulation": "-",
+   "legal_reference": "n.a.",
+   "legal_references": [
+    "n.a."
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "voluntary",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "voluntary"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.4.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:39",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 39",
+   "text": "Battery chemistry",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "39",
+   "category": "Battery materials and composition",
+   "sub_category": "-",
+   "definition": "The electrochemical composition reflecting active materials in cathode and anode, and - voluntarily - electrolyte",
+   "requirement_regulation": "The battery passport must contain information on the battery chemistry of the battery. The battery chemistry must also be provided on the battery label Base on the labelling IA (currently available as draft), the following terms shall be used: Lead acid: “Pb” Nickel cadmium: “Ni-Cd” Nickel metal hydride: “Ni-MH” Lithium ion NMC: “Li-ion NMC” Lithium ion LFP: “Li-ion LFP” Lithium ion LMO: “Li-ion LMO” Lithium ion LCO: “Li-ion LCO” Lithium ion NCA: “Li-ion NCA” Lithium metal: “Li-metal” Sodium-ion: “Na-ion” For secondary (rechargeable) batteries whose electrochemical composition does not correspond to any of the categories listed above, it shall be indicated based on the molecular formula of the cathode and/or anode.",
+   "legal_reference": "Annex XIII (1b); Annex VI Part A (7); Labelling IA (draft)",
+   "legal_references": [
+    "Annex XIII (1b)",
+    "Annex VI Part A (7)",
+    "Labelling IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.5.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:40",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 40",
+   "text": "Critical raw materials",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "40",
+   "category": "Battery materials and composition",
+   "sub_category": "-",
+   "definition": "Critical raw materials present in a concentration of more than 0,1%, weight by weight",
+   "requirement_regulation": "The battery passport must contain information on the critical raw materials present in the battery. Critical raw materials are listed in Annex II of Regulation (EU) 2024/1252. The information on the critical raw materials must also be provided on the battery label. Per Annex VI, Part A(10), critical raw materials must be reported if present in the battery in a concentration of more than 0,1 % weight by weight.",
+   "legal_reference": "Annex XIII (1b); Annex VI Part A (10); Labelling IA (draft)",
+   "legal_references": [
+    "Annex XIII (1b)",
+    "Annex VI Part A (10)",
+    "Labelling IA (draft)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.5.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:41",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 41",
+   "text": "Materials used in cathode, anode and electrolyte",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "41",
+   "category": "Battery materials and composition",
+   "sub_category": "-",
+   "definition": "Detailed composition of cathode, anode and electrolyte",
+   "requirement_regulation": "The battery passport must contain information on the detailed composition of the battery. Information on the detailed composition must include materials used in the cathode, anode and electrolyte.",
+   "legal_reference": "Annex XIII (2a)",
+   "legal_references": [
+    "Annex XIII (2a)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest and the Commission",
+   "unit": "n.a.",
+   "data_format": "Array (string)",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.5.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:42",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 42",
+   "text": "Hazardous substances",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "42",
+   "category": "Battery materials and composition",
+   "sub_category": "-",
+   "definition": "Substances of very high concern in the meaning of Article 3 (1) (69) which are present in the battery, other than mercury, cadmium and lead, with a concentration equal or above 0,1%, weight on weight.’",
+   "requirement_regulation": "The battery passport must contain information on substances of very high concern other than mercury, cadmium, or lead contained in the battery. substances of very high concern in the meaning of Article 3 (1) (69) which are present in the battery, other than mercury, cadmium and lead, with a concentration equal or above 0,1%, weight on weight. ‘substance of very high concern’ means any substance which fulfils the criteria laid down in Article 57 of Regulation (EC) No 1907/2006 [REACH] and is identified in accordance with Article 59(1) of that Regulation, or any substance which fulfils the criteria laid down in Article 57 of Regulation (EC) No 1907/2006 [REACH] and listed in Annex VI of Regulation (EC) 1272/2008 [CLP Regulation].’ Substances of very high concern and those for which there is a restriction in BattReg Annex I [mercury, cadmium, lead] are required to be named in accordance with their nomenclature in Regulation (EC) 1272/2008 (\"CLP Regulation\"). The information on hazardous substances must also be provided on the battery label. BattReg Article 74(3) states that the location of the hazardous substances in the battery must be identified. This requirement needs to be provided upon request even though it is not specifically for the battery passport and can be integrated.",
+   "legal_reference": "Annex XIII (1b); Annex VI Part A (8); Labelling IA (draft), Environmental Omnibus: Draft: 2025/0397 (COD), Art. 1 (4)",
+   "legal_references": [
+    "Annex XIII (1b)",
+    "Annex VI Part A (8)",
+    "Labelling IA (draft), Environmental Omnibus: Draft: 2025/0397 (COD), Art. 1 (4)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "Array (string)",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.5.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:43",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 43",
+   "text": "Impact of substances on environment, human health, safety, persons",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "43",
+   "category": "Battery materials and composition",
+   "sub_category": "-",
+   "definition": "Elaboration on the impact of substances contained in the battery on the environment, human health and the safety of persons",
+   "requirement_regulation": "The battery passport must contain information on the impact of substances, in particular hazardous substances, present in the battery. Hereby the impact on the environment and on human health or the safety of persons is considered and includes the impact due to inappropriate discarding of waste batteries, such as littering or discarding as unsorted municipal waste.",
+   "legal_reference": "Annex XIII (1s); Art. 74 1(f)",
+   "legal_references": [
+    "Annex XIII (1s)",
+    "Art. 74 1(f)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.5.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:44",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 44",
+   "text": "Dismantling information: Manuals for the removal and the disassembly of the battery pack",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "44",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Circularity information",
+   "definition": "Manual(s) containing information on the removal and disassembly of the battery pack",
+   "requirement_regulation": "A battery passport must include dismantling information. The dismantling information must include: - exploded diagrams of the battery system/pack showing the location of battery cells; - disassembly sequences; - type and number of fastening techniques to be unlocked; - tools required for disassembly; - warnings if risk of damaging parts exist; and - amount of cells used and layout.",
+   "legal_reference": "Annex XIII (2c);",
+   "legal_references": [
+    "Annex XIII (2c)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest and the Commission",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.6.1.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:45",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 45",
+   "text": "Part numbers for components",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "45",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Circularity information",
+   "definition": "The part numbers of components of the battery",
+   "requirement_regulation": "A battery passport must include part numbers for components.",
+   "legal_reference": "Annex XIII (2b)",
+   "legal_references": [
+    "Annex XIII (2b)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest and the Commission",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.6.1.3",
+   "separate_spec_has_requirement_text": false
+  },
+  {
+   "id": "longlist:46",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 46",
+   "text": "Information on sources of spare parts",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "46",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Circularity Information",
+   "definition": "Information on how to contact sources of spare parts",
+   "requirement_regulation": "A battery passport must include contact details of sources for spare parts (replacement spares).",
+   "legal_reference": "Annex XIII (2b);",
+   "legal_references": [
+    "Annex XIII (2b)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest and the Commission",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.6.1.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:47",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 47",
+   "text": "Safety measures",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "47",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Circularity information",
+   "definition": "Safety measures to be taken during battery handling, including the dismantling",
+   "requirement_regulation": "A battery passport must include safety measures.",
+   "legal_reference": "Annex XIII (2d); Art. 74(2)",
+   "legal_references": [
+    "Annex XIII (2d)",
+    "Art. 74(2)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest and the Commission",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.6.1.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:48",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 48",
+   "text": "Pre-consumer recycled nickel share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "48",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "The share of nickel recycled from pre-consumer waste in the active materials of the battery",
+   "requirement_regulation": "A battery passport must include recycled content information. The content information must include the percentage share of nickel that is present in active materials and that has been recovered from battery manufacturing waste, for each battery model per year and per manufacturing plant. Pre-consumer waste or “battery manufacturing waste” is “the materials or objects rejected during the battery manufacturing process, which cannot be re-used as an integral part in the same process and need to be recycled”",
+   "legal_reference": "Annex XIII (1e); Art. 8(1), Art. 3, 1(51)",
+   "legal_references": [
+    "Annex XIII (1e)",
+    "Art. 8(1), Art. 3, 1(51)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:49",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 49",
+   "text": "Pre-consumer recycled cobalt share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "49",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "The share of cobalt recycled from pre-consumer waste in the active materials of the battery",
+   "requirement_regulation": "A battery passport must include recycled content information. The content information must include the percentage share of cobalt that is present in active materials and that has been recovered from battery manufacturing waste, for each battery model per year and per manufacturing plant. Pre-consumer waste or “battery manufacturing waste” is “the materials or objects rejected during the battery manufacturing process, which cannot be re-used as an integral part in the same process and need to be recycled”",
+   "legal_reference": "Annex XIII (1e); Art. 8(1), Art. 3, 1(51)",
+   "legal_references": [
+    "Annex XIII (1e)",
+    "Art. 8(1), Art. 3, 1(51)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:50",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 50",
+   "text": "Pre-consumer recycled lithium share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "50",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "The share of lithium recycled from pre-consumer waste in the active materials of the battery",
+   "requirement_regulation": "A battery passport must include recycled content information. The content information must include the percentage share of lithium that is present in active materials and that has been recovered from battery manufacturing waste, for each battery model per year and per manufacturing plant. Pre-consumer waste or “battery manufacturing waste” is “the materials or objects rejected during the battery manufacturing process, which cannot be re-used as an integral part in the same process and need to be recycled”",
+   "legal_reference": "Annex XIII (1e); Art. 8(1), Art. 3, 1(51)",
+   "legal_references": [
+    "Annex XIII (1e)",
+    "Art. 8(1), Art. 3, 1(51)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:51",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 51",
+   "text": "Post-consumer recycled nickel share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "51",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "The share of nickel recycled from post-consumer waste in the active materials of the battery",
+   "requirement_regulation": "A battery passport must include recycled content information. The content information must include the percentage share of nickel that is present in active materials and that has been recovered from post-consumer waste, for each battery model per year and per manufacturing plant.",
+   "legal_reference": "Annex XIII (1e); Art. 8(1)",
+   "legal_references": [
+    "Annex XIII (1e)",
+    "Art. 8(1)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:52",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 52",
+   "text": "Post-consumer recycled cobalt share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "52",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "The share of cobalt recycled from post-consumer waste in the active materials of the battery",
+   "requirement_regulation": "A battery passport must include recycled content information. The content information must include the percentage share of cobalt that is present in active materials and that has been recovered from post-consumer waste, for each battery model per year and per manufacturing plant.",
+   "legal_reference": "Annex XIII (1e); Art. 8(1)",
+   "legal_references": [
+    "Annex XIII (1e)",
+    "Art. 8(1)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.8",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:53",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 53",
+   "text": "Post-consumer recycled lithium share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "53",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "The share of lithium recycled from post-consumer waste in the active materials of the battery",
+   "requirement_regulation": "A battery passport must include recycled content information. The content information must include the percentage share of lithium that is present in active materials and that has been recovered from post-consumer waste, for each battery model per year and per manufacturing plant.",
+   "legal_reference": "Annex XIII (1e); Art. 8(1)",
+   "legal_references": [
+    "Annex XIII (1e)",
+    "Art. 8(1)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.9",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:54",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 54",
+   "text": "Recycled lead share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "54",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "The share of recycled lead in the active materials of the battery",
+   "requirement_regulation": "A battery passport must include recycled content information. The content information must include the percentage share of lead that is present in the active materials of the battery and that has been recovered from waste, for each battery model per year and per manufacturing plant. The regulation does not distinguish between pre- and post-consumer waste for the lead share.",
+   "legal_reference": "Annex XIII (1e); Art. 8(1)",
+   "legal_references": [
+    "Annex XIII (1e)",
+    "Art. 8(1)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.6, 6.6.2.10",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:55",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 55",
+   "text": "Renewable content share",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "55",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Recycled and renewable content",
+   "definition": "Share of renewable content in the battery",
+   "requirement_regulation": "A battery passport must include information about the share of renewable content.",
+   "legal_reference": "Annex XIII (1f)",
+   "legal_references": [
+    "Annex XIII (1f)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model per calendar year and per manufacturing site, i.e. batch level",
+   "separate_spec_chapter": "6.6.2.11",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:56",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 56",
+   "text": "Information on the role of end-users in contributing to waste prevention",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "56",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Information on role of end-users in waste prevention and information on battery collection, preparation for second life and on treatment at end of life",
+   "definition": "Information on how end-users can contribute to waste prevention",
+   "requirement_regulation": "A battery passport must include information on the role of end-users in contributing to waste prevention. The information must include good practices and recommendations concerning the use of batteries aimed at extending their use phase and the possibilities of re-use, preparation for re-use, preparation for repurposing, repurposing and remanufacturing.",
+   "legal_reference": "Art. 74(1a)",
+   "legal_references": [
+    "Art. 74(1a)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.6.3.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:57",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 57",
+   "text": "Information on the role of end-users in contributing to the separate collection of waste batteries",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "57",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Information on role of end-users in waste prevention and information on battery collection, preparation for second life and on treatment at end of life",
+   "definition": "Information on how end-users can contribute to the separate collection of waste batteries",
+   "requirement_regulation": "A battery passport must include information on the role of end-users in contributing to the separate collection of waste batteries. End-users are obliged to discard waste batteries separately from other waste streams, including from mixed municipal waste and in designated separate collection points set up by, or in accordance with the specific arrangements concluded with, the producer or a producer responsibility organisation.",
+   "legal_reference": "Art. 74(1b); Art. 64(1); Art. 64(2)",
+   "legal_references": [
+    "Art. 74(1b)",
+    "Art. 64(1)",
+    "Art. 64(2)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.6.3.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:58",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 58",
+   "text": "Information on battery collection, preparation for second life and on treatment at end of life",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "58",
+   "category": "Circularity and resource efficiency",
+   "sub_category": "Information on role of end-users in waste prevention and information on battery collection, preparation for second life and on treatment at end of life",
+   "definition": "Information on the collection of waste batteries, their preparation for second life and definitive treatment at end of life",
+   "requirement_regulation": "A battery passport must include information on the separate collection, take-back and collection points, preparation for re-use, preparation for repurposing and treatment available for waste batteries.",
+   "legal_reference": "Art. 74(1c)",
+   "legal_references": [
+    "Art. 74(1c)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.6.3.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:59",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 59",
+   "text": "Rated capacity",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "59",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The total number of ampere-hours that can be withdrawn from a fully charged battery under reference conditions",
+   "requirement_regulation": "The battery passport must include information about the rated capacity. The rated capacity of LMT batteries shall be determined according to reliable, accurate and reproducible methods which take into account the generally recognised state-of-the-art methods, and the results of which are deemed to be of low uncertainty, including methods set out in standards for which references have been published for those purposes in the Official Journal of the European Union (OJEU). Note: (For LMT batteries) the rated capacity is included in the required information for the battery label.",
+   "legal_reference": "Annex IV Part A (1); Annex XIII (1g); Labelling IA (draft) Annex II Part A (VI) and Part C (C, 1)",
+   "legal_references": [
+    "Annex IV Part A (1)",
+    "Annex XIII (1g)",
+    "Labelling IA (draft) Annex II Part A (VI) and Part C (C, 1)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "Ah or mAh (for LMT)",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.2.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:60",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 60",
+   "text": "Remaining capacity",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "60",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The corresponding in-use data attribute to rated capacity",
+   "requirement_regulation": "The battery passport must include information about the rated capacity. The rated capacity of LMT batteries shall be determined according to reliable, accurate and reproducible methods which take into account the generally recognised state-of-the-art methods, and the results of which are deemed to be of low uncertainty, including methods set out in standards for which references have been published for those purposes in the Official Journal of the European Union (OJEU). Note: (For LMT batteries) the rated capacity is included in the required information for the battery label.",
+   "legal_reference": "Annex VII Part A (1)",
+   "legal_references": [
+    "Annex VII Part A (1)"
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "Ah",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.2.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:61",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 61",
+   "text": "Capacity fade",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "61",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The decrease over time and upon usage in the amount of charge that a battery can deliver at the rated voltage, with respect to the original rated capacity as declared by the manufacturer",
+   "requirement_regulation": "The battery passport must include information on the capacity fade. The capacity fade must be updated upon change of the battery status.",
+   "legal_reference": "Annex IV Part A (1); Annex IV (2)",
+   "legal_references": [
+    "Annex IV Part A (1)",
+    "Annex IV (2)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "upon placement on market and battery status change",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.2.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:62",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 62",
+   "text": "Certified usable battery energy",
+   "mandatory": "no",
+   "condition": "",
+   "access": "public",
+   "applies_to": [],
+   "joins": [],
+   "number": "62",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The usable battery energy according to the procedure in the UN GTR No 22 as determined during the certification of the vehicle",
+   "requirement_regulation": "-",
+   "legal_reference": "n.a.",
+   "legal_references": [
+    "n.a."
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "not-stated",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "not-stated"
+   },
+   "access_as_written": "Public",
+   "unit": "kWh",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.2.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:63",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 63",
+   "text": "Remaining usable battery energy",
+   "mandatory": "no",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [],
+   "joins": [],
+   "number": "63",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The usable battery energy at the present point in the lifetime of a battery as determined according to the procedure in the UN GTR No 22",
+   "requirement_regulation": "-",
+   "legal_reference": "n.a.",
+   "legal_references": [
+    "n.a."
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "not-stated",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "not-stated"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "kWh",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.2.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:64",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 64",
+   "text": "State of certified energy (SOCE)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV"
+   ],
+   "joins": [],
+   "number": "64",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The measured or on-board usable battery energy performance at a specific point in its lifetime, expressed as a percentage of the certified usable battery energy.",
+   "requirement_regulation": "The battery passport must include information on the SOCE as information on the state of health of the battery pursuant to BattReg Article 14 for individual batteries.",
+   "legal_reference": "Annex VII Part A (EV)",
+   "legal_references": [
+    "Annex VII Part A (EV)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "not-stated",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "not-stated"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.2.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:65",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 65",
+   "text": "State of Charge (SoC)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "65",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The available energy or charge in a battery expressed as a percentage of rated capacity as declared by the manufacturer. When the battery’s state of health is no longer equal to its initial condition, SoC refers to the maximum energy or charge that can be stored in the battery at the time of charging.",
+   "requirement_regulation": "The battery passport shall include the state of charge (SoC) of the battery.",
+   "legal_reference": "Annex XIII (4d); Article 3 1(27); Standardization request M/579",
+   "legal_references": [
+    "Annex XIII (4d)",
+    "Article 3 1(27)",
+    "Standardization request M/579"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.2.8",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:66",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 66",
+   "text": "Minimum voltage",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "66",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The lower voltage limit that the safe operation of the battery is rated for",
+   "requirement_regulation": "The battery passport must include information on the minimal voltage, with temperature ranges when relevant.",
+   "legal_reference": "Annex XIII (1h)",
+   "legal_references": [
+    "Annex XIII (1h)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "V",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.2.9",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:67",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 67",
+   "text": "Maximum voltage",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "67",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The upper voltage limit that the safe operation of the battery is rated for",
+   "requirement_regulation": "The battery passport must include information about the maximum voltage, with temperature ranges when relevant.",
+   "legal_reference": "Annex XIII (1h)",
+   "legal_references": [
+    "Annex XIII (1h)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "V",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.2.10",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:68",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 68",
+   "text": "Nominal voltage",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "68",
+   "category": "Performance and durability",
+   "sub_category": "Capacity, energy, and voltage",
+   "definition": "The suitable approximate value of the voltage used to designate or identify the battery",
+   "requirement_regulation": "The battery passport must include information about the nominal voltage, with temperature ranges when relevant.",
+   "legal_reference": "Annex XIII (1h)",
+   "legal_references": [
+    "Annex XIII (1h)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "V",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.2.11",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:69",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 69",
+   "text": "Original power capability",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "69",
+   "category": "Performance and durability",
+   "sub_category": "Power capability",
+   "definition": "The amount of energy that a battery is capable to provide over a given period of time under reference conditions",
+   "requirement_regulation": "The battery passport must include information about the original power capability […], with temperature range when relevant.",
+   "legal_reference": "Annex XIII (1i); Art. 10, Annex IV Part B (4) → measurement at 80 % SoC and 20% SoC required; Annex IV (3)",
+   "legal_references": [
+    "Annex XIII (1i)",
+    "Art. 10, Annex IV Part B (4) → measurement at 80 % SoC and 20% SoC required",
+    "Annex IV (3)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "W",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.3.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:70",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 70",
+   "text": "Remaining power capability",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "70",
+   "category": "Performance and durability",
+   "sub_category": "Power capability",
+   "definition": "The amount of energy that a battery is capable to provide over a given period of time under reference conditions at a distinct point in time during its usage",
+   "requirement_regulation": "The battery passport must, where possible, contain information on the remaining power capability as information on the state of health of the battery",
+   "legal_reference": "Art. 10: Annex IV (3) (only definition of power); Annex VII Part A (2) \"where possible, remaining power capability\"; Annex IV Part B (4) --> measurement at 80 % SoC and 20% SoC required",
+   "legal_references": [
+    "Art. 10: Annex IV (3) (only definition of power)",
+    "Annex VII Part A (2) \"where possible, remaining power capability\"",
+    "Annex IV Part B (4) --> measurement at 80 % SoC and 20% SoC required"
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "W",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.3.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:71",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 71",
+   "text": "Power fade",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "71",
+   "category": "Performance and durability",
+   "sub_category": "Power capability",
+   "definition": "The decrease over time and upon usage in the amount of power that a battery can deliver at the rated voltage",
+   "requirement_regulation": "The battery passport must contain information on the power fade. The update interval must be upon placement on the market and upon change of the battery status.",
+   "legal_reference": "Annex IV P(4) (\"power fade\" definition); Annex IV Part A (2) (power fade in %) Annex IV Part B (4) → measurement at 80 % SoC required;",
+   "legal_references": [
+    "Annex IV P(4) (\"power fade\" definition)",
+    "Annex IV Part A (2) (power fade in %) Annex IV Part B (4) → measurement at 80 % SoC required"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "upon placement on market and battery status change",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.3.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:72",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 72",
+   "text": "Maximum permitted battery power",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "72",
+   "category": "Performance and durability",
+   "sub_category": "Power capability",
+   "definition": "The value of maximum permitted power the battery is rated for and reflects the data relevant for power limits",
+   "requirement_regulation": "The battery passport must include information about the original power capability and limits, with temperature range when relevant.",
+   "legal_reference": "Annex XIII (1i) (power limits)",
+   "legal_references": [
+    "Annex XIII (1i) (power limits)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "W",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.3.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:73",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 73",
+   "text": "Ratio between nominal battery power and battery energy",
+   "mandatory": "no",
+   "condition": "",
+   "access": "public",
+   "applies_to": [],
+   "joins": [],
+   "number": "73",
+   "category": "Performance and durability",
+   "sub_category": "Power capability",
+   "definition": "The suitable approximate value of the power capability used to designate or identify the battery, while the battery energy is determined in reference conditions to be defined",
+   "requirement_regulation": "-",
+   "legal_reference": "Annex IV Part B (2)",
+   "legal_references": [
+    "Annex IV Part B (2)"
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "voluntary",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "voluntary"
+   },
+   "access_as_written": "Public",
+   "unit": "W/Wh",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "upon placement on market and battery status change",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.3.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:74",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 74",
+   "text": "Initial round trip energy efficiency",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "74",
+   "category": "Performance and durability",
+   "sub_category": "Round trip energy efficiency and self-discharge",
+   "definition": "The ratio of the net energy delivered by a battery during a discharge test to the total energy required to restore the initial state of charge by a standard charge (see BattReg Annex IV (6))",
+   "requirement_regulation": "The battery passport must include information about the initial round trip energy efficiency.",
+   "legal_reference": "Annex XIII (1n); Art. 10: Annex IV (6); Annex IV Part A (4)",
+   "legal_references": [
+    "Annex XIII (1n)",
+    "Art. 10: Annex IV (6)",
+    "Annex IV Part A (4)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.4.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:75",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 75",
+   "text": "Round trip energy efficiency at 50% of cycle life",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "75",
+   "category": "Performance and durability",
+   "sub_category": "Round trip energy efficiency and self-discharge",
+   "definition": "The ratio of the net energy delivered by a battery during a discharge test to the total energy required to restore the initial state of charge by a standard charge (see BattReg Annex IV (6))",
+   "requirement_regulation": "The battery passport must include information about the round trip energy efficiency at 50 % of cycle-life.",
+   "legal_reference": "Annex XIII 1(n); Annex IV (6)",
+   "legal_references": [
+    "Annex XIII 1(n)",
+    "Annex IV (6)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.4.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:76",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 76",
+   "text": "Remaining round trip energy efficiency",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "76",
+   "category": "Performance and durability",
+   "sub_category": "Round trip energy efficiency and self-discharge",
+   "definition": "The in-use analogy to the initial roundtrip energy the ratio of the net energy delivered by a battery during a discharge test to the total energy required to restore the initial state of charge by a standard charge",
+   "requirement_regulation": "The battery passport must, where possible, include information about the remaining round-trip energy efficiency as information on the state of health of the battery.",
+   "legal_reference": "Art. 10: Annex IV Part A (4); Article 14: Annex VII Part A (3); Annex IV (6)",
+   "legal_references": [
+    "Art. 10: Annex IV Part A (4)",
+    "Article 14: Annex VII Part A (3)",
+    "Annex IV (6)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.4.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:77",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 77",
+   "text": "Energy round trip efficiency fade",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "77",
+   "category": "Performance and durability",
+   "sub_category": "Round trip energy efficiency and self-discharge",
+   "definition": "The decrease of round trip energy efficiency as percentage",
+   "requirement_regulation": "The battery passport must, where applicable, contain information on the energy round trip efficiency fade. The energy round trip efficiency fade must be updated upon placement on the market and change of the battery status.",
+   "legal_reference": "Annex IV Part A (4)",
+   "legal_references": [
+    "Annex IV Part A (4)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "upon placement on market and battery status change",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.4.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:78",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 78",
+   "text": "Initial self-discharge rate",
+   "mandatory": "no",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [],
+   "joins": [],
+   "number": "78",
+   "category": "Performance and durability",
+   "sub_category": "Round trip energy efficiency and self-discharge",
+   "definition": "The self-discharge-rate in an idle state of the battery in reference conditions (temperature etc.) at begin of life",
+   "requirement_regulation": "-",
+   "legal_reference": "n.a.",
+   "legal_references": [
+    "n.a."
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "voluntary",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "voluntary"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%/month",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.4.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:79",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 79",
+   "text": "Current self-discharge rate",
+   "mandatory": "no",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [],
+   "joins": [],
+   "number": "79",
+   "category": "Performance and durability",
+   "sub_category": "Round trip energy efficiency and self-discharge",
+   "definition": "The change of the self-discharge rate in an idle state of the battery in reference conditions (temperature etc.) at aging parameter x, e.g. after a certain amount of storage time or, number of cycles",
+   "requirement_regulation": "-",
+   "legal_reference": "n.a.",
+   "legal_references": [
+    "n.a."
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "voluntary",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "voluntary"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%/month",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.4.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:80",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 80",
+   "text": "Evolution of self-discharge rates",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "80",
+   "category": "Performance and durability",
+   "sub_category": "Round trip energy efficiency and self-discharge",
+   "definition": "The change of self-discharge over time and usage, as percentage calculated from the initial and current self-discharge rate.",
+   "requirement_regulation": "The battery passport must contain information on the evolution of self-discharge rates for stationary BESS and LMT batteries.",
+   "legal_reference": "Art. 14: Annex VII Part A (4)",
+   "legal_references": [
+    "Art. 14: Annex VII Part A (4)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.4.8",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:81",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 81",
+   "text": "Initial internal resistance of battery cell and pack (module recommended)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "81",
+   "category": "Performance and durability",
+   "sub_category": "Internal resistance",
+   "definition": "\"Quotient of change of voltage of a battery by the corresponding change in discharge current under specified conditions” (IEV 482 03 36)",
+   "requirement_regulation": "BattReg Annex IV (5) states that ‘Internal resistance’ means the opposition to the flow of current within a cell or a battery under reference conditions, that is, the sum of electronic resistance and ionic resistance to the contribution to total effective resistance including inductive/capacitive properties. This definition differs from the definition according to the IEC Electropedia stated above. The battery passport must include information about the internal resistance. The battery passport must include information about the internal resistance on both battery cell and pack level.",
+   "legal_reference": "Annex XIII (1o); Art. 10: Annex IV Part A (3) (+definition of internal resistance)",
+   "legal_references": [
+    "Annex XIII (1o)",
+    "Art. 10: Annex IV Part A (3) (+definition of internal resistance)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "Ohm",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.5.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:82",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 82",
+   "text": "Internal resistance increase of pack (cell and module recommended)",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "82",
+   "category": "Performance and durability",
+   "sub_category": "Internal resistance",
+   "definition": "The increase over time and upon usage of internal resistance",
+   "requirement_regulation": "The battery passport must include information about the internal resistance increase. The internal resistance increase must be updated upon change of the battery status, which is associated with a new placement on market and described in 6.1.3.7 \"battery status\".",
+   "legal_reference": "Annex IV, Part A(3)",
+   "legal_references": [
+    "Annex IV, Part A(3)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "upon placement on market and battery status change",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.5.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:83",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 83",
+   "text": "Expected lifetime in calendar years",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "83",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "Expected life-time under the reference conditions for which they have been designed in terms of cycles, except for non-cycle applications, and calendar years",
+   "requirement_regulation": "The battery passport must include information about the expected battery lifetime in calendar years. The update interval must be upon placement on the market and upon change of the battery status.",
+   "legal_reference": "Annex IV, Part A(5); Annex XIII (1); Annex XIII (4a)",
+   "legal_references": [
+    "Annex IV, Part A(5)",
+    "Annex XIII (1)",
+    "Annex XIII (4a)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "years",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.6.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:84",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 84",
+   "text": "Expected lifetime: Number of charge-discharge cycles",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "84",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "Expected life-time under the reference conditions for which they have been designed in terms of cycles, except for non-cycle applications, and calendar years",
+   "requirement_regulation": "The battery passport must include information about the expected battery lifetime expressed in cycles, and reference test used, except for non-cycle applications. The reference test must consider reference conditions for which the battery has been designed.",
+   "legal_reference": "Annex IV, Part A(5); Annex XIII (1); Annex XIII (4a)",
+   "legal_references": [
+    "Annex IV, Part A(5)",
+    "Annex XIII (1)",
+    "Annex XIII (4a)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.6.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:85",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 85",
+   "text": "Number of full charging and discharging cycles",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "85",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "In-use number of (full) charging and discharging cycles",
+   "requirement_regulation": "The battery passport must include information on the full number of charging and discharging cycles.",
+   "legal_reference": "Annex XIII (4d); Art. 14: Annex VII Part B (5)",
+   "legal_references": [
+    "Annex XIII (4d)",
+    "Art. 14: Annex VII Part B (5)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "n.a.",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.6.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:86",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 86",
+   "text": "Cycle-life reference test",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "86",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "The reference test for “Expected lifetime: Number of charge-discharge cycles”",
+   "requirement_regulation": "The battery passport must include information about the expected battery lifetime expressed in cycles, and reference test used.",
+   "legal_reference": "Annex XIII (1j)",
+   "legal_references": [
+    "Annex XIII (1j)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "n.a.",
+   "data_format": "String",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.6.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:87",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 87",
+   "text": "C-rate of relevant cycle-life test",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "87",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "Measurement parameter for “Expected lifetime: Number of charge-discharge cycles”: Applied charge and discharge rate in terms of rated capacity (C-rate) of relevant cycle-life reference test",
+   "requirement_regulation": "The battery passport must include information about the C-rate of relevant cycle-life test. The expected life-time of the battery under the reference conditions for which it has been designed must be documented in terms of cycles, except for non-cycle applications.",
+   "legal_reference": "Annex XIII (1p)",
+   "legal_references": [
+    "Annex XIII (1p)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "A/Ah",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.6.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:88",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 88",
+   "text": "Energy throughput",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "88",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "The overall sum of the energy throughput over the battery lifetime at a specific time during usage",
+   "requirement_regulation": "The battery passport must contain information on the energy throughput over the battery lifetime.",
+   "legal_reference": "Annex VII Part B (2)",
+   "legal_references": [
+    "Annex VII Part B (2)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "kWh",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.6.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:89",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 89",
+   "text": "Capacity throughput",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "89",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "The overall sum of the capacity throughput over the battery lifetime at a specific time during usage",
+   "requirement_regulation": "The battery passport must contain information on the capacity throughput.",
+   "legal_reference": "Annex VII Part B (3)",
+   "legal_references": [
+    "Annex VII Part B (3)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "Ah",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.6.8",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:90",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 90",
+   "text": "Capacity threshold for exhaustion",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV"
+   ],
+   "joins": [],
+   "number": "90",
+   "category": "Performance and durability",
+   "sub_category": "Battery lifetime",
+   "definition": "The percentage of SOCE, above which the battery is still considered operational as EV battery in its current life, as provided by the economic operator",
+   "requirement_regulation": "The battery passport must include information about the capacity threshold for exhaustion.",
+   "legal_reference": "Annex XIII (1k)",
+   "legal_references": [
+    "Annex XIII (1k)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "not-stated",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "not-stated"
+   },
+   "access_as_written": "Public",
+   "unit": "%",
+   "data_format": "Decimal",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.6.9",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:91",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 91",
+   "text": "Temperature information",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "91",
+   "category": "Performance and durability",
+   "sub_category": "Temperature conditions",
+   "definition": "Temperature information regarding operating environmental conditions",
+   "requirement_regulation": "The battery passport must include periodically recorded information on the operating environmental conditions, including temperature.",
+   "legal_reference": "Annex XIII (4d)",
+   "legal_references": [
+    "Annex XIII (4d)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "°C",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.7.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:92",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 92",
+   "text": "Temperature range idle state, lower boundary",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "92",
+   "category": "Performance and durability",
+   "sub_category": "Temperature conditions",
+   "definition": "The lower boundary of the surrounding temperature range",
+   "requirement_regulation": "The battery passport must include information about the temperature range the battery can withstand when not in use and a reference test must be provided.",
+   "legal_reference": "Annex XIII (1l)",
+   "legal_references": [
+    "Annex XIII (1l)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "°C",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.7.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:93",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 93",
+   "text": "Temperature range idle state, upper boundary",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "public",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "93",
+   "category": "Performance and durability",
+   "sub_category": "Temperature conditions",
+   "definition": "The upper boundary of the surrounding temperature range",
+   "requirement_regulation": "The battery passport must include information about the temperature range the battery can withstand when not in use and a reference test must be provided.",
+   "legal_reference": "Annex XIII (1l)",
+   "legal_references": [
+    "Annex XIII (1l)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "Public",
+   "unit": "°C",
+   "data_format": "Integer",
+   "static_or_dynamic": "Static",
+   "update_requirement": "n.a.",
+   "granularity": "Battery model",
+   "separate_spec_chapter": "6.7.7.4",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:94",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 94",
+   "text": "Time spent in extreme temperatures above boundary",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "94",
+   "category": "Performance and durability",
+   "sub_category": "Temperature conditions",
+   "definition": "The aggregated time, in which temperatures above the upper boundary of the temperature range as defined in 'Temperature range idle state, upper boundary' are prevalent",
+   "requirement_regulation": "The battery passport must include information on the time spent in extreme temperatures",
+   "legal_reference": "Annex VII Part B (4)",
+   "legal_references": [
+    "Annex VII Part B (4)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "Minutes",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.7.5",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:95",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 95",
+   "text": "Time spent in extreme temperatures below boundary",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "95",
+   "category": "Performance and durability",
+   "sub_category": "Temperature conditions",
+   "definition": "The aggregated time, in which temperatures below the lower boundary of the temperature range as defined in 'Temperature range idle state, lower boundary' are prevalent",
+   "requirement_regulation": "The battery passport must include information on the time spent in extreme temperatures",
+   "legal_reference": "Annex VII Part B (4)",
+   "legal_references": [
+    "Annex VII Part B (4)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "Minutes",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.7.6",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:96",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 96",
+   "text": "Time spent charging during extreme temperatures above boundary",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "96",
+   "category": "Performance and durability",
+   "sub_category": "Temperature conditions",
+   "definition": "The aggregated time, in which the battery is charged, while temperatures above the upper boundary of the temperature range as defined in 'Temperature range idle state, upper boundary' are prevalent",
+   "requirement_regulation": "The battery passport must include information on the time spent charging in extreme temperatures",
+   "legal_reference": "Annex VII Part B (4)",
+   "legal_references": [
+    "Annex VII Part B (4)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "Minutes",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.7.7",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:97",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 97",
+   "text": "Time spent charging during extreme temperatures below boundary",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "97",
+   "category": "Performance and durability",
+   "sub_category": "Temperature conditions",
+   "definition": "The aggregated time, in which the battery is charged, while temperatures below the lower boundary of the temperature range as defined in 'Temperature range idle state, lower boundary' are prevalent",
+   "requirement_regulation": "The battery passport must include information on the time spent charging in extreme temperatures",
+   "legal_reference": "Annex VII Part B (4)",
+   "legal_references": [
+    "Annex VII Part B (4)"
+   ],
+   "applicability": {
+    "EV": "not-stated",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "not-stated",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "Minutes",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.7.8",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:98",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 98",
+   "text": "Number of deep discharge events",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "LMT",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "98",
+   "category": "Performance and durability",
+   "sub_category": "Negative events",
+   "definition": "The number of occasions, in which voltage has dropped below the lower operational limit as provided in the battery passport",
+   "requirement_regulation": "The battery passport must include information on the tracking of harmful events, such as the number of deep discharge events for stationary BESS and LMT batteries using a BMS.",
+   "legal_reference": "Annex VII Part B (4)",
+   "legal_references": [
+    "Annex VII Part B (4)"
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "n.a.",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.8.2",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:99",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 99",
+   "text": "Number of overcharge events",
+   "mandatory": "no",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [],
+   "joins": [],
+   "number": "99",
+   "category": "Performance and durability",
+   "sub_category": "Negative events",
+   "definition": "The number of occasions, in which voltage has increased above the upper operational limit as provided in the battery passport",
+   "requirement_regulation": "-",
+   "legal_reference": "n.a.",
+   "legal_references": [
+    "n.a."
+   ],
+   "applicability": {
+    "EV": "voluntary",
+    "LMT": "voluntary",
+    "industrial-other-above-2kWh": "voluntary",
+    "industrial-stationary-above-2kWh": "voluntary"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "n.a.",
+   "data_format": "Integer",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.8.3",
+   "separate_spec_has_requirement_text": true
+  },
+  {
+   "id": "longlist:100",
+   "kind": "attribute",
+   "section": "longlist v1.3 row 100",
+   "text": "Information on accidents",
+   "mandatory": "yes",
+   "condition": "",
+   "access": "legitimate-interest",
+   "applies_to": [
+    "EV",
+    "LMT",
+    "industrial-other-above-2kWh",
+    "industrial-stationary-above-2kWh"
+   ],
+   "joins": [],
+   "number": "100",
+   "category": "Performance and durability",
+   "sub_category": "Negative events",
+   "definition": "Information on accidents affecting the battery, including when incorporated in equipment it is powering.",
+   "requirement_regulation": "The battery passport must contain information and data resulting from its use such as accidents.",
+   "legal_reference": "Annex XIII (4d)",
+   "legal_references": [
+    "Annex XIII (4d)"
+   ],
+   "applicability": {
+    "EV": "required-by-batteries-regulation",
+    "LMT": "required-by-batteries-regulation",
+    "industrial-other-above-2kWh": "required-by-batteries-regulation",
+    "industrial-stationary-above-2kWh": "required-by-batteries-regulation"
+   },
+   "access_as_written": "persons with a legitimate interest",
+   "unit": "n.a.",
+   "data_format": "URI/URL",
+   "static_or_dynamic": "Dynamic",
+   "update_requirement": "depending on individual definition of \"up-to-date\" based on this data attribute and its use case. (Currently no clarification through official guidance or delegated act expected)",
+   "granularity": "Individual battery",
+   "separate_spec_chapter": "6.7.8.4",
+   "separate_spec_has_requirement_text": true
+  }
+ ]
+}
