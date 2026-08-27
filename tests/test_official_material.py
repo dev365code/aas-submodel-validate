@@ -20,8 +20,9 @@ AASX_EXAMPLE = "tests/corpus/idta/02004/example.aasx"
 #: Read from the registry they would agree with any rewording, and a
 #: reworded remedy is exactly what promoting a rule body to a factory can
 #: do without moving an id or a subject.
-_D6_FIX = ("Set StatusValue to 'InReview' or 'Released' (exact casing) -- "
-           "the two values VDI 2770 names.")
+_D6_FIX = ("Set StatusValue to 'InReview' or 'Released' (exact casing). The "
+           "vendored concept description is where those two come from, and it "
+           "says they 'should be used' -- which is why this is a warning.")
 _L2_FIX = ("Correct the semanticId to the template's spelling; a near-miss "
            "matches nothing, and every rule that would have applied to the "
            "element silently stops applying.")

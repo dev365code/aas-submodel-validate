@@ -249,6 +249,10 @@ def _d9(tables):
         check offline, and §2.2 says such references "can span multiple AAS",
         so silence there is honesty, not a miss."""
         for submodel in matched_submodels(ctx, tables):
+            # Literal, not a module constant: `test_pack_roster` reads
+            # these out of the AST to check them against the roster's own
+            # `needs` tuple, and a name puts them where it cannot look.
+            # The roster is the copy anything else reads.
             for label in ("DocumentedEntity", "RefersTo", "BasedOn", "TranslationOf"):
                 for subject, element in instances_of(ctx, label, tables):
                     reference = getattr(element, "value", None)
@@ -381,8 +385,9 @@ ROSTER = (
      ("Document", "DocumentIds", "DocumentId", "DocumentIsPrimary"), _d5),
     ("-D6", "template", "SHOULD", "StatusValue uses the two-word vocabulary",
      "IDTA 02004-2-0 §2.8",
-     "Set StatusValue to 'InReview' or 'Released' (exact casing) -- "
-     "the two values VDI 2770 names.",
+     "Set StatusValue to 'InReview' or 'Released' (exact casing). The "
+     "vendored concept description is where those two come from, and it "
+     "says they 'should be used' -- which is why this is a warning.",
      ("DocumentVersion", "StatusValue"), _d6),
     ("-D7", "template", "MUST", "files named by %s exist in the container",
      "IDTA 02004-2-0 §2.8; IDTA 01005 (AASX)",

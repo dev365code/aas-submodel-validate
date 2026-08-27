@@ -24,6 +24,16 @@ from .rules import detect
 #: to find rules which never run -- pass on a rule that only ever crashes.
 COULD_NOT_RUN = "the rule itself could not run"
 
+#: Two sentences this module ships that no rule owns, named so the remedy
+#: census can hold them. Both were unpinned: rewriting the first to blame
+#: the author for a crash in this validator, and the second to say the
+#: metamodel's own constraints may be ignored, left every gate green.
+CRASH_REMEDY = ("This is a defect in the validator, not in your file; "
+                "please report it.")
+META_REMEDY = ("Fix the constraint aas-core3.0 names; these are IDTA 01001 "
+               "metamodel rules, upstream of any template.")
+
+
 
 def execute(rules_to_run, ctx) -> List[Finding]:
     findings: List[Finding] = []
@@ -34,8 +44,7 @@ def execute(rules_to_run, ctx) -> List[Finding]:
             findings.append(Finding(rule, Violation(
                 COULD_NOT_RUN,
                 detail="%s: %s" % (type(exc).__name__, exc),
-                fix="This is a defect in the validator, not in your file; "
-                    "please report it.")))
+                fix=CRASH_REMEDY)))
     return findings
 
 
@@ -66,8 +75,7 @@ def _meta_rule(strict: bool) -> Rule:
         title="the AAS metamodel, verified by aas-core3.0",
         spec="IDTA 01001 (metamodel constraints)",
         fn=lambda ctx: (),
-        fix="Fix the constraint aas-core3.0 names; these are IDTA 01001 "
-            "metamodel rules, upstream of any template.")
+        fix=META_REMEDY)
 
 
 def _meta_findings(loaded: Loaded, strict: bool):

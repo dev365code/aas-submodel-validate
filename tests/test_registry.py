@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from aas_submodel_validate import loader, registry
+from aas_submodel_validate import loader, registry, runner
 from aas_submodel_validate import rules as _rules  # noqa: F401 - registers
 from aas_submodel_validate.model import KINDS, Severity, Violation
 from aas_submodel_validate.registry import all_rules
@@ -413,8 +413,10 @@ REMEDIES = {
         "definition calls it 'the preferred ID', singular -- so several "
         "primaries are not reported here.",
     "HD-D6":
-        "Set StatusValue to 'InReview' or 'Released' (exact casing) -- "
-        "the two values VDI 2770 names.",
+        "Set StatusValue to 'InReview' or 'Released' (exact casing). "
+        "The vendored concept description is where those two come "
+        "from, and it says they 'should be used' -- which is why this "
+        "is a warning.",
     "HD-D7":
         "Add the file to the .aasx under the name this File value "
         "gives, or correct the value's path. (Declaring an aas-suppl "
@@ -560,13 +562,6 @@ SHIPPED_REMEDIES = {
         "instead, run --profile 02004. Removing the "
         "supplementalSemanticId that declares the profile changes no "
         "finding and removes this explanation of them.",
-    "X5/single-document":
-        "This reader takes in no single document over 64 MiB. An "
-        "environment divides along its submodels, so fewer of them "
-        "per file is the way through; one holding a single submodel "
-        "does not divide, and a file that large cannot be checked "
-        "here. Nothing is wrong with what you sent; it was refused, "
-        "not judged.",
     "HDL1/inside-a-list":
         "Remove this idShort. A submodel element directly inside a "
         "SubmodelElementList must not carry one (AASd-120), so "
@@ -576,6 +571,46 @@ SHIPPED_REMEDIES = {
         "Rename to the template's suggested pattern "
         r"(^DigitalFile(?:\d{2,3})?$). Any unique idShort is legal "
         "here; this is tidiness, not conformance.",
+    "X5/environment-json":
+        "This reader takes in no single document over 64 MiB. An "
+        "environment divides along its submodels, so fewer of them "
+        "per file is the way through; one holding a single submodel "
+        "does not divide, and a file that large cannot be checked "
+        "here. Nothing is wrong with what you sent; it was refused, "
+        "not judged.",
+    "X5/environment-xml":
+        "This reader takes in no single document over 64 MiB. An "
+        "environment divides along its submodels, so fewer of them "
+        "per file is the way through; one holding a single submodel "
+        "does not divide, and a file that large cannot be checked "
+        "here. Nothing is wrong with what you sent; it was refused, "
+        "not judged.",
+    "X5/submodel-json":
+        "This reader takes in no single document over 64 MiB. An "
+        "environment divides along its submodels, so fewer of them "
+        "per file is the way through; one holding a single submodel "
+        "does not divide, and a file that large cannot be checked "
+        "here. Nothing is wrong with what you sent; it was refused, "
+        "not judged.",
+    "runner/a-rule-that-crashed":
+        "This is a defect in the validator, not in your file; please "
+        "report it.",
+    "runner/the-metamodel-channel":
+        "Fix the constraint aas-core3.0 names; these are IDTA 01001 "
+        "metamodel rules, upstream of any template.",
+    "loader/payload-doctype":
+        "Remove the DTD and write out whatever it declared: a "
+        "nested-entity DTD is a decompression-free way to exhaust a "
+        "reader, so this one refuses the declaration rather than try "
+        "to bound what it expands to. Nothing is wrong with the "
+        "syntax; it is the declaration this reader will not take in.",
+    "loader/directory-bound":
+        "This reader indexes no archive whose directory of names "
+        "comes to more than 16 MiB -- a ZIP is indexed whole before "
+        "any of it is read, so the cost is paid on the names alone, "
+        "however little the entries hold. Remove what the package "
+        "does not need to carry. Nothing is wrong with what you sent; "
+        "it was refused, not judged.",
     "loader/relationship-doctype":
         "Remove the DTD from the named relationships part and write "
         "out whatever it declared. The chain itself is intact -- it "
@@ -583,6 +618,20 @@ SHIPPED_REMEDIES = {
         "decompression-free way to exhaust a reader, so this one "
         "refuses the declaration rather than bound what it expands "
         "to.",
+    "generated/0..1":
+        "Provide at most one 'DocumentIsPrimary' element(s) under "
+        "DocumentId with semanticId 0173-1#02-ABH995#003; example "
+        "value: 'true'.",
+    "generated/0..n":
+        "Provide any number of 'ProductImage' element(s) under "
+        "ProductImages with semanticId "
+        "0173-1#02-ABM220#001/0173-1#01-AHY911#001.",
+    "generated/1..1":
+        "Provide exactly one 'Documents' element(s) with semanticId "
+        "0173-1#02-ABI500#003.",
+    "generated/1..n":
+        "Provide one or more 'Document' element(s) under Documents "
+        "with semanticId 0173-1#02-ABI500#003/0173-1#01-AHF579#003.",
 }
 
 
@@ -600,8 +649,15 @@ def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
             profile, profile.alternative)
     for in_list, tag in ((True, "inside-a-list"), (False, "anywhere-else")):
         built["HDL1/%s" % tag] = engine.idshort_remedy(in_list, IDSHORT_PATTERN)
-    built["X5/single-document"] = container_rules._bounds_remedy("json")
+    for form in NON_CONTAINER_FORMS:
+        built["X5/%s" % form] = container_rules._bounds_remedy(form)
+    built["runner/a-rule-that-crashed"] = runner.CRASH_REMEDY
+    built["runner/the-metamodel-channel"] = runner.META_REMEDY
+    built["loader/payload-doctype"] = loader.PAYLOAD_DOCTYPE_REMEDY
+    built["loader/directory-bound"] = loader.directory_bound_remedy()
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY
+    for card, row in _one_row_per_cardinality().items():
+        built["generated/%s..%s" % (card[0], "n" if card[1] is None else card[1])] = row["fix"]
     assert built == SHIPPED_REMEDIES
 
 
@@ -627,11 +683,42 @@ def test_a_container_is_told_where_to_divide_and_a_document_is_not():
     assert container_rules._bounds_remedy("aasx") is None
 
 
-#: The four labels HD-D9 reads and the two reference types a template can
-#: declare. Named here so the census above cannot quietly stop covering
-#: one: adding a fifth label without adding its sentence fails.
-D9_LABELS = ("DocumentedEntity", "RefersTo", "BasedOn", "TranslationOf")
+#: The four labels HD-D9 reads -- read out of the roster, not written
+#: again here.
+#:
+#: A copy was written here first, and it made this census measure itself:
+#: adding a fifth label to the rule changed what shipped and left the
+#: expectations alone, so the sentence for it went out unpinned. The
+#: direction that did fail -- editing this tuple by itself -- is the edit
+#: nobody makes. The roster is where a rule declares what it navigates,
+#: and `test_pack_roster` already holds the rule's own loop against it.
+D9_LABELS = next(entry[6] for entry in handover.ROSTER if entry[0] == "-D9")
 REFERENCE_TYPES = ("ExternalReference", "ModelReference")
+
+#: Every form the loader can record that is not a container. `X5`'s
+#: remedy differs between a container -- which its own rule already tells
+#: how to split -- and a bare document, and the first version of this
+#: census asked for `"json"`, which is not a form this code produces.
+#: Calling a builder with an input it never receives is a census of a
+#: sentence nobody gets.
+NON_CONTAINER_FORMS = ("environment-json", "environment-xml", "submodel-json")
+
+
+def _one_row_per_cardinality():
+    """One generated row per cardinality the tables use.
+
+    The 86 generated remedies are written by `tools/extract_smt_rules.py`
+    from four sentence shapes, and none of them was held by anything: the
+    byte-compare gate holds table-against-generator, not
+    sentence-against-decision, so editing the generator's wording and
+    regenerating passed every gate. Four rows pin the four shapes; the
+    generator cannot change one without changing all of its kind."""
+    seen = {}
+    for tables in (hd_tables, td_tables, dbp_tables):
+        for row in tables.ROWS:
+            seen.setdefault(row["card"], row)
+    return seen
+
 
 #: The pattern the sentence quotes. Read from the table rather than
 #: written out, because the census is about the sentence and the table

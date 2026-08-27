@@ -205,6 +205,10 @@ def declared(submodel):
       title="the report names which of two templates sharing one identifier answered",
       spec="IDTA 02035-2 1.0 template, submodel supplementalSemanticIds; "
            "docs/divergences.md #26, #28",
+      # Unreachable: the rule sets `_remedy(...)` on its one violation.
+      # Kept and pinned, and worth reading beside what does ship -- this
+      # sentence still ends with the advice `_remedy` was rewritten to
+      # stop giving, which is what an unread copy does.
       fix="Check that the template named here is the one this submodel "
           "means. `--profile` chooses the other one without editing the "
           "file; a submodel that does not mean the profile it declares "

@@ -34,6 +34,34 @@ from .container import (
 #: part and a DTD in a part's. They were copies, and a copy of a sentence
 #: this project ships is a sentence that drifts (the reference-type lint
 #: had the same shape and the copies had already diverged).
+#: Two more this module ships. The first was guarded only by a substring
+#: assertion, which is the shape this project has already measured as no
+#: gate; the second by nothing at all -- and the second is the sentence
+#: X5's own rule exists to prefer, the one that says a refusal for the
+#: size of a directory of names is this reader's decision and not a defect
+#: in what was sent. Rewriting either to blame the author left `make
+#: check` green.
+PAYLOAD_DOCTYPE_REMEDY = (
+    "Remove the DTD and write out whatever it declared: a nested-entity "
+    "DTD is a decompression-free way to exhaust a reader, so this one "
+    "refuses the declaration rather than try to bound what it expands "
+    "to. Nothing is wrong with the syntax; it is the declaration this "
+    "reader will not take in.")
+
+
+def directory_bound_remedy() -> str:
+    """Built when the finding is, for the reason `_bounds_remedy` gives:
+    the sentence names the bound this run applied, and a number frozen at
+    import time disagrees with the one that refused the file."""
+    return ("This reader indexes no archive whose directory of names "
+            "comes to more than %d MiB -- a ZIP is indexed whole before "
+            "any of it is read, so the cost is paid on the names alone, "
+            "however little the entries hold. Remove what the package "
+            "does not need to carry. Nothing is wrong with what you "
+            "sent; it was refused, not judged."
+            % (container.MAX_DIRECTORY_BYTES // 1024 ** 2))
+
+
 RELATIONSHIP_DOCTYPE_REMEDY = (
     "Remove the DTD from the named relationships part and write out "
     "whatever it declared. The chain itself is intact -- it names the "
@@ -159,12 +187,7 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
             loaded.errors.append(LoadError(
                 "payload", "the XML declares a DOCTYPE, which is refused",
                 subject=part or loaded.path,
-                fix="Remove the DTD and write out whatever it declared: a "
-                    "nested-entity DTD is a decompression-free way to exhaust "
-                    "a reader, so this one refuses the declaration rather than "
-                    "try to bound what it expands to. Nothing is wrong with "
-                    "the syntax; it is the declaration this reader will not "
-                    "take in."))
+                fix=PAYLOAD_DOCTYPE_REMEDY))
             return
     try:
         if form.endswith("json"):
@@ -250,13 +273,7 @@ def _load_aasx(path: Path) -> Loaded:
         # nothing wrong with it to repair. This is a decision of ours.
         loaded.errors.append(LoadError(
             "bounds", str(exc), subject=str(path),
-            fix="This reader indexes no archive whose directory of names "
-                "comes to more than %d MiB -- a ZIP is indexed whole before "
-                "any of it is read, so the cost is paid on the names alone, "
-                "however little the entries hold. Remove what the package "
-                "does not need to carry. Nothing is wrong with what you "
-                "sent; it was refused, not judged."
-                % (container.MAX_DIRECTORY_BYTES // 1024 ** 2)))
+            fix=directory_bound_remedy()))
         return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("zip", str(exc)))
