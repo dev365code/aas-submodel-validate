@@ -86,6 +86,23 @@ def test_parts_summing_exactly_to_the_total_cap_are_all_read(tmp_path, monkeypat
             package.read("aasx/b.bin")                 # the crossing read
 
 
+def test_the_early_total_check_reads_the_total_cap_not_the_part_cap(tmp_path, monkeypatch):
+    """The refusal hoisted above the decompressor compares the same
+    number the late one does. Comparing it against the *part* cap
+    instead refuses a container whose running total merely passed one
+    part's worth -- three small parts under a generous total, and the
+    third read is the one a wrong constant loses."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 50)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 200)
+    path = tmp_path / "three.aasx"
+    build_aasx(path, payload=b"<x/>" + b" " * 46, payload_name="aasx/env.xml",
+               files=[("aasx/a.bin", b"a" * 50), ("aasx/b.bin", b"b" * 50)])
+    with AasxPackage(path) as package:
+        assert len(package.read("aasx/env.xml")) == 50
+        assert len(package.read("aasx/a.bin")) == 50
+        assert len(package.read("aasx/b.bin")) == 50
+
+
 def test_a_directory_declaring_exactly_the_cap_still_opens(tmp_path, monkeypatch):
     """Same edge, third cap. The directory bound reads the size the
     archive itself declares, so the fixture asks the file what it
@@ -116,6 +133,27 @@ def test_a_missing_package_rels_is_reported_as_the_package_root(tmp_path):
     findings = {f.id: f for f in runner.run(path).findings}
     assert "X2" in findings
     assert "the package root" in findings["X2"].violation.message
+
+
+def test_a_suppl_on_the_origin_does_not_become_the_payload(tmp_path):
+    """The filter admits exactly the aas-spec type. The thumbnail fixture
+    below pins "not everything"; this one pins "not the other type this
+    project itself knows" -- an aas-suppl declared on the origin, before
+    the payload, which a filter widened to both types would read as an
+    environment and fail for being a PDF."""
+    suppl = "http://admin-shell.io/aasx/relationships/aas-suppl"
+    path = tmp_path / "suppl-origin.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(suppl, "/aasx/files/manual.pdf"),
+                               (SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/files/manual.pdf", b"%PDF-1.4")
+    report = runner.run(path)
+    assert report.ok, [f.id for f in report.findings]
 
 
 def test_a_thumbnail_relationship_does_not_become_the_payload(tmp_path):
@@ -151,16 +189,25 @@ def test_bytes_the_declared_encoding_cannot_decode_come_back_untouched():
     assert container.xml_as_utf8(raw) == raw
 
 
-def test_only_the_prolog_declaration_is_rewritten():
-    """`count=1`, and the count is the decision: a document's *content*
-    may mention `encoding="..."` -- an attribute value, a page about XML
-    -- and a rewrite that strips every match edits the document instead
-    of its prolog. Only a UTF-16 document reaches the rewrite at all, so
-    the fixture is one."""
-    doc = '<?xml version="1.0" encoding="UTF-16"?><x note=\'encoding="keep"\'/>'
-    out = container.xml_as_utf8(b"\xff\xfe" + doc.encode("utf-16-le"))
-    assert b'encoding="keep"' in out
-    assert b'encoding="UTF-16"' not in out
+def test_only_a_declaration_at_the_top_is_rewritten():
+    """The anchor is the decision, not the count: the pattern is `\\A`-
+    anchored, so a document with no prolog whose *content* carries a
+    whole `<?xml ... encoding=...?>`-shaped string -- a page about XML --
+    keeps it. Unanchored, `count=1` strips "the first match anywhere",
+    which is exactly the content. Both fixtures are UTF-16, because only
+    a UTF-16 document reaches the rewrite at all.
+
+    A first version of this test hung the mention inside an attribute,
+    where the pattern's own `<?xml` prefix can never reach it -- a
+    fixture no mutation of anchor or count could touch. Measured, and
+    replaced with the input that decides."""
+    quoted = '<x>how to write one: <?xml version="1.0" encoding="x"?></x>'
+    out = container.xml_as_utf8(b"\xff\xfe" + quoted.encode("utf-16-le"))
+    assert b'encoding="x"' in out, "the content's example was edited"
+
+    prolog = '<?xml version="1.0" encoding="UTF-16"?><x/>'
+    out = container.xml_as_utf8(b"\xff\xfe" + prolog.encode("utf-16-le"))
+    assert b'encoding="UTF-16"' not in out, "the real declaration stayed"
 
 
 @pytest.mark.parametrize("raw", (

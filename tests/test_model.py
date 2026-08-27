@@ -226,11 +226,26 @@ def test_a_run_with_warnings_does_not_wear_the_clean_banner():
     assert "warning" in text
 
 
-def test_a_tab_in_a_message_stays_a_tab():
-    """`_safe` keeps tabs and escapes the rest of the control range: a
-    message quoting a tab-indented value should render the value, and a
-    message carrying a bell must not ring it."""
+def test_the_terminal_gets_no_control_bytes_but_the_tab():
+    """`_safe` keeps tabs and escapes all three control ranges. The first
+    version kept everything from 0x20 up, which is only C0: DEL walked
+    through, and so did C1 -- and 0x9B alone is CSI on a terminal
+    honouring 8-bit controls, the byte class the function exists to
+    stop. Printable non-ASCII stays itself."""
     from aas_submodel_validate.report import _safe
     assert _safe("a\tb") == "a\tb"
     assert _safe("a\x07b") == "a\\x07b"
+    assert _safe("a\x7fb") == "a\\x7fb"
+    assert _safe("a\x9bb") == "a\\x9bb"
+    assert _safe("caf\xe9") == "caf\xe9"
+
+
+def test_the_clean_banner_spells_ok_with_an_em_dash():
+    """The positive anchor for the two `"ok —" not in` assertions above
+    and in the CLI tests: if the banner ever respells itself, this goes
+    red instead of those going quietly vacuous."""
+    from aas_submodel_validate.report import render
+    report = Report(path="clean.json")
+    report.checked = 123
+    assert render(report).startswith("ok \u2014 ")
 

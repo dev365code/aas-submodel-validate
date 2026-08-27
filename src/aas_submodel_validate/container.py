@@ -416,9 +416,18 @@ class AasxPackage:
         if canonical in self._names:
             return canonical
         if self._canonical is None:
+            # In the archive's own order, not the set's: two entries can
+            # share a canonical spelling, and `setdefault` keeps the one
+            # met first. Iterating the frozenset made "first" mean the
+            # process's hash seed -- the same archive resolved a clashing
+            # value to different entries on different runs. Measured: a
+            # kill on this index landed on 12 of 20 seeds and survived
+            # the other 8. Write order is the only order the archive has.
             self._canonical = {}
-            for name in self._names:
-                self._canonical.setdefault(canonical_part_name(name), name)
+            for name in self._zip.namelist():
+                key = canonical_part_name(name)
+                if key is not None:
+                    self._canonical.setdefault(key, name)
         return self._canonical.get(canonical)
 
     def read(self, name: str) -> bytes:

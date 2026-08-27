@@ -37,20 +37,28 @@ _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _OPTIONAL = ("openpyxl", "fitz", "pymupdf")
 
 
-def _ledger() -> dict:
+def _ledger(problems) -> dict:
+    """Every pin in the ledger, and a problem for every line that is not
+    one. All lines, not just the referenced ones: ten of the twenty-five
+    pins are for sources no index cites directly, and a malformed pin
+    among them was invisible -- the ledger's own promise is that each
+    line verifies a fetch, referenced or not."""
     pins = {}
     for line in (DATA / "sources.sha256").read_text("utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        digest, _, name = line.partition("  ")
+        digest, sep, name = line.partition("  ")
+        if not sep or not _HEX64.match(digest.strip()) or not name.strip():
+            problems.append("sources.sha256: not a pin: %r" % line[:60])
+            continue
         pins[name.strip()] = digest.strip()
     return pins
 
 
 def main() -> int:
     problems = []
-    ledger = _ledger()
+    ledger = _ledger(problems)
 
     for name in INDEXES:
         index = json.loads((DATA / name).read_text("utf-8"))
@@ -59,12 +67,21 @@ def main() -> int:
         if counted != len(records):
             problems.append("%s: counts.records says %d, file holds %d"
                             % (name, counted, len(records)))
-        ids = [record["id"] for record in records]
-        for duplicate in sorted({i for i in ids if ids.count(i) > 1}):
+        # `.get`, because a record without an id is this checker's finding
+        # to report, not its crash to raise -- the first version raised a
+        # KeyError here, which turns a defect in the data into a defect
+        # in the gate.
+        ids = [record.get("id") for record in records]
+        for position, record_id in enumerate(ids):
+            if not record_id:
+                problems.append("%s: records[%d] carries no id" % (name, position))
+        for duplicate in sorted({i for i in ids if i and ids.count(i) > 1}):
             problems.append("%s: id %r appears more than once" % (name, duplicate))
         for entry in index["provenance"]:
-            digest, source = entry["sha256"], entry["file"]
-            if not _HEX64.match(digest):
+            digest, source = entry.get("sha256", ""), entry.get("file")
+            if not source:
+                problems.append("%s: a provenance entry names no file" % name)
+            elif not _HEX64.match(digest):
                 problems.append("%s: provenance for %s pins %r, not a sha256"
                                 % (name, source, digest))
             elif ledger.get(source) != digest:

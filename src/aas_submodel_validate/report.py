@@ -10,9 +10,16 @@ def _safe(text) -> str:
     A subject path can contain an attacker-chosen idShort, and a raw
     escape byte on a terminal is an ANSI/BEL injection. Control characters
     (tab excepted) are shown as their escape, so the report says what the
-    file holds without letting the file drive the terminal."""
+    file holds without letting the file drive the terminal.
+
+    All three control ranges. The first version kept everything from
+    0x20 up, which reads as "the control characters" and is only C0:
+    DEL walked through, and so did C1 -- and 0x9B alone is CSI on a
+    terminal honouring 8-bit controls, the very byte class this exists
+    to stop."""
     return "".join(
-        ch if ch == "\t" or ord(ch) >= 0x20 else "\\x%02x" % ord(ch)
+        ch if ch == "\t" or (ord(ch) >= 0x20 and not 0x7f <= ord(ch) <= 0x9f)
+        else "\\x%02x" % ord(ch)
         for ch in str(text))
 
 

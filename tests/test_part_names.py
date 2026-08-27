@@ -319,3 +319,60 @@ def test_the_repr_names_the_package(tmp_path):
         assert "AasxPackage" in repr(package)
         assert "p.aasx" in repr(package)
 
+
+def test_a_directory_entry_is_not_a_part_and_does_not_alias_one(tmp_path):
+    """Archives carry directory entries -- names ending in "/" -- and a
+    directory is not a part. Two ways that has to hold: asking for a
+    part *as* a directory (`aasx/env.json/`) answers None, and asking
+    for `/` answers None even though a directory entry is in the index
+    build's path. The second is the sharp one: `canonical_part_name` of
+    a directory entry is None, and an index that files something under
+    the None key hands that entry to *every* value that fails to
+    normalise -- `part("/")` came back `aasx/`."""
+    path = tmp_path / "dirs.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/", b"")
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+    with AasxPackage(path) as package:
+        assert package.part("aasx/env.json/") is None
+        assert package.part("/") is None
+        assert package.part("/aasx/env.json") == "aasx/env.json"
+
+
+def _clash_archive(path, first, second):
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr(first, b"first")
+        archive.writestr(second, b"second")
+    return path
+
+
+def test_a_clash_resolves_to_the_entry_stored_first_in_either_order(tmp_path):
+    """Two odd spellings of one name, neither canonical, so only the
+    normalised index can answer -- and the index keeps the entry it met
+    first. "First" must mean the archive's own order: the index used to
+    be built off a frozenset, where "first" meant the process's hash
+    seed, and the same archive resolved the same value to different
+    entries on different runs.
+
+    Two archives, same entries, opposite write order. Hash order gives
+    both archives the same answer, so under that defect one of these two
+    assertions fails on every seed -- a seed-proof pin, where a single
+    fixture was measured killing on 12 seeds of 20."""
+    value = "/aasx/f.pdf"
+    odd_a, odd_b = "aasx/./f.pdf", "./aasx/f.pdf"
+    with AasxPackage(_clash_archive(tmp_path / "ab.aasx", odd_a, odd_b)) as package:
+        assert package.part(value) == odd_a
+    with AasxPackage(_clash_archive(tmp_path / "ba.aasx", odd_b, odd_a)) as package:
+        assert package.part(value) == odd_b
+
