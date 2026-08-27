@@ -33,6 +33,7 @@ from aas_submodel_validate.rules import (
 )
 from builders import (
     break_row,
+    dbp_env,
     declaring_profile,
     env_json,
     hd_env,
@@ -448,3 +449,36 @@ def test_one_pair_today_and_what_a_second_one_has_to_change():
     assert len(profiles.PROFILES) == 1, (
         "a second profile pair arrived; `chosen` still returns on the first "
         "match and `SMT-D2` still yields once per submodel")
+
+
+def test_a_profile_reaches_past_a_submodel_that_is_not_in_the_pair(tmp_path):
+    """Every fixture for the profile decision holds exactly one submodel,
+    and an environment may hold several of different kinds.
+
+    Two decisions ride on walking all of them. `SMT-D2` reports the
+    choice for each submodel that is in a pair, and stopping at the first
+    one that is not leaves a run that changed six verdicts saying nothing
+    about why. And the run-level note -- "named a template no submodel
+    here answers to" -- asks whether *any* submodel answered; asking
+    whether *all* did would print it on a run where one did, which is a
+    sentence telling the reader their flag did nothing while it was
+    removing the errors in front of them.
+
+    A Technical Data submodel first, a battery passport second: with
+    `--profile 02035-2` the second is judged by 02035-2 and comes back
+    clean, where 02004 finds six."""
+    env = copy.deepcopy(td_env())
+    battery = copy.deepcopy(dbp_env()["submodels"][0])
+    battery["id"] = "urn:example:battery"
+    env["submodels"].append(battery)
+    path = tmp_path / "two.json"
+    path.write_bytes(json.dumps(env).encode("utf-8"))
+
+    without = runner.run(path)
+    assert not without.ok, "the battery passport has to be faulted under 02004"
+
+    report = runner.run(path, profile="02035-2")
+    assert report.ok
+    assert "SMT-D2" in {finding.id for finding in report.findings}, \
+        "the choice was made and the report did not say so"
+    assert report.notes == [], report.notes
