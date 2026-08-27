@@ -333,3 +333,84 @@ def test_an_element_level_reference_type_drift_is_linted(tmp_path):
     findings = _findings(tmp_path, env)
     assert "HDL3" in findings
     assert "Version" in (findings["HDL3"].violation.subject or "")
+
+
+# -- the conformant shapes these rules must stay silent about ----------------
+#
+# Every rule here reads a value out of the tree, and what it does when the
+# value is absent, cased differently, or one of two allowed words was
+# measured rather than assumed: each fixture below is silent today, and
+# each names a mutation of the rule that would break that silence. Half of
+# them break it by crashing -- `runner.execute` turns a rule that raises
+# into an error-severity finding whose remedy reads "This is a defect in
+# the validator, not in your file; please report it", which is the worst
+# sentence this tool can print about a conformant file.
+
+
+def _digital_files(env):
+    return next(child for child in _document_version(env)["value"]
+                if child.get("idShort") == "DigitalFiles")
+
+
+def test_a_class_name_with_no_entries_at_all_is_reported_not_a_crash(tmp_path):
+    """A MultiLanguageProperty may carry no value: the metamodel allows
+    it, the generated row accepts it, and HD-D4 has to say the English
+    entry is missing rather than iterate None."""
+    env = copy.deepcopy(hd_env())
+    for child in _classification(env)["value"]:
+        if child.get("idShort") == "ClassName":
+            child.pop("value", None)
+    findings = _findings(tmp_path, env)
+    assert "HD-D4" in findings
+    assert "none" in (findings["HD-D4"].violation.detail or "")
+    assert not [f for f in findings.values()
+                if "could not run" in f.violation.message]
+
+
+def test_a_file_with_no_value_is_silence_not_a_crash(tmp_path):
+    """`File.value` is optional. HD-D7 asks whether the container holds
+    what the value names; there is nothing named, so there is nothing to
+    ask -- and `None.strip()` is the alternative.
+
+    Packed, because HD-D7 says nothing at all about a bare document: the
+    fixture that asked this as loose JSON was answering the rule's own
+    early return and never reached the value."""
+    env = copy.deepcopy(hd_env())
+    _digital_files(env)["value"][0].pop("value", None)
+    packed = build_aasx(tmp_path / "p.aasx",
+                        payload=json.dumps(env).encode("utf-8"))
+    findings = {f.id: f for f in runner.run(packed).findings}
+    assert "HD-D7" not in findings
+    assert not [f for f in findings.values()
+                if "could not run" in f.violation.message]
+
+
+def test_the_other_status_word_is_conformant(tmp_path):
+    """The vocabulary is two words and only one of them was ever written
+    by a fixture, so dropping the other left the suite green -- and every
+    document under review would have failed."""
+    env = copy.deepcopy(hd_env())
+    _set_property(_document_version(env), "StatusValue", "InReview")
+    assert "HD-D6" not in _findings(tmp_path, env)
+
+
+def test_a_content_type_is_matched_without_regard_to_case(tmp_path):
+    """Media types are case-insensitive (RFC 2045 §5.1), so a PDF/A
+    rendition declared `Application/PDF` is a PDF/A rendition. HD-D10
+    would otherwise tell a conformant package it has none."""
+    env = copy.deepcopy(hd_env())
+    _digital_files(env)["value"][0]["contentType"] = "Application/PDF"
+    assert "HD-D10" not in _findings(tmp_path, env)
+
+
+def test_a_version_carrying_more_than_the_pdf_still_has_its_pdf(tmp_path):
+    """HD-D10 asks whether a PDF/A is *among* the renditions, not whether
+    it is the only one -- and a native file beside it is what VDI 2770
+    recommends, not a defect."""
+    env = copy.deepcopy(hd_env())
+    files = _digital_files(env)
+    native = copy.deepcopy(files["value"][0])
+    native["contentType"] = "application/step"
+    native["value"] = "/aasx/files/model.step"
+    files["value"].append(native)
+    assert "HD-D10" not in _findings(tmp_path, env)
