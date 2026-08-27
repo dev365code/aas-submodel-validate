@@ -13,6 +13,7 @@ import json
 import pytest
 
 from aas_submodel_validate import runner
+from aas_submodel_validate.rules import handover as rules_handover
 from builders import build_aasx, hd_env
 
 
@@ -694,3 +695,72 @@ def test_a_defect_past_the_first_of_several_is_still_reported(tmp_path, rule_id,
     env = copy.deepcopy(hd_env())
     bend(env)
     assert rule_id in _findings(tmp_path, env)
+
+
+# -- three closed vocabularies, and both of their edges ---------------------
+#
+# Each of these is a set spelled inline, and each was guarded on one side
+# only: fixtures prove the members are accepted and nothing proved a
+# non-member is refused. Widening any of them is over-acceptance -- the
+# rule goes on reporting, and stops reporting the thing it was written
+# for.
+
+
+def test_the_class_vocabulary_is_the_twelve_vdi_publishes():
+    """VDI 2770 Blatt 1:2020 Table 1. The vendored template carries only
+    an ExampleValue (`03-02`), not the list, so this set is read from the
+    standard's own table and cannot be re-derived from bytes this project
+    hash-verifies (docs/divergences.md #33).
+
+    A thirteenth would be accepted silently, and the rule that exists to
+    say "this class is not one of VDI's" would stop saying it about
+    whatever was added."""
+    assert frozenset({
+        "01-01",
+        "02-01", "02-02", "02-03", "02-04",
+        "03-01", "03-02", "03-03", "03-04", "03-05", "03-06",
+        "04-01",
+    }) == rules_handover.VDI2770_CLASS_IDS
+
+
+@pytest.mark.parametrize("value,is_primary", (
+    ("true", True), ("1", True),
+    ("TRUE", True), (" true ", True),
+    ("false", False), ("0", False), ("yes", False), ("", False),
+))
+def test_which_spellings_mark_a_document_id_primary(tmp_path, value, is_primary):
+    """`xs:boolean` writes true as `true` or `1`. This rule folds case
+    and trims first, so `TRUE` and a padded value are read as the author
+    meant them -- the metamodel refuses both spellings and the relayed
+    channel says so, which is the second opinion that makes the leniency
+    safe (docs/divergences.md #34).
+
+    `yes` is not a boolean in any reading and is not accepted."""
+    env = copy.deepcopy(hd_env())
+    document_ids = next(child for child in _first_document(env)["value"]
+                        if child.get("idShort") == "DocumentIds")
+    second = copy.deepcopy(document_ids["value"][0])
+    _set_property(second, "DocumentIdentifier", "OTHER-1")
+    document_ids["value"].append(second)
+    for entry in document_ids["value"]:
+        _set_property(entry, "DocumentIsPrimary", value)
+    assert ("HD-D5" not in _findings(tmp_path, env)) is is_primary
+
+
+@pytest.mark.parametrize("tag,is_english", (
+    ("en", True), ("EN", True), ("en-GB", True), ("en-us", True),
+    ("eng", False), ("enm", False), ("english", False), ("de", False),
+))
+def test_which_language_tags_count_as_english(tmp_path, tag, is_english):
+    """BCP 47's primary subtag for English is `en`, optionally with a
+    region. `eng` is ISO 639-2 and a legal BCP 47 tag, and it is refused
+    here -- the AAS metamodel names BCP 47, whose canonical form prefers
+    the two-letter code (docs/divergences.md #35).
+
+    Loosening the test to `startswith("en")` would make `enm` -- Middle
+    English -- satisfy a rule about the mandatory English class name."""
+    env = copy.deepcopy(hd_env())
+    for child in _classification(env)["value"]:
+        if child.get("idShort") == "ClassName":
+            child["value"] = [{"language": tag, "text": "Operation"}]
+    assert ("HD-D4" not in _findings(tmp_path, env)) is is_english
