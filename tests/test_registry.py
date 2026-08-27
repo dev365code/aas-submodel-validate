@@ -5,7 +5,7 @@ import pytest
 
 from aas_submodel_validate import registry
 from aas_submodel_validate import rules as _rules  # noqa: F401 - registers
-from aas_submodel_validate.model import KINDS, Violation
+from aas_submodel_validate.model import KINDS, Severity, Violation
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.runner import _meta_rule
 
@@ -108,6 +108,70 @@ def test_every_kind_in_the_vocabulary_has_a_user():
     assert registered <= set(KINDS), "a rule wears a kind the report cannot read"
     assert set(KINDS) - registered == UNREGISTERED_KINDS
     assert _meta_rule(strict=False).kind in UNREGISTERED_KINDS
+
+
+#: What a rule's priority decides is whether a build stops. `MUST` is an
+#: error and sets the exit code; `SHOULD` and `MAY` do not. Both
+#: directions are one word away and both are observable:
+#:
+#: - `MUST` -> `SHOULD` finds the violation and exits 0, which is a
+#:   conformance tool agreeing with a file it has just failed.
+#: - `SHOULD` -> `MUST` fails a file that was conformant.
+#:
+#: Measured before this list existed: the *promotions* were caught, and
+#: only because the official published example draws those warnings and
+#: is pinned as `ok`. The *demotions* were not caught at all -- every
+#: fixture that fires a rule asserts its id and never its severity. The
+#: direction this project calls worst was the one accidentally guarded.
+#:
+#: Read down the columns rather than the rows: MUST is what the template
+#: obliges (the mandatory classification, its English name, its class
+#: from the published twelve, files that exist, dates that are dates) and
+#: what leaves nothing judged at all (X1-X3, X5, SMT-D1). SHOULD is
+#: interoperability and the readings this project prefers without
+#: insisting -- a PDF/A rendition, a primary identifier, the status
+#: vocabulary, references that resolve, near-misses, duplicates, the
+#: canonical spelling, declared supplementary parts. MAY is tidiness
+#: alone: idShort patterns, reference types, and the sentence naming
+#: which of two templates answered.
+MUST_RULES = {
+    "DBP2-D2", "DBP2-D3", "DBP2-D4", "DBP2-D7",
+    "HD-D2", "HD-D3", "HD-D4", "HD-D7", "HD-D8",
+    "SMT-D1", "TD-D1", "TD-D2", "X1", "X2", "X3", "X5",
+}
+SHOULD_RULES = {
+    "DBP2-D5", "DBP2-D10", "DBP2L2", "DBP2L4", "DBP2L5",
+    "HD-D5", "HD-D6", "HD-D9", "HD-D10", "HDL2", "HDL4", "HDL5",
+    "TD-D3", "TDL1", "X4",
+}
+MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
+
+#: The generated rules are not listed one by one: a row's rule reports a
+#: cardinality the vendored template states, so all of them are `MUST`
+#: and the byte-compare gate holds the table they come from. What is
+#: asserted is that none of them has drifted off it.
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2)-E\d\d$")
+
+
+def test_every_generated_rule_stops_a_build():
+    """A generated row says what the template obliges, so a row's rule
+    failing is a file failing. One of them at `SHOULD` would report a
+    cardinality the template states and let the build through."""
+    generated = [rule for rule in all_rules() if GENERATED_ID.match(rule.id)]
+    assert len(generated) == 86
+    assert {rule.prio for rule in generated} == {"MUST"}
+
+
+def test_the_hand_rules_have_the_severities_that_were_decided():
+    """Every hand-written rule, in the column somebody put it in.
+
+    Both directions matter and neither was held: promotions only by
+    accident, demotions not at all."""
+    hand = [rule for rule in all_rules() if not GENERATED_ID.match(rule.id)]
+    assert len(hand) == len(MUST_RULES | SHOULD_RULES | MAY_RULES)
+    assert {r.id for r in hand if r.severity is Severity.ERROR} == MUST_RULES
+    assert {r.id for r in hand if r.severity is Severity.WARNING} == SHOULD_RULES
+    assert {r.id for r in hand if r.severity is Severity.INFO} == MAY_RULES
 
 
 #: Every rule-id namespace this tool registers, as the whole shape of an
