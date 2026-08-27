@@ -748,17 +748,25 @@ def test_which_spellings_mark_a_document_id_primary(tmp_path, value, is_primary)
 
 
 @pytest.mark.parametrize("tag,is_english", (
-    ("en", True), ("EN", True), ("en-GB", True), ("en-us", True),
-    ("eng", False), ("enm", False), ("english", False), ("de", False),
+    ("en", True), ("EN", True), ("en-GB", True), ("EN-GB", True),
+    ("eng", True), ("ENG-us", True),
+    ("enm", False), ("english", False), ("de", False), ("", False),
 ))
 def test_which_language_tags_count_as_english(tmp_path, tag, is_english):
-    """BCP 47's primary subtag for English is `en`, optionally with a
-    region. `eng` is ISO 639-2 and a legal BCP 47 tag, and it is refused
-    here -- the AAS metamodel names BCP 47, whose canonical form prefers
-    the two-letter code (docs/divergences.md #35).
+    """`eng` is the three-letter ISO 639 code for the same language, it
+    is well-formed under BCP 47's `2*3ALPHA` primary subtag, and the
+    metamodel's own verification accepts it -- measured. This rule asks
+    whether the class name is in English, and it is; judging the tag
+    belongs to the layer this project delegates (docs/divergences.md
+    #35). Refusing it exited 1 on a file the metamodel calls conformant.
 
-    Loosening the test to `startswith("en")` would make `enm` -- Middle
-    English -- satisfy a rule about the mandatory English class name."""
+    Both spellings are named rather than matched by prefix, because
+    `startswith("en")` would admit `enm` -- Middle English -- and
+    `english`, which is not a tag at all.
+
+    `EN-GB` twice over: the region branch lowercases too, and nothing
+    asked whether it does. A tag is case-insensitive under BCP 47 §2.1,
+    so dropping that fold draws a MUST on a conformant file."""
     env = copy.deepcopy(hd_env())
     for child in _classification(env)["value"]:
         if child.get("idShort") == "ClassName":

@@ -108,6 +108,24 @@ def _d3(tables):
     return check
 
 
+#: The two ISO 639 spellings of English, with an optional region subtag.
+#: `en` is what BCP 47 canonicalises to and what every vendored
+#: ExampleValue writes; `eng` is the three-letter code, well-formed under
+#: BCP 47's `2*3ALPHA` primary subtag, and accepted by the metamodel's
+#: own verification (docs/divergences.md #35). This rule asks whether a
+#: ClassName is in English, not whether a tag is canonical -- judging the
+#: tag is the metamodel layer's job, and this project delegates it.
+#:
+#: Named rather than a prefix test: `startswith("en")` would admit `enm`
+#: (Middle English) and `english` (not a tag at all).
+ENGLISH_TAGS = ("en", "eng")
+
+
+def _english(lang: str) -> bool:
+    lang = lang.lower()
+    return any(lang == tag or lang.startswith(tag + "-") for tag in ENGLISH_TAGS)
+
+
 def _d4(tables):
     def check(ctx):
         for subject, document in instances_of(ctx, "Document", tables):
@@ -116,8 +134,7 @@ def _d4(tables):
                 if name is None:
                     continue  # absence is the generated cardinality rule's finding
                 languages = {entry.language for entry in (name.value or [])}
-                english = any(lang.lower() == "en" or lang.lower().startswith("en-")
-                              for lang in languages)
+                english = any(_english(lang) for lang in languages)
                 if not english:
                     yield Violation("ClassName has no English entry",
                                     subject=subject,
@@ -332,8 +349,9 @@ ROSTER = (
       "ClassificationSystem", "ClassId"), _d3),
     ("-D4", "template", "MUST", "the VDI 2770 ClassName speaks English",
      "IDTA 02004-2-0 §2.3 (\"EN is mandatory\")",
-     "Add an 'en' entry to ClassName; Table 1 names each class in "
-     "English (for 03-02 it is 'Operation').",
+     "Add an English entry to ClassName -- 'en' or 'eng', with or "
+     "without a region subtag; Table 1 names each class in English "
+     "(for 03-02 it is 'Operation').",
      ("Document", "DocumentClassifications", "DocumentClassification",
       "ClassificationSystem", "ClassName"), _d4),
     ("-D5", "template", "SHOULD", "one of several DocumentIds is marked primary",
