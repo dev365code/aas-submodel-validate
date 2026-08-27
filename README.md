@@ -67,6 +67,14 @@ not, or what it did not ask that the other would (SMT-D2). A plain
 02004 file judged as 02004 draws nothing, because there was no choice
 to report.
 
+Beside the validator, `data/battery-passport/` publishes machine-readable
+indexes of what a battery passport is required to carry -- Annex XIII of
+Regulation (EU) 2023/1542, the Commission's data-point guidance, the
+Battery Pass long list, and the IDTA 02035/02099 templates -- with a
+join across all four whose coverage is stated as a floor. The sources
+are pinned by hash, not mirrored; `data/battery-passport/README.md` says
+how to rebuild every index from them.
+
 The AAS metamodel itself is relayed from aas-core3.0's verification in
 a separate `meta` channel — warnings by default, `--strict-meta` to
 promote — and never re-implemented here.

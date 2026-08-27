@@ -4,9 +4,10 @@
 sources this repository does not mirror -- the pins live in
 `sources.sha256`, and anyone can re-fetch the originals and re-run the
 extractors (`data/battery-passport/tools/REGENERATE.txt`). That
-regeneration is the real gate and it needs the network, so it runs in a
-scheduled job; a checkout has to settle for what the files can prove
-about each other. Four things, none of which needs a byte of source:
+regeneration is the real gate and it needs the network, so it is for
+whoever has one -- no job runs it today, and this sentence will say so
+until one does. A checkout settles for what the files can prove about
+each other. Four things, none of which needs a byte of source:
 
 - every index's own `counts.records` equals the number of records it
   carries, so a count quoted from the header is the count;
@@ -18,7 +19,14 @@ about each other. Four things, none of which needs a byte of source:
 - the extractor scripts still parse and import. Two of them need
   third-party readers (`openpyxl`, `pymupdf`) this project does not
   depend on; where those are absent the import is reported and skipped,
-  and CI installs them so the full check runs somewhere on every push.
+  and the main-branch CI job installs both, so the full check runs
+  wherever the gate itself runs.
+
+An sdist carries this file and not the data directory it checks --
+shipping fifteen thousand lines of indexes in a Python source archive
+serves nobody -- so outside a repository checkout the gate reports that
+there is nothing here to check and passes, rather than failing `make
+check` over content the tree never had.
 """
 from __future__ import annotations
 
@@ -57,6 +65,10 @@ def _ledger(problems) -> dict:
 
 
 def main() -> int:
+    if not DATA.is_dir():
+        print("battery-data: no data/battery-passport in this tree "
+              "(an sdist ships the checker, not the data); nothing to check")
+        return 0
     problems = []
     ledger = _ledger(problems)
 

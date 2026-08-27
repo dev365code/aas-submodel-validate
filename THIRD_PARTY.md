@@ -35,3 +35,21 @@ which answers and `SMT-D2` reports the choice.
 [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)
 (MIT) — metamodel types, JSON/XML de/serialisation, and the verification
 this project reports in its `meta` channel.
+
+## Battery-passport requirements indexes
+
+`data/battery-passport/` holds indexes derived from four canonical
+sources -- EU Regulation 2023/1542 Annex XIII (EUR-Lex consolidated
+text), the Commission's data-point guidance, the Battery Pass
+consortium's attribute long list (CC BY 4.0), and IDTA 02035/02099
+submodel templates (CC BY 4.0). The sources are not mirrored here; each
+is pinned by URL and sha256 in `data/battery-passport/sources.sha256`,
+and the bundle's own `README.md` carries the per-source attribution.
+
+Two pins of IDTA 02004 live in this repository and they are different
+files on purpose: this tool vendors and validates against **02004
+version 2.0.1** (the table above), while the battery bundle indexes
+**02004 V2.0** -- the edition the battery-passport template series
+references. Same document family, different editions, legitimately
+different hashes.
+
