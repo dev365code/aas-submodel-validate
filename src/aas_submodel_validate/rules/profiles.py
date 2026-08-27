@@ -196,15 +196,6 @@ def _marks_of(submodel) -> frozenset:
         said |= candidate_values(supplemental)
     return frozenset(said)
 
-
-def declared(submodel):
-    """Every profile this submodel positively declares."""
-    said = _marks_of(submodel)
-    return [profile for profile in PROFILES
-            if submodel_declares(submodel, profile.default.TEMPLATE_SEMANTIC_ID)
-            and said & profile.marks]
-
-
 @rule(RULE_ID, kind="template", prio="MAY",
       title="the report names which of two templates sharing one identifier answered",
       spec="IDTA 02035-2 1.0 template, submodel supplementalSemanticIds; "

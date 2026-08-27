@@ -482,3 +482,71 @@ def test_a_profile_reaches_past_a_submodel_that_is_not_in_the_pair(tmp_path):
     assert "SMT-D2" in {finding.id for finding in report.findings}, \
         "the choice was made and the report did not say so"
     assert report.notes == [], report.notes
+
+
+def test_a_marked_submodel_after_a_plain_one_is_still_told(tmp_path):
+    """The walk over submodels skips the plain default case with a
+    `continue`, and every fixture had one submodel -- so the skip could
+    be a `break` and the report would only ever lose the second
+    submodel's sentence, which no fixture had."""
+    env = declaring_profile(hd_env(), _mark())
+    plain = copy.deepcopy(hd_env())["submodels"][0]
+    plain["id"] = "urn:plain:first"
+    env["submodels"].insert(0, plain)
+    report = _report(tmp_path, env)
+    findings = [f for f in report.findings if f.id == "SMT-D2"]
+    assert len(findings) == 1, "the plain submodel drew a sentence or ate the marked one's"
+
+
+def test_the_declared_sentence_is_clean_of_its_own_plumbing(tmp_path):
+    """A declared (not forced) choice has no `why`, and the message must
+    not ship the plumbing spelling of that -- "(None)". The subject falls
+    back to the word "submodel" when the file names nothing."""
+    env = declaring_profile(hd_env(), _mark())
+    env["submodels"][0].pop("idShort", None)
+    report = _report(tmp_path, env)
+    (finding,) = [f for f in report.findings if f.id == "SMT-D2"]
+    assert "(None)" not in finding.violation.message
+    assert finding.violation.subject == "submodel"
+
+
+def test_the_declares_suffix_appears_exactly_where_it_is_true(tmp_path):
+    """The detail's "; this submodel declares ..." tail is a statement
+    about the file, and it has two conditions -- the file declares the
+    profile, and the run stayed on the default anyway. Three corners:
+
+    - declared, default side: the tail is the whole point -- present.
+    - declared, forced to the alternative: the choice honoured the
+      declaration, and repeating it under the alternative's sentence
+      reads as the file declaring the *default* -- absent.
+    - forced to the default with nothing declared: nothing to report --
+      absent, and the sentence carries the flag as its `why` instead."""
+    declared_default = _report(tmp_path, declaring_profile(hd_env(), _mark()))
+    (finding,) = [f for f in declared_default.findings if f.id == "SMT-D2"]
+    assert "this submodel declares" in finding.violation.detail
+
+    finding = _notice(tmp_path, declaring_profile(hd_env(), _mark()),
+                      profile="02035-2")
+    assert "this submodel declares" not in finding.violation.detail
+    assert "--profile 02035-2" in finding.violation.message
+
+    finding = _notice(tmp_path, hd_env(), profile="02004")
+    assert "this submodel declares" not in finding.violation.detail
+    assert "--profile 02004" in finding.violation.message
+
+
+def test_each_side_gets_its_own_cost_sentence(tmp_path):
+    """Two directions, two shapes: the default side names what it asked
+    that the other would not ("asked all of them, including ..."), the
+    alternative side counts what it is not asking -- and the relaxed pair
+    is named by label, so the set drifting to different rows is a diff in
+    a sentence somebody reads, not just in a tuple."""
+    on_default = _report(tmp_path, declaring_profile(hd_env(), _mark()))
+    (finding,) = [f for f in on_default.findings if f.id == "SMT-D2"]
+    assert "asked all of them, including" in finding.violation.detail
+
+    finding = _notice(tmp_path, declaring_profile(hd_env(), _mark()),
+                      profile="02035-2")
+    assert "are not made here" in finding.violation.detail
+    assert "no longer requires (Version, Description)" in finding.violation.detail
+
