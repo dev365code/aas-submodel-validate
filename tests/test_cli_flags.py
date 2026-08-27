@@ -165,3 +165,85 @@ def test_the_options_a_report_publishes_are_the_flags_it_was_given(tmp_path, cap
         "profile": None, "strictMeta": False, "allowUnmatched": True}
     assert published(["--profile", "02004"]) == {
         "profile": "02004", "strictMeta": False, "allowUnmatched": False}
+
+
+def test_allow_unmatched_forgives_only_the_presence_rule(tmp_path, capsys):
+    """The flag partitions findings on one rule id, and every fixture for
+    it had only that finding to move -- so the partition could sweep
+    every finding into the notes, or empty the report entirely, and the
+    flag would still look like it worked.
+
+    Here the unmatched submodel also carries a metamodel defect, and the
+    run is strict, so there is a real error in the report beside the
+    forgiven one. The error must stay a finding and keep the exit code;
+    the note must still name the semanticId the input declared."""
+    env = copy.deepcopy(hd_env())
+    submodel = env["submodels"][0]
+    submodel["semanticId"]["keys"][0]["value"] = "urn:not:ours"
+
+    def poison(node):
+        if isinstance(node, dict):
+            if node.get("idShort") == "DocumentIsPrimary":
+                node["value"] = "TRUE"     # aas-core3 refuses the spelling
+            for child in node.values():
+                poison(child)
+        elif isinstance(node, list):
+            for child in node:
+                poison(child)
+
+    poison(env)
+    path = tmp_path / "unmatched-strict.json"
+    path.write_text(json.dumps(env))
+    assert main([str(path), "--allow-unmatched", "--strict-meta"]) == 1
+    out = capsys.readouterr().out
+    assert "error   META" in out, "the real error went with the forgiven one"
+    assert out.count("(allowed)") == 1, "every finding was echoed as a note"
+    assert "urn:not:ours" in out, "the note lost the detail naming what was declared"
+
+
+def test_no_path_and_no_rules_is_a_usage_error(capsys):
+    """argparse's own exit: code 2 and a usage line, not a traceback from
+    handing None to the loader two calls later."""
+    with pytest.raises(SystemExit) as caught:
+        main([])
+    assert caught.value.code == 2
+    assert "required" in capsys.readouterr().err
+
+
+def test_the_json_report_is_indented_for_a_human_holding_a_pager(tmp_path, capsys):
+    """`indent=2` is part of what ships: one key per line, two spaces.
+    Nothing structural reads the whitespace, which is exactly why nothing
+    else would notice it going."""
+    path = tmp_path / "ok.json"
+    path.write_text(json.dumps(hd_env()))
+    main([str(path), "-f", "json"])
+    assert capsys.readouterr().out.startswith('{\n  "')
+
+
+def test_warnings_as_errors_needs_a_warning_not_a_vibe(tmp_path):
+    """The flag reads `count(WARNING) > 0`: a clean file stays exit 0
+    under it, and one warning flips to 1. Both edges, because `> 0` can
+    drift to `>= 0` (every clean run fails) or `> -1` (same) and only
+    the clean edge notices."""
+    clean = tmp_path / "clean.json"
+    clean.write_text(json.dumps(hd_env()))
+    assert main([str(clean), "--warnings-as-errors"]) == 0
+
+    warned = copy.deepcopy(hd_env())
+
+    def lowercase_status(node):
+        if isinstance(node, dict):
+            if node.get("idShort") == "StatusValue":
+                node["value"] = "released"          # HD-D6, a SHOULD
+            for child in node.values():
+                lowercase_status(child)
+        elif isinstance(node, list):
+            for child in node:
+                lowercase_status(child)
+
+    lowercase_status(warned)
+    warmed = tmp_path / "warned.json"
+    warmed.write_text(json.dumps(warned))
+    assert main([str(warmed)]) == 0
+    assert main([str(warmed), "--warnings-as-errors"]) == 1
+

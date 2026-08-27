@@ -726,3 +726,22 @@ def _one_row_per_cardinality():
 #: has its own byte-compare gate.
 IDSHORT_PATTERN = next(row["allowed_idshort"] for row in hd_tables.ROWS
                        if row["label"] == "DigitalFile")
+
+
+def test_the_refusal_lists_the_priorities_in_reading_order():
+    """The ValueError for an unknown priority names the known ones,
+    sorted -- a stable sentence, so two people hitting it file one bug."""
+    with pytest.raises(ValueError) as caught:
+        registry.rule("ZZ-TEST", kind="template", prio="MSUT",
+                      title="t", fix="f")(lambda ctx: ())
+    assert "MAY, MUST" in str(caught.value)
+
+
+def test_the_decorator_hands_the_function_back():
+    """`@rule` returns what it was given, so the module-level name stays
+    callable. Returning None poisons the name silently: every use through
+    the registry still works -- the function was stored before the
+    return -- and the first direct call is a TypeError."""
+    from aas_submodel_validate.rules import container as _c
+    assert callable(_c.x1_is_a_zip)
+

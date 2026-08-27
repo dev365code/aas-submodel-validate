@@ -155,3 +155,52 @@ def test_an_absent_reference_yields_an_empty_set_not_none():
     assert candidate_values_from_dict(None) == frozenset()
     assert candidate_values_from_dict({}) == frozenset()
 
+
+def test_the_nearest_miss_summary_caps_at_three_values():
+    """`sorted(set(seen))[:3]` -- deterministic, deduplicated, and
+    bounded: an environment declaring forty foreign identifiers gets a
+    three-item summary, not a page. And a value equal to a pack's own
+    identifier never draws the version-suffix hint -- such a submodel
+    matched, so the hint would be diagnosing a success."""
+    from aas_submodel_validate.rules.detect import PACKS, _nearest_miss
+
+    class _Sub:
+        def __init__(self, value):
+            from aas_core3 import types as aas
+            self.id_short = "Whatever"
+            self.semantic_id = aas.Reference(
+                type=aas.ReferenceTypes.EXTERNAL_REFERENCE,
+                keys=[aas.Key(type=aas.KeyTypes.GLOBAL_REFERENCE, value=value)])
+
+    detail = _nearest_miss([_Sub("urn:d"), _Sub("urn:c"),
+                            _Sub("urn:b"), _Sub("urn:a")])
+    assert detail == "semanticId value(s): urn:a, urn:b, urn:c"
+
+    equal = _nearest_miss([_Sub(PACKS[0].semantic_id)])
+    assert "version suffix" not in equal
+
+
+def test_a_named_submodel_with_no_semantic_id_says_absent():
+    """The name-hint sentence quotes what the semanticId is, and for a
+    submodel that has none the honest word is "absent" -- not an empty
+    string a reader parses as a typo."""
+    from aas_submodel_validate.rules.detect import _nearest_miss
+
+    class _Sub:
+        id_short = "HandoverDocumentation"
+        semantic_id = None
+
+    detail = _nearest_miss([_Sub()])
+    assert "absent" in detail
+    assert "never by name" in detail
+
+
+def test_an_input_declaring_nothing_says_so():
+    from aas_submodel_validate.rules.detect import _nearest_miss
+
+    class _Sub:
+        id_short = "Whatever"
+        semantic_id = None
+
+    assert "no submodel in the input declares" in _nearest_miss([_Sub()])
+
