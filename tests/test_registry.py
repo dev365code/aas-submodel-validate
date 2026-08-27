@@ -324,8 +324,8 @@ REMEDIES = {
         "Replace the ClassId with one of the twelve VDI 2770 Blatt "
         "1:2020 ids: 01-01, 02-01..02-04, 03-01..03-06 or 04-01.",
     "DBP2-D4":
-        "Add an English entry to ClassName -- 'en' or 'eng', with or "
-        "without a region subtag; Table 1 names each class in English "
+        "Add an entry to ClassName tagged 'en' (a region subtag is fine, "
+        "and case does not matter); Table 1 names each class in English "
         "(for 03-02 it is 'Operation').",
     "DBP2-D5":
         "Mark one of these DocumentIds with DocumentIsPrimary = true, "
@@ -372,8 +372,8 @@ REMEDIES = {
         "Replace the ClassId with one of the twelve VDI 2770 Blatt "
         "1:2020 ids: 01-01, 02-01..02-04, 03-01..03-06 or 04-01.",
     "HD-D4":
-        "Add an English entry to ClassName -- 'en' or 'eng', with or "
-        "without a region subtag; Table 1 names each class in English "
+        "Add an entry to ClassName tagged 'en' (a region subtag is fine, "
+        "and case does not matter); Table 1 names each class in English "
         "(for 03-02 it is 'Operation').",
     "HD-D5":
         "Mark one of these DocumentIds with DocumentIsPrimary = true, "

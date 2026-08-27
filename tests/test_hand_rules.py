@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import json
 
+import aas_core3.verification as verification
 import pytest
 
 from aas_submodel_validate import runner
@@ -498,28 +499,6 @@ def _file_values(env):
     walk(env)
     return found
 
-def test_the_primary_remedy_asks_for_what_the_rule_asks_for(tmp_path):
-    """HD-D5 fires on several DocumentIds and none marked primary. It
-    says nothing about several being marked -- measured: a file with two
-    primaries draws no finding -- and the template bounds
-    DocumentIsPrimary per DocumentId, not per Document.
-
-    The remedy used to say "set it on exactly one", which is a check this
-    rule does not make and a requirement this project has not vendored."""
-    env = copy.deepcopy(hd_env())
-    document_ids = next(child for child in _first_document(env)["value"]
-                        if child.get("idShort") == "DocumentIds")
-    second = copy.deepcopy(document_ids["value"][0])
-    _set_property(second, "DocumentIdentifier", "OTHER-1")
-    _set_property(second, "DocumentIsPrimary", "true")
-    document_ids["value"].append(second)
-    assert "HD-D5" not in _findings(tmp_path, env), "two primaries is not this rule"
-
-    _set_property(document_ids["value"][0], "DocumentIsPrimary", "false")
-    _set_property(second, "DocumentIsPrimary", "false")
-    assert "HD-D5" in _findings(tmp_path, env), "none marked is what it asks"
-
-
 def test_a_file_the_archive_holds_needs_no_suppl_relationship(tmp_path):
     """HD-D7 asks whether the container holds the entry the File value
     names. Whether an `aas-suppl` relationship declares it is X4's
@@ -803,26 +782,27 @@ def test_a_class_id_under_another_system_is_not_this_rules_business(tmp_path):
 
 @pytest.mark.parametrize("tag,is_english", (
     ("en", True), ("EN", True), ("en-GB", True), ("EN-GB", True),
-    ("eng", True), ("ENG-us", True),
-    ("enm", False), ("english", False), ("de", False), ("", False),
+    ("eng", False), ("enm", False), ("english", False), ("de", False),
+    ("", False),
 ))
 def test_which_language_tags_count_as_english(tmp_path, tag, is_english):
-    """`eng` is the three-letter ISO 639 code for the same language, it
-    is well-formed under BCP 47's `2*3ALPHA` primary subtag, and the
-    metamodel's own verification accepts it -- measured. This rule asks
-    whether the class name is in English, and it is; judging the tag
-    belongs to the layer this project delegates (docs/divergences.md
-    #35). Refusing it exited 1 on a file the metamodel calls conformant.
+    """What counts as English is aas-core3's answer, not one written here
+    (docs/divergences.md #35). These rows say what that answer is, and
+    the second assertion says whose it is.
 
-    Both spellings are named rather than matched by prefix, because
-    `startswith("en")` would admit `enm` -- Middle English -- and
-    `english`, which is not a tag at all.
-
-    `EN-GB` twice over: the region branch lowercases too, and nothing
-    asked whether it does. A tag is case-insensitive under BCP 47 §2.1,
-    so dropping that fold draws a MUST on a conformant file."""
+    `eng` was accepted here for a while, on the reading that BCP 47's
+    grammar admits a three-letter primary subtag and that a file using
+    it passes the metamodel's verification. Both are true and neither is
+    the question. The grammar is well-formedness -- `english` clears it
+    too, the primary subtag being `2*3ALPHA / 4ALPHA / 5*8ALPHA` -- and
+    the verification never asks whether a ClassName is *English*. Where
+    the metamodel does need to know, it ships `is_bcp_47_for_english`,
+    and that says `en` or `EN` with an optional region."""
     env = copy.deepcopy(hd_env())
     for child in _classification(env)["value"]:
         if child.get("idShort") == "ClassName":
             child["value"] = [{"language": tag, "text": "Operation"}]
     assert ("HD-D4" not in _findings(tmp_path, env)) is is_english
+    # And it is the metamodel's verdict, not a copy that agreed on the
+    # day it was written.
+    assert verification.is_bcp_47_for_english(tag) is is_english

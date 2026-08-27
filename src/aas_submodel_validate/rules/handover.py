@@ -27,6 +27,8 @@ the shape this repository keeps finding in its own gates.
 """
 from __future__ import annotations
 
+import aas_core3.verification as verification
+
 from ..model import Violation
 from ..registry import rule
 from .engine import (
@@ -116,22 +118,22 @@ def _d3(tables):
     return check
 
 
-#: The two ISO 639 spellings of English, with an optional region subtag.
-#: `en` is what BCP 47 canonicalises to and what every vendored
-#: ExampleValue writes; `eng` is the three-letter code, well-formed under
-#: BCP 47's `2*3ALPHA` primary subtag, and accepted by the metamodel's
-#: own verification (docs/divergences.md #35). This rule asks whether a
-#: ClassName is in English, not whether a tag is canonical -- judging the
-#: tag is the metamodel layer's job, and this project delegates it.
+#: "Is this tag English?" is a question the metamodel already answers, so
+#: this asks it rather than deciding it: `is_bcp_47_for_english` is
+#: aas-core3's own predicate, `^(en|EN)(-.*)?$`, the one it applies where
+#: the metamodel requires something in English (AASc-3a-002).
 #:
-#: Named rather than a prefix test: `startswith("en")` would admit `enm`
-#: (Middle English) and `english` (not a tag at all).
-ENGLISH_TAGS = ("en", "eng")
-
-
-def _english(lang: str) -> bool:
-    lang = lang.lower()
-    return any(lang == tag or lang.startswith(tag + "-") for tag in ENGLISH_TAGS)
+#: Borrowed rather than copied. A copy is a fork that looks like
+#: agreement, and this project has already reversed itself once here on
+#: the strength of a wider reading it had not checked against this
+#: function (docs/divergences.md #35). If aas-core3's answer moves, this
+#: moves with it, and the fixtures below say what the answer is today.
+#:
+#: Note this is *narrower* than `matches_bcp_47`, which is
+#: well-formedness only and admits `eng`, `enm` and `english` alike --
+#: a language tag being well-formed says nothing about which language it
+#: names.
+_english = verification.is_bcp_47_for_english
 
 
 def _d4(tables):
@@ -362,8 +364,8 @@ ROSTER = (
       "ClassificationSystem", "ClassId"), _d3),
     ("-D4", "template", "MUST", "the VDI 2770 ClassName speaks English",
      "IDTA 02004-2-0 §2.3 (\"EN is mandatory\")",
-     "Add an English entry to ClassName -- 'en' or 'eng', with or "
-     "without a region subtag; Table 1 names each class in English "
+     "Add an entry to ClassName tagged 'en' (a region subtag is fine, "
+     "and case does not matter); Table 1 names each class in English "
      "(for 03-02 it is 'Operation').",
      ("Document", "DocumentClassifications", "DocumentClassification",
       "ClassificationSystem", "ClassName"), _d4),
