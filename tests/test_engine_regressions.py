@@ -481,3 +481,54 @@ def test_a_stray_composite_in_a_multirow_scope_does_not_fabricate_a_count(tmp_pa
         "value": []})
     ids = _ids(tmp_path, env)
     assert "HD-E03" not in ids     # DocumentIds is still exactly one, not "found 2"
+
+
+# -- what the walk does when the optional parts of a submodel are absent ----
+
+
+def test_a_submodel_without_an_id_short_still_names_its_findings(tmp_path):
+    """`idShort` is optional on a Submodel, and every subject the walk
+    reports is built from it. Without the fallback the path a reader
+    follows begins `None/` -- not a crash, and not a place."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0].pop("idShort", None)
+    version = _version(env)
+    for child in version["value"]:
+        if child.get("idShort") == "StatusSetDate":
+            child["value"] = "not-a-date"
+    subjects = [f.violation.subject or "" for f in runner.run(_write(tmp_path, env)).findings
+                if f.id == "HD-D8"]
+    assert subjects and all(s.startswith("submodel/") for s in subjects), subjects
+
+
+def test_a_submodel_with_no_elements_at_all_is_judged_not_crashed(tmp_path):
+    """`submodelElements` is optional too, and the walk iterates it. A
+    submodel that declares none is a submodel missing everything the
+    template requires -- which is a verdict, and the generated rules give
+    it. Iterating `None` is a TypeError."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0].pop("submodelElements", None)
+    findings = {f.id: f for f in runner.run(_write(tmp_path, env)).findings}
+    assert "HD-E01" in findings
+    assert not [f for f in findings.values()
+                if "could not run" in f.violation.message]
+
+
+#: Conjuncts of the walk's guards that survive everything above, measured
+#: and left alone:
+#:
+#: *`expected` in the submodel reference-type check.* All three vendored
+#: tables declare `TEMPLATE_SUBMODEL_SID_TYPE = "ModelReference"`, so the
+#: term is never false.
+#:
+#: *`row["sid_type"]`.* Every one of the 86 generated rows carries one.
+#:
+#: *`row["value_type"]` and `declared is not None`.* The 59 rows without a
+#: value type are all containers, files, references and
+#: multi-language properties -- none of which carries a `value_type`
+#: attribute at all -- so `declared` is `None` exactly where the row is
+#: silent, and either term alone decides the same thing.
+#:
+#: *`not candidates` in the near-miss sweep.* An element with no
+#: identifiers reaches `_near_miss` with an empty set, which matches
+#: nothing; skipping it early is a saving, not a decision.
