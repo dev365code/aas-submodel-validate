@@ -219,3 +219,74 @@ def test_json_that_is_not_an_object_is_a_finding_not_a_crash(tmp_path):
     loaded = load(path)
     assert [error.stage for error in loaded.errors] == ["payload"]
     assert not loaded.submodels
+
+
+#: The five ways the chain can refuse, each at the clause that catches it.
+#: Every one of these clauses could be deleted with the suite green: the
+#: exception it names reached no fixture, so the handler was a promise
+#: about hostile input that had never been kept. Two of them catch the
+#: *same* exception the other two do, one link further along -- the root
+#: relationships part against a payload's own -- and a fixture for one
+#: says nothing about the other.
+_RELS_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+_DTD_RELS = ('<?xml version="1.0"?><!DOCTYPE Relationships '
+             '[<!ENTITY a "x">]><Relationships xmlns="%s"/>' % _RELS_NS).encode()
+_WIDE_RELS = ('<?xml version="1.0"?><Relationships xmlns="%s"><!-- %s --></Relationships>'
+              % (_RELS_NS, "x" * 4000)).encode()
+
+
+def _chain(path, *, root_rels=None, spec="/aasx/env.json", part_rels=None):
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", root_rels if root_rels is not None
+                         else rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, spec)]))
+        archive.writestr("aasx/env.json", env_json())
+        if part_rels is not None:
+            archive.writestr("aasx/_rels/env.json.rels", part_rels)
+    return path
+
+
+@pytest.mark.parametrize("how,stage,read_anyway,says", (
+    ("root rels over the bound", "bounds", False, None),
+    ("root rels declares a DTD", "chain", False, "Remove the DTD"),
+    ("a spec part the chain does not reach", "chain", False, None),
+    ("a part's own rels over the bound", "bounds", True, None),
+    ("a part's own rels will not parse", "chain", True, None),
+))
+def test_every_way_the_chain_refuses_is_caught_and_staged(tmp_path, monkeypatch,
+                                                          how, stage, read_anyway,
+                                                          says):
+    """Caught, staged as itself, carrying its own remedy where it has
+    one, and -- where the payload was already read -- not costing the
+    submodel that arrived before it.
+
+    The stage is what the container rules read to choose a finding, so
+    getting it wrong hands the author a remedy for a defect they do not
+    have: "bounds" says this reader refused, "chain" says the package's
+    relationships do not reach what they name.
+
+    The remedy matters separately, and the DTD clause is why. It is a
+    subclass of the clause below it, so deleting it changes no stage --
+    the parent catches the same exception and stages it the same way. All
+    that goes is the sentence telling the author which part holds the
+    declaration and why this reader will not expand it."""
+    path = tmp_path / "chain.aasx"
+    if "over the bound" in how:
+        monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+    if how.startswith("root rels over"):
+        _chain(path, root_rels=_WIDE_RELS)
+    elif how.startswith("root rels declares"):
+        _chain(path, root_rels=_DTD_RELS)
+    elif how.startswith("a spec part"):
+        _chain(path, spec="/aasx/absent.json")
+    elif "own rels over" in how:
+        _chain(path, part_rels=_WIDE_RELS)
+    else:
+        _chain(path, part_rels=b"<not xml")
+    loaded = load(path)
+    assert [error.stage for error in loaded.errors] == [stage]
+    assert bool(loaded.submodels) is read_anyway
+    if says:
+        assert says in (loaded.errors[0].fix or ""), loaded.errors[0].fix
