@@ -8,7 +8,14 @@ from aas_submodel_validate import rules as _rules  # noqa: F401 - registers
 from aas_submodel_validate.model import KINDS, Severity, Violation
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.rules import container as container_rules
-from aas_submodel_validate.rules import engine, handover, hd_tables, profiles
+from aas_submodel_validate.rules import (
+    dbp_tables,
+    engine,
+    handover,
+    hd_tables,
+    profiles,
+    td_tables,
+)
 from aas_submodel_validate.runner import _meta_rule
 
 
@@ -130,8 +137,11 @@ def test_every_kind_in_the_vocabulary_has_a_user():
 #: nine promotions were not (DBP2-D10, DBP2L2, DBP2L3, DBP2L4, DBP2L5,
 #: HDL4, TD-D3, TDL1, TDL2). Neither direction was guarded; promotions
 #: were guarded better, not caught. And "no fixture asserts a severity"
-#: was false when it was written -- eleven did, and two of them are what
-#: caught HD-D5 and HD-D9. The lesson is not about severities. Counting
+#: was false when it was written -- twelve did (two in
+#: `test_dbp_hand_rules`, seven in `test_hand_rules`, and one each in
+#: `test_detect`, `test_profiles` and `test_spec_accuracy`), and two of
+#: them are what caught HD-D5 and HD-D9. Counted from the tree this time,
+#: which is the only reason this number is different from the last one. The lesson is not about severities. Counting
 #: what a suite covers by reading it, rather than by breaking the thing
 #: and watching, is how all three sentences came out wrong at once.
 #:
@@ -198,10 +208,15 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #:   row stricter, and one profile's error is the other's clean file. At
 #:   MUST it exits 1.
 #:
-#: `\d+`, not `\d\d`: the generator formats ids with `%02d`, a minimum
-#: width, so an 87th row in a pack would be `HD-E087` but a 100th would
-#: be `HD-E100` -- which `\d\d` sorts into the hand-written rules, where
-#: it surfaces as an arity mismatch naming nothing.
+#: `\d+`, not `\d\d`: the generator formats ids with `%02d`, a *minimum*
+#: width, so a 100th row in a pack is `HD-E100` and `\d\d` would not
+#: match it. That is the semantic half. The failure-message half needs
+#: the assertion below to compare sets before it compares counts -- under
+#: `\d\d` an `HD-E100` fell through to the hand census, which named it;
+#: under `\d+` it lands here, and a bare `assert 87 == 86` above a
+#: truncated repr of 87 Rule objects names nothing. Widening the pattern
+#: without moving that assertion would have made the case it was widened
+#: for worse.
 GENERATED_ID = re.compile(r"^(HD|TD|DBP2)-E\d+$")
 
 
@@ -210,6 +225,12 @@ def test_every_generated_rule_stops_a_build():
     failing is a file failing. One of them at `SHOULD` would report a
     cardinality the template states and let the build through."""
     generated = [rule for rule in all_rules() if GENERATED_ID.match(rule.id)]
+    # The ids first, against the tables they are generated from, so a row
+    # that appears or disappears is named rather than counted. Then the
+    # count, which is the number this project quotes in its README.
+    assert {rule.id for rule in generated} == {
+        row["id"] for tables in (hd_tables, td_tables, dbp_tables)
+        for row in tables.ROWS}
     assert len(generated) == 86
     assert {rule.prio for rule in generated} == {"MUST"}
 
@@ -228,7 +249,11 @@ def test_the_hand_rules_have_the_severities_that_were_decided():
     assert {r.id for r in hand if r.severity is Severity.ERROR} == MUST_RULES
     assert {r.id for r in hand if r.severity is Severity.WARNING} == SHOULD_RULES
     assert {r.id for r in hand if r.severity is Severity.INFO} == MAY_RULES
-    assert len(hand) == len(MUST_RULES | SHOULD_RULES | MAY_RULES)
+    # No count here. `Severity` has exactly these three members and the
+    # registry refuses any other priority, so the three subsets partition
+    # `hand`; if all three match, the ids agree and so does the arity.
+    # The count that was here read as a fourth check and was none -- it
+    # could not fail, and an assertion that cannot fail reads as a gate.
 
 
 #: Every rule-id namespace this tool registers, as the whole shape of an
@@ -242,13 +267,13 @@ def test_the_hand_rules_have_the_severities_that_were_decided():
 NAMESPACES = {
     r"X\d+": "the AASX/OPC container the submodel arrived in",
     r"SMT-D\d+": "the tool's own questions, belonging to no template",
-    r"HD-E\d\d": "IDTA 02004, generated from the template's rows",
+    r"HD-E\d+": "IDTA 02004, generated from the template's rows",
     r"HD-D\d+": "IDTA 02004, what the template file cannot say",
     r"HDL\d+": "IDTA 02004, informational lints",
-    r"TD-E\d\d": "IDTA 02003, generated from the template's rows",
+    r"TD-E\d+": "IDTA 02003, generated from the template's rows",
     r"TD-D\d+": "IDTA 02003, what the template file cannot say",
     r"TDL\d+": "IDTA 02003, informational lints",
-    r"DBP2-E\d\d": "IDTA 02035-2, generated from the template's rows",
+    r"DBP2-E\d+": "IDTA 02035-2, generated from the template's rows",
     r"DBP2-D\d+": "IDTA 02035-2, 02004's hand rules over 02035-2's table",
     r"DBP2L\d+": "IDTA 02035-2, informational lints",
 }
