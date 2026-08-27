@@ -35,6 +35,7 @@ from .engine import (
     analyze,
     child_of,
     children_of,
+    idshort_remedy,
     instances_of,
     matched_submodels,
     property_value,
@@ -285,10 +286,11 @@ def _d10(tables):
 
 def _l1(tables):
     def check(ctx):
-        for subject, id_short, pattern in analyze(ctx, tables)["idshort_drift"]:
+        for subject, id_short, pattern, in_list in analyze(ctx, tables)["idshort_drift"]:
             yield Violation("idShort does not follow the template's suggestion",
                             subject=subject,
-                            detail="%r does not match %s" % (id_short, pattern))
+                            detail="%r does not match %s" % (id_short, pattern),
+                            fix=idshort_remedy(in_list, pattern))
     return check
 
 
@@ -394,6 +396,10 @@ ROSTER = (
      ("DocumentVersion", "StatusSetDate"), _d8),
     ("L1", "lint", "MAY", "idShorts follow the template's naming suggestion",
      "IDTA 02004-2-0 Annex A; template AllowedIdShort qualifiers",
+     # Unreachable: `_l1` gives every violation its own remedy, and one
+     # of the two says the opposite of this -- inside a SubmodelElementList
+     # an idShort is not tidiness, it is AASd-120. Kept and pinned; see
+     # `-D9`.
      "Rename to the template's suggested pattern (base name plus an "
      "optional 2-3 digit suffix). Any unique idShort is legal; this "
      "is tidiness, not conformance.", (), _l1),

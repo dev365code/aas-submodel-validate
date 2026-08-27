@@ -78,7 +78,7 @@ def _analyze(ctx, tables) -> Dict:
         "violations": {},      # row id -> [Violation]
         "instances": {},       # row id -> [(subject path, element)]
         "near_misses": [],     # (subject path, seen value, expected value)
-        "idshort_drift": [],   # (subject path, id_short, intended pattern)
+        "idshort_drift": [],   # (subject, id_short, pattern, is a list child)
         "reftype_drift": [],   # (subject path, seen type, template type)
     }
     for submodel in matched_submodels(ctx, tables):
@@ -92,6 +92,28 @@ def _analyze(ctx, tables) -> Dict:
                in_list=False)
     return result
 
+
+
+def idshort_remedy(in_list: bool, pattern: str) -> str:
+    """Two sentences, because the lint reads two situations and only one
+    of them is about tidiness.
+
+    Five of the six rows that carry an idShort pattern sit directly
+    inside a SubmodelElementList, where AASd-120 forbids an idShort
+    outright -- measured: aas-core3 raises it, six times, on a fixture
+    that is otherwise clean. On those rows this lint can only fire on a
+    file that already breaks the metamodel, and the one sentence it used
+    to ship told the author to *rename* what must not be there. Following
+    it left the violation in place.
+    """
+    if in_list:
+        return ("Remove this idShort. A submodel element directly inside "
+                "a SubmodelElementList must not carry one (AASd-120), so "
+                "renaming it to the template's suggestion leaves a "
+                "metamodel violation the file already has.")
+    return ("Rename to the template's suggested pattern (%s). Any unique "
+            "idShort is legal here; this is tidiness, not conformance."
+            % pattern)
 
 
 def reftype_remedy(expected: str) -> str:
@@ -184,7 +206,7 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
             if row["allowed_idshort"] and element.id_short \
                     and not re.match(row["allowed_idshort"], element.id_short):
                 result["idshort_drift"].append(
-                    (subject, element.id_short, row["allowed_idshort"]))
+                    (subject, element.id_short, row["allowed_idshort"], in_list))
             reference = element.semantic_id
             if row["sid_type"] and reference is not None \
                     and reference.type.value != row["sid_type"]:

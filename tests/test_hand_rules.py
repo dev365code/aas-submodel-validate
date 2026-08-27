@@ -762,6 +762,45 @@ def test_which_spellings_mark_a_document_id_primary(tmp_path, value, is_primary)
 
 
 
+
+def test_a_list_child_is_told_to_delete_its_id_short_not_rename_it(tmp_path):
+    """Five of the six rows that carry an idShort pattern sit directly
+    inside a SubmodelElementList, where AASd-120 forbids an idShort at
+    all -- so on those rows this lint can only fire on a file that
+    already breaks the metamodel.
+
+    Its one standing sentence said "any unique idShort is legal; this is
+    tidiness, not conformance", and told the author to rename. Doing that
+    leaves the violation exactly where it was. Measured here: the meta
+    channel raises AASd-120 on the same file, six times, and it raises
+    nothing once the idShorts are gone."""
+    env = copy.deepcopy(hd_env())
+    for element in _every_list_child(env):
+        element["idShort"] = "Whatever"
+    findings = _findings(tmp_path, env)
+    assert "Remove this idShort" in findings["HDL1"].fix
+    assert "AASd-120" in findings["HDL1"].fix
+    assert "META" in findings, "the metamodel channel stopped seeing AASd-120"
+
+
+def _every_list_child(env):
+    found = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("modelType") == "SubmodelElementList":
+                found.extend(c for c in node.get("value", []) if isinstance(c, dict))
+            for child in node.values():
+                walk(child)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child)
+
+    walk(env)
+    assert found, "the fixture stopped holding a list"
+    return found
+
+
 def test_a_class_id_under_another_system_is_not_this_rules_business(tmp_path):
     """The twelve are the twelve of a *published edition*, and this rule
     only ever looks at a classification whose system the file has already

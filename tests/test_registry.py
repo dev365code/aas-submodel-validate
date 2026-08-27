@@ -8,7 +8,7 @@ from aas_submodel_validate import rules as _rules  # noqa: F401 - registers
 from aas_submodel_validate.model import KINDS, Severity, Violation
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.rules import container as container_rules
-from aas_submodel_validate.rules import engine, handover, profiles
+from aas_submodel_validate.rules import engine, handover, hd_tables, profiles
 from aas_submodel_validate.runner import _meta_rule
 
 
@@ -304,12 +304,15 @@ def test_every_declared_namespace_has_at_least_one_rule():
 #:     sibling.
 #:   - HD-D2 told the author to write one spelling "exactly" while the
 #:     rule accepts two (docs/divergences.md #9).
-#:   - HD-D4 named `'en'` alone after `eng` became acceptable.
+#:   - HD-D5 offered the template's per-DocumentId bound as evidence for
+#:     something it does not bear on.
 #:
-#: Two remedies here never reach a reader: HD-D9 and HDL3 set a remedy on
-#: every Violation they raise, and `Finding.fix` prefers that one. They
-#: are pinned anyway -- standing advice that has stopped shipping is a
-#: thing to notice, not a thing to delete quietly.
+#: Seven remedies here never reach a reader: HD-D9, HDL1, DBP2L1, HDL3,
+#: DBP2L3, TDL2 and SMT-D2 set one on every Violation they raise, and
+#: `Finding.fix` prefers that one. `SHIPPED_REMEDIES` below is where their
+#: real sentences are held. They are pinned here anyway -- standing advice
+#: that has stopped shipping is a thing to notice, not a thing to delete
+#: quietly, and HDL1's says the opposite of what it now ships.
 REMEDIES = {
     "DBP2-D10":
         "Add a DigitalFile with contentType application/pdf (a PDF/A "
@@ -487,9 +490,10 @@ def test_every_rule_offers_a_remedy():
 #: The sentences a *violation* carries -- which is what a reader gets.
 #: `Finding.fix` is `violation.fix or rule.fix`, so wherever a rule sets a
 #: remedy per violation, the census above pins a string that never leaves
-#: the process. Five rules do (HD-D9, HDL3, DBP2L3, TDL2, SMT-D2) and
-#: three more relay one from the loader (X2, X3, X5). Measured before this
-#: existed: seven mutations of these sentences left the whole suite green,
+#: the process. Seven rules do -- HD-D9, HDL1, DBP2L1, HDL3, DBP2L3, TDL2
+#: and SMT-D2 -- and three more relay one from the loader (X2, X3, X5).
+#: Measured before this existed: seven mutations of these sentences left
+#: the whole suite green,
 #: including three that turn "nothing is wrong with what you sent" into
 #: blaming the author -- which `x5_within_the_readers_bounds` exists to
 #: promise it will not do.
@@ -538,6 +542,15 @@ SHIPPED_REMEDIES = {
         "does not divide, and a file that large cannot be checked "
         "here. Nothing is wrong with what you sent; it was refused, "
         "not judged.",
+    "HDL1/inside-a-list":
+        "Remove this idShort. A submodel element directly inside a "
+        "SubmodelElementList must not carry one (AASd-120), so "
+        "renaming it to the template's suggestion leaves a metamodel "
+        "violation the file already has.",
+    "HDL1/anywhere-else":
+        "Rename to the template's suggested pattern "
+        r"(^DigitalFile(?:\d{2,3})?$). Any unique idShort is legal "
+        "here; this is tidiness, not conformance.",
     "loader/relationship-doctype":
         "Remove the DTD from the named relationships part and write "
         "out whatever it declared. The chain itself is intact -- it "
@@ -560,6 +573,8 @@ def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
             profile, profile.default)
         built["SMT-D2/judged-as-%s" % profile.key] = _rules.profiles._remedy(
             profile, profile.alternative)
+    for in_list, tag in ((True, "inside-a-list"), (False, "anywhere-else")):
+        built["HDL1/%s" % tag] = engine.idshort_remedy(in_list, IDSHORT_PATTERN)
     built["X5/single-document"] = container_rules._bounds_remedy("json")
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY
     assert built == SHIPPED_REMEDIES
@@ -592,3 +607,9 @@ def test_a_container_is_told_where_to_divide_and_a_document_is_not():
 #: one: adding a fifth label without adding its sentence fails.
 D9_LABELS = ("DocumentedEntity", "RefersTo", "BasedOn", "TranslationOf")
 REFERENCE_TYPES = ("ExternalReference", "ModelReference")
+
+#: The pattern the sentence quotes. Read from the table rather than
+#: written out, because the census is about the sentence and the table
+#: has its own byte-compare gate.
+IDSHORT_PATTERN = next(row["allowed_idshort"] for row in hd_tables.ROWS
+                       if row["label"] == "DigitalFile")
