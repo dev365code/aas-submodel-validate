@@ -10,6 +10,8 @@ from __future__ import annotations
 import copy
 import json
 
+import pytest
+
 from aas_submodel_validate import runner
 from builders import build_aasx, hd_env
 
@@ -483,3 +485,110 @@ def test_the_missing_file_remedy_does_not_borrow_x4s_requirement(tmp_path):
                         payload=json.dumps(hd_env()).encode("utf-8"))
     remedy = next(f.fix for f in runner.run(packed).findings if f.id == "HD-D7")
     assert "X4" in remedy, remedy
+
+
+# -- a defect in the second of several -------------------------------------
+#
+# Every rule below walks a list and checks each item. The golden
+# environment holds one Document, one classification, one version and one
+# file, and the official example's two Documents are both conformant and
+# its five versions all say `released` -- so stopping after the first item
+# changed nothing any fixture could see. Six loops, each of them a MUST or
+# a lint that would simply go quiet.
+
+
+def _second_document_missing_the_classification(env):
+    documents = env["submodels"][0]["submodelElements"][0]
+    second = copy.deepcopy(documents["value"][0])
+    for classification in _classifications_of(second):
+        _set_property(classification, "ClassificationSystem", "SomethingElse")
+    documents["value"].append(second)
+
+
+def _classifications_of(document):
+    return next(child for child in document["value"]
+                if child.get("idShort") == "DocumentClassifications")["value"]
+
+
+def _add_second_classification(env, bend):
+    classifications = next(child for child in _first_document(env)["value"]
+                           if child.get("idShort") == "DocumentClassifications")
+    extra = copy.deepcopy(classifications["value"][0])
+    bend(extra)
+    classifications["value"].append(extra)
+
+
+def _second_classification_with_a_foreign_class_id(env):
+    _add_second_classification(env, lambda c: _set_property(c, "ClassId", "99-99"))
+
+
+def _second_classification_without_english(env):
+    def bend(classification):
+        for child in classification["value"]:
+            if child.get("idShort") == "ClassName":
+                child["value"] = [{"language": "de", "text": "Betrieb"}]
+    _add_second_classification(env, bend)
+
+
+def _second_classification_spelled_the_other_way(env):
+    _add_second_classification(
+        env, lambda c: _set_property(c, "ClassificationSystem", "VDI2770:2020"))
+
+
+def _second_version_with_a_broken_date(env):
+    versions = next(child for child in _first_document(env)["value"]
+                    if child.get("idShort") == "DocumentVersions")
+    second = copy.deepcopy(versions["value"][0])
+    _set_property(second, "StatusSetDate", "06.02.2020")
+    versions["value"].append(second)
+
+
+def _a_preview_file_the_container_lacks(env):
+    """The DigitalFile beside it has to be present, or the first label
+    answers on its own and the second is never reached -- which is the
+    thing this case exists to notice."""
+    _document_version(env)["value"].append({
+        "idShort": "PreviewFile", "modelType": "File", "contentType": "image/png",
+        "value": "/aasx/files/absent-preview.png",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference", "value": "0173-1#02-ABK127#002"}]}})
+
+
+def _a_second_digital_file_the_container_lacks(env):
+    """Two files under one label, the second absent. The label loop and
+    the element loop inside it are different decisions."""
+    files = next(child for child in _document_version(env)["value"]
+                 if child.get("idShort") == "DigitalFiles")
+    second = copy.deepcopy(files["value"][0])
+    second["value"] = "/aasx/files/absent-annex.pdf"
+    files["value"].append(second)
+
+
+@pytest.mark.parametrize("rule_id,bend,packed", (
+    ("HD-D2", _second_document_missing_the_classification, False),
+    ("HD-D3", _second_classification_with_a_foreign_class_id, False),
+    ("HD-D4", _second_classification_without_english, False),
+    ("HDL5", _second_classification_spelled_the_other_way, False),
+    ("HD-D8", _second_version_with_a_broken_date, False),
+    ("HD-D7", _a_preview_file_the_container_lacks, True),
+    ("HD-D7", _a_second_digital_file_the_container_lacks, True),
+))
+def test_a_defect_in_the_second_of_several_is_still_reported(tmp_path, rule_id,
+                                                             bend, packed):
+    """The first of each of these is conformant and the second is not.
+
+    HD-D7's pair is not two files but two *labels* -- `DigitalFile` and
+    `PreviewFile` -- which is the same shape one level over: the rule
+    walks the File rows its table declares, and reading only the first
+    leaves the preview unchecked. The sibling decision was pinned for
+    TD-D2 when it was found there; this is the one that was not."""
+    env = copy.deepcopy(hd_env())
+    bend(env)
+    if packed:
+        path = build_aasx(tmp_path / "p.aasx",
+                          payload=json.dumps(env).encode("utf-8"),
+                          files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+        found = {f.id for f in runner.run(path).findings}
+    else:
+        found = set(_findings(tmp_path, env))
+    assert rule_id in found
