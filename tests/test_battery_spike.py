@@ -129,10 +129,38 @@ def test_choosing_a_profile_settles_the_shared_identifier(tmp_path):
     """`--profile` is the instruction that makes the ambiguity go away.
     It does not make a table appear: the report still says nothing was
     judged by it, and saying otherwise would be the tool inventing a
-    verdict."""
+    verdict.
+
+    Through the command line, not the library. The first version of this
+    called `runner.run(profile=...)` and passed while the parser was
+    refusing the very value `BAT-R2`'s remedy tells a reader to type --
+    the flag was never wired, and the test exercised the layer below the
+    one that was broken."""
+    path = tmp_path / "env.json"
+    path.write_bytes(json.dumps(
+        _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT))).encode("utf-8"))
+    from aas_submodel_validate.cli import main
+    assert main([str(path), "--profile", "02035-3"]) in (0, 1)
     report = _run(tmp_path, _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT)),
                   profile="02035-3")
     assert "BAT-R2" not in _ids(report)
+
+
+def test_the_remedy_names_a_value_the_parser_accepts(tmp_path):
+    """A remedy is only advice if the advice can be followed. This one
+    tells the reader to run `--profile` with a document number, and the
+    parser has its own list of what it accepts -- two places for one
+    answer to be right, so this is where they are held together."""
+    from aas_submodel_validate.rules.battery import SETTLES_ONLY
+    report = _run(tmp_path, _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT)))
+    remedy = _one(report, "BAT-R2").fix
+    assert "--profile" in remedy
+    path = tmp_path / "probe.json"
+    path.write_bytes(json.dumps(
+        _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT))).encode("utf-8"))
+    from aas_submodel_validate.cli import main
+    for key in SETTLES_ONLY:
+        assert main([str(path), "--profile", key]) in (0, 1), key
 
 
 def test_the_pair_this_tool_has_tables_for_is_not_this_rules_business(tmp_path):

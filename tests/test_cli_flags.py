@@ -80,21 +80,67 @@ def test_profile_chooses_which_template_answers(tmp_path, capsys):
 
 def test_an_unknown_profile_is_the_callers_mistake_not_a_finding(capsys):
     """Exit 2, the code that means the tool could not run. A misspelled
-    template number is not a defect in anybody's file."""
+    template number is not a defect in anybody's file.
+
+    The example used to be `02023`, which the parser now accepts: it
+    settles a collision this tool has no table for. `02099-1` is a real
+    IDTA document number and still not one of these, which is the shape
+    a misspelling actually has."""
     with pytest.raises(SystemExit) as raised:
-        main(["x.json", "--profile", "02023"])
+        main(["x.json", "--profile", "02099-1"])
     assert raised.value.code == 2
     assert "02035-2" in capsys.readouterr().err
 
 
-def test_the_profiles_on_offer_come_from_the_tables(capsys):
-    """`--help` cannot name a template this tool has no table for."""
+def test_the_profiles_on_offer_say_which_kind_each_one_is(capsys):
+    """Two kinds, and `--help` has to tell them apart.
+
+    This said `--help` cannot name a template with no table behind it,
+    and that was the whole contract until `BAT-R2` started telling
+    readers to pass one. A remedy naming a value the parser refuses is
+    worse than no remedy -- measured: it shipped that way for a commit.
+    So both kinds are on offer and the help text says which is which:
+    some choose the table that judges, the rest only settle which
+    template the file claims to be."""
+    from aas_submodel_validate.rules.battery import SETTLES_ONLY
     from aas_submodel_validate.rules.profiles import KEYS
     with pytest.raises(SystemExit):
         main(["--help"])
-    helped = capsys.readouterr().out
+    helped = " ".join(capsys.readouterr().out.split())
+    assert not set(KEYS) & set(SETTLES_ONLY), "a key cannot be both kinds"
+    chooses, _, settles = helped.partition("choose the table that judges")
+    assert "only settle which template the file claims to be" in settles
+    # Each key on its own side of the sentence. Listing them all and
+    # checking each appears somewhere passes for a help text that files
+    # `02004` under "settles nothing", which is the opposite of true.
     for key in KEYS:
-        assert key in helped
+        assert key in chooses.rsplit(":", 1)[-1], key
+        assert key not in settles.split(";")[0], key
+    for key in SETTLES_ONLY:
+        assert key in settles, key
+        assert key not in chooses.rsplit(":", 1)[-1], key
+
+
+def test_a_profile_that_only_settles_a_collision_is_not_reported_as_idle(tmp_path,
+                                                                        capsys):
+    """The runner tells a caller when `--profile` named a template no
+    submodel answered to, so the flag chose nothing. A key that settles a
+    collision chose nothing by design -- it silenced a finding instead --
+    and saying it was idle contradicts the finding it just removed."""
+    env = {"assetAdministrationShells": [], "conceptDescriptions": [],
+           "submodels": [{
+               "modelType": "Submodel", "id": "urn:x", "idShort": "CarbonFootprint",
+               "semanticId": {"type": "ExternalReference", "keys": [
+                   {"type": "GlobalReference",
+                    "value": "https://admin-shell.io/idta/CarbonFootprint/"
+                             "CarbonFootprint/1/0"}]},
+               "submodelElements": []}]}
+    path = tmp_path / "cf.json"
+    path.write_text(json.dumps(env))
+    assert main([str(path), "--profile", "02035-3"]) in (0, 1)
+    printed = capsys.readouterr().out
+    assert "BAT-R2" not in printed, "the flag did not settle the collision"
+    assert "chose nothing" not in printed
 
 
 def test_a_run_with_a_note_does_not_call_itself_ok(tmp_path, capsys):

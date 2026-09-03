@@ -168,3 +168,18 @@ _KEYS_OF = {
     identifier: tuple(name.replace("IDTA ", "") for name in claimants)
     for identifier, claimants in battery_tables.SHARED_SUBMODEL_IDS.items()
 }
+
+#: The document numbers that settle a collision this tool has no table
+#: for. `profiles.KEYS` is deliberately the other thing -- the numbers
+#: that choose a table, derived so `--help` cannot name a template this
+#: tool cannot judge by. These are named separately for the same reason:
+#: they choose nothing, they only say which template the file claims to
+#: be, and a flag that pretends otherwise would be worse than no flag.
+#:
+#: Both lists reach the parser, because `BAT-R2`'s remedy tells the
+#: reader to use one of these and a remedy naming a value the parser
+#: refuses is worse than silence. Measured: it did, for one commit.
+SETTLES_ONLY = tuple(sorted(
+    key for identifier, keys in _KEYS_OF.items() for key in keys
+    if not any(claimant in _KNOWN_TO_THE_WALK
+               for claimant in battery_tables.SHARED_SUBMODEL_IDS[identifier])))

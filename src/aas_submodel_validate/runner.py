@@ -125,7 +125,10 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             report.notes.append("%s (allowed): %s -- %s"
                                 % (detect.RULE_ID, finding.violation.message,
                                    finding.violation.detail or ""))
-    if profile is not None and not any(
+    # Only for a key that chooses a table. One that merely settles a
+    # collision chose nothing by design, and telling its user the flag
+    # did nothing contradicts the finding it just silenced.
+    if profile in rules.profiles.KEYS and not any(
             rules.profiles.PROFILES and Context(loaded, selection).selection.chosen(submodel)
             for submodel in loaded.submodels
             for selection in (rules.profiles.Selection(profile),)):
