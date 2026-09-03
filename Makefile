@@ -31,6 +31,7 @@ exercised:
 
 battery-data:
 	$(PYTHON) tools/battery_data_check.py
+	$(PYTHON) tools/extract_battery_rules.py --check
 
 lint:
 	@$(PYTHON) -m ruff --version | grep -q "$(RUFF_VERSION)" \

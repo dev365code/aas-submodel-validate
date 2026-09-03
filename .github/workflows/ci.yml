@@ -31,6 +31,8 @@ jobs:
         run: pip install openpyxl pymupdf
       - name: the battery-passport indexes agree with themselves
         run: python tools/battery_data_check.py
+      - name: the battery rule table matches its generator
+        run: python tools/extract_battery_rules.py --check
 
   test:
     name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}

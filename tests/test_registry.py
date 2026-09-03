@@ -181,6 +181,7 @@ MUST_RULES = {
     "SMT-D1", "TD-D1", "TD-D2", "X1", "X2", "X3", "X5",
 }
 SHOULD_RULES = {
+    "BAT-R2", "BAT-R8",
     "DBP2-D5", "DBP2-D10", "DBP2L2", "DBP2L4", "DBP2L5",
     "HD-D5", "HD-D6", "HD-D9", "HD-D10", "HDL2", "HDL4", "HDL5",
     "TD-D3", "TDL1", "X4",
@@ -265,6 +266,7 @@ def test_the_hand_rules_have_the_severities_that_were_decided():
 #: and `XYZ99`, so an entire pack installed under the letter X passed the
 #: census as container rules.
 NAMESPACES = {
+    r"BAT-R\d+": "IDTA 02035 battery passport, read against the regulation",
     r"X\d+": "the AASX/OPC container the submodel arrived in",
     r"SMT-D\d+": "the tool's own questions, belonging to no template",
     r"HD-E\d+": "IDTA 02004, generated from the template's rows",
@@ -339,6 +341,16 @@ def test_every_declared_namespace_has_at_least_one_rule():
 #: that has stopped shipping is a thing to notice, not a thing to delete
 #: quietly, and HDL1's says the opposite of what it now ships.
 REMEDIES = {
+    "BAT-R2":
+        "Run --profile with the document number of the template you "
+        "mean. This tool has a table for neither side of this "
+        "collision, so the profile settles which template the file "
+        "claims to be and no more -- nothing here judges it against "
+        "either one.",
+    "BAT-R8":
+        "Provide the element, or record that this battery is outside "
+        "the provision that requires it. The template will not ask "
+        "for it -- that is the point of the finding.",
     "DBP2-D10":
         "Add a DigitalFile with contentType application/pdf (a PDF/A "
         "file, per VDI 2770) to this DocumentVersion. A content type "

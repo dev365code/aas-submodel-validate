@@ -18,7 +18,7 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
   "path": "machine-docs.aasx",
   "ok": false,
   "options": {"profile": null, "strictMeta": false, "allowUnmatched": false},
-  "summary": {"errors": 1, "warnings": 0, "info": 0, "rulesChecked": 123,
+  "summary": {"errors": 1, "warnings": 0, "info": 0, "rulesChecked": 125,
               "complete": true, "judged": true},
   "notes": [],
   "findings": [

@@ -97,5 +97,11 @@ def smt_d1_a_known_submodel_is_present(ctx):
         return
     if matched(ctx):
         return
-    yield Violation("no submodel declares a semanticId this tool recognises",
+    # "recognises" was true until the battery pack landed. That pack
+    # knows identifiers this one has no template table for, and reports
+    # on them (BAT-R2, BAT-R8), so a sentence claiming the tool does not
+    # recognise them contradicts a finding two lines further down the
+    # same report.
+    yield Violation("no submodel declares a semanticId this tool has a "
+                    "template table for",
                     detail=_nearest_miss(ctx.loaded.submodels))

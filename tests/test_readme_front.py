@@ -25,9 +25,9 @@ CHANGELOG = (ROOT / "CHANGELOG.md").read_text("utf-8")
 
 def test_the_rule_counts_are_the_registrys():
     generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
-    assert len(all_rules()) == 123
+    assert len(all_rules()) == 125
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS)) == (38, 26, 22)
-    assert "123 rules" in README
+    assert "125 rules" in README
     assert "%d generated" % generated in README
     # Each template's own row count is on the front page too, in the
     # table: a total alone would let one template's rows vanish into

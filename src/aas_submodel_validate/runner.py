@@ -133,6 +133,13 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             "--profile %s named a template no submodel here answers to, so it "
             "chose nothing; the verdict is the one you would have got without it"
             % profile)
+    # What the battery pack could look at in this run, computed from its
+    # table rather than quoted from a document, and marked as the floor
+    # it is. A note and not a finding: it reports the reach of a check,
+    # not a defect in the file.
+    coverage = rules.battery.coverage_note(loaded.submodels)
+    if coverage is not None:
+        report.notes.append(coverage)
     report.findings.sort(key=_reading_order)
     report.checked = len(rules_to_run)
     # Every load error means content that was not read: an archive that

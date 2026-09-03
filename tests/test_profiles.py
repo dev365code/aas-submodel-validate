@@ -291,7 +291,14 @@ def test_a_template_of_its_own_that_also_carries_the_mark_is_still_not_ours(tmp_
     path.write_bytes(wearing_our_anchor_as_a_supplemental(
         hd_tables.TEMPLATE_SEMANTIC_ID, "HandoverDocumentation", also=_mark()))
     ids = {finding.id for finding in runner.run(path).findings}
-    assert ids == {"SMT-D1"}, sorted(ids)
+    # Named rather than compared to the whole set. The identifier this
+    # fixture wears as its own is IDTA 02035-4's, which the battery pack
+    # now knows and reports on -- truthfully, and about a different
+    # question. What the shield is about is that no table of ours judged
+    # it and no profile named it, which is what these three say.
+    assert "SMT-D1" in ids, sorted(ids)
+    assert "SMT-D2" not in ids, "a template we just refused was named a profile"
+    assert not [i for i in ids if i.startswith(("HD", "TD", "DBP2"))], sorted(ids)
 
 
 def test_a_mark_on_a_different_template_draws_nothing(tmp_path):
