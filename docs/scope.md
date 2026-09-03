@@ -21,9 +21,18 @@ finding.
   what it is measured to be — a profile of the Handover Documentation
   template, twenty-two of its thirty-eight rows with two relaxed — and
   nothing more. `--profile` says which of the two answers, and the
-  report says which answered whenever there was a choice to make. No DPP registry, no passport identifier
-  resolution, no battery regulation compliance claim. This project is
-  the submodel-conformance layer.
+  report says which answered whenever there was a choice to make. No DPP
+  registry, no passport identifier resolution, no certificate of
+  compliance with Regulation (EU) 2023/1542. This project is the
+  submodel-conformance layer.
+- **It does say where a template and the regulation disagree, and only
+  that.** `BAT-R8` reports an element the template permits to be absent
+  that a published legal reading requires, and says both halves in those
+  words. It reports the disagreement, not a verdict on the battery:
+  reading a category, deciding which applicability date applies, or
+  concluding that a passport is compliant are all outside this. Of nine
+  such disagreements it knows, it reports the one that does not depend on
+  the battery's category, and its coverage note says so.
 - **Not a certifier, and not a fixer.** It reports findings and names
   the remedy for each; deciding what a file was meant to say is the
   author's job. No `--fix`, no conformance certificates.

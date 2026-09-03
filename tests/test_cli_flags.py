@@ -102,12 +102,12 @@ def test_the_profiles_on_offer_say_which_kind_each_one_is(capsys):
     So both kinds are on offer and the help text says which is which:
     some choose the table that judges, the rest only settle which
     template the file claims to be."""
-    from aas_submodel_validate.rules.battery import SETTLES_ONLY
+    from aas_submodel_validate.rules.battery import _settles_only
     from aas_submodel_validate.rules.profiles import KEYS
     with pytest.raises(SystemExit):
         main(["--help"])
     helped = " ".join(capsys.readouterr().out.split())
-    assert not set(KEYS) & set(SETTLES_ONLY), "a key cannot be both kinds"
+    assert not set(KEYS) & set(_settles_only()), "a key cannot be both kinds"
     chooses, _, settles = helped.partition("choose the table that judges")
     assert "only settle which template the file claims to be" in settles
     # Each key on its own side of the sentence. Listing them all and
@@ -116,7 +116,7 @@ def test_the_profiles_on_offer_say_which_kind_each_one_is(capsys):
     for key in KEYS:
         assert key in chooses.rsplit(":", 1)[-1], key
         assert key not in settles.split(";")[0], key
-    for key in SETTLES_ONLY:
+    for key in _settles_only():
         assert key in settles, key
         assert key not in chooses.rsplit(":", 1)[-1], key
 

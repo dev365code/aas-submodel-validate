@@ -33,15 +33,20 @@ pure Python, no C extensions — installable from a USB stick.
 
 ## What it checks
 
-125 rules across three IDTA templates — 86 generated from the vendored
+125 rules, 123 of them across three IDTA templates — 86 generated from the vendored
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), the rest hand-written
-where a template file cannot speak. Two of them read the battery
-passport against the regulation rather than against a template: one
-names a submodel identifier that two published templates claim, and one
-reports elements a template permits to be absent that Regulation (EU)
-2023/1542 requires — a file can be conformant to the template and not to
-the law, and those are different answers. X1, X2 and X4 are about the AASX/OPC
+where a template file cannot speak. The other two read the battery
+passport against Regulation (EU) 2023/1542 rather than against a
+template, over IDTA 02035-1, 02035-4 and 02035-5: one names a submodel
+identifier that two published templates claim, and one reports an
+element a template permits to be absent that a published legal reading
+requires — a file can be conformant to the template and not to the law,
+and those are different answers. It reports the one such disagreement
+that does not depend on the battery's category; eight more are known,
+counted in the report, and left unsaid because saying them without the
+category would tell one manufacturer to add what another's guidance
+forbids. X1, X2 and X4 are about the AASX/OPC
 package the submodel arrives in; X3 says a document would not parse,
 packaged or bare; and X5 is this reader's own bound on how much it will
 take in, whichever way it arrives. One, SMT-D1, asks whether
@@ -87,7 +92,7 @@ promote — and never re-implemented here.
 ```text
 error   SMT-D1   no submodel declares a semanticId this tool has a template table for
         saw  semanticId value(s): urn:somecompany:docs
-        fix: Give the submodel the semanticId of the template it means to be: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003).
+        fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
 1 error(s), 0 warning(s), 0 info — machine-docs.json
 ```
 

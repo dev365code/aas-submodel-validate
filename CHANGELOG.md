@@ -2,7 +2,7 @@
 
 ## 0.1.0 — unreleased
 
-First release: 125 rules across three IDTA templates — *Handover
+First release: 125 rules, 123 of them across three IDTA templates — *Handover
 Documentation* 2.0.1, *Technical Data* 2.0.1 and *Digital Battery
 Passport part 2* 1.0 — of which 86 are generated from the vendored
 official template files. The `meta` channel
@@ -33,10 +33,13 @@ Two rules read the battery passport against Regulation (EU) 2023/1542
 rather than against a template, from a table generated out of the
 requirements indexes published in `data/battery-passport/`: `BAT-R2`
 names a submodel identifier two published templates claim and this tool
-has a table for neither of, and `BAT-R8` reports elements the template
-permits to be absent that a legal reading requires. Both are warnings —
-two published readings of applicability exist and this pack cannot yet
-be told which to answer for.
+has a table for neither of, and `BAT-R8` reports an element the template
+permits to be absent that a legal reading requires of every battery
+category. Eight further disagreements are known and not reported,
+because whether the law requires them depends on a category no rule here
+reads; the report counts them rather than keeping quiet about them. Both
+rules are warnings — two published readings of applicability exist and
+this pack cannot yet be told which to answer for.
 
 The JSON report's shape is written down in `docs/report-schema.md`, and
 carries two more fields: `toolVersion`, because the shape's number and

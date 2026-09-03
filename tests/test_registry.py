@@ -459,9 +459,14 @@ REMEDIES = {
         "'VDI2770:2020' is the template's example artefact and other "
         "tools matching on the specified string will not recognise it.",
     "SMT-D1":
-        "Give the submodel the semanticId of the template it means to "
-        "be: 0173-1#01-AHF578#003 for Handover Documentation (IDTA "
-        "02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003).",
+        "If the submodel means one of the templates this tool has a "
+        "table for, give it that template's semanticId: "
+        "0173-1#01-AHF578#003 for Handover Documentation (IDTA "
+        "02004); 0173-1#01-AHX837#002 for Technical Data (IDTA "
+        "02003). If it means a template this tool has no table for, "
+        "leave the identifier alone -- it is doing its job, and this "
+        "finding only says nothing here judged the submodel against a "
+        "template.",
     "SMT-D2":
         "Check that the template named here is the one this submodel "
         "means. `--profile` chooses the other one without editing the "

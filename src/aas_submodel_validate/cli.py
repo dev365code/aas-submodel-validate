@@ -33,16 +33,16 @@ def main(argv: Optional[list] = None) -> int:
                         help="metamodel findings become errors instead of warnings")
     parser.add_argument("--allow-unmatched", action="store_true",
                         help="an input with no known submodel becomes a note, not an error")
-    from .rules.battery import SETTLES_ONLY as _SETTLES_ONLY
+    from .rules.battery import _settles_only
     from .rules.profiles import KEYS as _PROFILE_KEYS
-    parser.add_argument("--profile", choices=_PROFILE_KEYS + _SETTLES_ONLY,
+    parser.add_argument("--profile", choices=_PROFILE_KEYS + _settles_only(),
                         metavar="IDTA",
                         help="which template answers where two publish one "
                              "submodel identifier: %s choose the table that "
                              "judges; %s only settle which template the file "
                              "claims to be, because this tool has a table for "
                              "neither side of that collision"
-                             % (", ".join(_PROFILE_KEYS), ", ".join(_SETTLES_ONLY)))
+                             % (", ".join(_PROFILE_KEYS), ", ".join(_settles_only())))
     parser.add_argument("--rules", action="store_true",
                         help="list every rule and exit")
     parser.add_argument("--version", action="version",

@@ -79,9 +79,20 @@ def _nearest_miss(submodels) -> str:
     return "no submodel in the input declares any semanticId"
 
 
-_REMEDY = ("Give the submodel the semanticId of the template it means to be: "
+#: The remedy, and the sentence that keeps it from being wrong.
+#:
+#: It used to end at the list of identifiers, which reads as "relabel
+#: your file as one of these". For a battery-passport submodel that is
+#: advice to mislabel a correct document -- and it printed one line above
+#: a `BAT-R8` finding naming that document's real template. The message
+#: was corrected first and the remedy was not, which is the half a reader
+#: acts on.
+_REMEDY = ("If the submodel means one of the templates this tool has a table "
+           "for, give it that template's semanticId: "
            + "; ".join("%s for %s" % (pack.semantic_id, pack.name) for pack in PACKS)
-           + ".")
+           + ". If it means a template this tool has no table for, leave the "
+             "identifier alone -- it is doing its job, and this finding only "
+             "says nothing here judged the submodel against a template.")
 
 
 @rule(RULE_ID, kind="template", prio="MUST",

@@ -16,11 +16,23 @@ one question, and the second would be the one with no table behind it.
 **Is a template-conformant file conformant to the law?** Nine elements
 are `ZeroToOne` in their template -- absence is allowed -- while the
 Battery Pass long list or the Commission's data-point guidance marks the
-same attribute mandatory under Regulation (EU) 2023/1542. `BAT-R8` reads
-those nine and says both halves in the finding's own words. It is a
-warning, not an error: two published readings of applicability exist and
-this pack cannot yet be told which one to answer for
-(docs/divergences.md #37).
+same attribute mandatory under Regulation (EU) 2023/1542. `BAT-R8` says
+both halves in the finding's own words.
+
+It reads one of the nine. The other eight depend on the battery's
+category and nothing here can read one: remaining capacity is required
+for light means of transport and voluntary for electric vehicles, and
+the capacity threshold for exhaustion inverts -- required for EVs, and
+the guidance marks it *not to be filled* for anything else. A finding
+that ignored the category would tell an LMT manufacturer to add a field
+their own guidance forbids, which is over-refusal wearing the shape of
+diligence. They are in `CONDITIONAL_ON_CATEGORY`, read by nothing, and
+the coverage note counts them so the silence is stated rather than
+merely kept (docs/divergences.md #37).
+
+A warning and not an error, for a second reason: two published readings
+of applicability exist and this pack cannot yet be told which to answer
+for.
 
 Neither rule needs a template table, which is what lets them run at all:
 a row carries the submodel identifier, the element identifier, what the
@@ -31,7 +43,7 @@ from __future__ import annotations
 
 from ..model import Violation
 from ..registry import rule
-from ..semantics import candidate_values
+from ..semantics import candidate_values, element_candidate_values
 from . import battery_tables
 
 R2_ID = "BAT-R2"
@@ -41,12 +53,15 @@ R8_ID = "BAT-R8"
 #: it says what this run could examine, and a run examines nothing when
 #: the input holds no submodel the table names.
 COVERAGE_NOTE = (
-    "%s read %d of the %d elements this pack knows the regulation to "
-    "require and the template to permit absent (%s). That figure is a "
+    "%s looked at %d of the %d elements it can report without knowing "
+    "this battery's category; %d more are known to disagree and are not "
+    "reported, because whether the law requires them depends on a "
+    "category no rule here reads yet. Read from %s. Both figures are a "
     "floor, not a measurement: the templates cite no provision of the "
     "law, so the join behind the table matched attributes by name, and "
     "name matching misses every element whose label differs from the "
-    "prose and every nested one it cannot reach.")
+    "prose, and reaches a nested one only when its label happens to "
+    "match.")
 
 
 def coverage_note(submodels) -> str:
@@ -55,7 +70,7 @@ def coverage_note(submodels) -> str:
     Computed here, from the table, at the moment of the run. A sentence
     with the number typed into it is a sentence that stops being true the
     day the indexes move, and this project has already shipped that
-    mistake in prose more than once (LESSONS B).
+    mistake in prose more than once.
 
     The word "floor" is not decoration. The templates carry no citation
     of the regulation, so the join behind the table had to match template
@@ -65,10 +80,16 @@ def coverage_note(submodels) -> str:
     disagreement, never a measurement of it.
     """
     total = len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
-    read = sum(len(_rows_for(submodel)) for submodel in submodels)
+    withheld = len(battery_tables.CONDITIONAL_ON_CATEGORY)
+    # Distinct rows, not a sum over submodels: two ProductCondition
+    # submodels in one file -- two battery modules, an ordinary shape --
+    # made this say "10 of the 9".
+    read = len({row["element"] for submodel in submodels
+                for row in _rows_for(submodel)})
     if not read:
         return None
-    return COVERAGE_NOTE % (R8_ID, read, total, battery_tables.SOURCE_EDITION)
+    return COVERAGE_NOTE % (R8_ID, read, total, withheld,
+                            battery_tables.SOURCE_EDITION)
 
 
 def _declared(submodel) -> frozenset:
@@ -83,17 +104,39 @@ def _rows_for(submodel):
 
 
 def _carries(submodel, row) -> bool:
-    """Whether the element the row names is present, by semanticId.
+    """Whether the element the row names is present anywhere below the
+    submodel, by semanticId.
 
     By identifier and not by idShort, for the reason the roof of this
     project is built on: IDTA 02004 Annex A says a different idShort
     might be chosen. The idShort in the row is what a finding quotes, not
     what it matches on.
+
+    Through `element_candidate_values`, which reads supplementals too.
+    The walk has read them since `test_decisions_are_pinned` recorded
+    why -- an instance may carry a vendor identifier as its main one and
+    declare the template's in a supplemental, and a reader that looks
+    only at the main one turns that conformant file into a failing one.
+    Reading `semantic_id` alone here reproduced that exactly.
+
+    At any depth, because the one element this rule reads today sits two
+    collections down -- a walk over the top level alone reports it absent
+    from a file that carries it, which is the direction this project
+    treats as worst. The row says the submodel must carry the element;
+    it does not say where, and the template's own nesting is not a thing
+    the law speaks about.
     """
     wanted = row["element_semantic_id"]
-    for element in getattr(submodel, "submodel_elements", None) or []:
-        if wanted in candidate_values(getattr(element, "semantic_id", None)):
+    pending = list(getattr(submodel, "submodel_elements", None) or [])
+    while pending:
+        element = pending.pop()
+        if wanted in element_candidate_values(element):
             return True
+        for attribute in ("value", "statements", "submodel_element_list",
+                          "annotations"):
+            children = getattr(element, attribute, None)
+            if isinstance(children, list):
+                pending.extend(c for c in children if hasattr(c, "semantic_id"))
     return False
 
 
@@ -118,7 +161,7 @@ def bat_r2_shared_identifier_without_a_table(ctx):
             claimants = battery_tables.SHARED_SUBMODEL_IDS.get(identifier)
             if claimants is None:
                 continue
-            if any(claimant in _KNOWN_TO_THE_WALK for claimant in claimants):
+            if any(claimant in _known_to_the_walk() for claimant in claimants):
                 continue          # SMT-D2's collision, and its sentence
             if forced in _KEYS_OF.get(identifier, ()):
                 continue          # somebody said which one they meant
@@ -150,17 +193,30 @@ def bat_r8_template_optional_but_law_requires(ctx):
                 "'%s' is absent" % row["element_id_short"],
                 subject="%s/%s" % (getattr(submodel, "id_short", None)
                                    or "submodel", row["element_id_short"]),
-                detail="%s %s makes it %s; %s requires it (%s)"
+                detail="%s %s makes it %s; %s requires it, for every "
+                       "battery category the source names"
                        % (row["template"], row["template_version"],
-                          row["cardinality"], ", ".join(row["citations"]),
-                          ", ".join(row["says_mandatory"])))
+                          row["cardinality"], ", ".join(row["citations"])))
 
 
-#: The document numbers `engine.matched_submodels` can actually answer
-#: for. Written here rather than imported from `profiles`, which imports
-#: the two generated tables and would make this module depend on them for
-#: a fact about names.
-_KNOWN_TO_THE_WALK = frozenset(("IDTA 02004", "IDTA 02003", "IDTA 02035-2"))
+def _known_to_the_walk() -> frozenset:
+    """The templates this tool has a rule table for, read from the two
+    registries that hold them.
+
+    Written out by hand first, which made it a second place for one
+    answer to be right: a pack landing or leaving moved one list and not
+    the other, and a stale entry here makes `BAT-R2` say "no table for
+    either" about a collision that has just acquired one. Imported
+    lazily because `detect` and `profiles` register rules at import and
+    this module is imported alongside them.
+    """
+    from . import detect, profiles
+    named = {pack.name for pack in detect.PACKS}
+    for profile in profiles.PROFILES:
+        named |= {profile.default_name, profile.name}
+    # The registries spell a pack "Handover Documentation (IDTA 02004)";
+    # a collision is spelled by document number alone.
+    return frozenset(name.split(" (")[-1].rstrip(")") for name in named)
 
 #: What `--profile` is spelled with, per collision: the document numbers
 #: of the two templates that claim the identifier.
@@ -179,7 +235,8 @@ _KEYS_OF = {
 #: Both lists reach the parser, because `BAT-R2`'s remedy tells the
 #: reader to use one of these and a remedy naming a value the parser
 #: refuses is worse than silence. Measured: it did, for one commit.
-SETTLES_ONLY = tuple(sorted(
-    key for identifier, keys in _KEYS_OF.items() for key in keys
-    if not any(claimant in _KNOWN_TO_THE_WALK
-               for claimant in battery_tables.SHARED_SUBMODEL_IDS[identifier])))
+def _settles_only() -> tuple:
+    return tuple(sorted(
+        key for identifier, keys in _KEYS_OF.items() for key in keys
+        if not any(claimant in _known_to_the_walk()
+                   for claimant in battery_tables.SHARED_SUBMODEL_IDS[identifier])))
