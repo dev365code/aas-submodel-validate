@@ -49,7 +49,7 @@ that cannot be read and an input this reader refused, since nothing about
 either was judged. Warnings and info do
 not fail a build unless you ask with `-W`. `-f json` writes a versioned
 machine-readable report, described in
-[docs/report-schema.md](docs/report-schema.md).
+[docs/report-schema.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/report-schema.md).
 
 ### Putting it in a build
 
@@ -162,17 +162,17 @@ finding, offline. Metamodel checking is deliberately delegated to
 aas-core3.0's verification and reported in a separate channel, never
 re-invented here.
 
-What it refuses to do is written down in [docs/scope.md](docs/scope.md);
+What it refuses to do is written down in [docs/scope.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md);
 every chosen reading of the template, with evidence, in
-[docs/divergences.md](docs/divergences.md); the shape of the JSON report,
+[docs/divergences.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/divergences.md); the shape of the JSON report,
 and what its version number promises, in
-[docs/report-schema.md](docs/report-schema.md). Where to send a question,
-and what makes a report answerable, in [SUPPORT.md](SUPPORT.md).
+[docs/report-schema.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/report-schema.md). Where to send a question,
+and what makes a report answerable, in [SUPPORT.md](https://github.com/dev365code/aas-submodel-validate/blob/main/SUPPORT.md).
 
 ## Licence
 
 Apache-2.0, © 2026 Wooyong Lee. Contributions need a `Signed-off-by`
-line (DCO); see [CONTRIBUTING.md](CONTRIBUTING.md).
+line (DCO); see [CONTRIBUTING.md](https://github.com/dev365code/aas-submodel-validate/blob/main/CONTRIBUTING.md).
 
 This is an unofficial project, not affiliated with or endorsed by IDTA
 or the Eclipse BaSyx project. "AAS", "Asset Administration Shell" and

@@ -23,8 +23,17 @@ classifiers = [
 # where `pip` may not exist and every wheel crosses an air gap by hand.
 dependencies = ["aas-core3.0>=1.1.4,<2"]
 
+# The index page renders these as the only navigation it has. With two
+# entries a reader who wanted the changelog, the schema or somewhere to
+# report a defect had nowhere to click: the README's own links are
+# relative, and a package description is not inside the repository they
+# resolve against.
 [project.urls]
 Homepage = "https://github.com/dev365code/aas-submodel-validate"
+Documentation = "https://github.com/dev365code/aas-submodel-validate#readme"
+Changelog = "https://github.com/dev365code/aas-submodel-validate/blob/main/CHANGELOG.md"
+Issues = "https://github.com/dev365code/aas-submodel-validate/issues"
+"Report schema" = "https://github.com/dev365code/aas-submodel-validate/blob/main/docs/report-schema.md"
 "Sibling (iiRDS)" = "https://github.com/dev365code/iirds-validate"
 
 [project.optional-dependencies]

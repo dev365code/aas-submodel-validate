@@ -303,3 +303,24 @@ def test_the_published_package_path_stands_without_the_repository():
             "the published-package path hands the tool %s, which only a "
             "clone of this repository has; on PyPI this block is the whole "
             "page and there is no clone" % offences)
+
+
+def test_every_link_on_the_front_page_resolves_off_the_repository():
+    """The same two-documents problem, in the links this time.
+
+    A relative link works on the repository's front page and is dead on
+    the package index, which renders this file as the project
+    description and rewrites nothing. Five of them shipped in 0.1.0 --
+    the scope document, the divergences, the report schema, support and
+    contributing -- so a reader arriving from `pip install` could reach
+    none of what the page pointed them at.
+
+    In-page anchors are fine: they resolve wherever the page is."""
+    links = re.findall(r"\]\(([^)]+)\)", README)
+    assert links, "the front page has no links at all"
+    dead = [target for target in links
+            if not target.startswith(("http://", "https://", "#"))]
+    assert not dead, (
+        "these link targets are relative, and this file is also the "
+        "package description, where there is no repository to resolve "
+        "them against: %s" % dead)
