@@ -35,7 +35,12 @@ jobs:
           pip install -e ".[dev]"
           v="$(python -c 'import aas_submodel_validate as m; print(m.__version__)')"
           [ "$GITHUB_REF_NAME" = "v$v" ] || { echo "tag $GITHUB_REF_NAME != version $v"; exit 1; }
-          grep -q "^## $v — " CHANGELOG.md || { echo "CHANGELOG has no dated heading for $v"; exit 1; }
+          heading="$(grep -m1 "^## $v — " CHANGELOG.md)" || { echo "CHANGELOG has no heading for $v"; exit 1; }
+          case "$heading" in
+            *unreleased*) echo "CHANGELOG still says: $heading"; exit 1 ;;
+          esac
+          echo "$heading" | grep -qE ' — [0-9]{4}-[0-9]{2}-[0-9]{2}$' \
+            || { echo "CHANGELOG heading carries no date: $heading"; exit 1; }
 
       - name: everything must be green first
         run: make check
