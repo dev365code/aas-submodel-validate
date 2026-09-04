@@ -141,14 +141,30 @@ def test_the_console_sample_is_what_the_tool_prints(tmp_path, monkeypatch):
         "the README's console sample went stale; regenerate it"
 
 
-def test_the_changelog_counts_what_it_would_ship():
-    """The entry is still unreleased, so its numbers describe the present
-    and have to move with it. Once a version is tagged its entry is
-    history and must not be edited -- which is why this looks only at the
-    unreleased one."""
+def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
+    """Exactly two shapes, and the release workflow accepts the same two.
+
+    They used to disagree, and the disagreement was a deadlock nobody
+    could see from either side: the workflow refused an undated heading,
+    this test refused a dated one, and `make check` runs inside the
+    workflow. There was no state of this file in which a release could
+    be built. Measured, by dating the heading and watching the release
+    job's own `make check` step go red.
+
+    So the shape is asserted here in the same two forms the workflow
+    matches, and the number check below applies to a draft only -- once
+    a version is dated its entry is history and must not be edited."""
     _, _, entries = CHANGELOG.partition("\n## ")     # past the file's title
     unreleased, _, _ = entries.partition("\n## ")     # the newest entry alone
-    assert "unreleased" in unreleased.lower(), "the first entry is no longer a draft"
+    heading = unreleased.splitlines()[0]
+    draft = "unreleased" in heading.lower()
+    dated = re.match(r"^\d+\.\d+\.\d+ — \d{4}-\d\d-\d\d$", heading)
+    assert draft or dated, (
+        "the newest entry reads %r; the release workflow accepts a draft "
+        "(`— unreleased`) or a dated release (`— YYYY-MM-DD`) and nothing "
+        "else, and this file is the other half of that gate" % heading)
+    if not draft:
+        return                                        # history, not a draft
     generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
@@ -160,3 +176,32 @@ def test_the_changelog_counts_what_it_would_ship():
             % (container.MAX_PART_BYTES // 1024 ** 2,
                container.MAX_PART_BYTES // 1024 ** 2,
                container.MAX_TOTAL_PART_BYTES // 1024 ** 2)) in " ".join(unreleased.split())
+
+
+def test_every_file_the_readme_tells_a_stranger_to_run_exists():
+    """The third line of the quickstart named a file that exists nowhere
+    in this repository, and it is the first thing a reader types.
+
+    Nothing was watching, because the console sample beside it is
+    generated from a fixture rather than from the command the README
+    prints. So: every path-shaped argument in a fenced `sh` block is
+    resolved against the tree, unless it is plainly a stand-in for the
+    reader's own file."""
+    blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
+    assert blocks, "the README has no shell examples any more"
+    checked = 0
+    for line in "\n".join(blocks).splitlines():
+        for word in line.split():
+            if word.startswith("your-") or "/" not in word and "." not in word:
+                continue
+            if word.startswith(("http", "-", "&&", "#")) or word.endswith(":"):
+                continue
+            if "." not in Path(word).name:
+                continue                       # a directory, not a file argument
+            if word.startswith("dist/"):
+                continue                       # written by the line above it
+            checked += 1
+            assert (ROOT / word).exists(), \
+                "the README tells a reader to run %r and it is not here" % word
+    assert checked, "no runnable path was checked; the pattern stopped matching"
+

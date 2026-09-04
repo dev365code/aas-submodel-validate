@@ -14,11 +14,30 @@ step in a build.
 ```sh
 git clone https://github.com/dev365code/aas-submodel-validate && cd aas-submodel-validate
 pip install .
-smtv machine-docs.aasx
+smtv tests/corpus/idta/02004/example.aasx      # IDTA's own published example
+smtv your-submodel.aasx
 ```
+
+The third line runs against the official example this repository
+vendors, so the first verdict needs nothing of your own. Replace it with
+your file for the fourth.
 
 Not on PyPI yet — `pip install aas-submodel-validate` will work when 0.1.0
 is released, and the CHANGELOG says whether it has been.
+
+**For a machine with no package manager**, build the single file once
+where there is a network and carry it:
+
+```sh
+python tools/build_zipapp.py            # dist/smtv.pyz, about 220 KB
+python dist/smtv.pyz your-submodel.aasx
+```
+
+Everything is inside it — this package and its one dependency — and
+nothing is compiled, so the same file runs on Linux, macOS and Windows,
+and it is an ordinary zip anyone who has to approve it can open and
+read. Two builds of one tree are byte-identical, so the hash on a
+release page is the hash of the file you carried in.
 
 Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
 `.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
@@ -29,7 +48,9 @@ not fail a build unless you ask with `-W`. `-f json` writes a versioned
 machine-readable report, described in
 [docs/report-schema.md](docs/report-schema.md). One dependency
 ([aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)),
-pure Python, no C extensions — installable from a USB stick.
+pure Python, no C extensions. Both wheels fit on a USB stick and
+install with `--no-index --find-links`; the single file above needs not
+even that.
 
 ## What it checks
 

@@ -303,7 +303,7 @@ def test_the_set_of_packs_the_walk_answers_for_is_the_registry_s(tmp_path):
     assert all(name.startswith("IDTA ") for name in named), sorted(named)
 
 
-# -- BAT-R11: the coverage note is computed, and says what it is -------------
+# -- the coverage note is computed, and says what it is ---------------------
 
 def test_the_coverage_note_is_computed_and_calls_itself_a_floor(tmp_path):
     """Two claims, and the second is why the first matters. The numbers
