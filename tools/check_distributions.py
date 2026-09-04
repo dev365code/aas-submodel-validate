@@ -56,8 +56,16 @@ SOURCE_ROOT = "src/"
 #: `endswith` on the raw path let `evil-PKG-INFO/notes.md` through.
 METADATA_DIRS = (".egg-info", ".dist-info", ".data")
 
-#: Files the packaging standards put at the top of a distribution.
+#: Files the packaging standards put at the top of a distribution, and
+#: inside a metadata directory. Named, because a blanket exemption for
+#: everything under `*.egg-info/` hides a file put there on purpose --
+#: and `endswith` on a raw path let `evil-PKG-INFO/notes.md` through
+#: besides.
 METADATA_FILES = ("PKG-INFO", "setup.cfg")
+METADATA_MEMBERS = ("PKG-INFO", "RECORD", "WHEEL", "METADATA", "SOURCES.txt",
+                    "entry_points.txt", "top_level.txt", "requires.txt",
+                    "dependency_links.txt", "not-zip-safe", "zip-safe",
+                    "LICENSE", "NOTICE", "AUTHORS", "REQUESTED", "INSTALLER")
 
 
 def _in_metadata_dir(path: str) -> bool:
@@ -65,32 +73,48 @@ def _in_metadata_dir(path: str) -> bool:
 
 
 def is_build_metadata(path: str) -> bool:
-    """Inside a metadata directory, or a metadata file at the top."""
-    if _in_metadata_dir(path):
-        return True
+    """A file the build system writes, and only those.
+
+    Inside a metadata directory the name has to be one the packaging
+    standards define -- `licenses/` is theirs too, so its contents pass.
+    Everything else inside is reported: a note dropped into an
+    `.egg-info/` is still a note.
+    """
     parts = path.split("/")
+    if _in_metadata_dir(path):
+        for index, part in enumerate(parts):
+            if part.endswith(METADATA_DIRS):
+                rest = parts[index + 1:]
+                if not rest:
+                    return True
+                if rest[0] == "licenses":
+                    return True
+                return len(rest) == 1 and rest[0] in METADATA_MEMBERS
     return len(parts) == 1 and parts[0] in METADATA_FILES
 
 
 def members(artifact: pathlib.Path):
-    """(name in the archive, path in the repository or None)."""
+    """(name in the archive, path in the repository), files only.
+
+    Directories are dropped rather than compared: a tar carries them as
+    members of their own and `git ls-files` lists no directory, so every
+    one of them read as untracked -- twenty-one false reports on a clean
+    build, which is the shape that teaches a reader to ignore the gate.
+    """
     if artifact.name.endswith(".tar.gz"):
         with tarfile.open(artifact) as archive:
-            names = archive.getnames()
+            names = [m.name for m in archive.getmembers() if m.isfile()]
         # An sdist puts everything under one directory named for the
         # distribution; below that it is the repository's own layout.
         return [(name, name.split("/", 1)[-1]) for name in names]
     with zipfile.ZipFile(artifact) as archive:
-        names = archive.namelist()
-    mapped = []
-    for name in names:
-        if name.startswith(IMPORT_ROOT):
-            mapped.append((name, SOURCE_ROOT + name))
-        elif _in_metadata_dir(name):
-            mapped.append((name, None))          # the build's own, not the tree's
-        else:
-            mapped.append((name, name))
-    return mapped
+        names = [n for n in archive.namelist() if not n.endswith("/")]
+    # One decider. Mapping used to exempt a metadata directory here as
+    # well, so a file planted inside one never reached the function whose
+    # job is to say whether it belongs -- and a note in a `.dist-info/`
+    # went out green while the same note in an `.egg-info/` was caught.
+    return [(name, SOURCE_ROOT + name if name.startswith(IMPORT_ROOT) else name)
+            for name in names]
 
 
 def tracked():
@@ -138,12 +162,11 @@ def main() -> int:
         for name, inner in members(artifact):
             if name.endswith("/"):
                 continue
-            if inner is not None and (inner.startswith(NOT_A_PAYLOAD)
-                                      or inner == NOT_A_PAYLOAD.rstrip("/")):
+            if inner.startswith(NOT_A_PAYLOAD) or inner == NOT_A_PAYLOAD.rstrip("/"):
                 problems.append("%s carries %s -- the requirements indexes are a "
                                 "repository publication, not a Python payload"
                                 % (artifact.name, name))
-            elif inner is None or is_build_metadata(inner):
+            elif is_build_metadata(inner):
                 continue
             elif inner not in index:
                 problems.append("%s carries %s -- this repository does not track it"

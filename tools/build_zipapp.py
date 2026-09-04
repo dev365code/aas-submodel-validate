@@ -148,10 +148,22 @@ def smoke(pyz: Path) -> int:
 
     Building a thing that imports is not the same as building a thing
     that answers -- a missing dependency shows up here and nowhere in
-    the build."""
+    the build.
+
+    With the interpreter's own packages shut out. A zipapp does not
+    isolate `sys.path`: site-packages sits behind it, and the release
+    job installs this project and its dependency into the very
+    interpreter that runs this check, so an archive missing half of
+    `aas_core3` imported the installed copy and answered perfectly.
+    Measured: eight of nine modules deleted from the archive, and the
+    smoke test passed. `-S` and an empty `PYTHONPATH` leave the archive
+    carrying the whole answer or not answering at all.
+    """
     example = ROOT / "tests" / "corpus" / "idta" / "02004" / "example.json"
-    result = subprocess.run([sys.executable, str(pyz), "-f", "json", str(example)],
-                            capture_output=True, text=True)
+    environment = dict(os.environ, PYTHONPATH="", PYTHONNOUSERSITE="1")
+    result = subprocess.run([sys.executable, "-S", str(pyz), "-f", "json",
+                             str(example)],
+                            capture_output=True, text=True, env=environment)
     if result.returncode not in (0, 1):
         print("the archive did not run: exit %d\n%s"
               % (result.returncode, result.stderr[:2000]), file=sys.stderr)
