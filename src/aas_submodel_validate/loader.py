@@ -99,7 +99,15 @@ class Loaded:
     path: str
     form: str                     # aasx | environment-json | environment-xml | submodel-json
     submodels: List[types.Submodel] = field(default_factory=list)
-    environment: Optional[types.Environment] = None
+    #: Every environment document this input held, in the order the
+    #: parts were read. A field rather than one slot: an AASX may
+    #: declare more than one aas-spec part, and assigning a single
+    #: `environment` per part meant each overwrote the one before it --
+    #: so the relayed metamodel channel, which verifies environments,
+    #: saw only the last. Its findings for every earlier part vanished
+    #: with `complete` still true, because the template rules had walked
+    #: them and only the relay was blind.
+    environments: List[types.Environment] = field(default_factory=list)
     container: Optional[AasxPackage] = None
     errors: List[LoadError] = field(default_factory=list)
 
@@ -202,7 +210,7 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
             "payload", "the document could not be read as an AAS environment",
             subject=part or loaded.path, detail="%s: %s" % (type(exc).__name__, exc)))
         return
-    loaded.environment = environment
+    loaded.environments.append(environment)
     loaded.submodels.extend(environment.submodels or [])
 
 

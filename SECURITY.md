@@ -8,9 +8,12 @@ as hostile — parsing failures become findings, not crashes, and the test
 suite carries deliberately broken containers and documents. What this
 reader takes in is bounded: one document at 64 MiB, and a container's
 parts at 64 MiB each and 256 MiB together — so a container may deliver
-four times what a bare document may. The total is asked before each part
-is decompressed, so a container already past it stops costing, and a part
-counts once however many relationships name it. A container's directory
+four times what a bare document may. The total is asked of what has been
+read so far, before each next part is decompressed -- so a container
+stops costing once it is past the bound, having read the part that
+crossed it: the ceiling in practice is the bound plus one part, and what
+it buys is that the cost cannot keep growing. A part counts once however
+many relationships name it. A container's directory
 of names is bounded too, at 16 MiB, and separately: a ZIP is indexed
 whole before any of it is read, so the cost falls on how many names the
 archive declares rather than on what its entries hold — an archive of

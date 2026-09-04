@@ -84,7 +84,13 @@ def render(report: Report, *, show_meta: bool = False) -> str:
     # number rather than a finding -- but a report that omits the number
     # lets a reader believe the whole file was judged.
     judged = ""
-    if report.submodels_seen:
+    if not report.submodels_seen and report.judged:
+        # Zero is falsy, so the clause below was suppressed on the one
+        # input the front page calls the emptiest pass of the lot: an
+        # environment holding nothing. The screen said `0 error(s)` and
+        # nothing about having judged nothing.
+        judged = " · no submodels to judge"
+    elif report.submodels_seen:
         judged = " · judged %d of %d submodel%s" % (
             report.submodels_judged, report.submodels_seen,
             "" if report.submodels_seen == 1 else "s")

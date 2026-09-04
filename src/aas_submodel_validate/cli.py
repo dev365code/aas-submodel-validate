@@ -28,10 +28,14 @@ def main(argv: Optional[list] = None) -> int:
         # README, so the codes they will branch on have to be here. They
         # were on the front page only, which put them where the reader
         # who depends on them was least likely to look.
-        epilog="exit codes: 0 no finding at error severity · 1 at least one "
-               "error · 2 could not run, which covers a path that cannot be "
-               "read and an input this reader refused -- in both of those "
-               "nothing was judged, so neither is a verdict.",
+        # Wrapped by hand: a raw-description epilog is printed as
+        # written, and this ran off the eightieth column in one line.
+        epilog="exit codes:\n"
+               "  0  nothing at error severity\n"
+               "  1  at least one error -- or a warning, under -W\n"
+               "  2  could not run: a path that cannot be read, or an input\n"
+               "     this reader refused. Nothing was judged, so neither\n"
+               "     of those is a verdict.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("path", nargs="?",
                         help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")

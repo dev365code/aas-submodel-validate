@@ -44,7 +44,7 @@ def test_a_bare_submodel_json_file(tmp_path):
     loaded = load(path)
     assert loaded.form == "submodel-json"
     assert len(loaded.submodels) == 1
-    assert loaded.environment is None
+    assert loaded.environments == []
 
 
 def test_an_environment_xml_file(tmp_path):
@@ -146,7 +146,7 @@ def test_an_environment_json_is_parsed_once(tmp_path, monkeypatch):
                                                 original(text, *a, **kw))[1])
     loaded = load(path)
     assert not loaded.errors
-    assert loaded.environment is not None, "the environment branch was not taken"
+    assert loaded.environments, "the environment branch was not taken"
     assert len(parsed) == 1, "parsed %d times, on %r characters" % (len(parsed), parsed)
 
 

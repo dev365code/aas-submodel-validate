@@ -446,3 +446,44 @@ def test_the_two_tables_are_sorted_by_whether_a_category_decides_it():
                  if row["element_id_short"] == "CapacityThresholdExhaustion"]
     assert threshold, "the row that inverts is not among the withheld"
     assert ("LMT", "not-to-be-filled") in threshold[0]["categories"]
+
+
+def test_the_divergence_row_counts_the_index_it_cites():
+    """Row 36 states two numbers about the requirements index, and both
+    were wrong.
+
+    It said the index holds ten template editions and that this
+    repository vendors three of them. The index holds twelve, and one of
+    the three vendored templates is among them -- 02004 is indexed at a
+    different edition than the one vendored here, and 02003 is not
+    indexed at all. An evidence ledger whose numbers do not survive
+    being counted is worth less than no ledger.
+    """
+    import hashlib
+    import json
+    import pathlib
+    import re
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    index = root / "data" / "battery-passport" / "requirements-idta.json"
+    if not index.is_file():
+        pytest.skip("the indexes are not in this tree (an sdist ships the table)")
+    editions = json.loads(index.read_text(encoding="utf-8"))["counts"]["templates"]
+    digests = {entry["sha256"] for entry in editions.values()}
+
+    vendored = sorted((root / "src" / "aas_submodel_validate" / "data" / "smt")
+                      .rglob("template.json"))
+    assert vendored, "no vendored template to compare"
+    shared = sum(1 for path in vendored
+                 if hashlib.sha256(path.read_bytes()).hexdigest() in digests)
+
+    row = [line for line in (root / "docs" / "divergences.md")
+           .read_text(encoding="utf-8").splitlines() if line.startswith("| 36 |")]
+    assert row, "divergence 36 is gone"
+    numbers = re.search(r"indexes (\w+) template editions; this repository "
+                        r"vendors (\w+) of those", row[0])
+    assert numbers, "row 36 no longer states both counts in a readable shape"
+    words = {"one": 1, "two": 2, "three": 3, "ten": 10, "eleven": 11,
+             "twelve": 12, "thirteen": 13}
+    assert words[numbers.group(1)] == len(editions)
+    assert words[numbers.group(2)] == shared

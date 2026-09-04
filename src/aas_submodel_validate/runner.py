@@ -104,7 +104,12 @@ def _meta_level(strict) -> str:
 
 def _meta_findings(loaded: Loaded, strict):
     rule = _meta_rule(strict)
-    targets = [loaded.environment] if loaded.environment is not None else loaded.submodels
+    # Every environment the input held, or the bare submodels when it
+    # held none. One slot used to hold "the" environment and an AASX may
+    # declare several aas-spec parts, so all but the last went
+    # unverified -- silently, since the walk had already seen their
+    # submodels and the report called itself complete.
+    targets = loaded.environments or loaded.submodels
     for target in targets:
         for error in verification.verify(target):
             yield Finding(rule, Violation(error.cause, subject=str(error.path)))

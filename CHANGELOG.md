@@ -29,7 +29,8 @@ exits 0. A pipeline reading only the exit code saw success for a package
 two thirds of which was never looked at; this makes that fail instead.
 
 **The relayed channel is folded into one line** unless `--show-meta`.
-On the official example that is 359 lines of output down to 52, with the
+On the official example that is 360 lines of output down to 53 — count
+them with `smtv --example` and `smtv --example --show-meta` — with the
 verdict no longer scrolled past. Counted, never dropped: the summary
 totals them and the JSON report is unchanged.
 
