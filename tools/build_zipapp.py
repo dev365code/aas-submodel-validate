@@ -38,7 +38,22 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "aas_submodel_validate"
 OUTPUT = ROOT / "dist" / "smtv.pyz"
 
+#: The archive carries no wheel metadata, so `Requires-Python` is not in
+#: it -- and the reader who most needs that number is the one who carried
+#: this file through a site's inbound review and cannot go and look it
+#: up. An interpreter too old raised a syntax error from a file they had
+#: no way to read first, and the trip back out to a networked machine is
+#: measured in half-days.
+#:
+#: The guard runs before the import whose failure it explains, and uses
+#: nothing newer than what it refuses.
 MAIN = """import sys
+
+if sys.version_info < (3, 9):
+    sys.stderr.write(
+        "smtv: this needs Python 3.9 or newer; this one is %d.%d (%s)\\n"
+        % (sys.version_info[0], sys.version_info[1], sys.executable))
+    sys.exit(2)
 
 from aas_submodel_validate.cli import main
 
@@ -107,6 +122,28 @@ def stage(target: Path) -> None:
             shutil.copy2(found, target / found.name)
 
 
+#: Directories a dependency's own wheel carries for its maintainers.
+#: aas-core3.0 ships the scripts it builds itself with, and they arrived
+#: in the artifact: dead code the entry point never reaches, the only
+#: `subprocess` import in the whole archive -- the one line a scanner
+#: stops on and a reviewer then has to ask about -- and a top-level
+#: `dev_scripts` name on `sys.path` that this file has no business
+#: claiming. Matched as a whole path segment, not as a prefix, so a
+#: package legitimately named `dev_scripts_of_something` is not caught
+#: and one nested under `aas_core3/` is.
+NOT_OURS_TO_CARRY = ("dev_scripts",)
+
+
+def belongs(name: str) -> bool:
+    """Whether an archive member travels in the single file.
+
+    A path filter, and the only one: `inspect` afterwards asks what has
+    to be present, and the two together are what a reviewer opening the
+    zip is entitled to.
+    """
+    return not any(part in NOT_OURS_TO_CARRY for part in name.split("/"))
+
+
 def create_archive(source: Path, target: Path) -> None:
     """`zipapp.create_archive`, with the timestamps and the order pinned --
     which is what makes two builds of one tree the same bytes."""
@@ -116,8 +153,10 @@ def create_archive(source: Path, target: Path) -> None:
         handle.write(SHEBANG)
         with zipfile.ZipFile(handle, "w", zipfile.ZIP_DEFLATED) as archive:
             for path in sorted(p for p in source.rglob("*") if p.is_file()):
-                info = zipfile.ZipInfo(path.relative_to(source).as_posix(),
-                                       date_time=stamp)
+                name = path.relative_to(source).as_posix()
+                if not belongs(name):
+                    continue
+                info = zipfile.ZipInfo(name, date_time=stamp)
                 info.compress_type = zipfile.ZIP_DEFLATED
                 info.external_attr = 0o644 << 16
                 archive.writestr(info, path.read_bytes())

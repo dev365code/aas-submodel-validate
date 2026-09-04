@@ -21,6 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Signing. Without it the only trust story is a checksum file that
+      # travels beside the files it vouches for and is replaceable by
+      # whoever could replace them -- an integrity proof read as an
+      # authenticity one. A site whose rule is "nothing unsigned comes
+      # in" stops there, and `shasum -c` printing OK is exactly what
+      # makes that stop look unnecessary to everyone else.
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -71,6 +79,19 @@ jobs:
       - name: one checksum file beside them
         run: cd dist && shasum -a 256 * > SHA256SUMS && cat SHA256SUMS
 
+      - name: sign what was built
+        # After this, `gh attestation verify smtv.pyz --repo <this>`
+        # answers with the workflow, the repository and the commit that
+        # produced these bytes -- the question a reviewer actually asks,
+        # and the one a checksum file cannot answer. No key for anyone
+        # to manage or lose.
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/smtv.pyz
+
       # The publisher below uploads exactly these bytes; nothing is rebuilt.
       - uses: actions/upload-artifact@v4
         with:
@@ -81,10 +102,39 @@ jobs:
       - name: attach them to a GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+        # The body says three things the page did not, each of which cost
+        # a reader real time: which of the four files to carry, that the
+        # spelling is `python3`, and which Python it needs -- that last
+        # one is a trip back out of the plant to find out, measured in
+        # half-days rather than minutes.
         run: |
+          cat > notes.md <<'NOTES'
+          See CHANGELOG.md for what changed. **Requires Python 3.9 or newer.**
+
+          **Which file to carry**
+
+          - `smtv.pyz` — one file, for a machine with no package manager.
+            Needs only a Python: `python3 smtv.pyz --example` gives a verdict
+            with no file of your own, no repository and no network.
+          - the `.whl` and the `.tar.gz` — for a machine that has pip but no
+            index: `pip3 install --no-index --find-links . aas-submodel-validate`.
+            The same bytes are on PyPI.
+          - `SHA256SUMS` — the checksums for all three.
+
+          **Checking what you carried**
+
+              shasum -a 256 -c SHA256SUMS
+              gh attestation verify smtv.pyz --repo OWNER/REPO
+
+          The first says nothing was corrupted on the way. The second says
+          which workflow in which repository built these bytes — the one that
+          matters if you are signing for what comes through the door.
+
+          It reaches no network, and neither does the tool.
+          NOTES
+          sed -i "s|OWNER/REPO|$GITHUB_REPOSITORY|" notes.md
           gh release create "$GITHUB_REF_NAME" dist/* \
-            --title "$GITHUB_REF_NAME" \
-            --notes "See CHANGELOG.md. Verify what you download: \`shasum -a 256 -c SHA256SUMS\`. The .pyz needs only a Python — \`python smtv.pyz your-submodel.aasx\`; it reaches no network and neither does the tool."
+            --title "$GITHUB_REF_NAME" --notes-file notes.md
 
   publish:
     needs: build
