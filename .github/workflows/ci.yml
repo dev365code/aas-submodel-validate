@@ -101,11 +101,16 @@ jobs:
         # find it.
         run: |
           python -m build --sdist --outdir dist/
-          rm -rf unpacked && mkdir unpacked
-          tar -xzf dist/*.tar.gz -C unpacked
-          cd unpacked/*/
+          # Outside the workspace, so the steps after this see the
+          # directory they expect and nothing has to be deleted
+          # afterwards. The first version cleaned up with
+          # `rm -rf "$GITHUB_WORKSPACE/unpacked"`, which is `rm -rf
+          # /unpacked` anywhere that variable is unset -- including a
+          # maintainer running the step by hand.
+          unpacked="$(mktemp -d)"
+          tar -xzf dist/*.tar.gz -C "$unpacked"
+          cd "$unpacked"/*/
           PYTHONPATH="$PWD/src:$PWD/tests" python -m pytest -q
-          rm -rf "$GITHUB_WORKSPACE/unpacked"
 
       - name: the wheel must carry the vendored template and not the corpus
         run: |
