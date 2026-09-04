@@ -25,5 +25,6 @@ Frank Scherenschlich as their author, and a STEP model produced with
 FreeCAD/OpenCASCADE. They travel unmodified.
 
 Copyright for that material: Industrial Digital Twin Association (IDTA)
-and the template's contributors. THIRD_PARTY.md, which travels beside
-this file, has the pinned upstream revision and the verification hashes.
+and the template's contributors. THIRD_PARTY.md travels beside this file
+and names the upstream revision they were taken from; the SHA-256 digest
+of each one is recorded in a `sha256sums.txt` in its own directory.

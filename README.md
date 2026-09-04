@@ -28,11 +28,13 @@ aas-submodel-validate` always is. If `smtv` is then *command not found*,
 pip printed the directory it installed into — put that on your `PATH`,
 or run the tool as `python3 -m aas_submodel_validate`.
 
-**For a machine with no package manager**, build the single file once
-where there is a network and carry it:
+**For a machine with no package manager**, take `smtv.pyz` from the
+[releases page](https://github.com/dev365code/aas-submodel-validate/releases/latest)
+— built, checksummed and signed there — or build it yourself from a
+clone where there is a network, and carry it:
 
 ```sh
-python3 tools/build_zipapp.py           # writes dist/smtv.pyz
+python3 tools/build_zipapp.py           # from a clone; or download it
 python3 dist/smtv.pyz --example         # a verdict, with nothing else on the machine
 python3 dist/smtv.pyz your-submodel.aasx
 ```
@@ -40,8 +42,12 @@ python3 dist/smtv.pyz your-submodel.aasx
 Everything is inside it — this package and its one dependency — and
 nothing is compiled, so the same file runs on Linux, macOS and Windows,
 and it is an ordinary zip anyone who has to approve it can open and
-read. Two builds of one tree are byte-identical, so the hash on a
-release page is the hash of the file you carried in.
+read. Two builds of one tree that resolve the same dependency version
+are byte-identical, so the hash on a release page is the hash of the
+file you carried in. The dependency is a range and not a pin, so a build
+made after upstream publishes again is a different file — which is why
+the release page's hash is the one to check against, and not one you
+produce later.
 
 Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
 `.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
@@ -154,9 +160,10 @@ answers has to be chosen. Today that choice is the caller's:
 answers as it always has. Whenever a file declares the profile or the
 flag is used, the report says which template answered and counts the
 checks the two disagree about — what this run asked that the other would
-not, or what it did not ask that the other would (SMT-D2). A plain
-02004 file judged as 02004 draws nothing, because there was no choice
-to report.
+not, or what it did not ask that the other would (SMT-D2). Without the flag, a plain
+02004 file draws nothing here, because nothing had to choose; ask for
+`--profile 02004` and SMT-D2 says so at info, because then something
+did.
 
 Beside the validator, `data/battery-passport/` publishes machine-readable
 indexes of what a battery passport is required to carry -- Annex XIII of

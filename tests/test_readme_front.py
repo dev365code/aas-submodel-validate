@@ -276,23 +276,47 @@ def _arguments_to_the_tool(words):
     return None
 
 
+#: Commands in a shell block that are not this tool: installing it,
+#: fetching something, moving around. Anything on the page that is
+#: neither one of these nor an invocation is a spelling nobody taught
+#: the gate, and the gate has to say so rather than skip the line.
+NOT_THE_TOOL = ("pip", "pip3", "python3 -m pip", "python -m pip",
+                "python3 -m venv", "python -m venv",
+                "python3 tools/", "python tools/",
+                "curl", "git", "cd", "export", "shasum", "gh", "make")
+
+
 def test_the_gate_knows_every_way_this_page_starts_the_tool():
     """A spelling the page teaches and the gate does not know is a hole
     in the gate, and the page teaches new ones.
 
-    Measured by planting `python3 -m aas_submodel_validate docs/scope.md`
-    in the published-package block: every test in this file stayed
-    green, including the two whose only purpose is to catch exactly that
-    line."""
-    taught = set()
-    for line in README.splitlines():
-        stripped = line.strip().lstrip("`").split("#", 1)[0].split()
-        for invocation in INVOCATIONS:
-            if tuple(stripped[:len(invocation)]) == invocation:
-                taught.add(invocation)
-    assert taught, "the page starts the tool in no way this gate knows"
-    for invocation in taught:
-        assert _arguments_to_the_tool(list(invocation) + ["x"]) == ["x"]
+    The first version of this compared the page's invocations against
+    the gate's list and then asserted that each one it had found in the
+    list was in the list. It could not fail. Planted `uvx
+    aas-submodel-validate tests/corpus/...` in the published-package
+    block -- a repository path, in the block whose whole purpose is to
+    have none -- and every test in this file stayed green.
+
+    So it reads the other way now: every command in every shell block
+    has to be one of two known kinds, and a first word that is neither
+    fails here rather than being skipped by the gate that matters."""
+    unknown = []
+    for block in re.findall(r"```sh\n(.*?)```", README, re.S):
+        for line in block.splitlines():
+            words = line.split("#", 1)[0].split()
+            if not words:
+                continue
+            if _arguments_to_the_tool(words) is not None:
+                continue
+            command = " ".join(words)
+            if any(command == other or command.startswith(other + " ")
+                   or (other.endswith("/") and command.startswith(other))
+                   for other in NOT_THE_TOOL):
+                continue
+            unknown.append(line.strip())
+    assert not unknown, (
+        "these lines start with something this file does not recognise, so "
+        "the gates that read shell blocks skip them silently: %s" % unknown)
 
 
 def test_the_published_package_path_stands_without_the_repository():

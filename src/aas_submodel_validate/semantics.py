@@ -55,10 +55,10 @@ def candidate_values(reference) -> frozenset:
     """Every spelling under which a reference may match a template row.
 
     Each key's value, and the "/"-join when a reference stacks several
-    keys. IRDI composites are NOT split into their components: the review
-    that justified splitting ("the PDF cites the item id alone") was
-    checked against the published PDF and found false -- the tables carry
-    the composite -- and the splitting cross-contaminated matching (a
+    keys. IRDI composites are NOT split into their components: the
+    argument for splitting ("the PDF cites the item id alone") does not
+    survive the published PDF -- the tables carry the composite -- and
+    splitting cross-contaminated matching (a
     Document collection's id decomposed to its parent Documents-list id
     and matched the list row too). See docs/divergences.md #8.
     """

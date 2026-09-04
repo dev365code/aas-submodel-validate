@@ -555,3 +555,26 @@ def test_example_and_rules_are_two_different_requests(capsys):
         main(["--example", "--rules"])
     assert raised.value.code == 2
     assert "--example" in capsys.readouterr().err
+
+
+def test_the_two_spellings_of_the_meta_dial_cannot_disagree(tmp_path, capsys):
+    """One of them was losing silently, and losing meant exit 0.
+
+    `--strict-meta` is the older spelling of `--meta error`, and the
+    code read `args.meta or args.strict_meta` -- so `--strict-meta
+    --meta info` dropped the first without a word, and a build pinned on
+    `--strict-meta` went green the moment anyone added `--meta` beside
+    it. That is the failure this dial was introduced to end, arriving
+    through the dial itself. Agreeing is fine; disagreeing is a question
+    only the caller can answer."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"][0]["value"][0]["idShort"] = "Datasheet"
+    path = _write(tmp_path, json.dumps(env).encode("utf-8"))
+
+    assert main(["-q", "--strict-meta", path]) == 1
+    assert main(["-q", "--strict-meta", "--meta", "error", path]) == 1
+    for level in ("warning", "info"):
+        with pytest.raises(SystemExit) as raised:
+            main(["--strict-meta", "--meta", level, path])
+        assert raised.value.code == 2
+        assert "--strict-meta" in capsys.readouterr().err

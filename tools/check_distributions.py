@@ -35,6 +35,7 @@ Run after `python -m build`. Exits 1 and names every offending member.
 from __future__ import annotations
 
 import pathlib
+import re
 import subprocess
 import sys
 import tarfile
@@ -66,7 +67,21 @@ METADATA_FILES = ("PKG-INFO", "setup.cfg")
 METADATA_MEMBERS = ("PKG-INFO", "RECORD", "WHEEL", "METADATA", "SOURCES.txt",
                     "entry_points.txt", "top_level.txt", "requires.txt",
                     "dependency_links.txt", "not-zip-safe", "zip-safe",
-                    "LICENSE", "NOTICE", "AUTHORS", "REQUESTED", "INSTALLER")
+                    "AUTHORS", "REQUESTED", "INSTALLER")
+
+
+def licence_files() -> tuple:
+    """The attribution files the build is configured to relocate.
+
+    Read from the configuration rather than listed here. `LICENSE` and
+    `NOTICE` were named in this file and `THIRD_PARTY.md` was not, so
+    adding a third attribution file to the build was enough to make the
+    gate report it as untracked -- a correct build rejected, which is
+    the failure this project fears most.
+    """
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    listed = re.search(r"(?m)^license-files\s*=\s*\[([^\]]*)\]", text)
+    return tuple(re.findall(r'"([^"]+)"', listed.group(1))) if listed else ()
 
 
 def _in_metadata_dir(path: str) -> bool:
@@ -140,8 +155,20 @@ def _repository_path(name: str) -> str:
         return SOURCE_ROOT + name
     parts = name.split("/")
     for index, part in enumerate(parts):
-        if part.endswith(METADATA_DIRS) and parts[index + 1:index + 2] == ["licenses"]:
-            return "/".join(parts[index + 2:])
+        if not part.endswith(METADATA_DIRS):
+            continue
+        rest = parts[index + 1:]
+        # setuptools >= 77 puts them under `licenses/`; before that they
+        # sit directly in the metadata directory, and this project's
+        # build requirement admits both. Only the declared ones are
+        # relocated back in the flat case -- everything else in there is
+        # the build system's and is asked about as such.
+        if rest[:1] == ["licenses"]:
+            return "/".join(rest[1:])
+        if len(rest) == 1:
+            for declared in licence_files():
+                if pathlib.PurePosixPath(declared).name == rest[0]:
+                    return declared
     return name
 
 

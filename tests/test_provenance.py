@@ -95,7 +95,10 @@ def test_the_notice_names_every_vendored_file_that_ships():
         packaged = rel[len("src/"):] if rel.startswith("src/") else rel
         assert packaged in notice, \
             "NOTICE does not name %s, which ships" % packaged
-        assert rel in third_party, "THIRD_PARTY.md does not list %s" % rel
+        # THIRD_PARTY.md travels in all three distributions now, so it
+        # is addressed the same way for the same reason.
+        assert packaged in third_party, \
+            "THIRD_PARTY.md does not list %s" % packaged
 
 
 def test_the_wheel_gate_requires_every_vendored_file_that_ships():

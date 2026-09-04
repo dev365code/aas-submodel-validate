@@ -134,7 +134,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         # The body says three things the page did not, each of which cost
-        # a reader real time: which of the four files to carry, that the
+        # a reader real time: which of the five files to carry, that the
         # spelling is `python3`, and which Python it needs -- that last
         # one is a trip back out of the plant to find out, measured in
         # half-days rather than minutes.
@@ -148,19 +148,23 @@ jobs:
             Needs only a Python: `python3 smtv.pyz --example` gives a verdict
             with no file of your own, no repository and no network.
           - the two `.whl` files — for a machine that has pip but no index.
-            Put both in a directory and
-            `pip3 install --no-index --find-links . aas-submodel-validate`;
-            the second is the one dependency, and without it that command
-            has nothing to resolve. Under 400 KB together.
+            Put both in a directory and run
+            `python3 -m pip install --no-index --find-links . aas-submodel-validate`
+            (`pip3` works too, where that is the spelling). The
+            `aas_core3.0` wheel is the one dependency; without it that
+            command has nothing to resolve. Under 400 KB together.
           - the `.tar.gz` — the source, for anyone building it themselves.
           - `SHA256SUMS` — the checksums for everything above.
 
           **Checking what you carried**
 
-              shasum -a 256 -c SHA256SUMS
+              shasum -a 256 --ignore-missing -c SHA256SUMS
               gh attestation verify smtv.pyz --repo OWNER/REPO
 
-          The first says nothing was corrupted on the way. The second says
+          `--ignore-missing` because you were told to carry one file, and
+          without it `shasum` reports the three you did not bring as
+          failures and exits 1. The first says nothing was corrupted on
+          the way. The second says
           which workflow in which repository built these bytes — the one that
           matters if you are signing for what comes through the door.
 

@@ -2,10 +2,10 @@
 
 ## Where to ask
 
-Open an issue on this repository. That is the whole channel, and it is
-open before there is a release to install — a question about a file this
-tool judged wrongly is worth more now than after the reading is frozen
-into a version somebody depends on.
+Open an issue on this repository. That is the whole channel. A question
+about a file this tool judged wrongly is worth most while the reading it
+disagrees with can still be changed: `docs/divergences.md` exists to be
+argued with.
 
 If an issue is the wrong shape for what you have — a licensing question,
 something you would rather not post, an offer of test material you
@@ -28,8 +28,8 @@ version, and the flags the run was given. Attach that and the file, and
 say what you expected instead.
 
 If the file cannot be shared, the rule id and the subject path are
-usually enough to start — several of this project's own corrections
-began with somebody describing a shape rather than sending one.
+usually enough to start: they say which reading is in dispute, which is
+the part that has to be settled before anything else.
 
 ## The two reports worth making
 

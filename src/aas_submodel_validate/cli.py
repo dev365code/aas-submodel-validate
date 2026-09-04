@@ -35,7 +35,10 @@ def main(argv: Optional[list] = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("path", nargs="?",
                         help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")
-    parser.add_argument("-f", "--format", choices=("text", "json"), default="text")
+    parser.add_argument("-f", "--format", choices=("text", "json"),
+                        default="text",
+                        help="text for a person, json for a pipeline "
+                             "(docs/report-schema.md describes it)")
     parser.add_argument("-q", "--quiet", action="store_true", help="exit code only")
     parser.add_argument("-W", "--warnings-as-errors", action="store_true",
                         help="exit 1 on warnings too")
@@ -75,6 +78,16 @@ def main(argv: Optional[list] = None) -> int:
                         version="aas-submodel-validate %s" % __version__)
     args = parser.parse_args(argv)
 
+    if args.strict_meta and args.meta not in (None, "error"):
+        # `--strict-meta` is the older spelling of `--meta error`, and
+        # `args.meta or args.strict_meta` let the newer one drop it
+        # without a word -- so a build pinned on `--strict-meta` went
+        # green the moment anyone added `--meta info` beside it. That is
+        # the failure the dial was introduced to end, arriving through
+        # the dial. Agreeing is fine; disagreeing is the caller's to
+        # resolve.
+        parser.error("--strict-meta is --meta error; it cannot be combined "
+                     "with --meta %s" % args.meta)
     if args.rules and args.example:
         # `--rules` returned before the conflict check below, so one
         # flag was obeyed and the other silently dropped -- while

@@ -2,9 +2,12 @@
 
 One directory per template, holding the published examples unmodified,
 vendored under CC BY 4.0 (© IDTA and contributors — see THIRD_PARTY.md
-for the pin and hashes).
+for the upstream revision; each
+directory's `sha256sums.txt` has the digests).
 
-- `02004/` — the 2.0 Handover Documentation example, as JSON and as AASX.
+- `02004/` — the 2.0 Handover Documentation example as JSON. The AASX
+  form of it ships in the package, under `data/example/`, because
+  `smtv --example` judges it.
 - `02003/` — the Technical Data sample, published twice: beside the 2.0
   template and again beside 2.0.1. The second is upstream's own repair of
   the first, and keeping both is what makes it evidence rather than a

@@ -4,21 +4,24 @@
 
 | file | what it is | modified? |
 |---|---|---|
-| `src/aas_submodel_validate/data/smt/02004/2.0.1/template.json` | IDTA 02004-2-0-1 *Handover Documentation* template | no |
-| `src/aas_submodel_validate/data/smt/02003/2.0.1/template.json` | IDTA 02003 2.0.1 *Technical Data* template | no |
-| `src/aas_submodel_validate/data/smt/02035-2/1.0/template.json` | IDTA 02035-2 1.0 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
+| `aas_submodel_validate/data/smt/02004/2.0.1/template.json` | IDTA 02004-2-0-1 *Handover Documentation* template | no |
+| `aas_submodel_validate/data/smt/02003/2.0.1/template.json` | IDTA 02003 2.0.1 *Technical Data* template | no |
+| `aas_submodel_validate/data/smt/02035-2/1.0/template.json` | IDTA 02035-2 1.0 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
 | `tests/corpus/idta/02004/example.json` | official 02004 2.0 example (environment JSON) | no |
-| `src/aas_submodel_validate/data/example/idta-02004-2.0.aasx` | official 02004 2.0 example (AASX) — ships in the wheel, and `smtv --example` judges it | no |
+| `aas_submodel_validate/data/example/idta-02004-2.0.aasx` | official 02004 2.0 example (AASX) — ships in the wheel, and `smtv --example` judges it | no |
 | `tests/corpus/idta/02003/sample-2.0.json` | official 02003 2.0 sample (environment JSON) | no |
 | `tests/corpus/idta/02003/sample-2.0.aasx` | official 02003 2.0 sample (AASX) | no |
 | `tests/corpus/idta/02003/sample-2.0.1.aasx` | official 02003 2.0.1 sample (AASX) — upstream's own repair of the one above | no |
 
 Source: [admin-shell-io/submodel-templates](https://github.com/admin-shell-io/submodel-templates),
 licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), © IDTA
-and contributors. Pinned to one commit and hash-verified on every CI run
-by `tools/vendor_template.py --check`, which also sweeps those trees for
-anything this table does not list; the pin and the recorded SHA-256
-digests live beside the files. `--refresh` is the only operation that
+and contributors. Taken from commit `11ef3353124626e2dba4cb50767024df9a39928a` and
+hash-verified on every CI run by `tools/vendor_template.py --check`,
+which also sweeps those trees for anything this table does not list. The
+SHA-256 digest of each file is recorded in a `sha256sums.txt` in its own
+directory. Paths above are as an installed package addresses them; this
+repository keeps the first four under `src/`, and the corpus entries are
+in the source distribution only. `--refresh` is the only operation that
 touches the network.
 
 The template files are the *generator input* for the structural rule
