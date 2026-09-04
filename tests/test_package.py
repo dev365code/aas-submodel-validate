@@ -116,8 +116,16 @@ def test_nothing_local_is_tracked():
     if listed.returncode != 0:
         pytest.skip("not a git checkout")
     tracked = set(listed.stdout.split())
+    # A `git ls-files` that succeeds says nothing about whether this
+    # tree has a `.gitignore`: unpack an sdist inside somebody else's
+    # working copy and it succeeds, and the read below raised. The
+    # sibling check learned this one commit earlier and this half did
+    # not -- the same file, the same shape.
+    exclusions = root / ".gitignore"
+    if not exclusions.is_file():
+        pytest.skip("not a checkout of this repository")
     ignored = [line.strip().lstrip("/").rstrip("/")
-               for line in (root / ".gitignore").read_text(encoding="utf-8").splitlines()
+               for line in exclusions.read_text(encoding="utf-8").splitlines()
                if line.startswith("/")]
     assert ignored, ".gitignore names no local-only path"
     for name in ignored:

@@ -21,10 +21,13 @@ rather than in this package's metadata.
 Both are asked of what the archives actually contain, rather than of
 what the packaging configuration says they should hold. Configuration
 is a claim about a build; the archive is the build, and only one of the
-two can be wrong without anybody noticing. The configuration is read
-for one thing only -- which files the build relocates into its metadata
-directory -- because that is a question about where a member came from,
-which the archive cannot answer about itself.
+two can be wrong without anybody noticing. Which files the build
+relocated into its metadata directory is asked of the archive too: its
+`METADATA` (or an sdist's `PKG-INFO`) lists them under `License-File:`,
+resolved to real names. Reading `pyproject.toml` for the same answer was
+tried and is what a spelling can break -- a `license-files` glob without
+a bracket parsed as a literal pattern, matched nothing, and the gate
+reported `LICENSE` as a file this repository does not track.
 
 A wheel is a different namespace from the tree: its members live under
 the import name, not under `src/`. Repository paths are recovered before
@@ -73,7 +76,21 @@ METADATA_MEMBERS = ("PKG-INFO", "RECORD", "WHEEL", "METADATA", "SOURCES.txt",
                     "AUTHORS", "REQUESTED", "INSTALLER")
 
 
-def licence_files() -> tuple:
+def _licence_files(text: str) -> tuple:
+    """The names the build says it relocated, from an archive's own
+    metadata.
+
+    `License-File:` is written by the build after resolving whatever
+    `license-files` said -- a glob arrives here as the names it matched.
+    So this answers for every spelling, which is the thing reading the
+    configuration could not do.
+    """
+    return tuple(line.split(":", 1)[1].strip()
+                 for line in text.splitlines()
+                 if line.startswith("License-File:"))
+
+
+def declared_licence_files() -> tuple:
     """The attribution files the build is configured to relocate.
 
     Which files the build relocates into its metadata directory, and so
@@ -149,14 +166,18 @@ def members(artifact: pathlib.Path):
         return [(name, name.split("/", 1)[-1]) for name in names]
     with zipfile.ZipFile(artifact) as archive:
         names = [n for n in archive.namelist() if not n.endswith("/")]
+        # What the build says it relocated, read from the build.
+        metadata = [n for n in names if n.endswith(".dist-info/METADATA")]
+        declared = _licence_files(
+            archive.read(metadata[0]).decode("utf-8", "replace")) if metadata else ()
     # One decider. Mapping used to exempt a metadata directory here as
     # well, so a file planted inside one never reached the function whose
     # job is to say whether it belongs -- and a note in a `.dist-info/`
     # went out green while the same note in an `.egg-info/` was caught.
-    return [(name, _repository_path(name)) for name in names]
+    return [(name, _repository_path(name, declared)) for name in names]
 
 
-def _repository_path(name: str) -> str:
+def _repository_path(name: str, declared: tuple = ()) -> str:
     """Where a wheel member came from in the tree.
 
     Two relocations, not one. Package members live under the import name
@@ -184,7 +205,6 @@ def _repository_path(name: str) -> str:
             # own README and passed -- and setuptools >= 77, which is
             # what builds this project, puts licence files exactly here.
             # One branch was given teeth and the other was not.
-            declared = licence_files()
             if not declared or inner in declared:
                 return inner
             for candidate in declared:
@@ -211,7 +231,6 @@ def _repository_path(name: str) -> str:
             # correct build is the worse of the two failures and a
             # configuration this cannot parse is a configuration nobody
             # is hiding a payload in.
-            declared = licence_files()
             if not declared:
                 return rest[0]
             for candidate in declared:

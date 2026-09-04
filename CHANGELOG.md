@@ -48,12 +48,14 @@ anything and have no attestation to find.
 
 **`--rules` refuses what it would have ignored.** It lists the rules and
 judges nothing, so every flag about judging is a question it does not
-answer — `-q`, `-f json`, `-W`, `--allow-unmatched`,
-`--require-all-judged`, `--show-meta`, `--profile` and a path now exit 2
-naming what would have been dropped. In 0.1.0 they were accepted and
-silently ignored, so a command that worked may now fail; `--meta` (and
-its older spelling `--strict-meta`) is what it reads, because that
-changes the listing.
+answer: `-q`, `-f json`, `-W`, `--allow-unmatched`,
+`--require-all-judged`, `--show-meta`, `--profile` and a path all exit 2
+now, naming what would have been dropped. Five of those — `-q`,
+`-f json`, `-W`, `--allow-unmatched` and `--profile` — were accepted and
+silently ignored in 0.1.0, so a command that worked may now fail. The
+other two flags are new in this release. `--meta` (and its older
+spelling `--strict-meta`) is what `--rules` reads, because that changes
+the listing.
 
 **Documented:** `--allow-unmatched` and `--require-all-judged`, both of
 which decide an exit code and were reachable only from `--help`; that the

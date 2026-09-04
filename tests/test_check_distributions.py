@@ -28,6 +28,9 @@ def _gate():
 
 DIST_INFO = "aas_submodel_validate-0.1.1.dist-info"
 
+#: What a build of this project writes into its own metadata.
+DECLARED = ("LICENSE", "NOTICE", "THIRD_PARTY.md")
+
 
 @pytest.mark.parametrize("member", [
     # setuptools >= 77 puts them in a subdirectory; older ones do not,
@@ -44,25 +47,65 @@ DIST_INFO = "aas_submodel_validate-0.1.1.dist-info"
 ])
 def test_a_declared_licence_file_is_recognised_in_either_placement(member):
     gate = _gate()
-    recovered = gate._repository_path(member)
+    recovered = gate._repository_path(member, DECLARED)
     assert (ROOT / recovered).is_file(), \
         "%s was mapped to %r, which is not in this tree" % (member, recovered)
     assert not gate.is_build_metadata(recovered)
 
 
-def test_the_licence_files_come_from_the_configuration_not_a_list():
-    """A hand-kept list is what let the third one through.
+#: How every spelling of `license-files` reaches this gate. The build
+#: resolves the setting and writes the names it actually used, so a glob
+#: arrives here as filenames.
+METADATA_SPELLINGS = (
+    "License-File: LICENSE\nLicense-File: NOTICE\nLicense-File: THIRD_PARTY.md\n",
+    "Metadata-Version: 2.4\nName: x\nLicense-File: LICENSE\n"
+    "License-File: NOTICE\nLicense-File: THIRD_PARTY.md\nDescription\n",
+)
 
-    `LICENSE` and `NOTICE` were named in the gate and `THIRD_PARTY.md`
-    was not, so adding a third attribution file to the build was enough
-    to make the gate reject it."""
+
+@pytest.mark.parametrize("metadata", METADATA_SPELLINGS)
+def test_the_declared_files_are_read_from_the_build_not_the_configuration(metadata):
+    """Reading `pyproject.toml` for this could not answer for a glob.
+
+    A regular expression over `license-files = [...]` stops at the first
+    `]`, so `LICEN[CS]E*` returned nothing -- the permissive answer, and
+    harmless. `LICENSE*` has no bracket: it parsed cleanly as the literal
+    string `LICENSE*`, matched no member, and the gate reported
+    `<dist-info>/licenses/LICENSE` as a file this repository does not
+    track. A correct build refused, which is the failure this file
+    exists not to cause, on the branch that builds this project.
+
+    The build has already resolved the setting by the time an archive
+    exists, and writes the names it used. Asking the archive answers for
+    every spelling, and is what the module says it does."""
     gate = _gate()
-    declared = gate.licence_files()
-    assert "THIRD_PARTY.md" in declared
-    configuration = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    for name in declared:
-        assert name in configuration, \
-            "%s is treated as a licence file and the configuration does not say so" % name
+    declared = gate._licence_files(metadata)
+    assert declared == ("LICENSE", "NOTICE", "THIRD_PARTY.md")
+    for member in (DIST_INFO + "/licenses/LICENSE", DIST_INFO + "/LICENSE"):
+        assert gate._repository_path(member, declared) == "LICENSE"
+
+
+def test_a_build_that_declares_nothing_is_not_refused():
+    """No `License-File:` at all is "no opinion", not "none of them".
+
+    Very old metadata carries no such header, and answering "nothing was
+    relocated" there would report every licence file in the archive as
+    untracked."""
+    gate = _gate()
+    assert gate._licence_files("Metadata-Version: 2.1\nName: x\n") == ()
+    assert gate._repository_path(DIST_INFO + "/LICENSE", ()) == "LICENSE"
+    assert gate._repository_path(DIST_INFO + "/licenses/LICENSE", ()) == "LICENSE"
+
+
+def test_the_configuration_still_names_them_explicitly():
+    """Not what the gate reads, and still worth asking: setuptools'
+    default glob sweeps `NOTICE*` and `LICEN[CS]E*` from the top of the
+    tree, so an untracked working note gets copied into the wheel. An
+    explicit list is what stops that."""
+    gate = _gate()
+    declared = gate.declared_licence_files()
+    assert "THIRD_PARTY.md" in declared, \
+        "the configuration no longer names the attribution files"
 
 
 @pytest.mark.parametrize("member", [
@@ -86,7 +129,7 @@ def test_something_that_only_looks_like_one_is_still_asked_about(member):
     copied in. Exempting the directory answered "is this a licence
     file?" when the question is "did this repository put it there?"."""
     gate = _gate()
-    recovered = gate._repository_path(member)
+    recovered = gate._repository_path(member, DECLARED)
     assert not gate.is_build_metadata(recovered)
     # The member itself, unmoved. Only a declared licence file is
     # relocated, in either placement, so the tracked-files rule is asked
