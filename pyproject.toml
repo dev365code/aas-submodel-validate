@@ -40,8 +40,17 @@ where = ["src"]
 # The vendored IDTA template (CC BY 4.0) travels in the wheel: the offline
 # story is that what you install carries its own provenance. NOTICE says the
 # distribution contains it, so it must.
+#
+# So does IDTA's own published example, under the same licence and the same
+# NOTICE entry. `pip install` used to leave a reader with a validator and
+# nothing to validate: the first command the front page gave named a file
+# only a clone had, and on a machine where the clone is blocked -- which is
+# the machine this project is for -- there was no first verdict at all.
+# `smtv --example` runs it, and needs no network and no repository.
 [tool.setuptools.package-data]
-aas_submodel_validate = ["data/smt/**/*.json", "data/smt/**/*.txt"]
+aas_submodel_validate = ["data/smt/**/*.json", "data/smt/**/*.txt",
+                         "data/example/*.aasx",
+                         "data/example/*.txt"]
 
 [tool.ruff]
 # data/battery-passport is a bundle copied verbatim from its own build

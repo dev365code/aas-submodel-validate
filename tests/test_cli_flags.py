@@ -389,3 +389,36 @@ def test_a_promoted_relay_is_never_folded_away(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "error   META" in out
     assert "--show-meta" not in out
+
+
+def test_example_judges_the_bundled_package_with_no_repository(tmp_path,
+                                                               monkeypatch,
+                                                               capsys):
+    """`pip install` used to leave a reader with nothing to validate.
+
+    The front page's first command named a file only a clone has, and on
+    a machine where the clone is blocked -- which is the machine this
+    project is for -- there was no first verdict at all. The example
+    IDTA publishes now travels in the wheel under the same licence and
+    the same NOTICE entry as the templates beside it.
+
+    Run from somewhere that is not this repository, so a path that
+    happens to resolve here cannot pass for a bundled one."""
+    monkeypatch.chdir(tmp_path)
+    assert main(["--example"]) == 0
+    out = capsys.readouterr().out
+    assert "judged 1 of 1 submodel" in out
+    assert "idta-02004-2.0.aasx" in out
+
+
+def test_example_and_a_path_are_two_different_requests(tmp_path, capsys):
+    """Giving both is a mistake to name, not one to resolve silently.
+
+    Whichever the tool picked, the other would be judged without being
+    mentioned -- a report about bytes the caller did not think it was
+    reading, which is the one thing this report's provenance field
+    exists to prevent."""
+    path = _write(tmp_path, json.dumps(hd_env()).encode("utf-8"))
+    with pytest.raises(SystemExit) as raised:
+        main(["--example", path])
+    assert raised.value.code == 2

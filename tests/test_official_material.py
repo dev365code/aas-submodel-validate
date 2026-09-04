@@ -14,7 +14,7 @@ import json
 from aas_submodel_validate import runner
 
 JSON_EXAMPLE = "tests/corpus/idta/02004/example.json"
-AASX_EXAMPLE = "tests/corpus/idta/02004/example.aasx"
+AASX_EXAMPLE = ("src/aas_submodel_validate/data/example/idta-02004-2.0.aasx")
 
 #: The remedy sentences, written out rather than read from the registry.
 #: Read from the registry they would agree with any rewording, and a

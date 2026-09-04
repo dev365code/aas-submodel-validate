@@ -100,6 +100,9 @@ jobs:
               "aas_submodel_validate/data/smt/02003/2.0.1/sha256sums.txt",
               "aas_submodel_validate/data/smt/02035-2/1.0/template.json",
               "aas_submodel_validate/data/smt/02035-2/1.0/sha256sums.txt",
+              # `pip install` has to leave the reader something to judge.
+              "aas_submodel_validate/data/example/idta-02004-2.0.aasx",
+              "aas_submodel_validate/data/example/sha256sums.txt",
           ]
           missing = [n for n in required if n not in names]
           if missing:

@@ -12,25 +12,21 @@ checks a submodel instance against its IDTA template — starting with
 step in a build.
 
 ```sh
-pip install aas-submodel-validate
-curl -LO https://github.com/dev365code/aas-submodel-validate/raw/v0.1.0/tests/corpus/idta/02004/example.aasx
-smtv example.aasx        # IDTA's own published example
+pip3 install aas-submodel-validate
+smtv --example              # IDTA's own published example, carried in the package
 smtv your-submodel.aasx
 ```
 
-The second line fetches the official IDTA example so the first verdict
-needs nothing of your own; skip it if you already have a file. The
-package itself carries no examples — a wheel is not the place for other
-people's documents — so this is the one step that wants a network. The
-tool never does.
+The second line needs no file of your own, no clone and no network: the
+example IDTA publishes travels in the wheel, under the same CC BY 4.0
+licence as the templates beside it (see `NOTICE`). It is unmodified,
+defects and all — it raises findings, which is the point of shipping
+that one rather than a clean file written to pass.
 
-From a clone the example is already there:
-
-```sh
-git clone https://github.com/dev365code/aas-submodel-validate && cd aas-submodel-validate
-pip install .
-smtv tests/corpus/idta/02004/example.aasx
-```
+If `pip3` is not the spelling on your machine, `python3 -m pip install
+aas-submodel-validate` always is. If `smtv` is then *command not found*,
+pip printed the directory it installed into — put that on your `PATH`,
+or run the tool as `python3 -m aas_submodel_validate`.
 
 **For a machine with no package manager**, build the single file once
 where there is a network and carry it:

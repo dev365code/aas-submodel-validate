@@ -8,7 +8,7 @@
 | `src/aas_submodel_validate/data/smt/02003/2.0.1/template.json` | IDTA 02003 2.0.1 *Technical Data* template | no |
 | `src/aas_submodel_validate/data/smt/02035-2/1.0/template.json` | IDTA 02035-2 1.0 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
 | `tests/corpus/idta/02004/example.json` | official 02004 2.0 example (environment JSON) | no |
-| `tests/corpus/idta/02004/example.aasx` | official 02004 2.0 example (AASX) | no |
+| `src/aas_submodel_validate/data/example/idta-02004-2.0.aasx` | official 02004 2.0 example (AASX) — ships in the wheel, and `smtv --example` judges it | no |
 | `tests/corpus/idta/02003/sample-2.0.json` | official 02003 2.0 sample (environment JSON) | no |
 | `tests/corpus/idta/02003/sample-2.0.aasx` | official 02003 2.0 sample (AASX) | no |
 | `tests/corpus/idta/02003/sample-2.0.1.aasx` | official 02003 2.0.1 sample (AASX) — upstream's own repair of the one above | no |

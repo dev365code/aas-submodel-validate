@@ -13,6 +13,9 @@ License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
   - src/aas_submodel_validate/data/smt/02035-2/1.0/template.json
     (IDTA 02035-2 1.0 Digital Battery Passport part 2, Handover
     Documentation template, unmodified)
+  - src/aas_submodel_validate/data/example/idta-02004-2.0.aasx
+    (IDTA 02004 2.0 Handover Documentation example package, unmodified
+    -- defects and all, which is why it is worth shipping)
 
 Copyright for that material: Industrial Digital Twin Association (IDTA)
 and the template's contributors. See THIRD_PARTY.md for the pinned

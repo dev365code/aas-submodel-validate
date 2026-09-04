@@ -11,6 +11,7 @@ import sys
 from typing import Optional
 
 from . import __version__, runner
+from .example import bundled_example
 from .loader import UnreadablePath
 from .report import render
 
@@ -50,6 +51,10 @@ def main(argv: Optional[list] = None) -> int:
                              "claims to be, because this tool has a table for "
                              "neither side of that collision"
                              % (", ".join(_PROFILE_KEYS), ", ".join(_settles_only())))
+    parser.add_argument("--example", action="store_true",
+                        help="judge the official IDTA 02004 example that "
+                             "travels in this package; needs no file of your "
+                             "own, no repository and no network")
     parser.add_argument("--rules", action="store_true",
                         help="list every rule and exit")
     parser.add_argument("--version", action="version",
@@ -63,8 +68,16 @@ def main(argv: Optional[list] = None) -> int:
         for rule in list(all_rules()) + [_meta_rule(args.strict_meta)]:
             print("%-8s %-9s %-10s %s" % (rule.id, rule.kind, rule.severity, rule.title))
         return EXIT_OK
+    if args.example and args.path:
+        # Whichever one won, the other would be judged without being
+        # mentioned -- a report about bytes the caller did not think it
+        # was reading, which is what the provenance field exists to stop.
+        parser.error("--example judges the bundled package; give it or a "
+                     "path, not both")
+    if args.example:
+        args.path = str(bundled_example())
     if not args.path:
-        parser.error("a path is required (or --rules)")
+        parser.error("a path is required (or --example, or --rules)")
 
     try:
         report = runner.run(args.path, strict_meta=args.strict_meta,

@@ -6,6 +6,7 @@ registry says 57 is the kind of small lie that outlives its excuse.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -213,20 +214,42 @@ def test_every_file_the_readme_tells_a_stranger_to_run_exists():
     assert checked, "no runnable path was checked; the pattern stopped matching"
 
 
-def test_the_example_the_readme_fetches_is_pinned_and_here():
-    """The install-from-PyPI path has no file to run on -- a wheel does
-    not carry other people's documents -- so the README fetches one, and
-    the URL has to name something that exists at a tag that will not
-    move.
+def test_the_first_verdict_needs_nothing_but_the_install():
+    """The reader gets a verdict from the install alone.
 
-    Measured the day the package went out: a reader who ran the
-    quickstart's `pip install` line and then its `smtv` line got "no such
-    file", because the example named there only exists in a clone."""
-    found = re.findall(r"https://github\.com/[\w-]+/[\w-]+/raw/([^/\s]+)/(\S+)", README)
-    assert found, "the README no longer fetches an example to run on"
-    for ref, path in found:
+    Two earlier answers were worse. The wheel carried no example and the
+    quickstart named a path only a clone has, so `pip install` followed
+    by the next line printed "no such file" -- measured the day the
+    package went out. Fetching one fixed that reader and not the one this
+    project is for, whose machine has no route to github.com; the file
+    arrived over the network the whole pitch says is unnecessary.
+
+    So it ships, and the block asks for it by name rather than by path.
+    Pinned here the same way the templates are: a recorded hash beside
+    it, and an entry in the attribution file, because it is IDTA's
+    document and not this project's."""
+    blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
+    published = [b for b in blocks if "install aas-submodel-validate" in b]
+    assert published, "the README no longer shows how to use the published package"
+    assert any("--example" in b for b in published), (
+        "the published-package block gives the reader no verdict without a "
+        "file of their own")
+
+    example = ROOT / "src/aas_submodel_validate/data/example/idta-02004-2.0.aasx"
+    assert example.is_file(), "the example the block promises does not ship"
+    recorded = (example.parent / "sha256sums.txt").read_text(encoding="utf-8")
+    assert hashlib.sha256(example.read_bytes()).hexdigest() in recorded, \
+        "the bundled example does not match its recorded hash"
+    attribution = (ROOT / "THIRD_PARTY.md").read_text(encoding="utf-8")
+    assert example.name in attribution, \
+        "a CC BY 4.0 file ships without an attribution entry"
+
+    # A raw URL may still appear for something else; a branch moves and a
+    # tag does not.
+    for ref, path in re.findall(
+            r"https://github\.com/[\w-]+/[\w-]+/raw/([^/\s]+)/(\S+)", README):
         assert re.match(r"^v\d+\.\d+\.\d+$", ref), \
-            "the example is fetched from %r; a branch moves and a tag does not" % ref
+            "%r is fetched from %r, which moves" % (path, ref)
         assert (ROOT / path).exists(), \
             "the README fetches %r and this tree does not have it" % path
 
@@ -248,7 +271,10 @@ def test_the_published_package_path_stands_without_the_repository():
     until the next release, so the path has to be right *before* the tag,
     not after."""
     blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
-    published = [b for b in blocks if "pip install aas-submodel-validate" in b]
+    # `pip` or `pip3` or `python3 -m pip`; the block is identified by
+    # what it installs, not by the spelling of the installer -- which is
+    # itself one of the things the block now has to warn about.
+    published = [b for b in blocks if "install aas-submodel-validate" in b]
     assert published, "the README no longer shows how to use the published package"
     for block in published:
         fetched, offences = set(), []

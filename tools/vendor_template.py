@@ -52,7 +52,7 @@ FILES = {
     "tests/corpus/idta/02004/example.json":
         "published/Handover Documentation/2/0/"
         "IDTA 02004-2-0_Example_HandoverDocumentation.json",
-    "tests/corpus/idta/02004/example.aasx":
+    "src/aas_submodel_validate/data/example/idta-02004-2.0.aasx":
         "published/Handover Documentation/2/0/"
         "IDTA 02004-2-0_Example_HandoverDocumentation.aasx",
     # 02003 publishes its sample twice: once beside the 2.0 template and
