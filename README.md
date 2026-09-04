@@ -135,11 +135,12 @@ and those are different answers. It reports the one such disagreement
 that does not depend on the battery's category; eight more are known,
 counted in the report, and left unsaid because saying them without the
 category would tell one manufacturer to add what another's guidance
-forbids. A battery passport usually holds submodels this tool has no
-table for as well, so `smtv` reports `SMT-D1` and exits 1 on a package
-that is perfectly conformant — that error means "nothing here matched a
-template I have", which is the truth and is not a defect in the file.
-Add `--allow-unmatched` when that is expected. X1, X2 and X4 are about the AASX/OPC
+forbids. Most of a battery passport is submodels this tool has no table
+for; the exception is part 2, which declares 02004's identifier and so
+is judged. A package holding part 2 comes back with a verdict. One
+holding only the other parts draws `SMT-D1` and exits 1 — "nothing here
+matched a template I have", which is true and is not a defect in the
+file. `--allow-unmatched` is for that. X1, X2 and X4 are about the AASX/OPC
 package the submodel arrives in; X3 says a document would not parse,
 packaged or bare; and X5 is this reader's own bound on how much it will
 take in, whichever way it arrives. One, SMT-D1, asks whether

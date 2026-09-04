@@ -647,3 +647,22 @@ def test_rules_takes_only_the_flag_that_changes_the_listing(tmp_path, capsys):
             main(["--rules"] + argv)
         assert raised.value.code == 2, argv
         assert "--rules" in capsys.readouterr().err
+
+
+def test_an_input_with_nothing_to_judge_says_so_on_the_screen(tmp_path, capsys):
+    """Zero is falsy, and the coverage clause was written behind it.
+
+    `judged N of M` is appended when `submodels_seen` is truthy, so the
+    one input the front page calls the emptiest pass of the lot -- an
+    environment holding no submodels at all -- printed `0 error(s)` and
+    nothing about having judged nothing. The clause was added with no
+    test, and deleting it left the suite green."""
+    path = _write(tmp_path, b'{"submodels": []}')
+    assert main(["--allow-unmatched", path]) == 0
+    summary = capsys.readouterr().out.splitlines()[-1]
+    assert "no submodels to judge" in summary, summary
+
+    # And an input that has some still says how many of them were judged.
+    path = _write(tmp_path, json.dumps(hd_env()).encode("utf-8"))
+    assert main([path]) == 0
+    assert "judged 1 of 1 submodel" in capsys.readouterr().out.splitlines()[-1]

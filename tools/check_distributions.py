@@ -18,10 +18,13 @@ install serve nobody, the gate that reads them skips cleanly when they
 are absent, and their licences are attributed in the bundle's own README
 rather than in this package's metadata.
 
-Both are asked of what the archives actually contain, not of what the
-packaging configuration says they should. Configuration is a claim
-about a build; the archive is the build, and only one of the two can be
-wrong without anybody noticing.
+Both are asked of what the archives actually contain, rather than of
+what the packaging configuration says they should hold. Configuration
+is a claim about a build; the archive is the build, and only one of the
+two can be wrong without anybody noticing. The configuration is read
+for one thing only -- which files the build relocates into its metadata
+directory -- because that is a question about where a member came from,
+which the archive cannot answer about itself.
 
 A wheel is a different namespace from the tree: its members live under
 the import name, not under `src/`. Repository paths are recovered before
@@ -73,13 +76,21 @@ METADATA_MEMBERS = ("PKG-INFO", "RECORD", "WHEEL", "METADATA", "SOURCES.txt",
 def licence_files() -> tuple:
     """The attribution files the build is configured to relocate.
 
-    Not used to decide anything -- the mapping above works off the
-    member's own name, because a configuration read with a regex answers
-    wrongly for a glob, a single-quoted list or a deleted key, and every
-    one of those wrong answers rejects a correct build. This is here for
-    the test that asks whether the configuration names them explicitly,
-    which is what stops setuptools' default glob from sweeping in a
-    working note.
+    Which files the build relocates into its metadata directory, and so
+    which members of one came from the top of the tree. The mapping
+    below asks this; nothing else does.
+
+    Read with a regular expression, which cannot answer for a glob, a
+    single-quoted list or an indented key -- it returns nothing for each
+    of those. That is why the mapping treats an empty answer as "no
+    opinion" and falls back to the permissive reading: refusing a
+    correct build is the worse of the two failures. The cost is that the
+    gate loses its teeth under exactly those spellings, and this
+    project's own configuration is not one of them.
+
+    A test also asks whether the configuration names them explicitly,
+    which is what stops setuptools' default glob from sweeping a working
+    note into the distribution.
     """
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     listed = re.search(r"(?m)^license-files\s*=\s*\[([^\]]*)\]", text)
@@ -166,7 +177,20 @@ def _repository_path(name: str) -> str:
         # relocated back in the flat case -- everything else in there is
         # the build system's and is asked about as such.
         if rest[:1] == ["licenses"]:
-            return "/".join(rest[1:])
+            inner = "/".join(rest[1:])
+            # The same question the flat case asks. This branch used to
+            # relocate anything under `licenses/` by name, so
+            # `<dist-info>/licenses/README.md` recovered as the tree's
+            # own README and passed -- and setuptools >= 77, which is
+            # what builds this project, puts licence files exactly here.
+            # One branch was given teeth and the other was not.
+            declared = licence_files()
+            if not declared or inner in declared:
+                return inner
+            for candidate in declared:
+                if pathlib.PurePosixPath(candidate).name == inner:
+                    return candidate
+            return name
         if len(rest) == 1 and rest[0] not in METADATA_MEMBERS:
             # Where the build took it from. Before setuptools 77 the
             # licence files sit here rather than under `licenses/`, and

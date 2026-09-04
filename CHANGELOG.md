@@ -46,6 +46,15 @@ in the archive. `gh attestation verify` answers for releases from this
 one on; the 0.1.0 artifacts were built before the workflow signed
 anything and have no attestation to find.
 
+**`--rules` refuses what it would have ignored.** It lists the rules and
+judges nothing, so every flag about judging is a question it does not
+answer — `-q`, `-f json`, `-W`, `--allow-unmatched`,
+`--require-all-judged`, `--show-meta`, `--profile` and a path now exit 2
+naming what would have been dropped. In 0.1.0 they were accepted and
+silently ignored, so a command that worked may now fail; `--meta` (and
+its older spelling `--strict-meta`) is what it reads, because that
+changes the listing.
+
 **Documented:** `--allow-unmatched` and `--require-all-judged`, both of
 which decide an exit code and were reachable only from `--help`; that the
 JSON field for a channel is `kind`, so a reader filtering on `.channel`

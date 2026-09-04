@@ -116,8 +116,9 @@ def main(argv: Optional[list] = None) -> int:
             ("--show-meta", args.show_meta)) if given]
         if ignored:
             parser.error("--rules lists the rules and judges nothing, so it "
-                         "would ignore %s; --meta is the only other flag it "
-                         "reads" % ", ".join(ignored))
+                         "would ignore %s; --meta (or --strict-meta) is what "
+                         "it reads, because that changes the listing"
+                         % ", ".join(ignored))
     if args.rules and args.example:
         # `--rules` returned before the conflict check below, so one
         # flag was obeyed and the other silently dropped -- while

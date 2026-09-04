@@ -88,25 +88,19 @@ def test_something_that_only_looks_like_one_is_still_asked_about(member):
     gate = _gate()
     recovered = gate._repository_path(member)
     assert not gate.is_build_metadata(recovered)
-    # The member's own name, unmoved. Written first as "either it is not
-    # a file in the tree, or it is a declared licence file" -- an `or`
-    # with an escape hatch, and a wrong answer walked through it: a bug
-    # made this return `THIRD_PARTY.md` for every one of these, which is
-    # a file *and* a declared licence file, so the assertion held while
-    # the mapping was answering nonsense. Asked of the correspondence
-    # now, not of the result's membership in a set.
-    # Where the member itself points, not merely somewhere plausible.
+    # The member itself, unmoved. Only a declared licence file is
+    # relocated, in either placement, so the tracked-files rule is asked
+    # about this exactly where the archive holds it.
+    #
     # Written first as "either it is not a file in the tree, or it is a
     # declared licence file" -- an `or` with an escape hatch, and a wrong
     # answer walked through it: a bug made this return `THIRD_PARTY.md`
     # for every one of these, which is a file *and* a declared licence
     # file, so the assertion held while the mapping answered nonsense.
     # Asked of the correspondence now.
-    expected = member.split("/licenses/", 1)[-1] if "/licenses/" in member \
-        else member
-    assert recovered == expected, \
-        "%s was recovered as %r, which is neither it nor its own name " \
-        "under licenses/" % (member, recovered)
+    assert recovered == member, (
+        "%s was relocated to %r, and nothing but a declared licence file "
+        "moves" % (member, recovered))
 
 
 @pytest.mark.parametrize("member", [

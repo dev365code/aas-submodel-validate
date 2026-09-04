@@ -74,8 +74,14 @@ def test_no_distribution_rule_names_a_file_this_project_does_not_ship():
     # note was "published here and would not reach an sdist", whose
     # remedy is to add it to the manifest, which is the leak this list
     # exists to prevent.
+    # An sdist has no `.gitignore` -- and no working notes either, since
+    # they are what it excludes -- so an empty set is the right answer
+    # there rather than a skip. The assertion below still runs: this
+    # subtraction narrows what is asked, it is not the asking.
+    exclusions = root / ".gitignore"
     local = {line.strip().lstrip("/").split("/", 1)[-1]
-             for line in (root / ".gitignore").read_text(encoding="utf-8").splitlines()
+             for line in (exclusions.read_text(encoding="utf-8").splitlines()
+                          if exclusions.is_file() else [])
              if line.startswith("/docs/")}
     published = sorted(p.name for p in (root / "docs").iterdir()
                        if p.is_file() and not p.name.startswith(".")
