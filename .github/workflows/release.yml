@@ -1,0 +1,93 @@
+# Runs when a version tag is pushed. Proves the tree green, builds the
+# wheel, the sdist and the single file, proves the single file
+# reproducible by building it twice, attaches everything to a GitHub
+# Release with the checksums beside it -- for the air-gapped audience,
+# "the hash on the release page is the hash of the file I carried in" is
+# the entire trust story -- and then publishes the same bytes to PyPI.
+#
+# Until pypi.org trusts this repository for this project, the publish job
+# fails visibly, on purpose, without touching the GitHub Release above.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: the tag and the version agree
+        # Three places say the version -- the package, the tag and the
+        # CHANGELOG -- and a release where they disagree is one nobody
+        # can cite later.
+        run: |
+          pip install -e ".[dev]"
+          v="$(python -c 'import aas_submodel_validate as m; print(m.__version__)')"
+          [ "$GITHUB_REF_NAME" = "v$v" ] || { echo "tag $GITHUB_REF_NAME != version $v"; exit 1; }
+          grep -q "^## $v — " CHANGELOG.md || { echo "CHANGELOG has no dated heading for $v"; exit 1; }
+
+      - name: everything must be green first
+        run: make check
+
+      - name: build the wheel and the sdist
+        run: |
+          pip install build
+          python -m build
+
+      - name: no distribution carries what it must not
+        # Nothing this repository does not track, and not the
+        # requirements indexes -- asked of what the archives contain.
+        run: python tools/check_distributions.py
+
+      - name: build the single file twice; the hashes must match
+        run: |
+          python tools/build_zipapp.py -o dist/smtv.pyz --check
+          python tools/build_zipapp.py -o /tmp/again.pyz
+          cmp dist/smtv.pyz /tmp/again.pyz
+          echo "reproducible: yes"
+
+      - name: one checksum file beside them
+        run: cd dist && shasum -a 256 * > SHA256SUMS && cat SHA256SUMS
+
+      # The publisher below uploads exactly these bytes; nothing is rebuilt.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+      - name: attach them to a GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --notes "See CHANGELOG.md. Verify what you download: \`shasum -a 256 -c SHA256SUMS\`. The .pyz needs only a Python — \`python smtv.pyz your-submodel.aasx\`; it reaches no network and neither does the tool."
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: only the wheel and the sdist go to PyPI
+        run: mkdir up && cp dist/aas_submodel_validate-*.whl dist/aas_submodel_validate-*.tar.gz up/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: up

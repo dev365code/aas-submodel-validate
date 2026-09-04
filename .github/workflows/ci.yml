@@ -109,6 +109,16 @@ jobs:
               sys.exit("the wheel carries test material it should not: %s" % strays[:5])
           print("wheel carries the template, and no corpus")
           PY
+      - name: no distribution carries what it must not
+        # The same check the release runs. Here on every push, because a
+        # release line first exercised on the day of the release is one
+        # that dies on the day of the release.
+        run: python tools/check_distributions.py
+      - name: the single file builds twice to the same bytes and answers
+        run: |
+          python tools/build_zipapp.py -o dist/smtv.pyz --check
+          python tools/build_zipapp.py -o /tmp/again.pyz
+          cmp dist/smtv.pyz /tmp/again.pyz
       - name: install into a clean environment and smoke-test
         run: |
           python -m venv /tmp/v
