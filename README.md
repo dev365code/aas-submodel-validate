@@ -22,8 +22,8 @@ The third line runs against the official example this repository
 vendors, so the first verdict needs nothing of your own. Replace it with
 your file for the fourth.
 
-Not on PyPI yet — `pip install aas-submodel-validate` will work when 0.1.0
-is released, and the CHANGELOG says whether it has been.
+Or `pip install aas-submodel-validate` once the release has reached
+PyPI; the CHANGELOG says which version is out.
 
 **For a machine with no package manager**, build the single file once
 where there is a network and carry it:
