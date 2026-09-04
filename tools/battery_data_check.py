@@ -19,8 +19,11 @@ each other. Four things, none of which needs a byte of source:
 - the extractor scripts still parse and import. Two of them need
   third-party readers (`openpyxl`, `pymupdf`) this project does not
   depend on; where those are absent the import is reported and skipped,
-  and the main-branch CI job installs both, so the full check runs
-  wherever the gate itself runs.
+  and both the CI job and the release job install them, so the full
+  check runs wherever it matters. Measured: without them this reports
+  two skips and still exits 0 -- which is the right behaviour for a
+  contributor's laptop and the wrong one for a release, so the release
+  installs them rather than relying on this.
 
 An sdist carries this file and not the data directory it checks --
 shipping fifteen thousand lines of indexes in a Python source archive

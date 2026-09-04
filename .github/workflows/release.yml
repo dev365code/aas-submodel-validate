@@ -43,7 +43,13 @@ jobs:
             || { echo "CHANGELOG heading carries no date: $heading"; exit 1; }
 
       - name: everything must be green first
-        run: make check
+        # The readers the battery extractors import are installed here
+        # too, not only in CI. Without them that gate reports a skip and
+        # passes -- so a release would have run a weaker check than every
+        # push that led to it, which is the wrong way round.
+        run: |
+          pip install openpyxl pymupdf
+          make check
 
       - name: build the wheel and the sdist
         run: |
