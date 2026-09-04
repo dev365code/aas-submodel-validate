@@ -117,7 +117,8 @@ What it refuses to do is written down in [docs/scope.md](docs/scope.md);
 every chosen reading of the template, with evidence, in
 [docs/divergences.md](docs/divergences.md); the shape of the JSON report,
 and what its version number promises, in
-[docs/report-schema.md](docs/report-schema.md).
+[docs/report-schema.md](docs/report-schema.md). Where to send a question,
+and what makes a report answerable, in [SUPPORT.md](SUPPORT.md).
 
 ## Licence
 
