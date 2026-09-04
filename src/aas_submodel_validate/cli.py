@@ -75,6 +75,13 @@ def main(argv: Optional[list] = None) -> int:
                         version="aas-submodel-validate %s" % __version__)
     args = parser.parse_args(argv)
 
+    if args.rules and args.example:
+        # `--rules` returned before the conflict check below, so one
+        # flag was obeyed and the other silently dropped -- while
+        # `--example <path>` is an error. The same kind of mistake,
+        # answered two ways.
+        parser.error("--example judges the bundled package and --rules lists "
+                     "the rules; ask for one")
     if args.rules:
         from . import rules  # noqa: F401 - importing registers
         from .registry import all_rules
@@ -145,12 +152,18 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     # this channel should not decide a build, and it says so out loud.
     failed = not report.ok or (args.warnings_as_errors
                                and report.count(Severity.WARNING) > 0)
-    if args.require_all_judged and report.submodels_judged < report.submodels_seen:
+    if args.require_all_judged and (report.submodels_judged < report.submodels_seen
+                                    or not report.submodels_judged):
         # The report has carried this number since day one; a caller
         # reading only the exit code could not see it. An unjudged
         # submodel is not a defect in the file -- an environment holds
         # submodels this tool has no business judging -- so it stays out
         # of the default verdict and becomes one only when asked for.
+        #
+        # `judged < seen` alone read `0 < 0` as satisfied, so the flag
+        # failed a file with one unjudged submodel and passed one with
+        # none at all: the risk ordering backwards, on the input an
+        # exporter is most likely to produce by accident.
         print("smtv: judged %d of %d submodel%s; --require-all-judged was given"
               % (report.submodels_judged, report.submodels_seen,
                  "" if report.submodels_seen == 1 else "s"), file=sys.stderr)

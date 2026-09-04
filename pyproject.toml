@@ -43,6 +43,18 @@ dev = ["pytest>=7", "ruff==0.16.3"]
 aas-submodel-validate = "aas_submodel_validate.cli:main"
 smtv = "aas_submodel_validate.cli:main"
 
+# NOTICE points at THIRD_PARTY.md for the pinned upstream revision and
+# the hashes, and THIRD_PARTY.md was not in the wheel -- so inside a
+# wheel the attribution a CC BY 4.0 redistribution carries referred to a
+# file that was not there. Named here so the three travel together.
+#
+# setuptools' own key rather than PEP 639's `[project] license-files`:
+# that one requires dropping the license classifier and emitting
+# Metadata-Version 2.4, and the machines this project is for are the
+# ones running an old pip.
+[tool.setuptools]
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY.md"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

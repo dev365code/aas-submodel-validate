@@ -6,17 +6,24 @@ repository (https://github.com/admin-shell-io/submodel-templates),
 licensed under the Creative Commons Attribution 4.0 International
 License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
 
-  - src/aas_submodel_validate/data/smt/02004/2.0.1/template.json
+  - aas_submodel_validate/data/smt/02004/2.0.1/template.json
     (IDTA 02004-2-0-1 Handover Documentation template, unmodified)
-  - src/aas_submodel_validate/data/smt/02003/2.0.1/template.json
+  - aas_submodel_validate/data/smt/02003/2.0.1/template.json
     (IDTA 02003 2.0.1 Technical Data template, unmodified)
-  - src/aas_submodel_validate/data/smt/02035-2/1.0/template.json
+  - aas_submodel_validate/data/smt/02035-2/1.0/template.json
     (IDTA 02035-2 1.0 Digital Battery Passport part 2, Handover
     Documentation template, unmodified)
-  - src/aas_submodel_validate/data/example/idta-02004-2.0.aasx
+  - aas_submodel_validate/data/example/idta-02004-2.0.aasx
     (IDTA 02004 2.0 Handover Documentation example package, unmodified
     -- defects and all, which is why it is worth shipping)
 
+Those paths are where the files sit inside an installed package and
+inside smtv.pyz; this repository keeps them under `src/`.
+
+The example package embeds three PDF documents whose own metadata names
+Frank Scherenschlich as their author, and a STEP model produced with
+FreeCAD/OpenCASCADE. They travel unmodified.
+
 Copyright for that material: Industrial Digital Twin Association (IDTA)
-and the template's contributors. See THIRD_PARTY.md for the pinned
-revision and verification hashes.
+and the template's contributors. THIRD_PARTY.md, which travels beside
+this file, has the pinned upstream revision and the verification hashes.

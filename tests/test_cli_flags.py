@@ -526,3 +526,32 @@ def test_the_bundled_example_is_named_by_what_it_is(tmp_path, monkeypatch,
             assert report["provenance"]["inputSha256"] in \
                 recorded.read_text(encoding="utf-8")
     assert NAME in report["path"]
+
+
+def test_require_all_judged_fails_on_a_file_with_nothing_to_judge(tmp_path):
+    """Nothing judged out of nothing is the emptiest pass of all.
+
+    The comparison was `judged < seen`, and an environment holding no
+    submodels makes that `0 < 0` -- so the flag failed a file with one
+    unjudged submodel and passed one with none at all, which is the risk
+    ordering exactly backwards. An exporter that writes an empty
+    environment is not a rare accident, and
+    `--allow-unmatched --require-all-judged` is the combination the front
+    page recommends to the reader most likely to hit it."""
+    for payload in (b'{"submodels": []}', b"{}"):
+        path = _write(tmp_path, payload)
+        assert main(["-q", "--allow-unmatched", path]) == 0
+        assert main(["-q", "--allow-unmatched", "--require-all-judged", path]) == 1
+
+
+def test_example_and_rules_are_two_different_requests(capsys):
+    """`--example --rules` listed the rules and said nothing about the
+    example.
+
+    `--rules` returns before the conflict check, so one flag was obeyed
+    and the other silently dropped -- while `--example <path>` is an
+    error. The same kind of mistake, answered two ways."""
+    with pytest.raises(SystemExit) as raised:
+        main(["--example", "--rules"])
+    assert raised.value.code == 2
+    assert "--example" in capsys.readouterr().err
