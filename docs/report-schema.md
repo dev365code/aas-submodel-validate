@@ -100,7 +100,7 @@ something can be built against.
 
 | key | type | |
 |---|---|---|
-| `inputSha256` | string or null | SHA-256 of the input file as it arrived. `null` when the file could not be opened, or when it is larger than this reader takes in at all — a digest of bytes nobody read is evidence of nothing. |
+| `inputSha256` | string or null | SHA-256 of the input file as it arrived — of the bytes on disk, whether or not any of them were judged. A refused input still gets one, and that is the point: the report names the file it refused. `null` only when the file could not be opened at all, or when it is larger than the digest itself will read (256 MiB, the bound on a whole container). |
 | `engine` | null | Reserved: a reference to the engine build that produced the report, beyond the version string `toolVersion` already carries. Nothing fills it yet. |
 | `envelope` | null | Reserved: the signed envelope a report may be wrapped in, and the signature over it. Nothing fills it yet, and nothing in this project will — the signer is the organisation issuing the document. |
 
@@ -109,6 +109,14 @@ something can be built against.
 The same file comes back `ok` under one set of flags and not under
 another, so a report that did not carry its flags could not be compared
 with another report.
+
+These are the flags that move what is *in* the report. Two others move
+only the exit code and are deliberately absent: `-W` and
+`--require-all-judged` change what the caller does with a verdict, not
+what the verdict is, and a report that recorded them would be saying
+something about its reader rather than about the file. Read
+`summary.warnings` and the two `submodels` counts to see what those two
+would have decided.
 
 | key | type | |
 |---|---|---|
@@ -127,6 +135,8 @@ with another report.
 | `rulesChecked` | integer | Every rule registered in this build. Not how many applied to your file — a Technical Data file is not judged by 02004's rules, and the number does not move when a different template answers — and not the number of findings. The relayed `meta` channel is not registered and is not counted. |
 | `judged` | boolean | Whether anything reached the rules at all. `false` means the input was refused or could not be opened, so there is no verdict here — only the reason. The run exits 2. |
 | `complete` | boolean | Whether everything this run was handed got read. `false` means an archive that would not open, a relationship chain that went nowhere, a part that would not parse, or a document over the reader's bound — what was not read was not judged, and a report that only said `ok: false` could not tell you which. |
+| `submodelsSeen` | integer | How many submodels the input holds. |
+| `submodelsJudged` | integer | How many of them a template this tool has a table for answered for. The difference is not a defect — an environment carries submodels this tool has no business judging — but without the number a report is silent about them: `SMT-D1` speaks only when *nothing* matched. This is the coverage figure that means something here; the fraction of rules that ran does not, because most rules are about other templates and their silence says nothing. |
 
 The two are ordered, and both are worth gating on. `judged: false`
 implies `complete: false`; the reverse does not hold — an archive with
@@ -135,8 +145,6 @@ its findings are real. Three outcomes, then: a full verdict, a partial
 one, and no verdict at all. Without them a refused input arrived as
 `ok: false` with one error and every rule counted, which is exactly what
 a judged file that failed looks like.
-| `submodelsSeen` | integer | How many submodels the input holds. |
-| `submodelsJudged` | integer | How many of them a template this tool has a table for answered for. The difference is not a defect — an environment carries submodels this tool has no business judging — but without the number a report is silent about them: `SMT-D1` speaks only when *nothing* matched. This is the coverage figure that means something here; the fraction of rules that ran does not, because most rules are about other templates and their silence says nothing. |
 
 ## `findings`
 

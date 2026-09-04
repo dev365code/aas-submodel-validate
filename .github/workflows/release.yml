@@ -36,12 +36,21 @@ jobs:
           python-version: "3.12"
 
       - name: the tag and the version agree
-        # Three places say the version -- the package, the tag and the
-        # CHANGELOG -- and a release where they disagree is one nobody
-        # can cite later.
+        # Four places say the version -- the package, the build
+        # configuration, the tag and the CHANGELOG -- and a release where
+        # they disagree is one nobody can cite later. This comment said
+        # three and read three, and the one it left out is the one that
+        # decides what the artifact is *called*: the two drifted, and a
+        # tag pushed in that state would have passed every check here,
+        # built a wheel named for the older version, and offered it to an
+        # index that already had one under that name. The suite pins the
+        # two files against each other as well, so it fails where it is
+        # cheap; this asks again because a release is where it is not.
         run: |
           pip install -e ".[dev]"
           v="$(python -c 'import aas_submodel_validate as m; print(m.__version__)')"
+          built="$(python -c 'import re,pathlib; print(re.search(r"(?m)^version = \"([^\"]+)\"", pathlib.Path("pyproject.toml").read_text()).group(1))')"
+          [ "$built" = "$v" ] || { echo "pyproject says $built and the package says $v"; exit 1; }
           [ "$GITHUB_REF_NAME" = "v$v" ] || { echo "tag $GITHUB_REF_NAME != version $v"; exit 1; }
           heading="$(grep -m1 "^## $v — " CHANGELOG.md)" || { echo "CHANGELOG has no heading for $v"; exit 1; }
           case "$heading" in
@@ -69,6 +78,23 @@ jobs:
         # requirements indexes -- asked of what the archives contain.
         run: python tools/check_distributions.py
 
+      - name: the dependency travels too, or the offline route is a lie
+        # The release body offers `pip install --no-index --find-links .`
+        # for a machine that has pip and no index. Run against the
+        # release assets it failed -- "No matching distribution found for
+        # aas-core3.0" -- because the one dependency was never attached.
+        # The route only exists if the wheel it needs is on the page.
+        run: |
+          pip download --no-deps --only-binary=:all: --python-version 3.9 \
+            "$(python -c 'import aas_submodel_validate, importlib.metadata as m; print(m.requires("aas-submodel-validate")[0])')" \
+            -d dist/
+          rm -rf offline && mkdir offline
+          python -m venv offline/venv
+          offline/venv/bin/pip install --no-index --find-links dist/ aas-submodel-validate
+          offline/venv/bin/smtv --example > /dev/null
+          echo "offline install: works from the release assets alone"
+          rm -rf offline
+
       - name: build the single file twice; the hashes must match
         run: |
           python tools/build_zipapp.py -o dist/smtv.pyz --check
@@ -87,9 +113,14 @@ jobs:
         # to manage or lose.
         uses: actions/attest-build-provenance@v2
         with:
+          # Named, not globbed. `dist/*.whl` now also matches the
+          # dependency wheel downloaded for the offline route, and
+          # attesting that would be this workflow claiming to have built
+          # somebody else's artifact -- the opposite of what a build
+          # attestation is for. Its provenance is upstream's to give.
           subject-path: |
-            dist/*.whl
-            dist/*.tar.gz
+            dist/aas_submodel_validate-*.whl
+            dist/aas_submodel_validate-*.tar.gz
             dist/smtv.pyz
 
       # The publisher below uploads exactly these bytes; nothing is rebuilt.
@@ -116,10 +147,13 @@ jobs:
           - `smtv.pyz` — one file, for a machine with no package manager.
             Needs only a Python: `python3 smtv.pyz --example` gives a verdict
             with no file of your own, no repository and no network.
-          - the `.whl` and the `.tar.gz` — for a machine that has pip but no
-            index: `pip3 install --no-index --find-links . aas-submodel-validate`.
-            The same bytes are on PyPI.
-          - `SHA256SUMS` — the checksums for all three.
+          - the two `.whl` files — for a machine that has pip but no index.
+            Put both in a directory and
+            `pip3 install --no-index --find-links . aas-submodel-validate`;
+            the second is the one dependency, and without it that command
+            has nothing to resolve. Under 400 KB together.
+          - the `.tar.gz` — the source, for anyone building it themselves.
+          - `SHA256SUMS` — the checksums for everything above.
 
           **Checking what you carried**
 

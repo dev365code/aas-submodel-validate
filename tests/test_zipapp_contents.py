@@ -145,3 +145,21 @@ def test_the_example_is_reachable_and_not_merely_present():
     resource = importlib.resources.files("aas_submodel_validate")
     assert (resource / "data" / "example" / NAME).is_file(), \
         "the example cannot be resolved as a package resource"
+
+
+def test_the_example_is_named_the_same_from_the_archive_as_from_a_wheel():
+    """The name in a report cannot depend on how the tool was installed.
+
+    Read off the extracted path, it was `idta-02004-2.0.aasx` from an
+    installed package -- nothing is extracted there -- and
+    `tmp7uh08xcmidta-02004-2.0.aasx` from the single file, which is the
+    only place the extraction happens and the one place no test runs.
+    The suite passed while the artifact every air-gapped reader carries
+    printed a temporary filename as its verdict's subject."""
+    from aas_submodel_validate.example import NAME, example_name
+    assert example_name() == NAME
+    assert "tmp" not in example_name()
+
+    source = (ROOT / "src" / "aas_submodel_validate" / "cli.py").read_text("utf-8")
+    assert "shown_as=example_name()" in source, \
+        "the report names the example some other way again"

@@ -11,7 +11,7 @@ import sys
 from typing import Optional
 
 from . import __version__, runner
-from .example import NotBundled, bundled_example
+from .example import NotBundled, bundled_example, example_name
 from .loader import UnreadablePath
 from .report import render
 
@@ -103,7 +103,7 @@ def main(argv: Optional[list] = None) -> int:
                 # is true, useless to the reader, and gone by the time
                 # anyone looks it up; `provenance.inputSha256` still
                 # identifies the bytes exactly.
-                return _judge(str(path), args, shown_as=path.name)
+                return _judge(str(path), args, shown_as=example_name())
         except NotBundled as exc:
             print("smtv: %s" % exc, file=sys.stderr)
             return EXIT_ERROR
@@ -151,7 +151,8 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         # submodel is not a defect in the file -- an environment holds
         # submodels this tool has no business judging -- so it stays out
         # of the default verdict and becomes one only when asked for.
-        print("smtv: judged %d of %d submodels; --require-all-judged was given"
-              % (report.submodels_judged, report.submodels_seen), file=sys.stderr)
+        print("smtv: judged %d of %d submodel%s; --require-all-judged was given"
+              % (report.submodels_judged, report.submodels_seen,
+                 "" if report.submodels_seen == 1 else "s"), file=sys.stderr)
         failed = True
     return EXIT_FINDINGS if failed else EXIT_OK

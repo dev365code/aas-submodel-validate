@@ -127,3 +127,27 @@ def test_no_recorded_hash_names_a_file_that_is_not_there():
             if not (record.parent / name).is_file():
                 orphans.append("%s names %s" % (record.relative_to(root), name))
     assert not orphans, orphans
+
+
+def test_the_digest_bound_the_schema_publishes_is_the_one_in_the_code():
+    """A number in the schema that no test derives is a number that
+    drifts.
+
+    The prose said `null` for anything "larger than this reader takes
+    in at all", which reads as the 64 MiB document bound -- and the
+    digest uses the 256 MiB container bound, so a 100 MiB document is
+    refused, judged nothing, and comes back with a complete digest. The
+    document was describing a stricter tool than the one it ships with.
+    """
+    import pathlib
+    import re
+
+    from aas_submodel_validate import container
+
+    schema = (pathlib.Path(__file__).resolve().parents[1]
+              / "docs" / "report-schema.md").read_text(encoding="utf-8")
+    row = [line for line in schema.splitlines() if "`inputSha256`" in line]
+    assert row, "the schema no longer documents inputSha256"
+    stated = re.search(r"\((\d+) MiB", row[0])
+    assert stated, "the digest bound is not stated with its number"
+    assert int(stated.group(1)) * 1024 * 1024 == container.MAX_TOTAL_PART_BYTES

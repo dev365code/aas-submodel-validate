@@ -16,11 +16,12 @@ line named a path only a clone has. The example is unmodified, defects
 and all; it raises findings, which is the point of shipping that one
 rather than a clean file written to pass.
 
-**`-W` can be used in a build.** It fails on this tool's warnings and
-leaves the relayed metamodel channel alone, which has `--strict-meta` of
-its own. Before, every `-W` build failed on findings about the metamodel
-that no edit to a submodel could clear — including on the official
-example, where 77 of 87 warnings are of that kind.
+**`--meta error|warning|info` sets the relayed channel's severity**, and
+`-W` can be used in a build without it deciding one. At `info` the
+metamodel findings are still reported and still counted and `-W` no
+longer fails on them — which is the caller saying so, rather than the
+tool deciding it for them. `--strict-meta` is the older spelling of
+`--meta error` and keeps working.
 
 **`--require-all-judged`.** An environment holds submodels this tool has
 no business judging, so `judged 1 of 3` stays a number and the run still
@@ -28,7 +29,7 @@ exits 0. A pipeline reading only the exit code saw success for a package
 two thirds of which was never looked at; this makes that fail instead.
 
 **The relayed channel is folded into one line** unless `--show-meta`.
-On the official example that is 272 lines of output down to 42, with the
+On the official example that is 359 lines of output down to 52, with the
 verdict no longer scrolled past. Counted, never dropped: the summary
 totals them and the JSON report is unchanged.
 
@@ -40,7 +41,9 @@ look it up. Its releases are signed, so `gh attestation verify` says
 which workflow built the bytes; a checksum file beside the artifacts it
 vouches for cannot answer that. And a dependency's own build scripts
 stopped travelling in it — dead code, and the only `subprocess` import
-in the archive.
+in the archive. `gh attestation verify` answers for releases from this
+one on; the 0.1.0 artifacts were built before the workflow signed
+anything and have no attestation to find.
 
 **Documented:** `--allow-unmatched` and `--require-all-judged`, both of
 which decide an exit code and were reachable only from `--help`; that the

@@ -23,6 +23,19 @@ import pathlib
 NAME = "idta-02004-2.0.aasx"
 
 
+def example_name() -> str:
+    """What to call the example in a report.
+
+    `NAME`, and never the name of the file it was extracted to. Reading
+    it off the path worked from an installed package, where nothing is
+    extracted and the path is the real one, and printed
+    `tmp7uh08xcmidta-02004-2.0.aasx` from the single file -- which is
+    every reader who carried the archive in, and none of the tests,
+    because they run from a source tree.
+    """
+    return NAME
+
+
 class NotBundled(Exception):
     """The example did not travel with this installation."""
 

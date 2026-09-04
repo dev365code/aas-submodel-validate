@@ -366,3 +366,20 @@ def test_every_link_on_the_front_page_resolves_off_the_repository():
         "these link targets are relative, and this file is also the "
         "package description, where there is no repository to resolve "
         "them against: %s" % dead)
+
+
+def test_every_label_the_text_report_prints_is_explained():
+    """The person at a terminal has one document, and it is this page.
+
+    `docs/report-schema.md` says in its first sentence that it describes
+    the JSON, so a label that appears only in the text output is
+    explained nowhere at all -- which is where `per` and the fold line
+    both landed the day they were added. Derived from the renderer, not
+    listed, because a hand-kept list is how the next label goes
+    undocumented."""
+    source = (ROOT / "src" / "aas_submodel_validate" / "report.py").read_text("utf-8")
+    labels = set(re.findall(r'"        (\w+)[: ]', source))
+    assert labels, "the renderer prints no labelled lines any more"
+    for label in sorted(labels):
+        assert "| `%s` |" % label in README, \
+            "the text report prints a %r line and this page never says what it is" % label

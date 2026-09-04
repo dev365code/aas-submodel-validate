@@ -47,8 +47,8 @@ Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
 `.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
 severity, 1 at least one error, 2 could not run — which covers a path
 that cannot be read and an input this reader refused, since nothing about
-either was judged. Warnings and info do
-not fail a build unless you ask with `-W`. `-f json` writes a versioned
+either was judged. Warnings do not fail a build unless you ask with
+`-W`, and info never does. `-f json` writes a versioned
 machine-readable report, described in
 [docs/report-schema.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/report-schema.md).
 
@@ -56,18 +56,29 @@ machine-readable report, described in
 
     smtv -q -W your-submodel.aasx        # 0 pass, 1 findings, 2 could not run
 
-`-W` fails on this tool's warnings. It leaves the relayed metamodel
-channel alone; `--strict-meta` is the flag for that one, because no edit
-to your submodel can clear a finding about the metamodel.
+`-W` fails on every warning, including the ones relayed from
+aas-core3.0 about the metamodel. Those are not always somebody else's
+problem — on the official example, 45 of the 77 are about the submodel
+itself and most of those clear by deleting one idShort — so they are
+warnings like any other until you say otherwise:
+
+    smtv -q -W --meta info your-submodel.aasx
+
+`--meta` sets that channel's severity to `error`, `warning` (the
+default) or `info`. At `info` it is still reported and still counted;
+`-W` simply no longer fails on it. One dial, so there is no second flag
+to disagree with the first.
 
 Two more that decide exit codes, both for the case where the tool cannot
 speak to your file:
 
-- `--allow-unmatched` — an input declaring a submodel identifier this
-  tool has no table for is an *error* by default, because silence about
-  an unknown file is the one answer a validator must never give. When
-  that is expected — a repository where most submodels are of other
-  kinds — this makes it a note instead.
+- `--allow-unmatched` — an input where *nothing* declares a submodel
+  identifier this tool has a table for is an *error* by default, because
+  silence about a file it could not judge at all is the one answer a
+  validator must never give. When that is expected — a repository where
+  most submodels are of other kinds — this makes it a note instead. It
+  says nothing about a file where some submodels matched and others did
+  not; that is the next flag's question.
 - `--require-all-judged` — an environment can hold submodels this tool
   has no business judging, so `judged 1 of 3` is a number rather than a
   finding and the run still exits 0. If your pipeline reads only the exit
@@ -78,6 +89,28 @@ One dependency
 pure Python, no C extensions. Both wheels fit on a USB stick and
 install with `--no-index --find-links`; the single file above needs not
 even that.
+
+### Reading a finding
+
+Four labelled lines under each one, and a finding uses the ones it has:
+
+| | |
+|---|---|
+| `at` | where in the submodel — the path of idShorts down to the element |
+| `saw` | what was actually there, so you can tell this finding from a similar one |
+| `per` | the clause this reading comes from, for when you have to cite it |
+| `fix` | what to change. Every finding has one; a finding without a remedy is a complaint |
+
+Below them, one line per channel that was folded and then the summary.
+The metamodel channel is folded by default — it is relayed from
+aas-core3.0 rather than read off a template, and on the official example
+it is 77 of 87 findings. Folded, not dropped: the summary still counts
+them and `--show-meta` lists them. `-f json` is never folded.
+
+The summary line says how many of each severity, then the file, then how
+many of its submodels were judged. `(not a full verdict: some of it was
+not read)` is appended when something was refused or would not parse —
+which is a different thing from a file that was read and failed.
 
 ## What it checks
 
@@ -135,7 +168,7 @@ how to rebuild every index from them.
 
 The AAS metamodel itself is relayed from aas-core3.0's verification in
 a separate `meta` channel (the JSON field is `kind`) — warnings by
-default, folded into one line unless `--show-meta`, `--strict-meta` to
+default, folded into one line unless `--show-meta`, `--meta error` to
 promote — and never re-implemented here.
 
 ```text

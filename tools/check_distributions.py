@@ -169,8 +169,14 @@ def main() -> int:
     if not DIST.is_dir():
         print("no dist/ -- build the distributions first", file=sys.stderr)
         return 1
+    # This project's own, by name. `dist/` also holds the dependency
+    # wheel the release downloads so the offline route resolves, and
+    # every file in somebody else's wheel is untracked here -- which is
+    # true, and not a defect, and would have been reported as hundreds
+    # of them the first time the two steps were reordered.
     artifacts = sorted(p for p in DIST.iterdir()
-                       if p.suffix == ".whl" or p.name.endswith(".tar.gz"))
+                       if p.name.startswith("aas_submodel_validate-")
+                       and (p.suffix == ".whl" or p.name.endswith(".tar.gz")))
     if not artifacts:
         print("no distributions in dist/ -- build them first", file=sys.stderr)
         return 1
