@@ -72,6 +72,11 @@ METADATA_SPELLINGS = (
     ("Metadata-Version: 2.4\r\nName: x\r\nLicense-File: LICENSE\r\n"
      "License-File: NOTICE\r\nLicense-File: THIRD_PARTY.md\r\n"
      "\r\n# aas-submodel-validate\r\n\r\nLicense-File: docs/scope.md\r\n"),
+    # And the third line ending, so the split is total rather than
+    # nearly so.
+    ("Metadata-Version: 2.4\rName: x\rLicense-File: LICENSE\r"
+     "License-File: NOTICE\rLicense-File: THIRD_PARTY.md\r"
+     "\r# aas-submodel-validate\r\rLicense-File: docs/scope.md\r"),
 )
 
 
@@ -122,7 +127,7 @@ def test_the_configuration_still_names_them_explicitly():
     configuration no longer names them."""
     lines = (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines()
     start = [i for i, line in enumerate(lines)
-             if line.startswith("license-files")]
+             if line.lstrip().startswith("license-files")]
     assert start, "nothing overrides setuptools' default licence glob"
     setting = []
     for line in lines[start[0]:]:
@@ -184,7 +189,7 @@ def test_what_the_build_system_writes_is_still_exempt(member):
     assert _gate().is_build_metadata(member)
 
 
-@pytest.mark.parametrize("filename,ours", [
+@pytest.mark.parametrize("filename,mine", [
     ("aas_submodel_validate-0.1.1-py3-none-any.whl", True),
     ("aas_submodel_validate-0.1.1.tar.gz", True),
     # setuptools normalised sdist filenames in 69.3, and this project's
@@ -199,13 +204,69 @@ def test_what_the_build_system_writes_is_still_exempt(member):
     # this gate's business.
     ("aas_core3_0-1.1.4-py3-none-any.whl", False),
     ("aas-core3.0-1.1.4.tar.gz", False),
+    # Not a distribution at all. `dist/` holds these during a release.
+    ("SHA256SUMS", False),
+    ("smtv.pyz", False),
 ])
-def test_the_gate_looks_at_this_projects_artifacts_and_no_others(filename, ours):
-    import pathlib
-    prefixes = _gate().OURS
-    assert filename.startswith(prefixes) is ours, filename
-    assert (pathlib.Path(filename).suffix == ".whl"
-            or filename.endswith(".tar.gz"))
+def test_the_gate_looks_at_this_projects_artifacts_and_no_others(filename, mine):
+    assert _gate().ours(filename) is mine, filename
+
+
+def test_the_run_itself_examines_an_sdist_named_the_older_way(tmp_path,
+                                                              monkeypatch,
+                                                              capsys):
+    """Asked of `main`, and of what it said.
+
+    The first version checked `ours()` and passed while `main` used a
+    condition of its own, so a change that stopped it reading the
+    constant left every test green. The second asked `main` for an exit
+    code of 1 -- which "no distributions in dist/" also returns, so the
+    same mutant walked through a second time. What has to be true is
+    that the run *found the file and named it*.
+    """
+    import tarfile
+    gate = _gate()
+    monkeypatch.setattr(gate, "DIST", tmp_path)
+
+    stray = tmp_path / "note.md"
+    stray.write_text("not tracked by this repository\n", encoding="utf-8")
+    for name in ("aas-submodel-validate-0.1.1.tar.gz",
+                 "aas_submodel_validate-0.1.1.tar.gz"):
+        archive_path = tmp_path / name
+        with tarfile.open(archive_path, "w:gz") as archive:
+            archive.add(stray, arcname=name.split(".tar.gz")[0] + "/note.md")
+        capsys.readouterr()
+        assert gate.main() == 1
+        said = capsys.readouterr().err
+        assert "note.md" in said, \
+            "%s went unexamined; the run said %r" % (name, said)
+        archive_path.unlink()
+
+    # Somebody else's, in the same directory during a release: not this
+    # gate's business, and there is then nothing of ours to look at.
+    with tarfile.open(tmp_path / "aas_core3_0-1.1.4.tar.gz", "w:gz") as archive:
+        archive.add(stray, arcname="aas_core3_0-1.1.4/note.md")
+    capsys.readouterr()
+    assert gate.main() == 1
+    assert "no distributions" in capsys.readouterr().err
+
+
+def test_an_empty_index_is_not_an_answer(tmp_path, monkeypatch, capsys):
+    """A repository tracking nothing cannot have produced a
+    distribution, so an empty `git ls-files` is `git init` inside an
+    unpacked sdist rather than a reply.
+
+    Taking it as one marks every member untracked and reports the whole
+    archive. The paragraph above `tracked` said exactly that would
+    happen and guarded only the two cases where git itself fails."""
+    import subprocess
+    gate = _gate()
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=False)
+    if not (tmp_path / ".git").is_dir():
+        pytest.skip("git is not available")
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    assert gate.tracked() is None
+    assert "nothing was concluded" in capsys.readouterr().err
 
 
 def test_a_note_planted_inside_a_metadata_directory_is_not_exempt():

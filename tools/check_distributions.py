@@ -57,6 +57,24 @@ DIST = ROOT / "dist"
 #: Named here so a test can ask what the gate considers its own.
 OURS = ("aas_submodel_validate-", "aas-submodel-validate-")
 
+def ours(name: str) -> bool:
+    """Whether a file in `dist/` is a distribution of this project.
+
+    `dist/` also holds the dependency wheel the release downloads so the
+    offline route resolves, and every file inside somebody else's wheel
+    is untracked here -- true, and not this gate's business, and it
+    would have arrived as hundreds of reports the first time those two
+    steps were reordered.
+
+    A function rather than an expression inside `main`, so a test can
+    ask the gate this instead of restating it: the first version of that
+    test rebuilt the condition, and a change that stopped `main` reading
+    it at all left every test green.
+    """
+    return name.startswith(OURS) and (name.endswith(".whl")
+                                      or name.endswith(".tar.gz"))
+
+
 #: Tracked, published here, and deliberately not shipped.
 NOT_A_PAYLOAD = "data/battery-passport/"
 
@@ -101,7 +119,8 @@ def _licence_files(text: str) -> tuple:
     # Normalised first: a metadata file written on Windows separates its
     # headers from the description with `\r\n\r\n`, so splitting on
     # `\n\n` found no boundary and read the description again.
-    headers = text.replace("\r\n", "\n").split("\n\n", 1)[0]
+    plain = text.replace("\r\n", "\n").replace("\r", "\n")
+    headers = plain.split("\n\n", 1)[0]
     return tuple(line.split(":", 1)[1].strip()
                  for line in headers.splitlines()
                  if line.startswith("License-File:"))
@@ -249,27 +268,25 @@ def tracked():
         print("distribution: git could not list the index (%s)"
               % (result.stderr.strip() or "not a repository"), file=sys.stderr)
         return None
-    return {name for name in result.stdout.split("\0") if name}
+    listed = {name for name in result.stdout.split("\0") if name}
+    if not listed:
+        # A repository that tracks nothing cannot have produced a
+        # distribution honestly, so this is `git init` inside an
+        # unpacked sdist rather than an answer -- and taking it as one
+        # marks every member untracked and reports the whole archive.
+        # The paragraph above said that would happen and guarded only
+        # the two cases where git itself fails.
+        print("distribution: the index is empty, so nothing here came from "
+              "this repository; nothing was concluded", file=sys.stderr)
+        return None
+    return listed
 
 
 def main() -> int:
     if not DIST.is_dir():
         print("no dist/ -- build the distributions first", file=sys.stderr)
         return 1
-    # This project's own, by name. `dist/` also holds the dependency
-    # wheel the release downloads so the offline route resolves, and
-    # every file in somebody else's wheel is untracked here -- which is
-    # true, and not a defect, and would have been reported as hundreds
-    # of them the first time the two steps were reordered.
-    # Both spellings of this project's own name. setuptools normalised
-    # sdist filenames to underscores in 69.3 (PEP 625) and writes
-    # hyphens before that, and `requires = ["setuptools>=64"]` admits
-    # those -- so an sdist built with an older one matched nothing here
-    # and was skipped in silence, with the summary line still counting
-    # what it had looked at.
-    artifacts = sorted(p for p in DIST.iterdir()
-                       if p.name.startswith(OURS)
-                       and (p.suffix == ".whl" or p.name.endswith(".tar.gz")))
+    artifacts = sorted(p for p in DIST.iterdir() if ours(p.name))
     if not artifacts:
         print("no distributions in dist/ -- build them first", file=sys.stderr)
         return 1
