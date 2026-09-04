@@ -73,11 +73,13 @@ METADATA_MEMBERS = ("PKG-INFO", "RECORD", "WHEEL", "METADATA", "SOURCES.txt",
 def licence_files() -> tuple:
     """The attribution files the build is configured to relocate.
 
-    Read from the configuration rather than listed here. `LICENSE` and
-    `NOTICE` were named in this file and `THIRD_PARTY.md` was not, so
-    adding a third attribution file to the build was enough to make the
-    gate report it as untracked -- a correct build rejected, which is
-    the failure this project fears most.
+    Not used to decide anything -- the mapping above works off the
+    member's own name, because a configuration read with a regex answers
+    wrongly for a glob, a single-quoted list or a deleted key, and every
+    one of those wrong answers rejects a correct build. This is here for
+    the test that asks whether the configuration names them explicitly,
+    which is what stops setuptools' default glob from sweeping in a
+    working note.
     """
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     listed = re.search(r"(?m)^license-files\s*=\s*\[([^\]]*)\]", text)
@@ -165,10 +167,16 @@ def _repository_path(name: str) -> str:
         # the build system's and is asked about as such.
         if rest[:1] == ["licenses"]:
             return "/".join(rest[1:])
-        if len(rest) == 1:
-            for declared in licence_files():
-                if pathlib.PurePosixPath(declared).name == rest[0]:
-                    return declared
+        if len(rest) == 1 and rest[0] not in METADATA_MEMBERS:
+            # Where the build took it from, which for anything the build
+            # system did not write itself is the top of the tree. Asked
+            # of the member's own name rather than of the configured
+            # list: reading `license-files` out of the TOML with a regex
+            # made a glob, a single quote or a deleted key answer "no
+            # licence files", and every one of those rejected a correct
+            # build -- the failure this whole file exists not to cause.
+            # The name is what the archive holds either way.
+            return rest[0]
     return name
 
 

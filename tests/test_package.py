@@ -45,8 +45,10 @@ def test_no_distribution_rule_names_a_file_this_project_does_not_ship():
     all they published was the names. Measured by deleting all three and
     building: only the one under `graft docs` changed what shipped.
 
-    The one that works is kept, spelled as a directory, so a new note
-    does not need a new line naming it."""
+    Deleting all three and keeping `graft docs` opened a real leak in
+    place of a disclosure, so `docs/` is named file by file instead: a
+    new document does not travel until somebody adds it, and nothing
+    here spells out what must not."""
     import pathlib
     root = pathlib.Path(__file__).resolve().parents[1]
     manifest = (root / "MANIFEST.in").read_text(encoding="utf-8")
@@ -59,12 +61,18 @@ def test_no_distribution_rule_names_a_file_this_project_does_not_ship():
     # note dropped in that directory shipped. Planted one and it did.
     assert "graft docs" not in manifest, \
         "docs/ is grafted again, so anything left in it ships"
-    import subprocess
-    listed = subprocess.run(["git", "ls-files", "docs/"], cwd=str(root),
-                            capture_output=True, text=True)
-    for name in listed.stdout.split():
-        assert "include %s" % name in manifest, \
-            "%s is published here and would not reach an sdist" % name
+    # Asked of the directory, not of git. The first version shelled out
+    # to `git ls-files`, which is empty in an unpacked sdist -- where
+    # `MANIFEST.in`'s own first paragraph promises this suite runs -- so
+    # the check passed there having asked nothing, and raised
+    # FileNotFoundError anywhere git is not installed, which is most
+    # distribution build environments.
+    published = sorted(p.name for p in (root / "docs").iterdir()
+                       if p.is_file() and not p.name.startswith("."))
+    assert published, "docs/ holds nothing"
+    for name in published:
+        assert "include docs/%s" % name in manifest, \
+            "docs/%s is published here and would not reach an sdist" % name
 
 
 def test_nothing_local_is_tracked():
