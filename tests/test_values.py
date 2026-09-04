@@ -127,10 +127,9 @@ def test_the_ledger_excuses_exactly_the_differences_and_no_more():
 
 def test_the_corpus_keeps_its_shape():
     """A corpus that shrank would pass everything above while measuring
-    nothing: sixty-four of its values could be deleted one at a time
-    without a test noticing, and an eight-value stand-in passed both
-    guards while killing a fifth as many mutations. What cannot shrink is
-    asserted here."""
+    nothing: most of its values could be deleted one at a time without a
+    test noticing, and a tiny stand-in passed both guards while proving
+    far less. What cannot shrink is asserted here."""
     assert len(CORPUS) >= 2000
     months = {v.split("-")[1] for v in CORPUS if v.startswith("2025-")}
     assert months >= {"%02d" % m for m in range(1, 13)}
@@ -178,9 +177,9 @@ def test_a_value_outside_the_lexical_space_is_refused(value):
     assert not valid_xs_date(value)
 
 
-#: Four mutations of the predicate survive everything above, all four
-#: equivalent -- named so the next person measuring does not spend an
-#: afternoon on them, and because three of them *became* equivalent here.
+#: A few changes to the predicate survive everything above, all of
+#: them equivalent -- named so the next reader does not spend an
+#: afternoon on them, and because some of them *became* equivalent here.
 #:
 #: `^` removed and `match` swapped for `search`: `match` anchors already,
 #: and `^` anchors already, so either alone does the job. `\Z` swapped for

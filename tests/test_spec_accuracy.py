@@ -1,4 +1,5 @@
-"""Spec-fidelity fixes the review found by reading the PDF against the code."""
+"""Spec-fidelity fixes, each found by reading the published PDF against
+the code."""
 from __future__ import annotations
 
 import copy

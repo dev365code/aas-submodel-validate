@@ -467,8 +467,8 @@ def test_a_reference_piercing_a_leaf_is_a_finding_not_a_crash(tmp_path):
 
 
 def test_a_stray_composite_in_a_multirow_scope_does_not_fabricate_a_count(tmp_path):
-    """The teeth the earlier decomposition test lacked (verification found
-    the mutant survived it). A stray collection wearing a *DocumentId
+    """The teeth the earlier decomposition test lacked -- it passed with
+    the decomposition changed under it. A stray collection wearing a *DocumentId
     item* composite id, placed among a Document's real children, must not
     be counted as a DocumentIds list -- which is exactly what splitting
     the composite on '/' would do (docs/divergences.md #8)."""

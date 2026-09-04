@@ -187,7 +187,7 @@ def test_a_rule_that_stops_halfway_still_leaves_a_report_that_can_be_read():
 def test_this_fixture_would_notice_the_sort_going_away(tmp_path, monkeypatch):
     """A report whose rules happen to fire in reading order observes
     nothing about the sort: delete the sort and such a test stays green.
-    Measured -- the suite had one, and ten of thirteen mutations of the
+    Measured -- the suite had such a test, and most changes to the
     ordering lived through it."""
     path = _four_kinds_at_one_severity(tmp_path)
     ordered = [f.id for f in runner.run(path).findings]

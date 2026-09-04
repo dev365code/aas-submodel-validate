@@ -4,14 +4,19 @@
 # would include on its own.
 graft tests
 graft tools
-graft docs
+include docs/divergences.md
+include docs/report-schema.md
+include docs/rule-coverage.json
+include docs/scope.md
 graft .github
 include Makefile MANIFEST.in
 include CONTRIBUTING.md SECURITY.md NOTICE THIRD_PARTY.md CHANGELOG.md
 global-exclude __pycache__/* *.pyc
 recursive-exclude tests .rule-coverage.json
 
-# Working notes are not part of the distribution.
-exclude CLAUDE.md AGENTS.md
-prune .claude
-exclude docs/findings.md docs/audits.md
+# `docs/` is named file by file above rather than grafted. A rule that
+# excludes something says the something exists, and this file ships
+# inside the sdist -- three exclusions used to sit here spelling out
+# working-note filenames, and two of them did no work besides. Naming
+# what ships says nothing about what does not, and a new document does
+# not travel until somebody decides it should.

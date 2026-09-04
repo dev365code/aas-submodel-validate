@@ -537,9 +537,9 @@ def test_every_rule_offers_a_remedy():
 #: remedy per violation, the census above pins a string that never leaves
 #: the process. Seven rules do -- HD-D9, HDL1, DBP2L1, HDL3, DBP2L3, TDL2
 #: and SMT-D2 -- and three more relay one from the loader (X2, X3, X5).
-#: Measured before this existed: seven mutations of these sentences left
+#: Measured before this existed: changes to these sentences left
 #: the whole suite green,
-#: including three that turn "nothing is wrong with what you sent" into
+#: including ones that turn "nothing is wrong with what you sent" into
 #: blaming the author -- which `x5_within_the_readers_bounds` exists to
 #: promise it will not do.
 #:
