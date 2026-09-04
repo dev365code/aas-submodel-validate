@@ -91,12 +91,29 @@ def main(argv: Optional[list] = None) -> int:
         # resolve.
         parser.error("--strict-meta is --meta error; it cannot be combined "
                      "with --meta %s" % args.meta)
-    if args.rules and (args.path or args.profile):
-        # Half of a principle is worse than none: `--example <path>` was
-        # made an error for exactly this, and `--rules` went on taking a
-        # path and a profile and answering neither.
-        parser.error("--rules lists the rules and judges nothing; it takes "
-                     "no path and no --profile")
+    if args.rules:
+        # One statable rule rather than a line drawn where somebody
+        # noticed. `--rules` judges nothing, so every flag about judging
+        # is a question it does not answer -- and answering a different
+        # question in silence is the thing this tool refuses everywhere
+        # else. `--meta` is the exception because it is not ignored: it
+        # decides the severity the relayed channel is listed at, so the
+        # listing really does differ.
+        #
+        # The first version of this refused a path and `--profile` and
+        # went on quietly dropping `-q`, whose whole contract is "exit
+        # code only", and `-f json`. Half a rule reads as arbitrary.
+        ignored = [name for name, given in (
+            ("a path", args.path), ("--profile", args.profile),
+            ("-q", args.quiet), ("-f json", args.format != "text"),
+            ("-W", args.warnings_as_errors),
+            ("--allow-unmatched", args.allow_unmatched),
+            ("--require-all-judged", args.require_all_judged),
+            ("--show-meta", args.show_meta)) if given]
+        if ignored:
+            parser.error("--rules lists the rules and judges nothing, so it "
+                         "would ignore %s; --meta is the only other flag it "
+                         "reads" % ", ".join(ignored))
     if args.rules and args.example:
         # `--rules` returned before the conflict check below, so one
         # flag was obeyed and the other silently dropped -- while

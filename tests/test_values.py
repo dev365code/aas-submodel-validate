@@ -189,7 +189,7 @@ def test_a_value_outside_the_lexical_space_is_refused(value):
 #: literals, so a year in Arabic-Indic digits fails there before any
 #: `\d` is asked.
 #:
-#: All four stay. Each is redundant only while the thing beside it holds,
+#: They all stay. Each is redundant only while the thing beside it holds,
 #: and the thing beside it is one edit away from not holding.
 
 

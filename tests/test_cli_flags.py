@@ -617,3 +617,33 @@ def test_rules_takes_no_input_and_says_so(tmp_path, capsys):
         assert "--rules" in capsys.readouterr().err
     assert main(["--rules"]) == 0
     assert len(capsys.readouterr().out.splitlines()) > 100
+
+
+def test_rules_takes_only_the_flag_that_changes_the_listing(tmp_path, capsys):
+    """One statable rule, instead of a line drawn where somebody noticed.
+
+    `--rules` was made to refuse a path and a `--profile` because it
+    silently answered a different question than the one asked -- and it
+    went on silently ignoring `-q`, whose whole contract is "exit code
+    only", and `-f json`, which a reader could reasonably expect to
+    change the shape of this output. Half a rule reads as arbitrary.
+
+    `--meta` is the exception because it is not ignored: it sets the
+    severity the relayed channel is listed at, so the listing really is
+    different."""
+    for level in ("error", "warning", "info"):
+        assert main(["--rules", "--meta", level]) == 0
+        listed = [line for line in capsys.readouterr().out.splitlines()
+                  if line.startswith("META")]
+        assert listed and level in listed[0], listed
+    assert main(["--rules", "--strict-meta"]) == 0
+    assert "error" in [line for line in capsys.readouterr().out.splitlines()
+                       if line.startswith("META")][0]
+
+    path = _write(tmp_path, json.dumps(hd_env()).encode("utf-8"))
+    for argv in ([path], ["--profile", "02004"], ["-q"], ["-f", "json"],
+                 ["-W"], ["--allow-unmatched"], ["--require-all-judged"]):
+        with pytest.raises(SystemExit) as raised:
+            main(["--rules"] + argv)
+        assert raised.value.code == 2, argv
+        assert "--rules" in capsys.readouterr().err

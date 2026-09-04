@@ -1,5 +1,8 @@
-"""Spec-fidelity fixes, each found by reading the published PDF against
-the code."""
+"""Where a reading of the published specification was checked against
+the code, and the two disagreed.
+
+Most of these came from putting the document beside the implementation;
+a few came from asking what the implementation had never been shown."""
 from __future__ import annotations
 
 import copy
