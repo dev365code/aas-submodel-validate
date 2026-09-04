@@ -229,3 +229,51 @@ def test_the_example_the_readme_fetches_is_pinned_and_here():
             "the example is fetched from %r; a branch moves and a tag does not" % ref
         assert (ROOT / path).exists(), \
             "the README fetches %r and this tree does not have it" % path
+
+
+def test_the_published_package_path_stands_without_the_repository():
+    """This file is two documents. It is the front page of a repository,
+    and it is the description PyPI renders for the package -- and on
+    PyPI the repository does not exist.
+
+    So the block a reader follows after `pip install aas-submodel-validate`
+    may not name a file that only a clone has. Every input it hands the
+    tool must be one an earlier line in the same block fetched, or a
+    plainly-named stand-in for the reader's own.
+
+    Measured on the released 0.1.0: the description PyPI showed opened
+    with `git clone`, because the fix landed after the tag and a project
+    description is frozen at the release that carried it. That is the
+    trap this exists for -- a README correction is invisible on PyPI
+    until the next release, so the path has to be right *before* the tag,
+    not after."""
+    blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
+    published = [b for b in blocks if "pip install aas-submodel-validate" in b]
+    assert published, "the README no longer shows how to use the published package"
+    for block in published:
+        fetched, offences = set(), []
+        for line in block.splitlines():
+            # A trailing `# comment` is prose, not arguments. Without
+            # this the words of "# IDTA's own published example" were
+            # each read as a file the tool was handed.
+            words = line.split("#", 1)[0].split()
+            if words[:1] == ["curl"]:
+                fetched |= {Path(w).name for w in words if w.startswith("http")}
+                continue
+            if words[:1] not in (["smtv"], ["aas-submodel-validate"]):
+                continue
+            for word in words[1:]:
+                if word.startswith("-") or word.startswith("your-"):
+                    continue
+                # Exactly, not by basename: `curl -O` writes the file
+                # into the current directory under that bare name, so
+                # `tests/corpus/.../example.aasx` is a different thing
+                # from `example.aasx` and only the second one is there.
+                # Matching basenames let the repo path through.
+                if word in fetched:
+                    continue
+                offences.append(word)
+        assert not offences, (
+            "the published-package path hands the tool %s, which only a "
+            "clone of this repository has; on PyPI this block is the whole "
+            "page and there is no clone" % offences)
