@@ -63,7 +63,21 @@ def test_findings_serialise_for_machines():
 #: lines. A consumer reading `report.options.strictMeta` gets `undefined`
 #: -- falsy -- and a strict run silently reads as permissive.
 V1_REQUIRED = {"schemaVersion", "toolVersion", "path", "ok", "options",
-               "summary", "notes", "findings"}
+               "summary", "notes", "findings", "provenance"}
+#: The evidence envelope, reserved rather than implemented.
+#:
+#: A report becomes evidence only when it says *what* was judged, *by
+#: which engine*, and *who vouches for it* -- and the third is not this
+#: tool's to answer. Signing belongs to the organisation that issued the
+#: document, the way a declaration of conformity does; a validator that
+#: signed its own verdicts would be selling an assurance it has no
+#: standing to give. So the shape is fixed here, at the release that
+#: fixes the shape, and two of its three fields are `null` until
+#: somebody with standing fills them.
+#:
+#: `inputSha256` is not reserved -- it is computed, because the one thing
+#: this tool can say for certain is which bytes it read.
+V1_PROVENANCE = {"inputSha256", "engine", "envelope"}
 V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete", "judged"}
 V1_OPTIONS = {"profile", "strictMeta", "allowUnmatched"}
 V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
@@ -76,6 +90,7 @@ V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
 #: is the step nobody was told to take; it is written down here because
 #: the floor is worthless without it.
 ADDED_SINCE_V1 = set()
+ADDED_SINCE_V1_PROVENANCE = set()
 ADDED_SINCE_V1_SUMMARY = set()
 ADDED_SINCE_V1_OPTIONS = set()
 ADDED_SINCE_V1_FINDING = set()
@@ -85,6 +100,7 @@ REPORT_KEYS = V1_REQUIRED | ADDED_SINCE_V1
 SUMMARY_KEYS = V1_SUMMARY | ADDED_SINCE_V1_SUMMARY
 OPTIONS_KEYS = V1_OPTIONS | ADDED_SINCE_V1_OPTIONS
 FINDING_KEYS = V1_FINDING | ADDED_SINCE_V1_FINDING
+PROVENANCE_KEYS = V1_PROVENANCE | ADDED_SINCE_V1_PROVENANCE
 
 
 def _report():
@@ -113,10 +129,12 @@ def test_the_report_has_the_shape_version_one_names():
     assert set(document["summary"]) >= V1_SUMMARY
     assert set(document["findings"][0]) >= V1_FINDING
     assert set(document["options"]) >= V1_OPTIONS
+    assert set(document["provenance"]) >= V1_PROVENANCE
     assert set(document) == REPORT_KEYS
     assert set(document["summary"]) == SUMMARY_KEYS
     assert set(document["findings"][0]) == FINDING_KEYS
     assert set(document["options"]) == OPTIONS_KEYS
+    assert set(document["provenance"]) == PROVENANCE_KEYS
 
 
 def test_the_summary_counts_what_it_says_it_counts():
@@ -248,4 +266,43 @@ def test_the_clean_banner_spells_ok_with_an_em_dash():
     report = Report(path="clean.json")
     report.checked = 123
     assert render(report).startswith("ok \u2014 ")
+
+
+def test_the_report_names_the_bytes_it_judged(tmp_path):
+    """The one thing this tool can say for certain about provenance.
+
+    A report that says "this file failed" and does not say which bytes
+    it read is an assertion about a filename, and filenames are not
+    evidence. The digest is of the file as it arrived -- computed, not
+    reserved -- and two reports of one file agree on it."""
+    import hashlib
+
+    from aas_submodel_validate import runner
+    from builders import hd_env
+    path = tmp_path / "env.json"
+    payload = json.dumps(hd_env()).encode("utf-8")
+    path.write_bytes(payload)
+    document = runner.run(path).as_dict()
+    assert document["provenance"]["inputSha256"] == hashlib.sha256(payload).hexdigest()
+    assert runner.run(path).as_dict()["provenance"] == document["provenance"]
+
+
+def test_the_slots_nobody_may_fill_yet_are_null_and_stay_in_the_shape():
+    """Reserved, not omitted. A consumer building an evidence pipeline
+    needs to know the field will be there before anything can fill it --
+    a key that appears later is a schema change, and a key that is
+    always `null` is a promise. Signing is deliberately not this tool's:
+    it belongs to whoever issued the document."""
+    document = _report().as_dict()
+    assert document["provenance"]["engine"] is None
+    assert document["provenance"]["envelope"] is None
+
+
+def test_a_report_of_nothing_still_names_its_provenance():
+    """A `Report` built without a file -- the shape every unit test uses
+    -- must still carry the block, or a consumer has to branch on
+    whether the digest was computable."""
+    document = Report(path="nowhere.json").as_dict()
+    assert set(document["provenance"]) == PROVENANCE_KEYS
+    assert document["provenance"]["inputSha256"] is None
 

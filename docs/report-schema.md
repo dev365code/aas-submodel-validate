@@ -15,6 +15,7 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
 {
   "schemaVersion": 1,
   "toolVersion": "0.1.0",
+  "provenance": {"inputSha256": "9f2c…", "engine": null, "envelope": null},
   "path": "machine-docs.aasx",
   "ok": false,
   "options": {"profile": null, "strictMeta": false, "allowUnmatched": false},
@@ -57,12 +58,34 @@ report needs the second one.
 |---|---|---|
 | `schemaVersion` | integer | The shape. `1`. |
 | `toolVersion` | string | The version of `aas-submodel-validate` that wrote the report. |
+| `provenance` | object | What was judged, by what, and who vouches for it; see below. |
 | `path` | string | The input, as it was given on the command line. |
 | `ok` | boolean | No finding at `error` severity. `-W` raises the bar for the exit code without changing `ok`, and so does `summary.judged`: a run that judged nothing exits 2 whatever `ok` says. |
 | `options` | object | What was asked of this run; see below. |
 | `summary` | object | Counts; see below. |
 | `notes` | array of string | Things worth saying once about the run rather than about the file — a `--profile` that named a template nothing here answers to, or an unmatched submodel that `--allow-unmatched` let through. |
 | `findings` | array of object | Every finding, in reading order; see below. |
+
+## `provenance`
+
+A report becomes evidence when it says three things: which bytes were
+judged, which engine judged them, and who vouches for the result. This
+tool can answer the first for certain, cannot answer the second about
+itself in a way anyone should trust, and must not answer the third at
+all — signing belongs to whoever issued the document being judged, the
+way a declaration of conformity does. A validator that signed its own
+verdicts would be selling an assurance it has no standing to give.
+
+So one field is computed and two are reserved. They are present and
+`null` rather than absent, because a key that appears in a later version
+is a schema change and a key that is always `null` is a promise
+something can be built against.
+
+| key | type | |
+|---|---|---|
+| `inputSha256` | string or null | SHA-256 of the input file as it arrived. `null` when the file could not be opened, or when it is larger than this reader takes in at all — a digest of bytes nobody read is evidence of nothing. |
+| `engine` | null | Reserved: a reference to the engine build that produced the report, beyond the version string `toolVersion` already carries. Nothing fills it yet. |
+| `envelope` | null | Reserved: the signed envelope a report may be wrapped in, and the signature over it. Nothing fills it yet, and nothing in this project will — the signer is the organisation issuing the document. |
 
 ## `options`
 

@@ -11,7 +11,10 @@ from typing import List
 
 from aas_core3 import verification
 
-from . import rules  # noqa: F401  - importing registers every rule
+from . import (
+    container,
+    rules,  # noqa: F401  - importing registers every rule
+)
 from .loader import Loaded, load
 from .model import KINDS, Finding, Report, Rule, Violation
 from .registry import all_rules
@@ -108,13 +111,54 @@ def _reading_order(finding: Finding):
             finding.violation.message)
 
 
+#: Small on purpose: the peak cost of hashing is one block, and this
+#: reader's promise is about what it takes into memory, not about what
+#: it declines to look at.
+_DIGEST_BLOCK = 64 * 1024
+
+
+def _digest(path, limit: int) -> str:
+    """The sha256 of the file as it arrived, or None.
+
+    None in three cases, and each is a refusal to answer rather than a
+    partial answer. The file cannot be opened -- the loader has already
+    decided what that is, and a digest must not be a second, louder
+    answer to the same question. Or it is larger than this reader takes
+    in at all, in which case nothing was judged and a digest of bytes
+    nobody read is evidence of nothing. Or it grew past the bound while
+    being read, which is the same case arriving later.
+
+    Streamed in small blocks, so the peak is one block whatever the file
+    weighs -- a digest is not a reason to take in what the rest of the
+    reader refuses, and the first version read a megabyte at a time and
+    was caught by the fixture that weighs a run.
+    """
+    import hashlib
+    digest = hashlib.sha256()
+    read = 0
+    try:
+        with open(path, "rb") as handle:
+            for block in iter(lambda: handle.read(_DIGEST_BLOCK), b""):
+                read += len(block)
+                if read > limit:
+                    return None
+                digest.update(block)
+    except OSError:
+        return None
+    return digest.hexdigest()
+
+
 def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
         profile: str = None) -> Report:
     """Validate one input. UnreadablePath propagates: that is the caller's
     mistake and the CLI's exit-2, not a finding about the file."""
     loaded = load(path)
     rules_to_run = all_rules()
-    report = Report(path=str(path))
+    # The same bound the reader itself applies to a bare document. A
+    # container may deliver more in total, and a container this reader
+    # accepted is one whose own bounds already held.
+    report = Report(path=str(path),
+                    input_sha256=_digest(path, container.MAX_TOTAL_PART_BYTES))
     report.findings = execute(rules_to_run,
                               Context(loaded, rules.profiles.Selection(profile)))
     report.findings.extend(_meta_findings(loaded, strict_meta))

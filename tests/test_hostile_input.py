@@ -513,6 +513,30 @@ def test_a_stat_that_went_stale_does_not_buy_the_file(tmp_path, monkeypatch):
     assert peak < 4 * cap, "read %d bytes for a %d byte cap" % (peak, cap)
 
 
+
+def test_a_file_too_large_to_judge_gets_no_digest(tmp_path, monkeypatch):
+    """The report says which bytes it judged. A file this reader refuses
+    outright was not judged, so the honest answer is no digest rather
+    than a digest of bytes nobody read -- and hashing it anyway would
+    mean streaming a file past the very bound that refused it."""
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 64 * 1024)
+    path = tmp_path / "big.json"
+    path.write_bytes(_weighing(".json", 256 * 1024))
+    report = runner.run(path)
+    assert report.as_dict()["provenance"]["inputSha256"] is None
+
+    # The lower edge, where the bound is written "over" like the reader's
+    # other three: a file of exactly the limit is one this reader takes
+    # in, so it gets a digest. Without this the comparison can grow an
+    # `=` and only a file sitting on the line notices.
+    import hashlib
+    exact = tmp_path / "exact.json"
+    payload = b"x" * container.MAX_TOTAL_PART_BYTES
+    exact.write_bytes(payload)
+    assert runner.run(exact).as_dict()["provenance"]["inputSha256"] == \
+        hashlib.sha256(payload).hexdigest()
+
+
 def test_a_read_that_runs_out_of_memory_could_not_run(tmp_path):
     """SECURITY.md promises that reading a hostile file fails as a finding
     rather than a crash, and MemoryError walked out of the loader as a

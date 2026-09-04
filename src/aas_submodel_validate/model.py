@@ -151,6 +151,10 @@ class Report:
     profile: Optional[str] = None
     strict_meta: bool = False
     allow_unmatched: bool = False
+    #: The digest of the bytes this run read, or None when there were
+    #: none to read. A report that says a file failed and does not say
+    #: which bytes it read is an assertion about a filename.
+    input_sha256: Optional[str] = None
 
     def count(self, severity: Severity) -> int:
         return sum(1 for f in self.findings if f.severity is severity)
@@ -164,6 +168,24 @@ class Report:
 
         return {
             "schemaVersion": 1,
+            # The evidence envelope. Two of its three fields are reserved
+            # and one is computed, and the split is the point: a report
+            # becomes evidence when it says what was judged, by which
+            # engine, and who vouches for it -- and the third is not this
+            # tool's to answer. Signing belongs to whoever issued the
+            # document, the way a declaration of conformity does; a
+            # validator that signed its own verdicts would be selling an
+            # assurance it has no standing to give.
+            #
+            # Reserved rather than omitted, at the release that fixes the
+            # shape: a key that appears later is a schema change, and a
+            # key that is always `null` is a promise somebody can build
+            # against.
+            "provenance": {
+                "inputSha256": self.input_sha256,
+                "engine": None,
+                "envelope": None,
+            },
             # The shape's number and the producer's are different numbers.
             # A consumer that finds a defect in a report needs to say which
             # build wrote it, and `schemaVersion` cannot answer that.
