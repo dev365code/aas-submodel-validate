@@ -156,22 +156,31 @@ jobs:
           - the `.tar.gz` — the source, for anyone building it themselves.
           - `SHA256SUMS` — the checksums for everything above.
 
-          **Checking what you carried** — on the machine you carried it
-          *from*, while you still have a network:
+          **Was it corrupted on the way?** Run this where the files
+          landed — that is the only place the question means anything:
 
               shasum -a 256 --ignore-missing -c SHA256SUMS
+
+          `--ignore-missing` because you were probably told to carry one
+          file, and without it `shasum` calls the ones you did not bring
+          failures and exits 1. (`sha256sum -c` where that is the
+          spelling.)
+
+          **Who built it?** A checksum cannot answer that; the signature
+          can. It needs GitHub, so do it on a machine that can reach it:
+
               gh attestation verify smtv.pyz --repo OWNER/REPO
 
-          `--ignore-missing` because you were told to carry one file, and
-          without it `shasum` reports the ones you did not bring as
-          failures and exits 1. The first says nothing was corrupted on
-          the way; it needs nothing but `shasum`, so it works anywhere.
-          The second says which workflow in which repository built these
-          bytes — the question that matters if you are signing for what
-          comes through the door — and it asks GitHub, so run it before
-          you cross the air gap, or carry the bundle
-          (`gh attestation download`) and verify offline with
-          `--bundle`.
+          To check it on the far side instead, bring three things rather
+          than one — the file, its bundle, and the trust root — because
+          `gh` fetches that root over the network unless you hand it one:
+
+              gh attestation download smtv.pyz --repo OWNER/REPO
+              gh attestation trusted-root > trusted_root.jsonl
+              # carry smtv.pyz, the .jsonl bundle and trusted_root.jsonl
+              gh attestation verify smtv.pyz --repo OWNER/REPO \
+                --bundle sha256:<digest>.jsonl \
+                --custom-trusted-root trusted_root.jsonl
 
           The tool itself reaches no network, ever.
           NOTES

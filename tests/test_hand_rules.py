@@ -899,3 +899,50 @@ def test_a_class_name_of_the_wrong_kind_is_the_files_defect_not_the_tools(tmp_pa
     assert any(f.severity is not None and f.id.startswith("HD-E")
                for f in findings.values()), \
         "nothing reported an element declared as the wrong kind"
+
+
+@pytest.mark.parametrize("element,kind", [
+    ("ClassName", "Range"),
+    ("ClassName", "Capability"),
+    ("ClassName", "Operation"),
+    ("ClassName", "Entity"),
+    ("ClassName", "SubmodelElementCollection"),
+    ("ClassId", "MultiLanguageProperty"),
+    ("DocumentClassifications", "MultiLanguageProperty"),
+])
+def test_no_rule_blames_itself_for_an_element_of_the_wrong_kind(tmp_path,
+                                                               element, kind):
+    """The first attempt at this fixed one shape and claimed all of them.
+
+    Its commit said eight rules crashed on wrong `modelType` and none
+    does now. Sweeping every kind the metamodel has says otherwise:
+    seven more crashed, because the guard was written where the value
+    was read and the hole was one level up -- `child_of` iterated
+    `getattr(element, "value", None) or []` where its sibling
+    `children_of` had checked `isinstance(value, list)` since it was
+    written. A `Range` has no `value` at all; a `Property` has a string,
+    and iterating a string yields characters.
+
+    Every one of these reported "the rule itself could not run -- a
+    defect in the validator, not in your file; please report it", about
+    a defect in the file that the generated rule beside it names
+    exactly."""
+    env = copy.deepcopy(hd_env())
+
+    def bend(node):
+        if isinstance(node, dict):
+            if node.get("idShort") == element:
+                node["modelType"] = kind
+                node.pop("value", None)
+                node.pop("valueType", None)
+                return True
+            return any(bend(v) for v in node.values())
+        if isinstance(node, list):
+            return any(bend(v) for v in node)
+        return False
+
+    assert bend(env), "the fixture has no %s to bend" % element
+    findings = _findings(tmp_path, env)
+    for finding in findings.values():
+        assert "could not run" not in finding.violation.message, \
+            "%s crashed on a %s declared as a %s" % (finding.id, element, kind)

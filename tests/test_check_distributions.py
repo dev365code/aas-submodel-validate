@@ -69,6 +69,16 @@ def test_the_licence_files_come_from_the_configuration_not_a_list():
     DIST_INFO + "/NOTICE.internal.md",
     DIST_INFO + "/licenses/NOTICE.internal.md",
     DIST_INFO + "/licenses/notes.md",
+    # Named like something this repository tracks, which is what made
+    # the second version of the mapping let them past: it relocated
+    # anything to the tree root, and the tree has a README, a Makefile
+    # and a pyproject. None of them has any business in a metadata
+    # directory.
+    DIST_INFO + "/README.md",
+    DIST_INFO + "/Makefile",
+    DIST_INFO + "/pyproject.toml",
+    DIST_INFO + "/CHANGELOG.md",
+    DIST_INFO + "/.gitignore",
 ])
 def test_something_that_only_looks_like_one_is_still_asked_about(member):
     """setuptools' default glob collects `NOTICE*` from the top of the
@@ -78,7 +88,25 @@ def test_something_that_only_looks_like_one_is_still_asked_about(member):
     gate = _gate()
     recovered = gate._repository_path(member)
     assert not gate.is_build_metadata(recovered)
-    assert not (ROOT / recovered).is_file() or recovered in gate.licence_files()
+    # The member's own name, unmoved. Written first as "either it is not
+    # a file in the tree, or it is a declared licence file" -- an `or`
+    # with an escape hatch, and a wrong answer walked through it: a bug
+    # made this return `THIRD_PARTY.md` for every one of these, which is
+    # a file *and* a declared licence file, so the assertion held while
+    # the mapping was answering nonsense. Asked of the correspondence
+    # now, not of the result's membership in a set.
+    # Where the member itself points, not merely somewhere plausible.
+    # Written first as "either it is not a file in the tree, or it is a
+    # declared licence file" -- an `or` with an escape hatch, and a wrong
+    # answer walked through it: a bug made this return `THIRD_PARTY.md`
+    # for every one of these, which is a file *and* a declared licence
+    # file, so the assertion held while the mapping answered nonsense.
+    # Asked of the correspondence now.
+    expected = member.split("/licenses/", 1)[-1] if "/licenses/" in member \
+        else member
+    assert recovered == expected, \
+        "%s was recovered as %r, which is neither it nor its own name " \
+        "under licenses/" % (member, recovered)
 
 
 @pytest.mark.parametrize("member", [

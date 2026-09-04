@@ -67,12 +67,24 @@ def test_no_distribution_rule_names_a_file_this_project_does_not_ship():
     # the check passed there having asked nothing, and raised
     # FileNotFoundError anywhere git is not installed, which is most
     # distribution build environments.
+    # Read from the directory, minus what `.gitignore` keeps out of it.
+    # Asking git instead was empty in an unpacked sdist and raised where
+    # git is absent; asking the directory alone failed `make check` the
+    # moment somebody put a working note in `docs/` -- and told them the
+    # note was "published here and would not reach an sdist", whose
+    # remedy is to add it to the manifest, which is the leak this list
+    # exists to prevent.
+    local = {line.strip().lstrip("/").split("/", 1)[-1]
+             for line in (root / ".gitignore").read_text(encoding="utf-8").splitlines()
+             if line.startswith("/docs/")}
     published = sorted(p.name for p in (root / "docs").iterdir()
-                       if p.is_file() and not p.name.startswith("."))
+                       if p.is_file() and not p.name.startswith(".")
+                       and p.name not in local)
     assert published, "docs/ holds nothing"
     for name in published:
         assert "include docs/%s" % name in manifest, \
-            "docs/%s is published here and would not reach an sdist" % name
+            "docs/%s would not reach an sdist; name it in MANIFEST.in, or " \
+            "keep it out of docs/ if it is not meant to travel" % name
 
 
 def test_nothing_local_is_tracked():
@@ -90,8 +102,11 @@ def test_nothing_local_is_tracked():
     import pathlib
     import subprocess
     root = pathlib.Path(__file__).resolve().parents[1]
-    listed = subprocess.run(["git", "ls-files"], cwd=str(root),
-                            capture_output=True, text=True)
+    try:
+        listed = subprocess.run(["git", "ls-files"], cwd=str(root),
+                                capture_output=True, text=True)
+    except OSError:                    # git is not installed
+        pytest.skip("git is not available")
     if listed.returncode != 0:
         pytest.skip("not a git checkout")
     tracked = set(listed.stdout.split())

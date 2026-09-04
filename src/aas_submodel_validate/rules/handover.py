@@ -29,6 +29,7 @@ the shape this repository keeps finding in its own gates.
 from __future__ import annotations
 
 import aas_core3.verification as verification
+from aas_core3.types import MultiLanguageProperty
 
 from ..model import Violation
 from ..registry import rule
@@ -161,10 +162,20 @@ def _d4(tables):
                 # a different thing -- the metamodel allows it and the
                 # row accepts it -- and still has to be reported as no
                 # English entry, so only the wrong kind is passed over.
-                if name.value is not None and not isinstance(name.value, list):
+                # By kind, not by what the value happens to look like.
+                # A `Property` gives a bare string here and a `Range` or
+                # a `Capability` has no `value` at all -- the first was
+                # guarded against and the second still raised, and both
+                # were reported as "the rule itself could not run: a
+                # defect in the validator, not in your file". The defect
+                # is in the file, and the generated rule beside this one
+                # says which element and which kind. An element of the
+                # wrong kind is that rule's to report, so this one stays
+                # silent; an *empty* one is this rule's, because the
+                # metamodel allows it and the row accepts it.
+                if not isinstance(name, MultiLanguageProperty):
                     continue
-                languages = {entry.language for entry in (name.value or [])
-                             if hasattr(entry, "language")}
+                languages = {entry.language for entry in (name.value or [])}
                 english = any(_english(lang) for lang in languages)
                 if not english:
                     yield Violation("ClassName has no English entry",

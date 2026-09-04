@@ -168,15 +168,31 @@ def _repository_path(name: str) -> str:
         if rest[:1] == ["licenses"]:
             return "/".join(rest[1:])
         if len(rest) == 1 and rest[0] not in METADATA_MEMBERS:
-            # Where the build took it from, which for anything the build
-            # system did not write itself is the top of the tree. Asked
-            # of the member's own name rather than of the configured
-            # list: reading `license-files` out of the TOML with a regex
-            # made a glob, a single quote or a deleted key answer "no
-            # licence files", and every one of those rejected a correct
-            # build -- the failure this whole file exists not to cause.
-            # The name is what the archive holds either way.
-            return rest[0]
+            # Where the build took it from. Before setuptools 77 the
+            # licence files sit here rather than under `licenses/`, and
+            # this project's build requirement admits that version, so
+            # the tracked-files rule has to be asked of the tree root
+            # for those -- and only for those.
+            #
+            # Both earlier versions of this were wrong in opposite
+            # directions. Naming `LICENSE` and `NOTICE` in a list here
+            # rejected `THIRD_PARTY.md` the day it was added: a correct
+            # build refused. Relocating anything by name let
+            # `<dist-info>/README.md` through, because the tree has a
+            # README -- the gate's teeth pulled, measured against eight
+            # such names.
+            #
+            # So: the declared list decides, and when it cannot be read
+            # the fallback is the permissive one, because refusing a
+            # correct build is the worse of the two failures and a
+            # configuration this cannot parse is a configuration nobody
+            # is hiding a payload in.
+            declared = licence_files()
+            if not declared:
+                return rest[0]
+            for candidate in declared:
+                if pathlib.PurePosixPath(candidate).name == rest[0]:
+                    return candidate
     return name
 
 

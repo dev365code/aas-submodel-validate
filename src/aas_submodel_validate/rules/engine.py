@@ -300,7 +300,20 @@ def child_of(element, label: str, tables):
     disagree about which child is which (docs/divergences.md #11)."""
     row = tables.BY_LABEL[label]
     parent_is_list = type(element).__name__ == "SubmodelElementList"
-    for child in getattr(element, "value", None) or []:
+    # The same guard `children_of` has had since it was written. An
+    # element declared as the wrong kind has a `value` that is a string,
+    # or none at all: a `Property` where a collection belongs gives one,
+    # a `Range` or a `Capability` has no `value` attribute. Iterating the
+    # first yields characters and the second raises, and either way the
+    # rule was reported as having crashed -- "a defect in the validator,
+    # not in your file" -- about a defect in the file that the generated
+    # rule beside it names exactly. Absence is what this returns for any
+    # child it cannot find, and a child of the wrong kind is one of
+    # those; the generated cardinality and kind rules are what speak.
+    value = getattr(element, "value", None)
+    if not isinstance(value, list):
+        return None
+    for child in value:
         if _child_matches(child, row, parent_is_list):
             return child
     return None
