@@ -16,7 +16,7 @@ from . import (
     rules,  # noqa: F401  - importing registers every rule
 )
 from .loader import Loaded, load
-from .model import KINDS, Finding, Report, Rule, Violation
+from .model import KINDS, META_KIND, Finding, Report, Rule, Violation
 from .registry import all_rules
 from .rules import detect
 
@@ -74,7 +74,7 @@ def _meta_rule(strict: bool) -> Rule:
     for shops that want the metamodel enforced too.
     """
     return Rule(
-        id="META", kind="meta", prio="MUST" if strict else "SHOULD",
+        id="META", kind=META_KIND, prio="MUST" if strict else "SHOULD",
         title="the AAS metamodel, verified by aas-core3.0",
         spec="IDTA 01001 (metamodel constraints)",
         fn=lambda ctx: (),

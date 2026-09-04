@@ -293,3 +293,99 @@ def test_warnings_as_errors_needs_a_warning_not_a_vibe(tmp_path):
     assert main([str(warmed)]) == 0
     assert main([str(warmed), "--warnings-as-errors"]) == 1
 
+
+
+def test_warnings_as_errors_leaves_the_relayed_channel_alone(tmp_path, capsys):
+    """`-W` is about this tool's warnings, and the metamodel channel has
+    a flag of its own.
+
+    Two flags governed one channel and the broader one won, so a build
+    could not use `-W` at all: the official example this project ships
+    raises eighty-seven warnings, seventy-seven of them relayed from
+    aas-core3.0 about IDTA's own concept descriptions, and every one of
+    them failed a `-W` build over something no edit to the submodel can
+    fix. `--strict-meta` exists for exactly that promotion and is the
+    only thing that should perform it."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"][0]["value"][0]["idShort"] = "Datasheet"
+    path = _write(tmp_path, json.dumps(env).encode("utf-8"))
+    assert main(["-f", "json", path]) == 0
+    report = json.loads(capsys.readouterr().out)
+    warnings = [f for f in report["findings"] if f["severity"] == "warning"]
+    assert warnings and all(f["kind"] == "meta" for f in warnings), (
+        "this fixture is meant to raise metamodel warnings and nothing else")
+    assert main(["-W", path]) == 0
+    assert main(["-W", "--strict-meta", path]) == 1
+
+
+def test_require_all_judged_turns_the_coverage_number_into_a_verdict(tmp_path):
+    """`judged 1 of 3 submodels` and `exit 0` is a silent pass.
+
+    An environment carries submodels this tool has no business judging,
+    so an unjudged one stays a number rather than a finding -- but a
+    pipeline written as `smtv pkg.aasx && ship` reads the exit code and
+    nothing else, and sees success for a package two thirds of which was
+    never looked at. The number was already in the report; what was
+    missing was a way to make it decide."""
+    env = copy.deepcopy(hd_env())
+    stranger = copy.deepcopy(env["submodels"][0])
+    stranger["id"] = "urn:some:other:submodel"
+    stranger["semanticId"]["keys"][0]["value"] = "urn:not:a:template:we:have"
+    env["submodels"].append(stranger)
+    path = _write(tmp_path, json.dumps(env).encode("utf-8"))
+    assert main([path]) == 0
+    assert main(["--require-all-judged", path]) == 1
+
+
+def test_the_relayed_channel_is_summarised_until_it_is_asked_for(tmp_path, capsys):
+    """Seventy-seven relayed lines bury the ten the reader came for.
+
+    The official example this project points a newcomer at raises
+    eighty-seven warnings, and seventy-seven of them are aas-core3.0
+    speaking about IDTA's own concept descriptions -- all carrying one
+    remedy sentence that no edit to the submodel can act on. Printed in
+    full they are the first thing a stranger sees, and the verdict is
+    two hundred and seventy lines below.
+
+    Counted, never dropped: the summary line still totals them and the
+    JSON report is untouched, because a reader who cannot see a finding
+    must at least be told it exists and how to read it."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"][0]["value"][0]["idShort"] = "Datasheet"
+    path = _write(tmp_path, json.dumps(env).encode("utf-8"))
+
+    assert main([path]) == 0
+    folded = capsys.readouterr().out
+    assert "--show-meta" in folded, "the fold has to say how to open it"
+    assert "META" not in folded.split("--show-meta")[1], (
+        "a folded channel prints no finding of its own")
+
+    assert main(["--show-meta", path]) == 0
+    opened = capsys.readouterr().out
+    assert "META" in opened
+    assert len(opened.splitlines()) > len(folded.splitlines())
+
+    # Folding is a rendering choice, not a change of verdict: the count
+    # in the summary and the JSON a pipeline reads both stay whole.
+    assert folded.splitlines()[-1] == opened.splitlines()[-1]
+    assert main(["-f", "json", path]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert sum(1 for f in report["findings"] if f["kind"] == "meta") > 0
+
+
+def test_a_promoted_relay_is_never_folded_away(tmp_path, capsys):
+    """`--strict-meta` makes this channel the verdict, and a verdict is
+    printed.
+
+    The fold exists for a relayed warning nobody asked to be judged by.
+    Once the flag has made those findings errors they decide the exit
+    code, and the first version folded them anyway -- a run that exited 1
+    with no error on the screen. Caught by a test written for a different
+    flag, which is the only reason it was not shipped."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["submodelElements"][0]["value"][0]["idShort"] = "Datasheet"
+    path = _write(tmp_path, json.dumps(env).encode("utf-8"))
+    assert main(["--strict-meta", path]) == 1
+    out = capsys.readouterr().out
+    assert "error   META" in out
+    assert "--show-meta" not in out

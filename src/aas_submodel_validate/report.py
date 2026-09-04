@@ -1,7 +1,7 @@
 """Rendering a report for a person at a terminal."""
 from __future__ import annotations
 
-from .model import Report, Severity
+from .model import META_KIND, Report, Severity
 
 
 def _safe(text) -> str:
@@ -23,9 +23,34 @@ def _safe(text) -> str:
         for ch in str(text))
 
 
-def render(report: Report) -> str:
+def render(report: Report, *, show_meta: bool = False) -> str:
+    """The report as a person reads it.
+
+    The metamodel channel is folded by default. It is relayed from
+    aas-core3.0 about the metamodel, upstream of any template, and on
+    the official example this project points a newcomer at it is
+    seventy-seven of eighty-seven findings -- every one of them carrying
+    the same remedy sentence, which no edit to the submodel can act on.
+    Printed in full they are the first thing a stranger sees and the
+    verdict is two hundred lines below them.
+
+    Folded, not dropped. The summary line still counts them, the JSON
+    report is untouched, and the fold says how many there are and which
+    flag opens it: a reader who cannot see a finding must at least be
+    told that it exists. And never folded once `--strict-meta` has made
+    them errors, because then they are the verdict.
+    """
     lines = []
+    folded = 0
     for finding in report.findings:
+        # Never an error. `--strict-meta` promotes this channel to the
+        # verdict, and a finding that decided the exit code has to be on
+        # the screen -- folding is for a relayed warning nobody asked to
+        # be judged by, not for the reason a run failed.
+        if (finding.rule.kind == META_KIND and not show_meta
+                and finding.severity is not Severity.ERROR):
+            folded += 1
+            continue
         head = "%-7s %-8s %s" % (finding.severity, finding.id, _safe(finding.violation.message))
         lines.append(head)
         if finding.violation.subject:
@@ -34,6 +59,13 @@ def render(report: Report) -> str:
             lines.append("        saw  %s" % _safe(finding.violation.detail))
         if finding.fix:
             lines.append("        fix: %s" % _safe(finding.fix))
+    if folded:
+        # Where they would have been printed: the reading order puts this
+        # channel last, so the fold sits under the findings it stands in
+        # for rather than above them.
+        lines.append("%-7s %-8s %d finding%s relayed from aas-core3.0 about the "
+                     "metamodel, upstream of any template (--show-meta lists them)"
+                     % ("", "", folded, "" if folded == 1 else "s"))
     for note in report.notes:
         lines.append("note    %s" % _safe(note))
     # Hoisted above the branch, not attached to one of them. Today only

@@ -58,6 +58,14 @@ PRIO_SEVERITY = {
 #: is the whole reason it is a copy.
 KINDS = ("container", "template", "lint", "meta")
 
+#: The one relayed kind, named once. Everything in the other three is
+#: this project's own reading of a template; this one is aas-core3.0
+#: speaking about the metamodel, and two flags decide its severity and
+#: whether `-W` may promote it. Spelled as a literal in three places
+#: before, which is two places for the spelling to drift.
+META_KIND = "meta"
+assert META_KIND in KINDS
+
 
 @dataclass(frozen=True)
 class Violation:
