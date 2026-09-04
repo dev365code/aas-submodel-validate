@@ -50,10 +50,10 @@ anything and have no attestation to find.
 judges nothing, so every flag about judging is a question it does not
 answer: `-q`, `-f json`, `-W`, `--allow-unmatched`,
 `--require-all-judged`, `--show-meta`, `--profile` and a path all exit 2
-now, naming what would have been dropped. Five of those — `-q`,
-`-f json`, `-W`, `--allow-unmatched` and `--profile` — were accepted and
-silently ignored in 0.1.0, so a command that worked may now fail. The
-other two flags are new in this release. `--meta` (and its older
+now, naming what would have been dropped. Six of those — `-q`,
+`-f json`, `-W`, `--allow-unmatched`, `--profile` and a path — were
+accepted and silently ignored in 0.1.0, so a command that worked may now
+fail. The two flags not in that list are new in this release. `--meta` (and its older
 spelling `--strict-meta`) is what `--rules` reads, because that changes
 the listing.
 

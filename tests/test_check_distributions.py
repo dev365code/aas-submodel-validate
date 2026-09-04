@@ -67,6 +67,11 @@ METADATA_SPELLINGS = (
     "Metadata-Version: 2.4\nName: x\nLicense-File: LICENSE\n"
     "License-File: NOTICE\nLicense-File: THIRD_PARTY.md\n"
     "\n# aas-submodel-validate\n\nLicense-File: docs/scope.md\n",
+    # The same file as written on Windows. `\r\n\r\n` is not `\n\n`,
+    # so the boundary was not found and the description was read again.
+    ("Metadata-Version: 2.4\r\nName: x\r\nLicense-File: LICENSE\r\n"
+     "License-File: NOTICE\r\nLicense-File: THIRD_PARTY.md\r\n"
+     "\r\n# aas-submodel-validate\r\n\r\nLicense-File: docs/scope.md\r\n"),
 )
 
 
@@ -115,12 +120,19 @@ def test_the_configuration_still_names_them_explicitly():
     list or an indented key -- so changing the spelling of a setting
     that still names all three failed the suite saying the
     configuration no longer names them."""
-    configuration = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    assert "license-files" in configuration, \
-        "nothing overrides setuptools' default licence glob"
+    lines = (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines()
+    start = [i for i, line in enumerate(lines)
+             if line.startswith("license-files")]
+    assert start, "nothing overrides setuptools' default licence glob"
+    setting = []
+    for line in lines[start[0]:]:
+        setting.append(line)
+        if "]" in line:
+            break
+    block = "\n".join(setting)
     for name in ("LICENSE", "NOTICE", "THIRD_PARTY.md"):
-        assert name in configuration.split("license-files", 1)[1][:400], \
-            "%s is attributed and the configuration does not name it" % name
+        assert name in block, \
+            "%s is attributed and license-files does not name it" % name
 
 
 @pytest.mark.parametrize("member", [
@@ -170,6 +182,30 @@ def test_something_that_only_looks_like_one_is_still_asked_about(member):
 ])
 def test_what_the_build_system_writes_is_still_exempt(member):
     assert _gate().is_build_metadata(member)
+
+
+@pytest.mark.parametrize("filename,ours", [
+    ("aas_submodel_validate-0.1.1-py3-none-any.whl", True),
+    ("aas_submodel_validate-0.1.1.tar.gz", True),
+    # setuptools normalised sdist filenames in 69.3, and this project's
+    # build requirement admits the versions that write hyphens. Knowing
+    # one spelling meant an sdist built with an older one matched
+    # nothing and was skipped without a word; the change that fixed it
+    # had no test, and reverting it left the whole suite green.
+    ("aas-submodel-validate-0.1.1.tar.gz", True),
+    # Somebody else's. The release downloads the dependency wheel into
+    # the same directory so the offline route resolves, and every file
+    # inside another project's wheel is untracked here -- true, and not
+    # this gate's business.
+    ("aas_core3_0-1.1.4-py3-none-any.whl", False),
+    ("aas-core3.0-1.1.4.tar.gz", False),
+])
+def test_the_gate_looks_at_this_projects_artifacts_and_no_others(filename, ours):
+    import pathlib
+    prefixes = _gate().OURS
+    assert filename.startswith(prefixes) is ours, filename
+    assert (pathlib.Path(filename).suffix == ".whl"
+            or filename.endswith(".tar.gz"))
 
 
 def test_a_note_planted_inside_a_metadata_directory_is_not_exempt():

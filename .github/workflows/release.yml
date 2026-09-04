@@ -151,7 +151,7 @@ jobs:
             Put both in a directory and run
             `python3 -m pip install --no-index --find-links . aas-submodel-validate`
             (`pip3` works too, where that is the spelling). The
-            `aas_core3.0` wheel is the one dependency; without it that
+            `aas_core3_0-…` wheel is the one dependency; without it that
             command has nothing to resolve. Under 400 KB together.
           - the `.tar.gz` — the source, for anyone building it themselves.
           - `SHA256SUMS` — the checksums for everything above.

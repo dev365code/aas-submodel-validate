@@ -49,6 +49,14 @@ import zipfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 
+#: Both spellings of this project's own name. setuptools normalised
+#: sdist filenames to underscores in 69.3 (PEP 625) and writes hyphens
+#: before that, and `requires = ["setuptools>=64"]` admits those -- so an
+#: sdist built with an older one matched nothing and was skipped in
+#: silence, with the summary line still counting what it had looked at.
+#: Named here so a test can ask what the gate considers its own.
+OURS = ("aas_submodel_validate-", "aas-submodel-validate-")
+
 #: Tracked, published here, and deliberately not shipped.
 NOT_A_PAYLOAD = "data/battery-passport/"
 
@@ -90,7 +98,10 @@ def _licence_files(text: str) -> tuple:
     as a declaration. Measured: a line like that in the README made the
     gate accept a planted file of that name.
     """
-    headers = text.split("\n\n", 1)[0]
+    # Normalised first: a metadata file written on Windows separates its
+    # headers from the description with `\r\n\r\n`, so splitting on
+    # `\n\n` found no boundary and read the description again.
+    headers = text.replace("\r\n", "\n").split("\n\n", 1)[0]
     return tuple(line.split(":", 1)[1].strip()
                  for line in headers.splitlines()
                  if line.startswith("License-File:"))
@@ -256,9 +267,8 @@ def main() -> int:
     # those -- so an sdist built with an older one matched nothing here
     # and was skipped in silence, with the summary line still counting
     # what it had looked at.
-    ours = ("aas_submodel_validate-", "aas-submodel-validate-")
     artifacts = sorted(p for p in DIST.iterdir()
-                       if p.name.startswith(ours)
+                       if p.name.startswith(OURS)
                        and (p.suffix == ".whl" or p.name.endswith(".tar.gz")))
     if not artifacts:
         print("no distributions in dist/ -- build them first", file=sys.stderr)
