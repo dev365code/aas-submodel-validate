@@ -59,7 +59,14 @@ def test_a_declared_licence_file_is_recognised_in_either_placement(member):
 METADATA_SPELLINGS = (
     "License-File: LICENSE\nLicense-File: NOTICE\nLicense-File: THIRD_PARTY.md\n",
     "Metadata-Version: 2.4\nName: x\nLicense-File: LICENSE\n"
-    "License-File: NOTICE\nLicense-File: THIRD_PARTY.md\nDescription\n",
+    "License-File: NOTICE\nLicense-File: THIRD_PARTY.md\nSummary: x\n",
+    # Headers, a blank line, then the description -- which for this
+    # project is the README. A line in prose that looks like a header
+    # was read as one, so a sentence in the README could make the gate
+    # accept a planted file of that name.
+    "Metadata-Version: 2.4\nName: x\nLicense-File: LICENSE\n"
+    "License-File: NOTICE\nLicense-File: THIRD_PARTY.md\n"
+    "\n# aas-submodel-validate\n\nLicense-File: docs/scope.md\n",
 )
 
 
@@ -101,11 +108,19 @@ def test_the_configuration_still_names_them_explicitly():
     """Not what the gate reads, and still worth asking: setuptools'
     default glob sweeps `NOTICE*` and `LICEN[CS]E*` from the top of the
     tree, so an untracked working note gets copied into the wheel. An
-    explicit list is what stops that."""
-    gate = _gate()
-    declared = gate.declared_licence_files()
-    assert "THIRD_PARTY.md" in declared, \
-        "the configuration no longer names the attribution files"
+    explicit list is what stops that.
+
+    Asked of the text, not of a parse of it. This used to call the
+    gate's own regular expression, which cannot read a single-quoted
+    list or an indented key -- so changing the spelling of a setting
+    that still names all three failed the suite saying the
+    configuration no longer names them."""
+    configuration = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert "license-files" in configuration, \
+        "nothing overrides setuptools' default licence glob"
+    for name in ("LICENSE", "NOTICE", "THIRD_PARTY.md"):
+        assert name in configuration.split("license-files", 1)[1][:400], \
+            "%s is attributed and the configuration does not name it" % name
 
 
 @pytest.mark.parametrize("member", [

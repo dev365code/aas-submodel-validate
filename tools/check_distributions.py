@@ -41,7 +41,6 @@ Run after `python -m build`. Exits 1 and names every offending member.
 from __future__ import annotations
 
 import pathlib
-import re
 import subprocess
 import sys
 import tarfile
@@ -84,34 +83,17 @@ def _licence_files(text: str) -> tuple:
     `license-files` said -- a glob arrives here as the names it matched.
     So this answers for every spelling, which is the thing reading the
     configuration could not do.
+
+    Headers only. A metadata file is headers, one blank line, then the
+    project description -- which for this project is its README -- and
+    reading the whole file took a `License-File:` line written in prose
+    as a declaration. Measured: a line like that in the README made the
+    gate accept a planted file of that name.
     """
+    headers = text.split("\n\n", 1)[0]
     return tuple(line.split(":", 1)[1].strip()
-                 for line in text.splitlines()
+                 for line in headers.splitlines()
                  if line.startswith("License-File:"))
-
-
-def declared_licence_files() -> tuple:
-    """The attribution files the build is configured to relocate.
-
-    Which files the build relocates into its metadata directory, and so
-    which members of one came from the top of the tree. The mapping
-    below asks this; nothing else does.
-
-    Read with a regular expression, which cannot answer for a glob, a
-    single-quoted list or an indented key -- it returns nothing for each
-    of those. That is why the mapping treats an empty answer as "no
-    opinion" and falls back to the permissive reading: refusing a
-    correct build is the worse of the two failures. The cost is that the
-    gate loses its teeth under exactly those spellings, and this
-    project's own configuration is not one of them.
-
-    A test also asks whether the configuration names them explicitly,
-    which is what stops setuptools' default glob from sweeping a working
-    note into the distribution.
-    """
-    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    listed = re.search(r"(?m)^license-files\s*=\s*\[([^\]]*)\]", text)
-    return tuple(re.findall(r'"([^"]+)"', listed.group(1))) if listed else ()
 
 
 def _in_metadata_dir(path: str) -> bool:
@@ -268,8 +250,15 @@ def main() -> int:
     # every file in somebody else's wheel is untracked here -- which is
     # true, and not a defect, and would have been reported as hundreds
     # of them the first time the two steps were reordered.
+    # Both spellings of this project's own name. setuptools normalised
+    # sdist filenames to underscores in 69.3 (PEP 625) and writes
+    # hyphens before that, and `requires = ["setuptools>=64"]` admits
+    # those -- so an sdist built with an older one matched nothing here
+    # and was skipped in silence, with the summary line still counting
+    # what it had looked at.
+    ours = ("aas_submodel_validate-", "aas-submodel-validate-")
     artifacts = sorted(p for p in DIST.iterdir()
-                       if p.name.startswith("aas_submodel_validate-")
+                       if p.name.startswith(ours)
                        and (p.suffix == ".whl" or p.name.endswith(".tar.gz")))
     if not artifacts:
         print("no distributions in dist/ -- build them first", file=sys.stderr)
@@ -303,7 +292,7 @@ def main() -> int:
         print("distribution: %s" % problem, file=sys.stderr)
     if problems:
         return 1
-    print("distributions: %d checked, neither carries what it must not"
+    print("distributions: %d checked, none carries what it must not"
           % len(artifacts))
     return 0
 
