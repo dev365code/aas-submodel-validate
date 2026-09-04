@@ -20,7 +20,8 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
   "ok": false,
   "options": {"profile": null, "strictMeta": false, "allowUnmatched": false},
   "summary": {"errors": 1, "warnings": 0, "info": 0, "rulesChecked": 125,
-              "complete": true, "judged": true},
+              "complete": true, "judged": true,
+              "submodelsSeen": 1, "submodelsJudged": 1},
   "notes": [],
   "findings": [
     {
@@ -117,6 +118,8 @@ its findings are real. Three outcomes, then: a full verdict, a partial
 one, and no verdict at all. Without them a refused input arrived as
 `ok: false` with one error and every rule counted, which is exactly what
 a judged file that failed looks like.
+| `submodelsSeen` | integer | How many submodels the input holds. |
+| `submodelsJudged` | integer | How many of them a template this tool has a table for answered for. The difference is not a defect — an environment carries submodels this tool has no business judging — but without the number a report is silent about them: `SMT-D1` speaks only when *nothing* matched. This is the coverage figure that means something here; the fraction of rules that ran does not, because most rules are about other templates and their silence says nothing. |
 
 ## `findings`
 

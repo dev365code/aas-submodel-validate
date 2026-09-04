@@ -41,12 +41,21 @@ def render(report: Report) -> str:
     # error has a rule to report it -- but that is a fact about the rules,
     # not about the summary, and the summary is what promises to say so.
     incomplete = "" if report.complete else " (not a full verdict: some of it was not read)"
+    # How much of the file a template answered for, said in both forms.
+    # A submodel this tool has no table for is not a defect, so it is a
+    # number rather than a finding -- but a report that omits the number
+    # lets a reader believe the whole file was judged.
+    judged = ""
+    if report.submodels_seen:
+        judged = " · judged %d of %d submodel%s" % (
+            report.submodels_judged, report.submodels_seen,
+            "" if report.submodels_seen == 1 else "s")
     if report.ok and not report.findings and not report.notes:
         # "rules registered", not "rules checked": a Technical Data file
         # is not judged by 02004's fifty-two, and a run that says it
         # checked them has told the reader something it did not do.
-        lines.append("ok — %s (%d rules registered)%s"
-                     % (report.path, report.checked, incomplete))
+        lines.append("ok — %s (%d rules registered%s)%s"
+                     % (report.path, report.checked, judged, incomplete))
     else:
         # The third count is INFO findings. It said "note(s)" and the
         # report has notes of its own, printed above and not counted
@@ -56,7 +65,7 @@ def render(report: Report) -> str:
         # file summarises as one error, which is what a judged file that
         # failed looks like -- the JSON report grew a field to tell those
         # apart and the person at the terminal is owed the same sentence.
-        lines.append("%d error(s), %d warning(s), %d info — %s%s"
+        lines.append("%d error(s), %d warning(s), %d info — %s%s%s"
                      % (report.count(Severity.ERROR), report.count(Severity.WARNING),
-                        report.count(Severity.INFO), report.path, incomplete))
+                        report.count(Severity.INFO), report.path, judged, incomplete))
     return "\n".join(lines)

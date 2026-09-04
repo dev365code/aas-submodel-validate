@@ -187,6 +187,12 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     coverage = rules.battery.coverage_note(loaded.submodels)
     if coverage is not None:
         report.notes.append(coverage)
+    # How much of the input a template answered for. Counted from the
+    # same helper the presence rule uses, so the number and the finding
+    # cannot disagree about what "judged" means.
+    report.submodels_seen = len(loaded.submodels)
+    report.submodels_judged = len({id(submodel) for _pack, submodel
+                                   in detect.matched(Context(loaded, rules.profiles.Selection(profile)))})
     report.findings.sort(key=_reading_order)
     report.checked = len(rules_to_run)
     # Every load error means content that was not read: an archive that

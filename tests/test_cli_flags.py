@@ -160,7 +160,7 @@ def test_a_run_with_a_note_does_not_call_itself_ok(tmp_path, capsys):
     clean = tmp_path / "clean.json"
     clean.write_bytes(json.dumps(hd_env()).encode("utf-8"))
     assert main([str(clean)]) == 0
-    assert "rules registered)" in capsys.readouterr().out
+    assert "rules registered · judged 1 of 1 submodel)" in capsys.readouterr().out
 
 
 def test_the_json_a_pipeline_reads_is_the_shape_it_was_promised(tmp_path, capsys):

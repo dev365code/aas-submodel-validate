@@ -155,6 +155,15 @@ class Report:
     #: none to read. A report that says a file failed and does not say
     #: which bytes it read is an assertion about a filename.
     input_sha256: Optional[str] = None
+    #: How much of the input was looked at. Not a fraction of the rules
+    #: -- most of those are about other templates and their silence means
+    #: nothing -- but of the submodels the file actually holds. An
+    #: environment carries submodels this tool has no business judging,
+    #: so an unjudged one is a number and not a finding; without the
+    #: number the report says nothing about it at all, because `SMT-D1`
+    #: speaks only when *nothing* matched.
+    submodels_seen: int = 0
+    submodels_judged: int = 0
 
     def count(self, severity: Severity) -> int:
         return sum(1 for f in self.findings if f.severity is severity)
@@ -206,6 +215,8 @@ class Report:
                 # not know the key reads exactly what it read before.
                 "complete": self.complete,
                 "judged": self.judged,
+                "submodelsSeen": self.submodels_seen,
+                "submodelsJudged": self.submodels_judged,
             },
             "notes": self.notes,
             "findings": [f.as_dict() for f in self.findings],

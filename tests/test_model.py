@@ -78,7 +78,8 @@ V1_REQUIRED = {"schemaVersion", "toolVersion", "path", "ok", "options",
 #: `inputSha256` is not reserved -- it is computed, because the one thing
 #: this tool can say for certain is which bytes it read.
 V1_PROVENANCE = {"inputSha256", "engine", "envelope"}
-V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete", "judged"}
+V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete", "judged",
+              "submodelsSeen", "submodelsJudged"}
 V1_OPTIONS = {"profile", "strictMeta", "allowUnmatched"}
 V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
               "detail", "fix", "title", "spec"}
@@ -144,7 +145,8 @@ def test_the_summary_counts_what_it_says_it_counts():
     document = _report().as_dict()
     assert document["summary"] == {"errors": 1, "warnings": 2, "info": 3,
                                    "rulesChecked": 123, "complete": True,
-                                   "judged": True}
+                                   "judged": True, "submodelsSeen": 0,
+                                   "submodelsJudged": 0}
 
 
 def test_the_report_says_what_was_asked_of_it():
@@ -189,7 +191,8 @@ def test_the_report_says_what_the_types_promise():
     assert isinstance(document["summary"]["complete"], bool)
     assert isinstance(document["summary"]["judged"], bool)
     assert isinstance(document["toolVersion"], str)
-    for counter in ("errors", "warnings", "info", "rulesChecked"):
+    for counter in ("errors", "warnings", "info", "rulesChecked",
+                    "submodelsSeen", "submodelsJudged"):
         assert isinstance(document["summary"][counter], int), counter
     # The flags especially. `1 == True` in Python, so a value assertion
     # comparing the options dict passes while `json.dumps` writes
@@ -305,4 +308,42 @@ def test_a_report_of_nothing_still_names_its_provenance():
     document = Report(path="nowhere.json").as_dict()
     assert set(document["provenance"]) == PROVENANCE_KEYS
     assert document["provenance"]["inputSha256"] is None
+
+
+def test_the_summary_says_how_much_of_the_input_was_judged(tmp_path):
+    """The coverage figure a reader actually needs: not what fraction of
+    the rules ran -- most of them are about other templates and their
+    silence means nothing -- but how much of *this file* was looked at.
+
+    An environment holds submodels this tool has no business judging, so
+    a submodel it did not judge is not a finding. It is a number, and
+    without it the report is silent about it: `SMT-D1` fires only when
+    *nothing* matched, so a file whose one Handover submodel was judged
+    and whose two others were not read exactly like a file with one
+    submodel."""
+    from aas_submodel_validate import runner
+    from builders import hd_env
+    env = hd_env()
+    for identifier in ("urn:someone:else", "urn:another:thing"):
+        env["submodels"].append({
+            "modelType": "Submodel", "id": identifier, "idShort": "Other",
+            "semanticId": {"type": "ExternalReference",
+                           "keys": [{"type": "GlobalReference", "value": identifier}]},
+            "submodelElements": []})
+    path = tmp_path / "three.json"
+    path.write_bytes(json.dumps(env).encode("utf-8"))
+    summary = runner.run(path).as_dict()["summary"]
+    assert summary["submodelsSeen"] == 3
+    assert summary["submodelsJudged"] == 1
+
+
+def test_the_console_says_it_too(tmp_path):
+    """The person at the terminal is owed the same sentence as the
+    machine reading the JSON."""
+    from aas_submodel_validate import runner
+    from aas_submodel_validate.report import render
+    from builders import hd_env
+    path = tmp_path / "one.json"
+    path.write_bytes(json.dumps(hd_env()).encode("utf-8"))
+    assert "1 of 1 submodel" in render(runner.run(path))
 
