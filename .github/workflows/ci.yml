@@ -88,6 +88,25 @@ jobs:
           python-version: "3.12"
       - run: pip install build
       - run: python -m build --wheel --outdir dist/
+
+      - name: the suite runs from an unpacked sdist, as MANIFEST.in promises
+        # `MANIFEST.in` opens by saying a downstream packager who
+        # unpacks the sdist and runs pytest must find a runnable suite,
+        # and nothing measured it: the suite runs here from a checkout,
+        # where files an sdist does not carry are present. That promise
+        # has broken more than once -- a test that shelled out to git,
+        # a test that read `.gitignore` -- and each time it was found by
+        # hand rather than here. Nothing installed: the
+        # unpacked tree is put on the path exactly as a packager would
+        # find it.
+        run: |
+          python -m build --sdist --outdir dist/
+          rm -rf unpacked && mkdir unpacked
+          tar -xzf dist/*.tar.gz -C unpacked
+          cd unpacked/*/
+          PYTHONPATH="$PWD/src:$PWD/tests" python -m pytest -q
+          rm -rf "$GITHUB_WORKSPACE/unpacked"
+
       - name: the wheel must carry the vendored template and not the corpus
         run: |
           python - <<'PY'

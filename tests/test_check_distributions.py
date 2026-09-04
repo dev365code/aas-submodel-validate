@@ -144,6 +144,17 @@ def test_the_configuration_still_names_them_explicitly():
     DIST_INFO + "/NOTICE.internal.md",
     DIST_INFO + "/licenses/NOTICE.internal.md",
     DIST_INFO + "/licenses/notes.md",
+    # The names that made the hole, in the placement that has it. These
+    # five were listed for the flat branch only -- and the flat branch
+    # is what setuptools wrote before 77, while `licenses/` is what
+    # builds this project. So the case the fix was named for was the one
+    # case not covered: putting the hole back left all 837 green while a
+    # planted `licenses/README.md` walked through a real wheel.
+    DIST_INFO + "/licenses/README.md",
+    DIST_INFO + "/licenses/Makefile",
+    DIST_INFO + "/licenses/pyproject.toml",
+    DIST_INFO + "/licenses/CHANGELOG.md",
+    DIST_INFO + "/licenses/.gitignore",
     # Named like something this repository tracks, which is what made
     # the second version of the mapping let them past: it relocated
     # anything to the tree root, and the tree has a README, a Makefile
@@ -227,6 +238,13 @@ def test_the_run_itself_examines_an_sdist_named_the_older_way(tmp_path,
     import tarfile
     gate = _gate()
     monkeypatch.setattr(gate, "DIST", tmp_path)
+    # The rule this exercises needs an index to compare against, and an
+    # unpacked sdist has none. Pinned rather than skipped: `tracked` is
+    # what decides, so it is told the answer and the selection is what
+    # gets measured. Written first without this, it failed in exactly
+    # the place `MANIFEST.in` promises the suite runs -- which is the
+    # third time in a day a test here has assumed a checkout.
+    monkeypatch.setattr(gate, "tracked", lambda: {"pyproject.toml"})
 
     stray = tmp_path / "note.md"
     stray.write_text("not tracked by this repository\n", encoding="utf-8")
@@ -261,7 +279,10 @@ def test_an_empty_index_is_not_an_answer(tmp_path, monkeypatch, capsys):
     happen and guarded only the two cases where git itself fails."""
     import subprocess
     gate = _gate()
-    subprocess.run(["git", "init", "-q", str(tmp_path)], check=False)
+    try:
+        subprocess.run(["git", "init", "-q", str(tmp_path)], check=False)
+    except OSError:                              # git is not installed
+        pytest.skip("git is not available")
     if not (tmp_path / ".git").is_dir():
         pytest.skip("git is not available")
     monkeypatch.setattr(gate, "ROOT", tmp_path)
