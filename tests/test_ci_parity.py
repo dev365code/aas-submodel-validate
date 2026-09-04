@@ -57,6 +57,40 @@ def _normalise(command: str) -> str:
     return re.sub(r"\s+", " ", command).strip()
 
 
+#: The workflow, one line at a time. It used to be flattened whole and
+#: the recipe looked for as a substring of the result, so any line
+#: anywhere that happened to contain the words satisfied the check --
+#: and one did: a step added to run the suite from an unpacked sdist
+#: writes `python -m pytest -q`, which normalises to a string containing
+#: `pytest -q`. From then on the whole test matrix could stop running
+#: the suite and this file would not notice. Measured: deleting
+#: `- run: pytest -q` from the matrix job left ten passing.
+WORKFLOW_LINES = WORKFLOW.splitlines()
+
+
+def _is_the_step(line: str, command: str) -> bool:
+    """Whether this line *is* CI running that command, not merely a line
+    with those words in it.
+
+    A step is `- run: <command>` or, inside a block, the command alone.
+    Asked as a substring of the whole flattened file, then of a whole
+    line, both were satisfied by a step that runs the suite from an
+    unpacked sdist: `PYTHONPATH=... python -m pytest -q` normalises to
+    something ending in `pytest -q`. From then on the entire matrix
+    could stop running the suite unnoticed. Measured both times by
+    deleting `- run: pytest -q` and watching this file pass.
+    """
+    spoken = _normalise(line)
+    for prefix in ("- run: ", "run: ", ""):
+        rest = spoken[len(prefix):] if spoken.startswith(prefix) else None
+        if rest is None:
+            continue
+        for interpreter in ("python ", "python3 ", ""):
+            if rest == interpreter + command:
+                return True
+    return False
+
+
 CHECKS = [(target, _normalise(command))
           for target in _check_targets()
           for command in _commands_of(target)]
@@ -80,7 +114,7 @@ def test_no_gate_can_leave_make_check_quietly():
 def test_ci_runs_everything_make_check_runs(target, command):
     if command in LOCAL_ONLY:
         pytest.skip(LOCAL_ONLY[command])
-    assert command in _normalise(WORKFLOW), \
+    assert any(_is_the_step(line, command) for line in WORKFLOW_LINES), \
         "`make %s` runs %r and no CI job does" % (target, command)
 
 

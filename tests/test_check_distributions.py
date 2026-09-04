@@ -28,6 +28,27 @@ def _gate():
 
 DIST_INFO = "aas_submodel_validate-0.1.1.dist-info"
 
+def _the_setting(configuration: str) -> str:
+    """The `license-files` assignment, however it is written.
+
+    Not a parse of the value -- only enough to find the lines the
+    setting occupies, so a question about what it names can be asked of
+    the text. A regular expression over the value broke on a glob; the
+    first occurrence of the word is in the comment above it.
+    """
+    lines = configuration.splitlines()
+    start = [i for i, line in enumerate(lines)
+             if line.lstrip().startswith("license-files")]
+    if not start:
+        return ""
+    setting = []
+    for line in lines[start[0]:]:
+        setting.append(line)
+        if "]" in line:
+            break
+    return "\n".join(setting)
+
+
 #: What a build of this project writes into its own metadata.
 DECLARED = ("LICENSE", "NOTICE", "THIRD_PARTY.md")
 
@@ -125,19 +146,36 @@ def test_the_configuration_still_names_them_explicitly():
     list or an indented key -- so changing the spelling of a setting
     that still names all three failed the suite saying the
     configuration no longer names them."""
-    lines = (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines()
-    start = [i for i, line in enumerate(lines)
-             if line.lstrip().startswith("license-files")]
-    assert start, "nothing overrides setuptools' default licence glob"
-    setting = []
-    for line in lines[start[0]:]:
-        setting.append(line)
-        if "]" in line:
-            break
-    block = "\n".join(setting)
+    block = _the_setting((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert block, "nothing overrides setuptools' default licence glob"
     for name in ("LICENSE", "NOTICE", "THIRD_PARTY.md"):
         assert name in block, \
             "%s is attributed and license-files does not name it" % name
+
+
+@pytest.mark.parametrize("configuration,names", [
+    ('license-files = ["LICENSE", "NOTICE"]', True),
+    ("license-files = ['LICENSE', 'NOTICE']", True),
+    ('license-files = [\n  "LICENSE",\n  "NOTICE",\n]', True),
+    ('license-files=["LICENSE","NOTICE"]', True),
+    # A top-level TOML key may be indented and is still the setting.
+    # Refusing it called a correct configuration red, with the diagnosis
+    # "nothing overrides setuptools' default licence glob" -- and the
+    # paragraph above names an indented key as a thing this must read.
+    # Nothing measured that: the shipped file is not indented, so
+    # reverting the fix left the suite green.
+    ('  license-files = ["LICENSE", "NOTICE"]', True),
+    # The comment above the setting mentions it too, and taking the
+    # first occurrence of the word read that instead.
+    ('# see `license-files` below\nlicense-files = ["LICENSE", "NOTICE"]', True),
+    ("# license-files is not set here, on purpose\nname = 'x'", False),
+    ("name = 'x'", False),
+])
+def test_the_setting_is_found_however_it_is_spelled(configuration, names):
+    block = _the_setting(configuration)
+    assert bool(block) is names, block
+    if names:
+        assert "LICENSE" in block and "NOTICE" in block
 
 
 @pytest.mark.parametrize("member", [

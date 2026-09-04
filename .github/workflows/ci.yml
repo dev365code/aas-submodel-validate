@@ -101,6 +101,23 @@ jobs:
         # find it.
         run: |
           python -m build --sdist --outdir dist/
+          # What a packager has: the runtime dependency and a test
+          # runner, and not this package -- the unpacked tree is what
+          # the suite must run against. Taken from the wheel just built
+          # rather than written here, so the two cannot drift; without
+          # them the step died on `No module named pytest`, and then on
+          # `aas_core3`, from the first push it was on.
+          python - <<'PY' > requirements-sdist.txt
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          meta = [n for n in names if n.endswith(".dist-info/METADATA")][0]
+          text = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).read(meta).decode()
+          for line in text.replace("\r\n", "\n").split("\n\n", 1)[0].splitlines():
+              if line.startswith("Requires-Dist:") and "extra ==" not in line:
+                  print(line.split(":", 1)[1].strip())
+          PY
+          cat requirements-sdist.txt
+          pip install pytest -r requirements-sdist.txt
           # Outside the workspace, so the steps after this see the
           # directory they expect and nothing has to be deleted
           # afterwards. The first version cleaned up with
