@@ -189,6 +189,13 @@ def test_every_file_the_readme_tells_a_stranger_to_run_exists():
     reader's own file."""
     blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
     assert blocks, "the README has no shell examples any more"
+    # What an earlier line in the same block writes into the reader's
+    # directory: a fetched example, a built archive. Those are not in
+    # the tree and are not supposed to be.
+    written = {Path(word).name
+               for line in "\n".join(blocks).splitlines()
+               if line.split()[:1] == ["curl"]
+               for word in line.split() if word.startswith("http")}
     checked = 0
     for line in "\n".join(blocks).splitlines():
         for word in line.split():
@@ -198,10 +205,27 @@ def test_every_file_the_readme_tells_a_stranger_to_run_exists():
                 continue
             if "." not in Path(word).name:
                 continue                       # a directory, not a file argument
-            if word.startswith("dist/"):
-                continue                       # written by the line above it
+            if word.startswith("dist/") or Path(word).name in written:
+                continue                       # written by a line above it
             checked += 1
             assert (ROOT / word).exists(), \
                 "the README tells a reader to run %r and it is not here" % word
     assert checked, "no runnable path was checked; the pattern stopped matching"
 
+
+def test_the_example_the_readme_fetches_is_pinned_and_here():
+    """The install-from-PyPI path has no file to run on -- a wheel does
+    not carry other people's documents -- so the README fetches one, and
+    the URL has to name something that exists at a tag that will not
+    move.
+
+    Measured the day the package went out: a reader who ran the
+    quickstart's `pip install` line and then its `smtv` line got "no such
+    file", because the example named there only exists in a clone."""
+    found = re.findall(r"https://github\.com/[\w-]+/[\w-]+/raw/([^/\s]+)/(\S+)", README)
+    assert found, "the README no longer fetches an example to run on"
+    for ref, path in found:
+        assert re.match(r"^v\d+\.\d+\.\d+$", ref), \
+            "the example is fetched from %r; a branch moves and a tag does not" % ref
+        assert (ROOT / path).exists(), \
+            "the README fetches %r and this tree does not have it" % path

@@ -12,18 +12,25 @@ checks a submodel instance against its IDTA template — starting with
 step in a build.
 
 ```sh
-git clone https://github.com/dev365code/aas-submodel-validate && cd aas-submodel-validate
-pip install .
-smtv tests/corpus/idta/02004/example.aasx      # IDTA's own published example
+pip install aas-submodel-validate
+curl -LO https://github.com/dev365code/aas-submodel-validate/raw/v0.1.0/tests/corpus/idta/02004/example.aasx
+smtv example.aasx        # IDTA's own published example
 smtv your-submodel.aasx
 ```
 
-The third line runs against the official example this repository
-vendors, so the first verdict needs nothing of your own. Replace it with
-your file for the fourth.
+The second line fetches the official IDTA example so the first verdict
+needs nothing of your own; skip it if you already have a file. The
+package itself carries no examples — a wheel is not the place for other
+people's documents — so this is the one step that wants a network. The
+tool never does.
 
-Or `pip install aas-submodel-validate` once the release has reached
-PyPI; the CHANGELOG says which version is out.
+From a clone the example is already there:
+
+```sh
+git clone https://github.com/dev365code/aas-submodel-validate && cd aas-submodel-validate
+pip install .
+smtv tests/corpus/idta/02004/example.aasx
+```
 
 **For a machine with no package manager**, build the single file once
 where there is a network and carry it:
