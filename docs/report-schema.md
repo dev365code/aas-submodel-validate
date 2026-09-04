@@ -133,7 +133,7 @@ differ.
 | key | type | |
 |---|---|---|
 | `rule` | string | The rule id — stable, and the thing to filter on. |
-| `kind` | string | `container`, `template`, `lint` or `meta`. |
+| `kind` | string | `container`, `template`, `lint` or `meta`. The prose above calls these *channels*; this field is spelled kind, and a reader who filters on `.channel` gets null for every finding with nothing to say why. |
 | `severity` | string | `error`, `warning` or `info` — this project's reading of the priority. |
 | `priority` | string | The rule's own priority word, one of `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `RECOMMENDED`, `SHOULD`, `MAY` or `OPTIONAL` — the RFC 2119 keywords this project maps to a severity. The set is closed and wider than what today's rules use, so accept all eight. Both fields are published so a consumer that wants to re-derive the severity can. |
 | `message` | string | What is wrong. |

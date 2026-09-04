@@ -49,7 +49,30 @@ that cannot be read and an input this reader refused, since nothing about
 either was judged. Warnings and info do
 not fail a build unless you ask with `-W`. `-f json` writes a versioned
 machine-readable report, described in
-[docs/report-schema.md](docs/report-schema.md). One dependency
+[docs/report-schema.md](docs/report-schema.md).
+
+### Putting it in a build
+
+    smtv -q -W your-submodel.aasx        # 0 pass, 1 findings, 2 could not run
+
+`-W` fails on this tool's warnings. It leaves the relayed metamodel
+channel alone; `--strict-meta` is the flag for that one, because no edit
+to your submodel can clear a finding about the metamodel.
+
+Two more that decide exit codes, both for the case where the tool cannot
+speak to your file:
+
+- `--allow-unmatched` — an input declaring a submodel identifier this
+  tool has no table for is an *error* by default, because silence about
+  an unknown file is the one answer a validator must never give. When
+  that is expected — a repository where most submodels are of other
+  kinds — this makes it a note instead.
+- `--require-all-judged` — an environment can hold submodels this tool
+  has no business judging, so `judged 1 of 3` is a number rather than a
+  finding and the run still exits 0. If your pipeline reads only the exit
+  code, this makes partial coverage fail rather than pass quietly.
+
+One dependency
 ([aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)),
 pure Python, no C extensions. Both wheels fit on a USB stick and
 install with `--no-index --find-links`; the single file above needs not
@@ -110,7 +133,8 @@ are pinned by hash, not mirrored; `data/battery-passport/README.md` says
 how to rebuild every index from them.
 
 The AAS metamodel itself is relayed from aas-core3.0's verification in
-a separate `meta` channel — warnings by default, `--strict-meta` to
+a separate `meta` channel (the JSON field is `kind`) — warnings by
+default, folded into one line unless `--show-meta`, `--strict-meta` to
 promote — and never re-implemented here.
 
 ```text
