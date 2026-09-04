@@ -11,7 +11,7 @@ import sys
 from typing import Optional
 
 from . import __version__, runner
-from .example import bundled_example
+from .example import NotBundled, bundled_example
 from .loader import UnreadablePath
 from .report import render
 
@@ -38,10 +38,15 @@ def main(argv: Optional[list] = None) -> int:
     parser.add_argument("-f", "--format", choices=("text", "json"), default="text")
     parser.add_argument("-q", "--quiet", action="store_true", help="exit code only")
     parser.add_argument("-W", "--warnings-as-errors", action="store_true",
-                        help="exit 1 on this tool's warnings too (not the "
-                             "relayed metamodel channel -- see --strict-meta)")
+                        help="exit 1 on warnings too")
+    parser.add_argument("--meta", choices=("error", "warning", "info"),
+                        default=None, metavar="LEVEL",
+                        help="severity for the relayed metamodel channel: "
+                             "error, warning (the default), or info -- which "
+                             "keeps reporting it while leaving it out of what "
+                             "-W fails on")
     parser.add_argument("--strict-meta", action="store_true",
-                        help="metamodel findings become errors instead of warnings")
+                        help=argparse.SUPPRESS)
     parser.add_argument("--allow-unmatched", action="store_true",
                         help="an input with no known submodel becomes a note, not an error")
     parser.add_argument("--show-meta", action="store_true",
@@ -74,7 +79,7 @@ def main(argv: Optional[list] = None) -> int:
         from . import rules  # noqa: F401 - importing registers
         from .registry import all_rules
         from .runner import _meta_rule
-        for rule in list(all_rules()) + [_meta_rule(args.strict_meta)]:
+        for rule in list(all_rules()) + [_meta_rule(args.meta or args.strict_meta)]:
             print("%-8s %-9s %-10s %s" % (rule.id, rule.kind, rule.severity, rule.title))
         return EXIT_OK
     if args.example and args.path:
@@ -83,18 +88,38 @@ def main(argv: Optional[list] = None) -> int:
         # was reading, which is what the provenance field exists to stop.
         parser.error("--example judges the bundled package; give it or a "
                      "path, not both")
-    if args.example:
-        args.path = str(bundled_example())
-    if not args.path:
+    if not (args.path or args.example):
         parser.error("a path is required (or --example, or --rules)")
 
+    if args.example:
+        # A context manager, because from a zipapp the example is not a
+        # file until something extracts it. `NotBundled` is exit 2 rather
+        # than a traceback: nothing was judged, and 1 is the code for a
+        # verdict.
+        try:
+            with bundled_example() as path:
+                # Named by what it is, not by where it had to be put.
+                # Extracting from an archive gives a temporary path that
+                # is true, useless to the reader, and gone by the time
+                # anyone looks it up; `provenance.inputSha256` still
+                # identifies the bytes exactly.
+                return _judge(str(path), args, shown_as=path.name)
+        except NotBundled as exc:
+            print("smtv: %s" % exc, file=sys.stderr)
+            return EXIT_ERROR
+    return _judge(args.path, args)
+
+
+def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     try:
-        report = runner.run(args.path, strict_meta=args.strict_meta,
+        report = runner.run(path, strict_meta=args.meta or args.strict_meta,
                             allow_unmatched=args.allow_unmatched,
                             profile=args.profile)
     except UnreadablePath as exc:
         print("smtv: %s" % exc, file=sys.stderr)
         return EXIT_ERROR
+    if shown_as:
+        report.path = shown_as
 
     if not args.quiet:
         if args.format == "json":
@@ -106,18 +131,20 @@ def main(argv: Optional[list] = None) -> int:
         # and 1 is the code for a verdict. Said on stderr as well, since
         # -q suppressed the report that would otherwise explain it.
         print("smtv: nothing in %s could be read, so nothing was judged"
-              % args.path, file=sys.stderr)
+              % path, file=sys.stderr)
         return EXIT_ERROR
-    from .model import META_KIND, Severity
-    # `-W` promotes this tool's warnings. The metamodel channel is
-    # relayed from aas-core3.0 and has `--strict-meta` for exactly this,
-    # and two flags governing one channel meant the broader one always
-    # won: the official example ships eighty-seven warnings, seventy-
-    # seven of them about IDTA's own concept descriptions, so `-W` failed
-    # every build over findings no edit to the submodel could clear.
-    ours = sum(1 for f in report.findings
-               if f.severity is Severity.WARNING and f.rule.kind != META_KIND)
-    failed = not report.ok or (args.warnings_as_errors and ours > 0)
+    from .model import Severity
+    # Every warning, including the relayed ones. A version of this
+    # exempted that channel, on the reasoning that no edit to a submodel
+    # can clear a finding about the metamodel -- which is false, and the
+    # example this project ships disproves it: 45 of its 77 relayed
+    # findings are about `.submodels`, 33 of them an idShort that has
+    # only to be deleted. A submodel with an empty `id` raises one
+    # relayed finding and nothing else, and passed `-W` while the summary
+    # line above it counted the warning. `--meta info` is the way to say
+    # this channel should not decide a build, and it says so out loud.
+    failed = not report.ok or (args.warnings_as_errors
+                               and report.count(Severity.WARNING) > 0)
     if args.require_all_judged and report.submodels_judged < report.submodels_seen:
         # The report has carried this number since day one; a caller
         # reading only the exit code could not see it. An unjudged

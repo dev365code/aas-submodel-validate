@@ -203,14 +203,18 @@ def test_the_options_a_report_publishes_are_the_flags_it_was_given(tmp_path, cap
         main([path, "-f", "json"] + argv)
         return json.loads(capsys.readouterr().out)["options"]
 
-    assert published([]) == {
-        "profile": None, "strictMeta": False, "allowUnmatched": False}
-    assert published(["--strict-meta"]) == {
-        "profile": None, "strictMeta": True, "allowUnmatched": False}
-    assert published(["--allow-unmatched"]) == {
-        "profile": None, "strictMeta": False, "allowUnmatched": True}
-    assert published(["--profile", "02004"]) == {
-        "profile": "02004", "strictMeta": False, "allowUnmatched": False}
+    def expected(**changed):
+        options = {"profile": None, "meta": "warning", "strictMeta": False,
+                   "allowUnmatched": False}
+        options.update(changed)
+        return options
+
+    assert published([]) == expected()
+    assert published(["--strict-meta"]) == expected(meta="error", strictMeta=True)
+    assert published(["--meta", "error"]) == expected(meta="error", strictMeta=True)
+    assert published(["--meta", "info"]) == expected(meta="info")
+    assert published(["--allow-unmatched"]) == expected(allowUnmatched=True)
+    assert published(["--profile", "02004"]) == expected(profile="02004")
 
 
 def test_allow_unmatched_forgives_only_the_presence_rule(tmp_path, capsys):
@@ -295,27 +299,56 @@ def test_warnings_as_errors_needs_a_warning_not_a_vibe(tmp_path):
 
 
 
-def test_warnings_as_errors_leaves_the_relayed_channel_alone(tmp_path, capsys):
-    """`-W` is about this tool's warnings, and the metamodel channel has
-    a flag of its own.
+def test_warnings_as_errors_still_means_every_warning(tmp_path):
+    """`-W` fails on warnings. All of them.
 
-    Two flags governed one channel and the broader one won, so a build
-    could not use `-W` at all: the official example this project ships
-    raises eighty-seven warnings, seventy-seven of them relayed from
-    aas-core3.0 about IDTA's own concept descriptions, and every one of
-    them failed a `-W` build over something no edit to the submodel can
-    fix. `--strict-meta` exists for exactly that promotion and is the
-    only thing that should perform it."""
+    A version of this file exempted the relayed metamodel channel,
+    reasoning that no edit to a submodel can clear a finding about the
+    metamodel. That reasoning is false and the project's own example
+    disproves it: of the 77 relayed findings it raises, 45 are about
+    `.submodels` -- 33 of them AASd-120, which is cleared by deleting an
+    idShort. A submodel whose `id` is empty raises one relayed finding
+    and no other, and under the exemption `smtv -q -W` passed it while
+    printing "1 warning(s)". Anyone who put that line in a build on
+    0.1.0 would have had a red build turn quietly green.
+
+    The escape the exemption was reaching for is `--meta info`, which
+    says out loud that this channel is not to decide the build."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["id"] = ""       # AASd: the value must not be empty
+    path = _write(tmp_path, json.dumps(env).encode("utf-8"))
+    assert main([path]) == 0
+    assert main(["-W", path]) == 1
+    assert main(["-W", "--meta", "info", path]) == 0
+
+
+def test_the_relayed_channel_has_one_dial_with_three_settings(tmp_path,
+                                                              capsys):
+    """One flag decides this channel's severity, and `--strict-meta` is
+    the older spelling of its top setting.
+
+    Two flags governing one channel is what made `-W` unusable in the
+    first place, and answering that with a third would have been the
+    same mistake again."""
     env = copy.deepcopy(hd_env())
     env["submodels"][0]["submodelElements"][0]["value"][0]["idShort"] = "Datasheet"
     path = _write(tmp_path, json.dumps(env).encode("utf-8"))
-    assert main(["-f", "json", path]) == 0
-    report = json.loads(capsys.readouterr().out)
-    warnings = [f for f in report["findings"] if f["severity"] == "warning"]
-    assert warnings and all(f["kind"] == "meta" for f in warnings), (
-        "this fixture is meant to raise metamodel warnings and nothing else")
-    assert main(["-W", path]) == 0
-    assert main(["-W", "--strict-meta", path]) == 1
+
+    seen = {}
+    for level in ("error", "warning", "info"):
+        main(["-f", "json", "--meta", level, path])
+        report = json.loads(capsys.readouterr().out)
+        relayed = [f for f in report["findings"] if f["kind"] == "meta"]
+        assert relayed, "this fixture is meant to raise relayed findings"
+        assert {f["severity"] for f in relayed} == {level}
+        seen[level] = report["options"]["meta"]
+    assert seen == {"error": "error", "warning": "warning", "info": "info"}
+
+    main(["-f", "json", "--strict-meta", path])
+    aliased = json.loads(capsys.readouterr().out)["options"]
+    assert aliased["meta"] == "error"
+    assert aliased["strictMeta"] is True, \
+        "the field 0.1.0 readers parse has to keep answering"
 
 
 def test_require_all_judged_turns_the_coverage_number_into_a_verdict(tmp_path):
@@ -466,3 +499,30 @@ def test_the_text_report_cites_the_clause_the_json_already_carried(tmp_path,
     assert main([path]) == 0
     out = capsys.readouterr().out
     assert cited[0]["spec"] in out
+
+
+def test_the_bundled_example_is_named_by_what_it_is(tmp_path, monkeypatch,
+                                                    capsys):
+    """The reader is told which file was judged, and a temporary one is
+    not an answer.
+
+    From a zipapp the example has to be extracted before it can be read,
+    so the path the run actually opened is
+    `/var/folders/.../tmpXXXXidta-02004-2.0.aasx` -- true, useless, and
+    gone by the time anyone looks. The report names the example instead.
+    The bytes are still identified exactly: `provenance.inputSha256` is
+    of what was read, and it is the same hash the package records beside
+    the file."""
+    monkeypatch.chdir(tmp_path)
+    assert main(["-f", "json", "--example"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert "tmp" not in report["path"], report["path"]
+    assert report["path"].endswith("idta-02004-2.0.aasx")
+
+    from aas_submodel_validate.example import NAME, bundled_example
+    with bundled_example() as path:
+        recorded = (path.parent / "sha256sums.txt")
+        if recorded.is_file():                 # absent once extracted
+            assert report["provenance"]["inputSha256"] in \
+                recorded.read_text(encoding="utf-8")
+    assert NAME in report["path"]

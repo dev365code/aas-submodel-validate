@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aas-submodel-validate"
-version = "0.1.0"
+version = "0.1.1"
 description = "Offline conformance validator for AAS submodel templates, starting with IDTA 02004 Handover Documentation"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -63,8 +63,8 @@ aas_submodel_validate = ["data/smt/**/*.json", "data/smt/**/*.txt",
 
 [tool.ruff]
 # data/battery-passport is a bundle copied verbatim from its own build
-# tree; the drawer copy is canonical and hand edits here are forbidden,
-# so this repo's lint has no standing over it. Its scripts still parse
+# tree; it is generated, not authored, and hand edits here are
+# forbidden, so this repo's lint has no standing over it. Its scripts still parse
 # and import -- tools/battery_data_check.py holds that.
 extend-exclude = ["data"]
 line-length = 100

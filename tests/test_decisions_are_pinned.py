@@ -1,9 +1,9 @@
-"""Decisions made this week, each with a test that fails when it is undone.
+"""Decisions this project made deliberately, each with a test that fails
+when it is undone.
 
-a review mutated production code and the
-suite stayed green every time. Most of those mutations undid something
-decided deliberately, with a commit message explaining why — which is to
-say the reasons were written down and the behaviour was not.
+Every one of these survived having the code that implements it changed:
+the reason was written down in a commit message and the behaviour was
+not, so nothing went red.
 
 Each test here names the decision it guards. They are gathered in one
 file because they have one purpose; the rules they exercise are spread

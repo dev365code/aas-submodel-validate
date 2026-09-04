@@ -219,8 +219,8 @@ def test_the_first_verdict_needs_nothing_but_the_install():
 
     Two earlier answers were worse. The wheel carried no example and the
     quickstart named a path only a clone has, so `pip install` followed
-    by the next line printed "no such file" -- measured the day the
-    package went out. Fetching one fixed that reader and not the one this
+    by the next line printed "no such file" -- measured against the
+    description the package index serves, not against this tree. Fetching one fixed that reader and not the one this
     project is for, whose machine has no route to github.com; the file
     arrived over the network the whole pitch says is unnecessary.
 
@@ -252,6 +252,47 @@ def test_the_first_verdict_needs_nothing_but_the_install():
             "%r is fetched from %r, which moves" % (path, ref)
         assert (ROOT / path).exists(), \
             "the README fetches %r and this tree does not have it" % path
+
+
+#: Every way this page tells a reader to invoke the tool. Two of them
+#: were listed while a third was taught in prose -- `python3 -m
+#: aas_submodel_validate`, offered for when the console script is not on
+#: the PATH -- so a repository path written that way walked past the
+#: gate whose whole job is to catch a repository path. Named here, and
+#: pinned below against what the page actually teaches, because a list
+#: of spellings goes stale the moment a new one is offered.
+INVOCATIONS = (("smtv",), ("aas-submodel-validate",),
+               ("python3", "-m", "aas_submodel_validate"),
+               ("python", "-m", "aas_submodel_validate"),
+               ("python3", "dist/smtv.pyz"), ("python", "dist/smtv.pyz"),
+               ("python3", "smtv.pyz"), ("python", "smtv.pyz"))
+
+
+def _arguments_to_the_tool(words):
+    """What a command line hands the tool, or None if it is not one."""
+    for invocation in INVOCATIONS:
+        if tuple(words[:len(invocation)]) == invocation:
+            return words[len(invocation):]
+    return None
+
+
+def test_the_gate_knows_every_way_this_page_starts_the_tool():
+    """A spelling the page teaches and the gate does not know is a hole
+    in the gate, and the page teaches new ones.
+
+    Measured by planting `python3 -m aas_submodel_validate docs/scope.md`
+    in the published-package block: every test in this file stayed
+    green, including the two whose only purpose is to catch exactly that
+    line."""
+    taught = set()
+    for line in README.splitlines():
+        stripped = line.strip().lstrip("`").split("#", 1)[0].split()
+        for invocation in INVOCATIONS:
+            if tuple(stripped[:len(invocation)]) == invocation:
+                taught.add(invocation)
+    assert taught, "the page starts the tool in no way this gate knows"
+    for invocation in taught:
+        assert _arguments_to_the_tool(list(invocation) + ["x"]) == ["x"]
 
 
 def test_the_published_package_path_stands_without_the_repository():
@@ -286,9 +327,10 @@ def test_the_published_package_path_stands_without_the_repository():
             if words[:1] == ["curl"]:
                 fetched |= {Path(w).name for w in words if w.startswith("http")}
                 continue
-            if words[:1] not in (["smtv"], ["aas-submodel-validate"]):
+            arguments = _arguments_to_the_tool(words)
+            if arguments is None:
                 continue
-            for word in words[1:]:
+            for word in arguments:
                 if word.startswith("-") or word.startswith("your-"):
                     continue
                 # Exactly, not by basename: `curl -O` writes the file

@@ -3,10 +3,10 @@
 ## 0.1.1 — unreleased
 
 Still 125 rules, 86 generated from the vendored template files as
-before: nothing here changes what is checked. Everything came from watching strangers use 0.1.0 at the three
-doors this project publishes — the package index, the release page and
-the front page — and every one of them is about reaching a verdict, not
-about the verdict itself.
+before: nothing here changes what is checked. Everything is about
+reaching a verdict rather than about the verdict — what someone who
+installed 0.1.0 from the package index, took it from the release page,
+or read the front page could not do.
 
 **The first verdict needs nothing of your own.** IDTA's published example
 travels in the package now, and `smtv --example` judges it — no file of

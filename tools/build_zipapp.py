@@ -169,6 +169,13 @@ def inspect(pyz: Path) -> list:
         names = archive.namelist()
     problems = []
     for wanted in ("__main__.py", "aas_submodel_validate/cli.py",
+                   # Redistributing four CC BY 4.0 files, so the notice
+                   # that attributes them is not optional. It was copied
+                   # by a loop that skipped silently when the file was
+                   # absent, and nothing downstream asked.
+                   "LICENSE", "NOTICE", "THIRD_PARTY.md",
+                   # The input the archive is for.
+                   "aas_submodel_validate/data/example/idta-02004-2.0.aasx",
                    "aas_submodel_validate/rules/battery_tables.py",
                    "aas_core3/verification.py"):
         if wanted not in names:
@@ -198,20 +205,36 @@ def smoke(pyz: Path) -> int:
     smoke test passed. `-S` and an empty `PYTHONPATH` leave the archive
     carrying the whole answer or not answering at all.
     """
-    example = ROOT / "tests" / "corpus" / "idta" / "02004" / "example.json"
     environment = dict(os.environ, PYTHONPATH="", PYTHONNOUSERSITE="1")
-    result = subprocess.run([sys.executable, "-S", str(pyz), "-f", "json",
-                             str(example)],
-                            capture_output=True, text=True, env=environment)
-    if result.returncode not in (0, 1):
-        print("the archive did not run: exit %d\n%s"
-              % (result.returncode, result.stderr[:2000]), file=sys.stderr)
-        return 1
-    if '"schemaVersion": 1' not in result.stdout:
-        print("the archive ran and did not print a report", file=sys.stderr)
-        return 1
-    print("smoke: the archive judged %s and exited %d"
-          % (example.name, result.returncode))
+    for what, argv in (
+            # The input the archive carries, reached the way the release
+            # note tells a reader to reach it. This used to hand it a
+            # path under `tests/`, which is a repository file the archive
+            # does not contain -- so the one input that actually travels
+            # was the one input never exercised, and `--example` raised a
+            # traceback from the single file for a whole release while
+            # every gate stayed green.
+            ("--example", ["--example"]),
+            # And a path from outside, because the two resolve
+            # differently and only one of them was ever run.
+            ("a path", [str(ROOT / "tests" / "corpus" / "idta" / "02004"
+                            / "example.json")])):
+        result = subprocess.run([sys.executable, "-S", str(pyz), "-f", "json"]
+                                + argv,
+                                capture_output=True, text=True, env=environment)
+        # 2 is "could not run", and an archive that cannot run is the
+        # thing this exists to catch. It used to be accepted.
+        if result.returncode not in (0, 1):
+            print("the archive did not run for %s: exit %d\n%s"
+                  % (what, result.returncode, result.stderr[:2000]),
+                  file=sys.stderr)
+            return 1
+        if '"schemaVersion": 1' not in result.stdout:
+            print("the archive ran %s and printed no report" % what,
+                  file=sys.stderr)
+            return 1
+        print("smoke: the archive judged %s and exited %d"
+              % (what, result.returncode))
     return 0
 
 

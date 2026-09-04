@@ -32,8 +32,9 @@ or run the tool as `python3 -m aas_submodel_validate`.
 where there is a network and carry it:
 
 ```sh
-python tools/build_zipapp.py            # dist/smtv.pyz, about 220 KB
-python dist/smtv.pyz your-submodel.aasx
+python3 tools/build_zipapp.py           # writes dist/smtv.pyz
+python3 dist/smtv.pyz --example         # a verdict, with nothing else on the machine
+python3 dist/smtv.pyz your-submodel.aasx
 ```
 
 Everything is inside it — this package and its one dependency — and

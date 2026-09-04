@@ -71,7 +71,9 @@ FILES = {
 #: FILES, so a file no entry names is invisible to it -- and still ships,
 #: because `pyproject.toml`'s package-data globs on path, not on this
 #: list. Sweeping these trees is how the two stay the same set.
-VENDORED_TREES = ("src/aas_submodel_validate/data/smt", "tests/corpus/idta")
+VENDORED_TREES = ("src/aas_submodel_validate/data/smt",
+                  "src/aas_submodel_validate/data/example",
+                  "tests/corpus/idta")
 
 #: What those trees hold that is ours rather than upstream's: the gate's
 #: own record, and the note that says where the corpus came from.

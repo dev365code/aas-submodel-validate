@@ -15,13 +15,29 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
 {
   "schemaVersion": 1,
   "toolVersion": "0.1.1",
-  "provenance": {"inputSha256": "9f2c…", "engine": null, "envelope": null},
+  "provenance": {
+    "inputSha256": "9f2c\u2026",
+    "engine": null,
+    "envelope": null
+  },
   "path": "machine-docs.aasx",
   "ok": false,
-  "options": {"profile": null, "strictMeta": false, "allowUnmatched": false},
-  "summary": {"errors": 1, "warnings": 0, "info": 0, "rulesChecked": 125,
-              "complete": true, "judged": true,
-              "submodelsSeen": 1, "submodelsJudged": 1},
+  "options": {
+    "profile": null,
+    "meta": "warning",
+    "strictMeta": false,
+    "allowUnmatched": false
+  },
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "info": 0,
+    "rulesChecked": 125,
+    "complete": true,
+    "judged": true,
+    "submodelsSeen": 1,
+    "submodelsJudged": 1
+  },
   "notes": [],
   "findings": [
     {
@@ -34,7 +50,7 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
       "detail": "'06.02.2020'",
       "fix": "Write StatusSetDate as YYYY-MM-DD (xs:date), e.g. 2020-02-06.",
       "title": "StatusSetDate is a calendar date",
-      "spec": "IDTA 02004-2-0 §2.8 (xs:date)"
+      "spec": "IDTA 02004-2-0 \u00a72.8 (xs:date)"
     }
   ]
 }
@@ -97,7 +113,8 @@ with another report.
 | key | type | |
 |---|---|---|
 | `profile` | string or null | The `--profile` value, or `null` when the choice was left to the default. |
-| `strictMeta` | boolean | `--strict-meta`: the relayed metamodel channel reports at `MUST` rather than `SHOULD`. |
+| `meta` | string | `--meta`: the severity the relayed metamodel channel reported at — `error`, `warning` (the default) or `info`. At `info` it is still reported and still counted; it is `-W` that stops failing on it. |
+| `strictMeta` | boolean | The older spelling of `meta == "error"`, kept because a reader written against 0.1.0 parses this one. Derived from `meta`, never set on its own — two independently-set fields for one setting is how they come to disagree. |
 | `allowUnmatched` | boolean | `--allow-unmatched`: a submodel this tool does not recognise is a note rather than a finding. |
 
 ## `summary`

@@ -13,6 +13,8 @@ A first verdict that says `ok` proves nothing about a validator.
 """
 from __future__ import annotations
 
+import contextlib
+import importlib.resources
 import pathlib
 
 #: Beside the vendored templates, because it is the same kind of thing:
@@ -21,16 +23,33 @@ import pathlib
 NAME = "idta-02004-2.0.aasx"
 
 
-def bundled_example() -> pathlib.Path:
-    """Where the example is, or a message saying why it is not.
+class NotBundled(Exception):
+    """The example did not travel with this installation."""
 
-    A wheel built without its package data installs a validator whose
-    `--example` points at nothing, and the failure has to name the file
-    rather than arrive as a stack trace from the loader.
+
+@contextlib.contextmanager
+def bundled_example():
+    """A real path to the example, for as long as the caller needs one.
+
+    Asked of the package rather than computed from `__file__`. The first
+    version did the arithmetic -- `Path(__file__).parent / "data" / ...`
+    -- which is a filesystem path, and inside a zipapp `__file__` names a
+    location *within* the archive that no `open()` can reach. So the one
+    command the release note leads with died on the single file, with a
+    message saying the data had not travelled while the bytes sat in the
+    archive it was reading, and the reader it misinformed is by
+    definition the one who cannot go and check.
+
+    A context manager because the answer is not always a file that
+    exists: from a zipapp the bytes are extracted for the duration and
+    removed afterwards, which is what `as_file` is for. Callers get a
+    path either way and never learn which case they were in.
     """
-    path = pathlib.Path(__file__).resolve().parent / "data" / "example" / NAME
-    if not path.is_file():
-        raise FileNotFoundError(
+    resource = (importlib.resources.files(__package__)
+                / "data" / "example" / NAME)
+    if not resource.is_file():
+        raise NotBundled(
             "this installation carries no %s; the package data did not "
             "travel with it" % NAME)
-    return path
+    with importlib.resources.as_file(resource) as path:
+        yield pathlib.Path(path)

@@ -74,14 +74,35 @@ def _meta_rule(strict: bool) -> Rule:
     for shops that want the metamodel enforced too.
     """
     return Rule(
-        id="META", kind=META_KIND, prio="MUST" if strict else "SHOULD",
+        id="META", kind=META_KIND, prio=META_PRIO[_meta_level(strict)],
         title="the AAS metamodel, verified by aas-core3.0",
         spec="IDTA 01001 (metamodel constraints)",
         fn=lambda ctx: (),
         fix=META_REMEDY)
 
 
-def _meta_findings(loaded: Loaded, strict: bool):
+#: The three settings of the one dial, as the priorities that decide a
+#: severity. A channel with two flags deciding it is what made `-W`
+#: unusable; answering that with a third would have been the same
+#: mistake, so `--strict-meta` is the older spelling of `error` rather
+#: than a second control.
+META_PRIO = {"error": "MUST", "warning": "SHOULD", "info": "MAY"}
+
+
+def _meta_level(strict) -> str:
+    """`--meta`'s level, from either spelling.
+
+    `True`/`False` are what `--strict-meta` and 0.1.0's callers pass; a
+    string is what `--meta` passes.
+    """
+    if isinstance(strict, str):
+        if strict not in META_PRIO:
+            raise ValueError("no such meta level: %r" % strict)
+        return strict
+    return "error" if strict else "warning"
+
+
+def _meta_findings(loaded: Loaded, strict):
     rule = _meta_rule(strict)
     targets = [loaded.environment] if loaded.environment is not None else loaded.submodels
     for target in targets:
@@ -205,6 +226,6 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # verdict, so a document that does not carry them cannot be compared
     # with another.
     report.profile = profile
-    report.strict_meta = strict_meta
+    report.meta = _meta_level(strict_meta)
     report.allow_unmatched = allow_unmatched
     return report

@@ -117,3 +117,31 @@ def test_the_version_check_parses_on_the_pythons_it_is_meant_to_warn():
         "the version guard runs after the import whose failure it explains"
     assert "f\"" not in main[:package] and "f'" not in main[:package], \
         "the guard uses syntax the interpreters it warns cannot parse"
+
+
+def test_the_example_is_reachable_and_not_merely_present():
+    """Present in the archive is not the same as reachable from it.
+
+    `--example` resolved the file through `__file__`, which inside a
+    zipapp names a path within the zip and not one on the filesystem.
+    So the flagship command of the release note -- the one an air-gapped
+    reader runs first, having carried the file in on a stick -- died with
+    a traceback saying the package data had not travelled, while the
+    bytes sat in the archive it was reading. The message was false, the
+    exit code said a verdict had been reached, and the reader it lied to
+    is by definition the one who cannot go and check.
+
+    `belongs()` said yes and `inspect()` never asked; both are about
+    presence. This asks whether the resolution can find it, which is what
+    the reader actually needs.
+    """
+    from aas_submodel_validate.example import NAME
+    inside = "aas_submodel_validate/data/example/" + NAME
+    assert _rule()(inside), "the example does not travel"
+
+    # The resolution the tool performs, against an archive rather than a
+    # directory. `files()` reads a zip; `__file__` arithmetic does not.
+    import importlib.resources
+    resource = importlib.resources.files("aas_submodel_validate")
+    assert (resource / "data" / "example" / NAME).is_file(), \
+        "the example cannot be resolved as a package resource"

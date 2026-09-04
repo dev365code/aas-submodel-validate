@@ -93,7 +93,11 @@ V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
 ADDED_SINCE_V1 = set()
 ADDED_SINCE_V1_PROVENANCE = set()
 ADDED_SINCE_V1_SUMMARY = set()
-ADDED_SINCE_V1_OPTIONS = set()
+#: `meta` joins `strictMeta` rather than replacing it: a 0.1.0 reader
+#: parses the boolean and keeps working, and the boolean is derived from
+#: the level so the two cannot disagree. Promote at the release that
+#: ships it.
+ADDED_SINCE_V1_OPTIONS = {"meta"}
 ADDED_SINCE_V1_FINDING = set()
 
 #: And this is everything the document carries today.
@@ -155,10 +159,14 @@ def test_the_report_says_what_was_asked_of_it():
     reader comparing them had the prose of a finding's message and
     nothing else."""
     report = _report()
-    report.profile, report.strict_meta, report.allow_unmatched = "02035-2", True, False
+    report.profile, report.meta, report.allow_unmatched = "02035-2", "error", False
     document = report.as_dict()
-    assert document["options"] == {"profile": "02035-2", "strictMeta": True,
-                                   "allowUnmatched": False}
+    assert document["options"] == {"profile": "02035-2", "meta": "error",
+                                   "strictMeta": True, "allowUnmatched": False}
+    # The boolean is derived from the level, never set beside it: two
+    # fields for one setting is how two fields come to disagree.
+    report.meta = "info"
+    assert report.as_dict()["options"]["strictMeta"] is False
     assert document["toolVersion"] == __version__
     # The documented default, which the case above never reaches: a run
     # with no --profile publishes `null`, not the empty string a reader
@@ -227,8 +235,8 @@ def test_a_fresh_reports_defaults_are_the_documented_ones():
     a bare run means."""
     document = Report(path="p").as_dict()
     assert document["summary"]["rulesChecked"] == 0
-    assert document["options"] == {"profile": None, "strictMeta": False,
-                                   "allowUnmatched": False}
+    assert document["options"] == {"profile": None, "meta": "warning",
+                                   "strictMeta": False, "allowUnmatched": False}
 
 
 def test_a_run_with_warnings_does_not_wear_the_clean_banner():

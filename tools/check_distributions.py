@@ -19,8 +19,9 @@ are absent, and their licences are attributed in the bundle's own README
 rather than in this package's metadata.
 
 Both are asked of what the archives actually contain, not of what the
-packaging configuration says they should -- a sibling project shipped
-its working notes in five sdists while its configuration said otherwise.
+packaging configuration says they should. Configuration is a claim
+about a build; the archive is the build, and only one of the two can be
+wrong without anybody noticing.
 
 A wheel is a different namespace from the tree: its members live under
 the import name, not under `src/`. Repository paths are recovered before
@@ -88,7 +89,18 @@ def is_build_metadata(path: str) -> bool:
                 if not rest:
                     return True
                 if rest[0] == "licenses":
-                    return True
+                    # Not exempt -- relocated. The build copies these
+                    # from the top of the tree, so the tracked-files rule
+                    # is exactly the right question and just has to be
+                    # asked of where they came from. Exempting the whole
+                    # directory answered "is it a licence file?" when the
+                    # question is "did this repository put it there?":
+                    # setuptools' default `license-files` glob picks up
+                    # anything matching NOTICE*, LICEN[CS]E*, COPYING* or
+                    # AUTHORS* at the root, so an untracked working note
+                    # named NOTICE.internal.md shipped in the wheel while
+                    # this printed its green line. Planted, and it did.
+                    return False
                 return len(rest) == 1 and rest[0] in METADATA_MEMBERS
     return len(parts) == 1 and parts[0] in METADATA_FILES
 
@@ -113,8 +125,24 @@ def members(artifact: pathlib.Path):
     # well, so a file planted inside one never reached the function whose
     # job is to say whether it belongs -- and a note in a `.dist-info/`
     # went out green while the same note in an `.egg-info/` was caught.
-    return [(name, SOURCE_ROOT + name if name.startswith(IMPORT_ROOT) else name)
-            for name in names]
+    return [(name, _repository_path(name)) for name in names]
+
+
+def _repository_path(name: str) -> str:
+    """Where a wheel member came from in the tree.
+
+    Two relocations, not one. Package members live under the import name
+    and come from `src/`. Licence files live under
+    `<dist-info>/licenses/` and come from wherever the tree keeps them,
+    which for the ones setuptools collects by default is the top.
+    """
+    if name.startswith(IMPORT_ROOT):
+        return SOURCE_ROOT + name
+    parts = name.split("/")
+    for index, part in enumerate(parts):
+        if part.endswith(METADATA_DIRS) and parts[index + 1:index + 2] == ["licenses"]:
+            return "/".join(parts[index + 2:])
+    return name
 
 
 def tracked():

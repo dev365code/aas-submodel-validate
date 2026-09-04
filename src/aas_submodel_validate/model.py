@@ -157,7 +157,10 @@ class Report:
     #: indistinguishable, and a reader comparing them had only the prose
     #: inside a finding's message to go on.
     profile: Optional[str] = None
-    strict_meta: bool = False
+    #: Which severity the relayed channel reported at: `error`,
+    #: `warning` or `info`. The flags move the verdict, so a document
+    #: that does not carry them cannot be compared with another.
+    meta: str = "warning"
     allow_unmatched: bool = False
     #: The digest of the bytes this run read, or None when there were
     #: none to read. A report that says a file failed and does not say
@@ -211,7 +214,12 @@ class Report:
             "ok": self.ok,
             "options": {
                 "profile": self.profile,
-                "strictMeta": self.strict_meta,
+                "meta": self.meta,
+                # The older spelling, derived rather than stored: a
+                # reader written against 0.1.0 parses this one, and two
+                # independently-set fields for one setting is how they
+                # come to disagree.
+                "strictMeta": self.meta == "error",
                 "allowUnmatched": self.allow_unmatched,
             },
             "summary": {

@@ -104,3 +104,26 @@ def test_the_wheel_gate_requires_every_vendored_file_that_ships():
         for name in (installed, sums):
             assert '"%s"' % name in workflow, \
                 "the wheel gate does not require %s" % name
+
+
+def test_no_recorded_hash_names_a_file_that_is_not_there():
+    """A record that vouches for something absent is worse than none.
+
+    `check()` looks each file up in its directory's record, so a record
+    naming a file the directory no longer holds is invisible to it, and
+    `--refresh` rewrites the file sorted and keeps the orphan. Left one
+    behind when the example moved into the package: anyone running
+    `shasum -a 256 -c sha256sums.txt` in that directory got a FAILED
+    line and exit 1 from a provenance record that is otherwise this
+    project's whole argument for what it vendored."""
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parents[1]
+    orphans = []
+    for record in root.rglob("sha256sums.txt"):
+        for line in record.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            name = line.split(None, 1)[1].strip()
+            if not (record.parent / name).is_file():
+                orphans.append("%s names %s" % (record.relative_to(root), name))
+    assert not orphans, orphans
