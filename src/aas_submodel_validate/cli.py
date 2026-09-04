@@ -23,7 +23,16 @@ EXIT_ERROR = 2
 def main(argv: Optional[list] = None) -> int:
     parser = argparse.ArgumentParser(
         prog="smtv",
-        description="Validate an AAS submodel against its IDTA template, offline.")
+        description="Validate an AAS submodel against its IDTA template, offline.",
+        # Someone wiring this into a build reads `--help` before a
+        # README, so the codes they will branch on have to be here. They
+        # were on the front page only, which put them where the reader
+        # who depends on them was least likely to look.
+        epilog="exit codes: 0 no finding at error severity · 1 at least one "
+               "error · 2 could not run, which covers a path that cannot be "
+               "read and an input this reader refused -- in both of those "
+               "nothing was judged, so neither is a verdict.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("path", nargs="?",
                         help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")
     parser.add_argument("-f", "--format", choices=("text", "json"), default="text")

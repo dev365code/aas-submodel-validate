@@ -140,6 +140,7 @@ promote — and never re-implemented here.
 ```text
 error   SMT-D1   no submodel declares a semanticId this tool has a template table for
         saw  semanticId value(s): urn:somecompany:docs
+        per  IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2
         fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
 1 error(s), 0 warning(s), 0 info — machine-docs.json · judged 0 of 1 submodel
 ```

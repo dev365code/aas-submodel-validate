@@ -57,6 +57,12 @@ def render(report: Report, *, show_meta: bool = False) -> str:
             lines.append("        at   %s" % _safe(finding.violation.subject))
         if finding.violation.detail:
             lines.append("        saw  %s" % _safe(finding.violation.detail))
+        if finding.rule.spec:
+            # The clause, on the screen. It has been in the JSON since
+            # the first release and nowhere else, so the person writing
+            # "conforms: yes/no" into a report -- who needs the citation
+            # more than anyone -- had to re-run with `-f json` to get it.
+            lines.append("        per  %s" % _safe(finding.rule.spec))
         if finding.fix:
             lines.append("        fix: %s" % _safe(finding.fix))
     if folded:

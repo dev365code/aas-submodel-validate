@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.1.1 — unreleased
+
+Still 125 rules, 86 generated from the vendored template files as
+before: nothing here changes what is checked. Everything came from watching strangers use 0.1.0 at the three
+doors this project publishes — the package index, the release page and
+the front page — and every one of them is about reaching a verdict, not
+about the verdict itself.
+
+**The first verdict needs nothing of your own.** IDTA's published example
+travels in the package now, and `smtv --example` judges it — no file of
+your own, no clone, no network. Installing from the index used to leave a
+reader with a validator and nothing to validate: the front page's next
+line named a path only a clone has. The example is unmodified, defects
+and all; it raises findings, which is the point of shipping that one
+rather than a clean file written to pass.
+
+**`-W` can be used in a build.** It fails on this tool's warnings and
+leaves the relayed metamodel channel alone, which has `--strict-meta` of
+its own. Before, every `-W` build failed on findings about the metamodel
+that no edit to a submodel could clear — including on the official
+example, where 77 of 87 warnings are of that kind.
+
+**`--require-all-judged`.** An environment holds submodels this tool has
+no business judging, so `judged 1 of 3` stays a number and the run still
+exits 0. A pipeline reading only the exit code saw success for a package
+two thirds of which was never looked at; this makes that fail instead.
+
+**The relayed channel is folded into one line** unless `--show-meta`.
+On the official example that is 272 lines of output down to 42, with the
+verdict no longer scrolled past. Counted, never dropped: the summary
+totals them and the JSON report is unchanged.
+
+**The single file says what it needs.** `smtv.pyz` now names the Python
+version it requires instead of failing with a syntax error on an old
+one — the metadata that carries `Requires-Python` is not in the archive,
+and a reader who has already carried the file into a plant cannot go and
+look it up. Its releases are signed, so `gh attestation verify` says
+which workflow built the bytes; a checksum file beside the artifacts it
+vouches for cannot answer that. And a dependency's own build scripts
+stopped travelling in it — dead code, and the only `subprocess` import
+in the archive.
+
+**Documented:** `--allow-unmatched` and `--require-all-judged`, both of
+which decide an exit code and were reachable only from `--help`; that the
+JSON field for a channel is `kind`, so a reader filtering on `.channel`
+no longer gets an empty result with nothing to explain it; and that the
+installer may be `pip3`, that `smtv` may need a `PATH` entry pip prints
+and nobody reads.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
 ## 0.1.0 — 2026-09-04
 
 First release: 125 rules, 123 of them across three IDTA templates — *Handover

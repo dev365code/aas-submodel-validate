@@ -422,3 +422,47 @@ def test_example_and_a_path_are_two_different_requests(tmp_path, capsys):
     with pytest.raises(SystemExit) as raised:
         main(["--example", path])
     assert raised.value.code == 2
+
+
+def test_help_says_what_the_exit_codes_mean(capsys):
+    """Someone wiring this into a build reads `--help` before a README.
+
+    The codes were on the front page only, so the reader most likely to
+    depend on them was the one least likely to have seen them."""
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    out = capsys.readouterr().out
+    # The first version of this test asked only that "exit" and the three
+    # digits appeared somewhere, and passed against a help page that says
+    # nothing about exit codes -- every one of those strings occurs in
+    # some flag's own description. What is wanted is a place where the
+    # three are explained together.
+    tail = out.split("--require-all-judged")[-1]
+    assert "exit codes" in tail.lower(), \
+        "the help page explains the exit codes nowhere"
+    for code, meaning in ((" 0 ", "no"), (" 1 ", "error"), (" 2 ", "run")):
+        assert code in tail and meaning in tail.lower()
+
+
+def test_the_text_report_cites_the_clause_the_json_already_carried(tmp_path,
+                                                                   capsys):
+    """`spec` is the field a regulatory reader needs most.
+
+    A finding says which clause of which document it comes from, and the
+    JSON has carried that since the first release -- but the person at a
+    terminal, who is the one writing "conforms: yes/no" into a report,
+    could not see it without re-running with `-f json`."""
+    env = copy.deepcopy(hd_env())
+    version = env["submodels"][0]["submodelElements"][0]["value"][0]["value"][2]["value"][0]
+    for child in version["value"]:
+        if child.get("idShort") == "StatusValue":
+            child["value"] = "released"
+    path = _write(tmp_path, json.dumps(env).encode("utf-8"))
+
+    assert main(["-f", "json", path]) == 0
+    cited = [f for f in json.loads(capsys.readouterr().out)["findings"] if f.get("spec")]
+    assert cited, "this fixture is meant to raise a finding that cites a clause"
+
+    assert main([path]) == 0
+    out = capsys.readouterr().out
+    assert cited[0]["spec"] in out
