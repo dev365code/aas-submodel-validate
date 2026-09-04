@@ -88,7 +88,9 @@ speak to your file:
 - `--require-all-judged` — an environment can hold submodels this tool
   has no business judging, so `judged 1 of 3` is a number rather than a
   finding and the run still exits 0. If your pipeline reads only the exit
-  code, this makes partial coverage fail rather than pass quietly.
+  code, this makes partial coverage fail rather than pass quietly — and
+  `judged 0 of 0`, an input holding no submodels at all, which is the
+  emptiest pass of the lot.
 
 One dependency
 ([aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)),

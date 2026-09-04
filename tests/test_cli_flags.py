@@ -578,3 +578,42 @@ def test_the_two_spellings_of_the_meta_dial_cannot_disagree(tmp_path, capsys):
             main(["--strict-meta", "--meta", level, path])
         assert raised.value.code == 2
         assert "--strict-meta" in capsys.readouterr().err
+
+
+def test_the_example_says_what_it_is_before_it_says_what_is_wrong(tmp_path,
+                                                                  monkeypatch,
+                                                                  capsys):
+    """87 findings with no subject line is a first screen that reads as
+    a broken install.
+
+    The front page says this is IDTA's own example and that its defects
+    are the point of shipping that one; the terminal did not, and the
+    file it names is fifty lines below. Text only -- a pipeline reading
+    `-f json` must find JSON on the first byte."""
+    monkeypatch.chdir(tmp_path)
+    assert main(["--example"]) == 0
+    first = capsys.readouterr().out.splitlines()[0]
+    assert "IDTA" in first and "defects" in first
+
+    assert main(["-f", "json", "--example"]) == 0
+    assert json.loads(capsys.readouterr().out)["summary"]["errors"] == 0
+
+    assert main(["-q", "--example"]) == 0
+    assert capsys.readouterr().out == ""
+
+
+def test_rules_takes_no_input_and_says_so(tmp_path, capsys):
+    """`--rules` judged nothing and accepted a path and a `--profile`
+    anyway, answering neither.
+
+    `--example <path>` was made an error for exactly this shape in the
+    same change that left this one alone; half a principle is worse than
+    none, because it teaches that the silence is deliberate somewhere."""
+    path = _write(tmp_path, json.dumps(hd_env()).encode("utf-8"))
+    for argv in ([path], ["--profile", "02004"]):
+        with pytest.raises(SystemExit) as raised:
+            main(["--rules"] + argv)
+        assert raised.value.code == 2
+        assert "--rules" in capsys.readouterr().err
+    assert main(["--rules"]) == 0
+    assert len(capsys.readouterr().out.splitlines()) > 100

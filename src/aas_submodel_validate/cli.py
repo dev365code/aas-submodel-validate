@@ -37,8 +37,10 @@ def main(argv: Optional[list] = None) -> int:
                         help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")
     parser.add_argument("-f", "--format", choices=("text", "json"),
                         default="text",
-                        help="text for a person, json for a pipeline "
-                             "(docs/report-schema.md describes it)")
+                        help="text for a person, json for a pipeline; the "
+                             "JSON shape is described in this project's "
+                             "docs/report-schema.md, which a clone and the "
+                             "source distribution carry")
     parser.add_argument("-q", "--quiet", action="store_true", help="exit code only")
     parser.add_argument("-W", "--warnings-as-errors", action="store_true",
                         help="exit 1 on warnings too")
@@ -57,7 +59,8 @@ def main(argv: Optional[list] = None) -> int:
                              "folding them into one line")
     parser.add_argument("--require-all-judged", action="store_true",
                         help="exit 1 unless every submodel in the input was "
-                             "judged, not only the ones this tool has a table for")
+                             "judged, not only the ones this tool has a "
+                             "table for -- and unless there was one to judge")
     from .rules.battery import _settles_only
     from .rules.profiles import KEYS as _PROFILE_KEYS
     parser.add_argument("--profile", choices=_PROFILE_KEYS + _settles_only(),
@@ -88,6 +91,12 @@ def main(argv: Optional[list] = None) -> int:
         # resolve.
         parser.error("--strict-meta is --meta error; it cannot be combined "
                      "with --meta %s" % args.meta)
+    if args.rules and (args.path or args.profile):
+        # Half of a principle is worse than none: `--example <path>` was
+        # made an error for exactly this, and `--rules` went on taking a
+        # path and a profile and answering neither.
+        parser.error("--rules lists the rules and judges nothing; it takes "
+                     "no path and no --profile")
     if args.rules and args.example:
         # `--rules` returned before the conflict check below, so one
         # flag was obeyed and the other silently dropped -- while
@@ -123,6 +132,15 @@ def main(argv: Optional[list] = None) -> int:
                 # is true, useless to the reader, and gone by the time
                 # anyone looks it up; `provenance.inputSha256` still
                 # identifies the bytes exactly.
+                if not args.quiet and args.format == "text":
+                    # The first screen a stranger sees is 87 findings
+                    # with no subject line. The front page says this is
+                    # IDTA's own example and that its defects are the
+                    # point; the terminal did not, and the file it names
+                    # is fifty lines below.
+                    print("judging IDTA's published 02004 2.0 example, "
+                          "carried in this package — unmodified, defects "
+                          "and all.")
                 return _judge(str(path), args, shown_as=example_name())
         except NotBundled as exc:
             print("smtv: %s" % exc, file=sys.stderr)

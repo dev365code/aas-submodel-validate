@@ -156,19 +156,24 @@ jobs:
           - the `.tar.gz` — the source, for anyone building it themselves.
           - `SHA256SUMS` — the checksums for everything above.
 
-          **Checking what you carried**
+          **Checking what you carried** — on the machine you carried it
+          *from*, while you still have a network:
 
               shasum -a 256 --ignore-missing -c SHA256SUMS
               gh attestation verify smtv.pyz --repo OWNER/REPO
 
           `--ignore-missing` because you were told to carry one file, and
-          without it `shasum` reports the three you did not bring as
+          without it `shasum` reports the ones you did not bring as
           failures and exits 1. The first says nothing was corrupted on
-          the way. The second says
-          which workflow in which repository built these bytes — the one that
-          matters if you are signing for what comes through the door.
+          the way; it needs nothing but `shasum`, so it works anywhere.
+          The second says which workflow in which repository built these
+          bytes — the question that matters if you are signing for what
+          comes through the door — and it asks GitHub, so run it before
+          you cross the air gap, or carry the bundle
+          (`gh attestation download`) and verify offline with
+          `--bundle`.
 
-          It reaches no network, and neither does the tool.
+          The tool itself reaches no network, ever.
           NOTES
           sed -i "s|OWNER/REPO|$GITHUB_REPOSITORY|" notes.md
           gh release create "$GITHUB_REF_NAME" dist/* \
