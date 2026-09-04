@@ -862,3 +862,40 @@ def test_which_language_tags_count_as_english(tmp_path, tag, is_english):
     # passed it.
     assert handover_rules._english is verification.is_bcp_47_for_english
     assert verification.is_bcp_47_for_english(tag) is is_english
+
+
+def test_a_class_name_of_the_wrong_kind_is_the_files_defect_not_the_tools(tmp_path):
+    """A rule that meets the wrong kind of element must say whose defect
+    it is, and it said the wrong one.
+
+    `ClassName` is a MultiLanguageProperty, and a file declaring it a
+    `Property` gave `AttributeError: 'str' object has no attribute
+    'language'` -- caught by the isolation that turns a raising rule into
+    a finding, and then reported with the remedy that isolation carries:
+    "This is a defect in the validator, not in your file; please report
+    it." It is a defect in the file, the generated rule beside it already
+    says which element is the wrong kind, and the reader is sent to open
+    an issue instead. From a plant that is a trip outside to ask a
+    question nobody can answer.
+    """
+    env = copy.deepcopy(hd_env())
+    classification = _classification(env)
+    for child in classification["value"]:
+        if child.get("idShort") == "ClassName":
+            child["modelType"] = "Property"
+            child["value"] = "Operation"
+            child["valueType"] = "xs:string"
+            break
+    else:                                        # pragma: no cover - fixture
+        raise AssertionError("the fixture has no ClassName to bend")
+
+    findings = _findings(tmp_path, env)
+    for finding in findings.values():
+        assert "could not run" not in finding.violation.message, \
+            "%s crashed on an element of the wrong kind" % finding.id
+        assert "defect in the validator" not in (finding.fix or ""), \
+            "%s blames the tool for something in the file" % finding.id
+    # And the file is still wrong, so something has to say so.
+    assert any(f.severity is not None and f.id.startswith("HD-E")
+               for f in findings.values()), \
+        "nothing reported an element declared as the wrong kind"

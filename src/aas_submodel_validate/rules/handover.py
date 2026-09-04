@@ -149,7 +149,22 @@ def _d4(tables):
                 name = child_of(classification, "ClassName", tables)
                 if name is None:
                     continue  # absence is the generated cardinality rule's finding
-                languages = {entry.language for entry in (name.value or [])}
+                # A MultiLanguageProperty's value is a list of tagged
+                # strings; a file that declares this element a `Property`
+                # gives a bare one. Iterating it walked its characters
+                # and raised, which the isolation turned into "the rule
+                # itself could not run -- a defect in the validator, not
+                # in your file". It is a defect in the file, and the
+                # generated rule beside this one already names the
+                # element and the kind it should be, so this one has
+                # nothing to add and says nothing. An *absent* value is
+                # a different thing -- the metamodel allows it and the
+                # row accepts it -- and still has to be reported as no
+                # English entry, so only the wrong kind is passed over.
+                if name.value is not None and not isinstance(name.value, list):
+                    continue
+                languages = {entry.language for entry in (name.value or [])
+                             if hasattr(entry, "language")}
                 english = any(_english(lang) for lang in languages)
                 if not english:
                     yield Violation("ClassName has no English entry",

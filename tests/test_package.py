@@ -1,4 +1,6 @@
 """The package exists, imports, and says who it is."""
+import pytest
+
 import aas_submodel_validate
 
 
@@ -63,3 +65,32 @@ def test_no_distribution_rule_names_a_file_this_project_does_not_ship():
     for name in listed.stdout.split():
         assert "include %s" % name in manifest, \
             "%s is published here and would not reach an sdist" % name
+
+
+def test_nothing_local_is_tracked():
+    """The exclusions are in `.gitignore` because that is the only file a
+    clone carries.
+
+    They were moved to `.git/info/exclude` once, on the reasoning that a
+    rule excluding something says the something exists. It does -- and
+    that file is not cloned, so every fresh checkout was one `git add -A`
+    away from committing the things it named. Measured in a clone: all
+    five appeared in `git status` and staged. Publishing the names is the
+    cheaper of the two.
+
+    This asks the other half: that none of them is tracked now."""
+    import pathlib
+    import subprocess
+    root = pathlib.Path(__file__).resolve().parents[1]
+    listed = subprocess.run(["git", "ls-files"], cwd=str(root),
+                            capture_output=True, text=True)
+    if listed.returncode != 0:
+        pytest.skip("not a git checkout")
+    tracked = set(listed.stdout.split())
+    ignored = [line.strip().lstrip("/").rstrip("/")
+               for line in (root / ".gitignore").read_text(encoding="utf-8").splitlines()
+               if line.startswith("/")]
+    assert ignored, ".gitignore names no local-only path"
+    for name in ignored:
+        offenders = [t for t in tracked if t == name or t.startswith(name + "/")]
+        assert not offenders, "%s is local-only and tracked" % offenders

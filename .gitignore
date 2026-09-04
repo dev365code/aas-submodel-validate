@@ -15,4 +15,13 @@ dist/
 docs/consortium/
 docs/private/
 
-# Working notes stay local.
+# Working notes stay local. Named here, and the cost of naming them is
+# accepted: this file is the only exclusion a clone carries, and
+# `.git/info/exclude` is not cloned -- so moving these there left every
+# fresh checkout one `git add -A` away from committing them, which is a
+# worse thing to publish than the names.
+/CLAUDE.md
+/AGENTS.md
+/.claude/
+/docs/findings.md
+/docs/audits.md

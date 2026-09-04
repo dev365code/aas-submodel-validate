@@ -19,9 +19,10 @@ and contributors. Taken from commit `11ef3353124626e2dba4cb50767024df9a39928a` a
 hash-verified on every CI run by `tools/vendor_template.py --check`,
 which also sweeps those trees for anything this table does not list. The
 SHA-256 digest of each file is recorded in a `sha256sums.txt` in its own
-directory. Paths above are as an installed package addresses them; this
-repository keeps the first four under `src/`, and the corpus entries are
-in the source distribution only. `--refresh` is the only operation that
+directory. The `aas_submodel_validate/` rows are addressed as an
+installed package addresses them; this repository keeps those under
+`src/`. The `tests/corpus/` rows are in the source distribution only,
+and are spelled as that distribution holds them. `--refresh` is the only operation that
 touches the network.
 
 The template files are the *generator input* for the structural rule
