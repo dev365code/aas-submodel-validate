@@ -80,29 +80,53 @@ def test_a_refusal_survives_it_too(encoding, tmp_path):
         % (encoding, done.returncode))
 
 
+#: The one character this project writes that is not ASCII. `IDTA
+#: 02004-2-0 §2.4` is how the standard spells that clause and how a
+#: reader has to spell it back; the escape hatch above carries it onto
+#: a terminal that cannot. Everything else has an ASCII spelling and
+#: has to use it.
+ALLOWED = {"\u00a7"}
+
+
 def test_what_this_tool_writes_of_its_own_is_ascii():
-    """The separators, the counts, the labels. Not the citations -- a
-    section sign belongs in `IDTA 02004-2-0 §2.4` and the escape hatch
-    above is what carries it onto a terminal that cannot spell it."""
+    """Every line, not the last one.
+
+    The first version of this read `splitlines()[-1]` -- the summary --
+    on the reasoning that the summary was where the crash was. Putting
+    the em dash back into the `--example` banner, one of the four
+    places the same commit repaired, left the suite green. So did an em
+    dash in a rule's title, which travels in `--rules` and in every
+    JSON finding. And the companion gate was a list of three characters,
+    which an en dash walks past -- and an en dash is refused by cp949,
+    cp932, cp437, cp850 and latin-1, the same five that started this.
+
+    A list of what is forbidden is a list somebody has to keep. What is
+    allowed is one character long."""
     done = _run(["--example"], "utf-8")
     assert done.returncode == 0, done.stderr
-    summary = done.stdout.decode("utf-8").splitlines()[-1]
-    unspellable = sorted({character for character in summary
-                          if ord(character) > 127})
-    assert not unspellable, (
-        "the summary line every run prints carries %s, which several "
-        "default code pages cannot encode: %r"
-        % (unspellable, summary))
+    for line in done.stdout.decode("utf-8").splitlines():
+        found = sorted({character for character in line
+                        if ord(character) > 127} - ALLOWED)
+        assert not found, (
+            "this line carries %s, which the common default code pages "
+            "cannot encode: %r" % (found, line))
 
 
-#: Characters this tool must not write of its own accord, and the code
-#: pages that cannot take them. A section sign is not here: it belongs
-#: in `IDTA 02004-2-0 §2.4`, it is what the standard calls that clause,
-#: and the escape hatch above is what carries it onto a terminal that
-#: cannot spell it.
-UNSPELLABLE = {"—": "em dash (cp949, cp932, cp437, cp850, latin-1)",
-               "·": "middle dot (cp932, ascii)",
-               "…": "ellipsis (cp437, cp850, latin-1)"}
+def test_no_rule_carries_a_character_the_common_code_pages_lack():
+    """The sentences a rule is built from -- its title, the clause it
+    cites, the remedy it offers. The title never reaches the text
+    report, so a gate that reads the screen cannot see it, and it is on
+    every finding in the JSON and on every line of `--rules`."""
+    from aas_submodel_validate import runner
+    from aas_submodel_validate.registry import all_rules
+
+    for rule in list(all_rules()) + [runner._meta_rule(False)]:
+        for label, sentence in (("title", rule.title), ("spec", rule.spec),
+                                ("fix", rule.fix)):
+            found = sorted({character for character in (sentence or "")
+                            if ord(character) > 127} - ALLOWED)
+            assert not found, (
+                "%s's %s carries %s: %r" % (rule.id, label, found, sentence))
 
 
 def test_no_finding_writes_a_character_the_common_code_pages_lack(tmp_path,
@@ -147,10 +171,10 @@ def test_no_finding_writes_a_character_the_common_code_pages_lack(tmp_path,
 
     for text in written:
         found = sorted({character for character in text
-                        if character in UNSPELLABLE})
+                        if ord(character) > 127} - ALLOWED)
         assert not found, (
-            "the tool writes %s of its own accord: %s"
-            % (found, "; ".join(UNSPELLABLE[character] for character in found)))
+            "the tool writes %s of its own accord, and the common "
+            "default code pages cannot encode it" % found)
 
 
 def test_a_reader_who_typed_a_dash_is_told_what_that_means(capsys):

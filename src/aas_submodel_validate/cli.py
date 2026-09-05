@@ -183,8 +183,10 @@ def main(argv: Optional[list] = None) -> int:
                 # anyone looks it up; `provenance.inputSha256` still
                 # identifies the bytes exactly.
                 if not args.quiet and args.format == "text":
-                    # The first screen a stranger sees is 87 findings
-                    # with no subject line. The front page says this is
+                    # The first screen a stranger sees is a verdict
+                    # they did not ask for, on a file they did not
+                    # name: ten findings, a folded channel and a
+                    # summary counting eighty-seven. The front page says this is
                     # IDTA's own example and that its defects are the
                     # point; the terminal did not, and the file it names
                     # is fifty lines below.

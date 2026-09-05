@@ -548,8 +548,15 @@ def test_a_consortium_reading_is_not_reported_as_the_law_speaking(tmp_path):
                             ("message", finding.violation.message),
                             ("title", finding.rule.title)):
         flat = " ".join(sentence.split())
-        for hit in re.finditer(r"\b(regulation|law|provision)s?\b[^.]{0,24}?"
-                               r"\brequir", flat):
+        # Case-insensitive, because `the Regulation (EU) 2023/1542
+        # requires` walked past a pattern written in lower case; the
+        # instrument's own name and its number count as naming it; and
+        # the verb is any of the ones that mean the same thing, because
+        # "makes this mandatory" says exactly what "requires" says.
+        for hit in re.finditer(
+                r"\b(regulations?|laws?|provisions?|directives?|statutes?"
+                r"|annexe?s?\s+[IVXL]+|2023/1542)\b[^.]{0,80}?"
+                r"\b(requir|mandat|oblig|demand|compel)", flat, re.I):
             # Either side: "a published reading of the regulation
             # requires" puts the qualifier in front, "the provision read
             # as requiring it" puts it behind, and both are honest.

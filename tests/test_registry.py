@@ -802,12 +802,27 @@ def test_every_divergence_this_project_cites_exists():
             for line in (ROOT / "docs" / "divergences.md").read_text("utf-8").splitlines()
             if re.match(r"^\|\s*\d+\s*\|", line)}
     assert len(rows) > 30, "the divergences table did not parse"
+    # Every spelling, and everywhere. The first version read
+    # `divergences #N` in `src/` and `tests/` and saw 39 of 59: it
+    # missed the singular `divergence #N`, the backticked
+    # `` `docs/divergences.md` #37 ``, and a citation split across two
+    # string literals -- which is how the one every BAT-R8 finding
+    # carries was written. It also skipped this file, on no reason: the
+    # pattern does not match its own source, and skipping it threw away
+    # four real citations.
     cited: dict = {}
-    for path in sorted((ROOT / "src").rglob("*.py")) + sorted((ROOT / "tests").rglob("*.py")):
-        if path.name == "test_registry.py":
+    sources = (sorted((ROOT / "src").rglob("*.py"))
+               + sorted((ROOT / "tests").rglob("*.py"))
+               + sorted((ROOT / "tools").rglob("*.py"))
+               + [ROOT / "README.md", ROOT / "CHANGELOG.md"])
+    citation = re.compile(r"divergences?(?:\.md)?[`\s\\\"]*#\s*(\d+)")
+    for path in sources:
+        if not path.is_file():
             continue
-        text = path.read_text("utf-8")
-        for number in re.findall(r"divergences(?:\.md)?\s*#(\d+)", text):
+        # Joined first: a citation written across two adjacent string
+        # literals is one sentence to a reader and two to a scanner.
+        text = re.sub(r'"\s*\n\s*"', "", path.read_text("utf-8"))
+        for number in citation.findall(text):
             cited.setdefault(int(number), set()).add(path.name)
     assert cited, "nothing in this tree cites a divergence at all"
     dangling = sorted((number, sorted(where)) for number, where in cited.items()

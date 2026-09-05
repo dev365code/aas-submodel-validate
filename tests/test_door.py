@@ -117,9 +117,12 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
     # reader sees first, kept neither -- so the remedy and the clause
     # could be drawn the other way round, regenerate cleanly and stay
     # green through every gate.
-    at = -1
+    at, gap = -1, False
     for text in groups:
-        if text == elision or text.startswith("$ "):
+        if text == elision:
+            gap = True
+            continue
+        if text.startswith("$ "):
             continue
         if text.endswith(elision):
             stem = text[:-len(elision)].rstrip()
@@ -135,8 +138,27 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
         assert where, missing
         later = [index for index in where if index > at]
         assert later, (
-            "the picture draws %r after a line the tool prints later; a "
-            "verdict is read downwards and this one is not" % text)
+            "the picture draws %r after a line the tool prints later, or "
+            "draws it twice where the tool prints it once; a verdict is "
+            "read downwards and this one is not" % text)
+        # Every gap marked, which the comment above promised and the
+        # first version did not do: leaving a line out of the middle of
+        # the picture without an elision was green, and so was putting
+        # the mark somewhere no line was missing. The front page's text
+        # block has had both halves since the day reversing its lines
+        # was found to pass.
+        if at >= 0:
+            skipped = later[0] - at - 1
+            if gap:
+                assert skipped, (
+                    "there is an elision mark before %r and the tool "
+                    "prints nothing between it and the line above" % text)
+            else:
+                assert not skipped, (
+                    "the picture goes straight from the line above to "
+                    "%r and the tool prints %d line(s) between them, "
+                    "with nothing to say so" % (text, skipped))
+        gap = False
         at = later[0]
     # The one string in the picture that is not the tool's: the mark
     # that says lines were left out. The picture is a crop -- the folded

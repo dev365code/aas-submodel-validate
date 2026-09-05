@@ -38,11 +38,14 @@ PRIO_SEVERITY = {
 }
 
 
-#: What a rule is about, in the order a report is read: the container the
+#: What a rule is about. Listed in the order a report reads *within one
+#: severity*, which is where this order applies: the container the
 #: submodel arrived in, then the template it claims to be, then this
-#: project's informational lints, then the metamodel channel relayed from
-#: aas-core3.0 -- 77 relayed messages must not bury the template
-#: findings the reader came for.
+#: project's informational lints, then the metamodel channel relayed
+#: from aas-core3.0 -- 77 relayed messages must not bury the template
+#: findings the reader came for. Severity sorts first (`runner`), so
+#: under `--meta error` the relayed channel rises above template
+#: warnings: that is the caller asking for it, not this order failing.
 #:
 #: One list, because it was two and neither could see the other: the
 #: reading order held its own copy, and a kind outside that copy sorted

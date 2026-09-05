@@ -1,7 +1,9 @@
 """Rule registration: the id is a contract, the remedy is an obligation.
 
-Rules register themselves at import time via the decorator. Two things
-are refused at this boundary rather than caught by a later audit: a
+Rules register themselves at import time via the decorator. Four things
+are refused at this boundary rather than caught by a later audit -- the
+two below, and an unknown kind or priority, for the reason written
+beside them. The first two: a
 duplicate id (a stored report must never become ambiguous) and a rule
 without a `fix` sentence (naming a defect without naming the remedy
 leaves the reader all of the expertise).
@@ -28,9 +30,9 @@ def rule(rule_id: str, *, kind: str, prio: str, title: str,
         # verdict: `MSUT` scored as a warning, so a MUST stopped setting
         # the exit code, and a kind the reading order does not know sorted
         # into the middle of the channels a reader is scanning. Neither
-        # left a mark anywhere. They are refused here, beside the other
-        # two things this boundary refuses, because a rule that cannot be
-        # read correctly must not reach a report at all.
+        # left a mark anywhere. They are refused here, beside the
+        # duplicate id and the missing remedy above, because a rule that
+        # cannot be read correctly must not reach a report at all.
         if kind not in KINDS:
             raise ValueError("rule %s has kind %r; known kinds are %s"
                              % (rule_id, kind, ", ".join(KINDS)))

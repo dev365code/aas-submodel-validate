@@ -166,7 +166,7 @@ differ.
 | `detail` | string or null | Context — usually the value that was seen. |
 | `fix` | string | One imperative sentence: what to change so this stops being reported. Every finding carries one. |
 | `title` | string | The rule's standing description, the same for every finding it produces. |
-| `spec` | string | Where the requirement lives, and always present. Usually a template and section; for a rule that reads a regulation rather than a template, the provision, built from the row being reported rather than fixed per rule; for the rules about the container, the OPC or AASX standard that governs it; for the ones about what a document must be, the metamodel standard and its published schemas — which is also what the relayed `meta` channel cites; and for this reader's own size limits, a pointer to where they are written down. |
+| `spec` | string | Where the requirement lives, and always present. It is prose, not a key: a template and section for most rules; a provision of the regulation for the rules that read one, built from the row being reported rather than fixed per rule; the OPC or AASX standard for the rules about the container; the metamodel standard and its schemas for the ones about what a document must be, and the metamodel constraints for the relayed `meta` channel; a pointer to this project's own documented bounds for the limits it puts on what it will read; and, for the lints and for the rule about two templates sharing an identifier, a pointer to `docs/divergences.md` for the reading being applied. |
 
 `kind` is `meta` for findings relayed from
 [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s

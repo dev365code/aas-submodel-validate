@@ -65,11 +65,14 @@ def test_the_rule_counts_are_the_registrys():
     assert len(all_rules()) == 125
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS)) == (38, 26, 22)
     # Every place the page says it, not "somewhere on the page". The
-    # count appears four times -- the badge, the gallery, the roadmap
-    # and the table's heading -- and a substring check is satisfied by
-    # any one of them, so three could go stale in silence. The badge is
-    # the one a reader trusts most, being rendered as a picture, and it
-    # was the one nothing watched.
+    # count appears five times -- the badge, the gallery, the roadmap,
+    # the table's heading and the sentence that says which numbers are
+    # pinned -- and a substring check is satisfied by any one of them,
+    # so four could go stale in silence. The badge is the one a reader
+    # trusts most, being rendered as a picture, and it was the one
+    # nothing watched. The fourth pattern below is a substring of the
+    # third, deliberately: what holds the table's heading on its own is
+    # the count of occurrences underneath.
     total = len(all_rules())
     for where in ("[![templates](https://img.shields.io/badge/"
                   "IDTA_templates-3_\u00b7_%d_rules" % total,
@@ -124,6 +127,47 @@ def test_the_rule_counts_are_the_registrys():
         "the summary describes the five as container rules again; two of "
         "them fire on a document with no container, which the paragraph "
         "below derives from a run")
+
+
+def test_the_page_does_not_say_the_law_itself_requires_it():
+    """The same sentence the finding is held to, on the page.
+
+    The gallery row said "an element the law requires" while the
+    finding beneath it had been repaired to say a published reading
+    does -- one commit fixed both and only the finding got a guard, so
+    the page could go back on its own the next time somebody tightened
+    a line."""
+    for hit in re.finditer(
+            r"\b(regulations?|laws?|provisions?|2023/1542)\b[^.]{0,80}?"
+            r"\b(requires|mandates|obliges|demands)\b", FLOWED, re.I):
+        around = FLOWED[max(0, hit.start() - 70):hit.end() + 50]
+        assert re.search(r"\bread(?:ing|s)?\b", around), (
+            "the page has the law itself requiring something, with "
+            "nothing beside it saying whose reading that is: %r" % around)
+
+
+def test_the_coverage_note_is_what_the_tool_writes():
+    """The block that says "as the tool writes it" and was checked by
+    nothing. It is a ```text``` fence, and the gate that reads quoted
+    output reads ```console``` ones -- so the note could be replaced
+    with its own opposite and stay green."""
+    import tempfile
+
+    from test_battery_rules import _env, _technical_data
+
+    quoted = [body for body in re.findall("```text\n(.*?)```", README, re.S)
+              if "BAT-R8" in body]
+    assert len(quoted) == 1, "expected exactly one quoted note on the page"
+    with tempfile.TemporaryDirectory() as where:
+        target = Path(where) / "battery.json"
+        target.write_text(json.dumps(_env(_technical_data(fade=False))), "utf-8")
+        printed = {" ".join(row.split()) for row
+                   in render(runner.run(target, allow_unmatched=True)).splitlines()}
+    for line in quoted[0].splitlines():
+        if line.strip():
+            assert " ".join(line.split()) in printed, (
+                "the page quotes %r as a line the tool writes and it "
+                "writes no such line" % line)
 
 
 def test_the_battery_join_figures_are_the_joins():
@@ -574,8 +618,14 @@ def test_every_picture_on_the_page_is_the_one_committed():
     sources = re.findall(r"""<img\s[^>]*?src=["']([^"']+)["']""", README)
     sources += [target for _alt, target
                 in re.findall(r"!\[([^\]]*)\]\(([^)\s]+)\)", README)]
-    sources += [target for _label, target
-                in re.findall(r"(?m)^\[([^\]]+)\]:\s*(\S+)\s*$", README)]
+    # Reference-style definitions, but only the ones an image points at:
+    # the collector took every `[label]: url` line, so adding an
+    # ordinary link definition under the workflows prefix made up for a
+    # deleted badge and the count check passed.
+    referenced = set(re.findall(r"!\[[^\]]*\]\[([^\]]+)\]", README))
+    sources += [target for label, target
+                in re.findall(r"(?m)^\[([^\]]+)\]:\s*(\S+)\s*$", README)
+                if label in referenced]
     # Bound to hosts, not to a shape. The first version excused anything
     # whose path ended `/badge.svg`, which is a filename anyone can
     # choose: a picture served from another host under that name passed

@@ -99,8 +99,12 @@ def banner() -> str:
 
 
 # ── the real verdict, drawn ─────────────────────────────────────────────────
-#: Every line below is a line the installed tool prints for this input,
-#: and `tests/test_door.py` asserts exactly that against a live run.
+#: Below are the lines the installed tool prints for this input, split
+#: where the drawing needs them: a label opens a line and the runs
+#: after it at x >= 168 continue the same one, so the two prompts and
+#: five continuations are not lines of their own.
+#: `tests/test_door.py` joins them back before comparing, and asserts
+#: exactly that against a live run.
 #: Wrapping is the picture's own -- the terminal wraps where the window
 #: ends and an SVG has no window -- so the runs are joined back into the
 #: line they came from before the comparison. A line the picture cuts

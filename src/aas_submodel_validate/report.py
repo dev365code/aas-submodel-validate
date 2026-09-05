@@ -30,9 +30,13 @@ def render(report: Report, *, show_meta: bool = False) -> str:
     aas-core3.0 about the metamodel, upstream of any template, and on
     the official example this project points a newcomer at it is
     seventy-seven of eighty-seven findings -- every one of them carrying
-    the same remedy sentence, which no edit to the submodel can act on.
-    Printed in full they are the first thing a stranger sees and the
-    verdict is two hundred lines below them.
+    the same remedy sentence. Most of them can be acted on -- on that
+    example forty-five of the seventy-seven are about the submodel
+    itself and thirty-three of those clear by deleting an idShort the
+    metamodel says should not be there -- so the reason for folding
+    them is length and not futility. Printed in full they are the first
+    thing a stranger sees and the verdict is three hundred lines below
+    them.
 
     Folded, not dropped. The summary line still counts them, the JSON
     report is untouched, and the fold says how many there are and which

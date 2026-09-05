@@ -178,8 +178,9 @@ jobs:
         # signature is already in a public log. Here rather than there,
         # because a release line first exercised on the day of the
         # release is one that dies on the day of the release. Narrowed
-        # to this project's own artifacts: the directory also holds the
-        # dependency wheel, whose metadata is upstream's business.
+        # to this project's own artifacts: on the release run the same
+        # directory also holds the dependency wheel, whose metadata is
+        # upstream's business and which fails `--strict`.
         run: |
           pip install twine
           twine check --strict dist/aas_submodel_validate-*
