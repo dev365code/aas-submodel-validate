@@ -119,6 +119,50 @@ def file_part_violations(container, subject, value):
                         subject=subject, detail=value)
 
 
+def near_miss_violations(ctx, tables):
+    """The near-miss lint, for whichever pack asks.
+
+    Written twice, word for word, in `handover.py` and `td.py`. A copy
+    is a fork that looks like agreement, and this repository has now
+    watched one of these pairs diverge in the field.
+    """
+    from ..model import Violation
+    for subject, seen, expected in analyze(ctx, tables)["near_misses"]:
+        yield Violation("semanticId almost matches the template",
+                        subject=subject,
+                        detail="%s, where the template says %s" % (seen, expected))
+
+
+def reftype_violations(ctx, tables):
+    """The reference-type lint, for whichever pack asks. Same pair."""
+    from ..model import Violation
+    for subject, seen, expected in analyze(ctx, tables)["reftype_drift"]:
+        yield Violation(
+            "the reference type differs from the template's",
+            subject=subject,
+            detail="%s, where the template uses %s" % (seen, expected),
+            fix=reftype_remedy(expected))
+
+
+def dangling_violation(subject, keys, label):
+    """A reference that resolves to nothing, for whichever rule asks.
+
+    This pair had already come apart: the handover rule carried
+    `dangling_remedy(label)` -- a sentence written per label because the
+    standing one told the author of a dangling `BasedOn` to add an
+    Entity -- and the technical-data rule, saying the same words, did
+    not.
+    """
+    from ..model import Violation
+    from .handover import dangling_remedy
+    return Violation(
+        "the reference walks to nothing in this submodel",
+        subject=subject,
+        detail="no element at key path %s"
+               % " / ".join(key.value for key in keys[1:]),
+        fix=dangling_remedy(label))
+
+
 def matched_submodels(ctx, tables) -> List:
     """The instances a table answers for.
 

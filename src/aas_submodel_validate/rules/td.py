@@ -20,11 +20,13 @@ from ..registry import rule
 from . import td_tables
 from .engine import (
     analyze,
+    dangling_violation,
     file_part_violations,
     instances_of,
     matched_submodels,
+    near_miss_violations,
     property_value,
-    reftype_remedy,
+    reftype_violations,
     resolve_in_submodel,
 )
 from .values import valid_xs_date
@@ -111,11 +113,8 @@ def td_d3_area_references_resolve(ctx):
             if keys[0].type.value != "Submodel" or keys[0].value != submodel.id:
                 continue
             if not resolve_in_submodel(submodel, keys):
-                yield Violation(
-                    "the reference walks to nothing in this submodel",
-                    subject=subject,
-                    detail="no element at key path %s"
-                           % " / ".join(key.value for key in keys[1:]))
+                yield dangling_violation(
+                    subject, keys, "ReferenceToTechnicalPropertyArea")
 
 
 @rule("TDL1", kind="lint", prio="SHOULD",
@@ -125,10 +124,7 @@ def td_d3_area_references_resolve(ctx):
           "matches nothing, and every rule that would have applied to the "
           "element silently stops applying.")
 def tdl1_near_miss(ctx):
-    for subject, seen, expected in analyze(ctx, td_tables)["near_misses"]:
-        yield Violation("semanticId almost matches the template",
-                        subject=subject,
-                        detail="%s, where the template says %s" % (seen, expected))
+    yield from near_miss_violations(ctx, td_tables)
 
 
 @rule("TDL2", kind="lint", prio="MAY",
@@ -137,8 +133,4 @@ def tdl1_near_miss(ctx):
       fix="Use the reference type the template declares here; the value "
           "matched, so this is interoperability polish, not a failure.")
 def tdl2_reference_type(ctx):
-    for subject, seen, expected in analyze(ctx, td_tables)["reftype_drift"]:
-        yield Violation(
-            "the reference type differs from the template's",
-            subject=subject, detail="%s, where the template uses %s" % (seen, expected),
-            fix=reftype_remedy(expected))
+    yield from reftype_violations(ctx, td_tables)

@@ -125,10 +125,22 @@ def _meta_findings(loaded: Loaded, strict):
                 yield Finding(rule, Violation(error.cause,
                                               subject=str(error.path)))
         except Exception as exc:                     # noqa: BLE001
-            yield Finding(rule, Violation(
+            # The remedy `execute()` gives a rule that dies, because
+            # this is the same event: a defect in the validator, and
+            # telling the reader to fix the constraint aas-core3.0
+            # names is telling them to fix their file for our bug.
+            #
+            # And reported at the severity of a channel that could not
+            # run, not at the level `--meta` sets. That dial is for the
+            # constraint findings the channel relays; without this the
+            # crash arrived as a folded warning and the run left by 0 --
+            # quietly wrong, where the unisolated version had at least
+            # been loudly wrong.
+            yield Finding(_meta_rule("error"), Violation(
                 COULD_NOT_RUN,
-                subject=getattr(target, "id", None) or "",
-                detail="%s: %s" % (type(exc).__name__, exc)))
+                subject=getattr(target, "id", None),
+                detail="%s: %s" % (type(exc).__name__, exc),
+                fix=CRASH_REMEDY))
 
 
 #: Reading order: errors before warnings before notes; within a severity

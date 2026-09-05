@@ -868,3 +868,60 @@ def test_every_divergence_this_project_cites_exists():
     assert not dangling, (
         "these divergence numbers are cited and the document has no such "
         "row: %s" % dangling)
+
+
+#: Message literals allowed in more than one place, and why. A pair
+#: here is a pair somebody has looked at and decided is not a copy.
+SAID_TWICE: dict = {}
+
+
+def test_no_two_places_say_the_same_thing_to_a_reader():
+    """Every round of review this repository has run found the same
+    shape: one question asked in several places and a repair reaching
+    one of them. Counting the places got a layer better each time --
+    first the identifier (`loaded.submodels`), then the wording (`"://"
+    in value`, which that grep cannot see) -- and each layer was found
+    by a person after the defect had shipped.
+
+    Code diverges; the sentence does not. `HD-D7` and `TD-D2` had
+    different local names, different imports and different files, and
+    said the same three sentences to the reader word for word. That is
+    what a copy leaves behind, and it is one `ast.walk` away.
+
+    So: the first argument of every `Violation(...)` in `src/`, and no
+    literal may be built in two places. A shared function called from
+    two rules is one place, which is the repair this asks for.
+    """
+    import ast
+    import collections
+
+    where = collections.defaultdict(set)
+    for path in sorted((ROOT / "src").rglob("*.py")):
+        tree = ast.parse(path.read_text("utf-8"), str(path))
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call)
+                    and getattr(node.func, "id", None) == "Violation"
+                    and node.args):
+                continue
+            said = node.args[0]
+            parts = []
+            while isinstance(said, ast.BinOp) and isinstance(said.op, ast.Mod):
+                said = said.left
+            if isinstance(said, ast.Constant) and isinstance(said.value, str):
+                parts = [said.value]
+            elif isinstance(said, ast.JoinedStr):
+                parts = [piece.value for piece in said.values
+                         if isinstance(piece, ast.Constant)]
+            for text in parts:
+                if len(text.strip()) > 20:
+                    where[" ".join(text.split())].add(path.name)
+
+    assert where, "no violation messages were read out of src/ at all"
+    twinned = {said: sorted(files) for said, files in where.items()
+               if len(files) > 1 and said not in SAID_TWICE}
+    assert not twinned, (
+        "these sentences are built in more than one place, which is what "
+        "a copied rule leaves behind -- share the body or record the pair "
+        "in SAID_TWICE with the reason:\n  %s"
+        % "\n  ".join("%s -> %s" % (said[:70], files)
+                      for said, files in sorted(twinned.items())))

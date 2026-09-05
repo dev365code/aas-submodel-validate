@@ -37,12 +37,14 @@ from .engine import (
     analyze,
     child_of,
     children_of,
+    dangling_violation,
     file_part_violations,
     idshort_remedy,
     instances_of,
     matched_submodels,
+    near_miss_violations,
     property_value,
-    reftype_remedy,
+    reftype_violations,
     resolve_in_submodel,
 )
 from .values import valid_xs_date
@@ -315,12 +317,7 @@ def _d9(tables):
                     if keys[0].type.value != "Submodel" or keys[0].value != submodel.id:
                         continue
                     if not resolve_in_submodel(submodel, keys):
-                        yield Violation(
-                            "the reference walks to nothing in this submodel",
-                            subject=subject,
-                            detail="no element at key path %s"
-                                   % " / ".join(key.value for key in keys[1:]),
-                            fix=dangling_remedy(label))
+                        yield dangling_violation(subject, keys, label)
     return check
 
 
@@ -353,20 +350,13 @@ def _l1(tables):
 
 def _l2(tables):
     def check(ctx):
-        for subject, seen, expected in analyze(ctx, tables)["near_misses"]:
-            yield Violation("semanticId almost matches the template",
-                            subject=subject,
-                            detail="%s, where the template says %s" % (seen, expected))
+        yield from near_miss_violations(ctx, tables)
     return check
 
 
 def _l3(tables):
     def check(ctx):
-        for subject, seen, expected in analyze(ctx, tables)["reftype_drift"]:
-            yield Violation(
-                "the reference type differs from the template's",
-                subject=subject, detail="%s, where the template uses %s" % (seen, expected),
-                fix=reftype_remedy(expected))
+        yield from reftype_violations(ctx, tables)
     return check
 
 

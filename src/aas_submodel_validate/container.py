@@ -192,7 +192,24 @@ def xml_as_utf8(raw: bytes) -> bytes:
     """
     for bom, encoding in _BOMS:
         if raw.startswith(bom):
-            return raw if encoding is None else _as_utf8(raw, encoding)
+            if encoding is not None:
+                return _as_utf8(raw, encoding)
+            # A UTF-8 mark says the bytes after it are UTF-8, and a
+            # document may still declare something else -- ill-formed by
+            # XML 1.0, and read by every parser, which is the standard
+            # this function set for itself. Repairing only the branch
+            # with no mark left a marked `ISO-8859-1` document refused,
+            # with the same wrong remedy the repair was written to
+            # remove.
+            #
+            # The mark comes off first. Left on, it decodes to three
+            # stray characters in front of the prolog, the pattern that
+            # strips the declaration no longer matches, and the bytes
+            # go downstream as UTF-8 still claiming to be something
+            # else -- which the parser then refuses for a different
+            # reason than the one it arrived with.
+            converted = _as_declared(raw[len(bom):])
+            return converted if converted is not raw[len(bom):] else raw
     encoding = _sniff(raw)
     if encoding is not None:
         return _as_utf8(raw, encoding)
@@ -217,7 +234,10 @@ def _as_declared(raw: bytes) -> bytes:
     must be, since a parser has to read the declaration before it knows
     the encoding.
     """
-    declared = _ENCODING_NAME.match(raw[:200].decode("ascii", "ignore"))
+    # Long enough for a prolog nobody would write by hand: XML 1.0
+    # bounds nothing here, and a 200-byte window silently stopped
+    # reading a declaration a parser reads.
+    declared = _ENCODING_NAME.match(raw[:4096].decode("ascii", "ignore"))
     if declared is None:
         return raw
     name = declared.group("name")
@@ -233,7 +253,14 @@ def _as_declared(raw: bytes) -> bytes:
 def _as_utf8(raw: bytes, encoding: str) -> bytes:
     try:
         text = raw.decode(encoding)
-    except UnicodeDecodeError:
+    except (UnicodeError, LookupError):
+        # `LookupError` because `codecs.lookup` accepts a dozen names
+        # that are not text encodings -- `base64`, `rot13`, `zlib_codec`
+        # -- and `bytes.decode` refuses them. One line in a prolog was
+        # enough: traceback, no report, exit 1, which is the shape the
+        # commit one round earlier said it had removed. `UnicodeError`
+        # rather than its decode child because `punycode` raises the
+        # parent.
         return raw
     return _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
 
