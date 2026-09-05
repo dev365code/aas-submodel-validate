@@ -7,8 +7,12 @@ before: no rule checks anything it did not check in 0.1.0, and no
 verdict changes. Most of this is about *reaching* a verdict — what
 someone who installed 0.1.0 from the package index, took it from the
 release page, or read the front page could not do. The exceptions are
-at the end: three findings say something different from what they said,
-and each of them was saying something untrue.
+at the end: the line every run finishes with is spelled differently, so
+that a terminal which cannot encode it stops killing the run; three
+findings say something different from what they said, and each of them
+was saying something untrue; and every finding now prints the clause it
+answers for, which the JSON has carried since 0.1.0 and the screen
+never showed.
 
 **The first verdict needs nothing of your own.** IDTA's published example
 travels in the package now, and `smtv --example` judges it — no file of
@@ -81,6 +85,19 @@ landed. `at` named a path the walk never takes and now names the
 element. And the coverage note said `1 of the 1`, a number divided by
 itself wearing the look of complete coverage; the eight it withholds
 belong in the denominator that frames them.
+
+**The verdict line survives a terminal that cannot spell it.** Every run
+ended with an em dash, and cp949 — the default code page on Korean
+Windows — has none, nor does cp932 on Japanese. Writing it raised, the
+interpreter printed a traceback, and the process left by 1: so a clean
+file and a file this reader refused came back as the same number, and
+that number means *there are findings*. The exit code is the whole
+contract for a pipeline that reads nothing else. What this tool writes
+of its own is ASCII now — the summary reads `… info -- file.json;
+judged 1 of 1 submodel` where it read `… info — file.json · judged …`
+— and what it repeats from elsewhere, a section sign in a citation or
+an idShort in any script, is escaped rather than raised on. The JSON
+report is unchanged: it was always ASCII.
 
 **A wrong-kind element is no longer told to add itself.** A generated
 row's rule is about how many of an element there are and carries one

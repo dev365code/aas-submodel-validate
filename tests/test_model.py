@@ -251,7 +251,7 @@ def test_a_run_with_warnings_does_not_wear_the_clean_banner():
                        if str(f.severity) != "error"]
     report.notes = []    # or the notes guard hides the findings guard
     text = render(report)
-    assert "ok —" not in text
+    assert "ok --" not in text
     assert "warning" in text
 
 
@@ -269,14 +269,21 @@ def test_the_terminal_gets_no_control_bytes_but_the_tab():
     assert _safe("caf\xe9") == "caf\xe9"
 
 
-def test_the_clean_banner_spells_ok_with_an_em_dash():
-    """The positive anchor for the two `"ok —" not in` assertions above
+def test_the_clean_banner_spells_ok_the_way_the_others_look_for():
+    """The positive anchor for the two `"ok --" not in` assertions above
     and in the CLI tests: if the banner ever respells itself, this goes
-    red instead of those going quietly vacuous."""
+    red instead of those going quietly vacuous.
+
+    It spelled the separator with an em dash until a terminal that
+    cannot encode one was found to kill the run and take the exit code
+    with it. What this tool writes of its own is ASCII now, and this is
+    where that is pinned."""
     from aas_submodel_validate.report import render
     report = Report(path="clean.json")
     report.checked = 123
-    assert render(report).startswith("ok \u2014 ")
+    banner = render(report)
+    assert banner.startswith("ok -- ")
+    assert all(ord(character) < 128 for character in banner), banner
 
 
 def test_the_report_names_the_bytes_it_judged(tmp_path):

@@ -136,7 +136,7 @@ VERDICT_LINES = [
           (180, N, "BAT-R8 reported 1 of the 9 elements this table holds;", 0)]),
     (24, [(180, N, "8 of them need a battery category no rule here reads yet" + ELISION, 0)]),
     (19, [(28, T, "0 error(s), 1 warning(s), 3 info", 1),
-          (280, N, "— battery-passport.json · judged 0 of 1 submodel", 0)]),
+          (280, N, "-- battery-passport.json; judged 0 of 1 submodel", 0)]),
 ]
 
 SHOT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 %(h)d" role="img" aria-label="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, with the element named, the clause cited and a remedy">

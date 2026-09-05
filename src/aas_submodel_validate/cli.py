@@ -6,6 +6,7 @@ saying what was refused and what to do about it."""
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 from typing import Optional
@@ -20,7 +21,34 @@ EXIT_FINDINGS = 1
 EXIT_ERROR = 2
 
 
+def _survive_the_terminal() -> None:
+    """Escape what the terminal cannot encode instead of raising.
+
+    What this tool writes of its own is ASCII, so the ordinary output
+    reads the same everywhere. What it repeats from elsewhere is not
+    ours to constrain: a section sign in an IDTA citation, an idShort
+    in any script, a path a reader chose. Without this, writing one of
+    those raises, the interpreter prints a traceback, and the process
+    leaves by 1 -- so a clean file and a file this reader refused come
+    back as the same number, and that number means "there are
+    findings". The exit code is the whole contract for a pipeline that
+    reads nothing else, and it was the thing that broke.
+
+    Not an exotic case: cp949 is the default code page on Korean
+    Windows and cp932 on Japanese, and neither has an em dash. CI is
+    UTF-8 everywhere, which is why nothing saw it.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        # Not a text stream -- a test's own, a pipe somebody replaced.
+        # Nothing to do, and nothing to break.
+        if reconfigure is not None:
+            with contextlib.suppress(ValueError, OSError):
+                reconfigure(errors="backslashreplace")
+
+
 def main(argv: Optional[list] = None) -> int:
+    _survive_the_terminal()
     parser = argparse.ArgumentParser(
         prog="smtv",
         description="Validate an AAS submodel against its IDTA template, offline.",
@@ -161,7 +189,7 @@ def main(argv: Optional[list] = None) -> int:
                     # point; the terminal did not, and the file it names
                     # is fifty lines below.
                     print("judging IDTA's published 02004 2.0 example, "
-                          "carried in this package — unmodified, defects "
+                          "carried in this package -- unmodified, defects "
                           "and all.")
                 return _judge(str(path), args, shown_as=example_name())
         except NotBundled as exc:

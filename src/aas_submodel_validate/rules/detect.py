@@ -70,7 +70,7 @@ def _nearest_miss(submodels) -> str:
         named = (getattr(submodel, "id_short", None) or "").lower()
         for pack in PACKS:
             if named == pack.id_short_hint:
-                return ("a submodel is *named* %s but its semanticId is %s — "
+                return ("a submodel is *named* %s but its semanticId is %s -- "
                         "matching goes by semanticId, never by name"
                         % (submodel.id_short,
                            ", ".join(key_values(submodel.semantic_id)) or "absent"))

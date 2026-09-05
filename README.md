@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=0e9f01a5" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=46d1463d" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -32,7 +32,7 @@ warning BAT-R8   conformant to the template and not to the regulation: 'EnergyRo
         per  Regulation (EU) 2023/1542 Annex IV Part A (4); docs/divergences.md #37 for whose reading of it this answers
         fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
 …
-0 error(s), 1 warning(s), 3 info — your-battery-passport.json · judged 0 of 1 submodel
+0 error(s), 1 warning(s), 3 info -- your-battery-passport.json; judged 0 of 1 submodel
 ```
 
 The `…` is three lines: the one that accounts for the `3 info` — the
@@ -60,7 +60,7 @@ error   SMT-D1   no submodel declares a semanticId this tool has a template tabl
         saw  semanticId value(s): urn:somecompany:docs
         per  IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2
         fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
-1 error(s), 0 warning(s), 0 info — machine-docs.json · judged 0 of 1 submodel
+1 error(s), 0 warning(s), 0 info -- machine-docs.json; judged 0 of 1 submodel
 ```
 
 </details>
