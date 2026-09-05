@@ -106,8 +106,12 @@ jobs:
           # the suite must run against. Taken from the wheel just built
           # rather than written here, so the two cannot drift; without
           # them the step died on `No module named pytest`, and then on
-          # `aas_core3`, from the first push it was on.
-          python - <<'PY' > requirements-sdist.txt
+          # `aas_core3`, from the first push it was on. Written to a
+          # temporary file rather than the workspace: the first version
+          # left an untracked one behind, which is one `git add -A` away
+          # from a commit for anybody running this step by hand.
+          requirements="$(mktemp)"
+          python - <<'PY' > "$requirements"
           import glob, zipfile
           names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
           meta = [n for n in names if n.endswith(".dist-info/METADATA")][0]
@@ -116,8 +120,8 @@ jobs:
               if line.startswith("Requires-Dist:") and "extra ==" not in line:
                   print(line.split(":", 1)[1].strip())
           PY
-          cat requirements-sdist.txt
-          pip install pytest -r requirements-sdist.txt
+          cat "$requirements"
+          pip install pytest -r "$requirements"
           # Outside the workspace, so the steps after this see the
           # directory they expect and nothing has to be deleted
           # afterwards. The first version cleaned up with

@@ -184,7 +184,12 @@ jobs:
 
           The tool itself reaches no network, ever.
           NOTES
-          sed -i "s|OWNER/REPO|$GITHUB_REPOSITORY|" notes.md
+          python - <<'SUB'
+          import os, pathlib
+          notes = pathlib.Path("notes.md")
+          notes.write_text(notes.read_text(encoding="utf-8").replace(
+              "OWNER/REPO", os.environ["GITHUB_REPOSITORY"]), encoding="utf-8")
+          SUB
           gh release create "$GITHUB_REF_NAME" dist/* \
             --title "$GITHUB_REF_NAME" --notes-file notes.md
 
