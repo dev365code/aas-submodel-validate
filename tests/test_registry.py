@@ -822,8 +822,19 @@ def test_every_divergence_this_project_cites_exists():
     # because a citation written across two of them is one sentence to
     # a reader and two to a scanner.
     cited: dict = {}
-    tracked = subprocess.run(["git", "ls-files"], cwd=str(ROOT),
-                             capture_output=True, text=True)
+    # The same three guards `test_package.py` has, for the same reason
+    # and copied from it: an unpacked sdist is not a checkout, and most
+    # distribution build environments have no git at all. `MANIFEST.in`
+    # opens by naming this exact failure -- "a test that shelled out to
+    # git" -- from the last two times, and the gate written to catch
+    # dangling citations went and did it a third.
+    try:
+        tracked = subprocess.run(["git", "ls-files"], cwd=str(ROOT),
+                                 capture_output=True, text=True)
+    except OSError:                    # git is not installed
+        pytest.skip("git is not available")
+    if tracked.returncode != 0:
+        pytest.skip("not a git checkout (an unpacked sdist is not one)")
     paths = [ROOT / name for name in tracked.stdout.split("\n") if name]
     assert len(paths) > 50, "git ls-files found nothing; is this a checkout?"
     # One direction, and then every number in the list that follows.

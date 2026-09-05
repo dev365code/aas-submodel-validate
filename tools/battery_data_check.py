@@ -34,12 +34,25 @@ check` over content the tree never had.
 from __future__ import annotations
 
 import json
+import pathlib as _pathlib
 import py_compile
 import re
 import sys
+import sys as _sys
 from pathlib import Path
 
-from aas_submodel_validate._terminal import survive
+# The package, from wherever this script is. `make` exports
+# PYTHONPATH and the lint job installs the package first, but
+# CI's wheel job installs nothing and an unpacked sdist has no
+# install at all -- and `MANIFEST.in` grafts this directory for
+# exactly that reader. Two scripts here already did this; the
+# import added to all eight assumed the other six were as
+# lucky.
+_TOOLS_SRC = str(_pathlib.Path(__file__).resolve().parent.parent / "src")
+if _TOOLS_SRC not in _sys.path:
+    _sys.path.insert(0, _TOOLS_SRC)
+
+from aas_submodel_validate._terminal import survive  # noqa: E402
 
 DATA = Path(__file__).resolve().parents[1] / "data" / "battery-passport"
 INDEXES = ("requirements-annex-xiii.json", "requirements-ec-datapoints.json",

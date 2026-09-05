@@ -11,6 +11,7 @@ somebody saying so.
 from __future__ import annotations
 
 import json
+import pathlib
 import sys
 from pathlib import Path
 
@@ -35,6 +36,47 @@ FIRED: set = set()
 OBSERVED = Path(__file__).resolve().parents[1] / ".rule-coverage.json"
 
 
+#: Whether this session saw the whole suite. A filtered run -- `-k`, a
+#: single file, `-m`, `--lf` -- fires a handful of rules and would write
+#: that handful out as the observation, so `make exercised` then reports
+#: every other rule as dead and the next full run inherits it. One
+#: `pytest -k something` used to poison the tree until somebody ran the
+#: whole suite again and thought to look.
+def _whole_suite(config) -> bool:
+    option = config.option
+    if getattr(option, "keyword", "") or getattr(option, "markexpr", ""):
+        return False
+    if getattr(option, "last_failed", False) or getattr(option, "failed_first", False):
+        return False
+    if getattr(option, "deselect", None):
+        return False
+    # An argument naming a file collects part of the tree and says
+    # nothing about the rest; one naming a directory collects all of it
+    # below there, which for this suite is the whole thing. Counting
+    # arguments instead of looking at them called `pytest
+    # tests/test_semantics.py` a full run and wrote out its handful.
+    for argument in (config.args or []):
+        if argument.startswith("-"):
+            continue
+        named = pathlib.Path(argument.split("::", 1)[0])
+        if named.is_file():
+            return False
+    return True
+
+
+def _record(fired) -> None:
+    if _WHOLE_SUITE:
+        OBSERVED.write_text(json.dumps(sorted(fired), indent=0), "utf-8")
+
+
+_WHOLE_SUITE = True
+
+
+def pytest_configure(config):
+    global _WHOLE_SUITE
+    _WHOLE_SUITE = _whole_suite(config)
+
+
 @pytest.fixture(autouse=True, scope="session")
 def _observe_which_rules_fire():
     from aas_submodel_validate import runner
@@ -56,4 +98,4 @@ def _observe_which_rules_fire():
         yield
     finally:
         runner.run = original
-        OBSERVED.write_text(json.dumps(sorted(FIRED), indent=0), "utf-8")
+        _record(FIRED)

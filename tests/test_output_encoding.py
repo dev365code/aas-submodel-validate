@@ -307,9 +307,22 @@ def test_a_gate_does_not_die_of_its_own_output(script, encoding):
     done = subprocess.run(
         [sys.executable, str(ROOT / "tools" / name)] + ([flag] if flag else []),
         capture_output=True, env=environment, cwd=str(ROOT))
-    assert b"UnicodeEncodeError" not in done.stderr, (
-        "%s died writing its own output under %s:\n%s"
-        % (name, encoding, done.stderr.decode("utf-8", "replace")[-400:]))
-    assert done.returncode == 0, (
-        "%s failed under %s with %s"
-        % (name, encoding, done.stderr.decode("utf-8", "replace")[-400:]))
+    for died in (b"UnicodeEncodeError", b"UnicodeDecodeError"):
+        assert died not in done.stderr, (
+            "%s died writing its own output under %s:\n%s"
+            % (name, encoding, done.stderr.decode("utf-8", "replace")[-400:]))
+    # Not `returncode == 0`. What is asked here is whether a tool can
+    # write its own sentences on this terminal, and requiring it to
+    # *pass* drags in whatever else it needs: `rule_coverage.py` reads
+    # an observation file the suite writes at the end of a session, so
+    # on a tree nobody has run the suite in -- every clone CI makes --
+    # this gate failed four times over something that has nothing to do
+    # with encodings. Whatever it decides, it has to be able to say so.
+    assert done.returncode in (0, 1), (
+        "%s left by %d under %s, which is neither a verdict nor a "
+        "refusal:\n%s" % (name, done.returncode, encoding,
+                          done.stderr.decode("utf-8", "replace")[-400:]))
+    spoken = done.stdout + done.stderr
+    assert spoken.strip(), (
+        "%s said nothing at all under %s; a tool that cannot speak "
+        "cannot be checked for what it says" % (name, encoding))
