@@ -1,8 +1,6 @@
 <div align="center">
 
-# aas-submodel-validate
-
-**Asset Administration Shell submodels, judged against their IDTA template — offline.**
+  <img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/door.svg?v=4c090ce4" alt="aas-submodel-validate — Asset Administration Shell submodels, judged against their IDTA template: offline, and every finding tells you how to fix it. AI proposes, rules judge, people decide." width="100%">
 
 [![CI](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aas-submodel-validate?label=PyPI&color=2f6fb3)](https://pypi.org/project/aas-submodel-validate/)
@@ -13,12 +11,11 @@
 
 [Ten seconds](#ten-seconds) · [What it catches](#what-it-catches) · [Where it sits](#where-it-sits) · [Three doors](#three-doors-one-judgement) · [Honest coverage](#honest-coverage) · [Why trust the answer](#why-trust-the-answer) · [Roadmap](#roadmap) · [In your product](#using-this-validator-in-your-product)
 
-*Prüft AAS-Teilmodelle gegen ihre IDTA-Vorlage — offline, jeder Befund mit Behebung.*<br>
-*AAS 서브모델이 IDTA 템플릿에 맞는지 판정합니다 — 오프라인, 모든 소견에 고치는 법.*
-
 </div>
 
 ## Ten seconds
+
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=6897f299" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -158,12 +155,13 @@ timeline
     title Where aas-submodel-validate is going
     Shipped : Three IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2
             : 125 rules, 86 of them generated from the vendored official template files
-            : Battery passport read against Regulation (EU) 2023/1542 where template and law differ
+            : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
+            : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
-    Building : More of the battery obligation index, hardest first
-             : Deeper handover checks across the VDI 2770 classes
-             : An evidence bundle a reviewer can file
+    Building : Deeper coverage of the three templates already supported
     Planned : Further IDTA templates, chosen by what people bring
+            : The rest of the battery obligation index, once a rule can read a battery's category
+            : An evidence bundle a reviewer can file — one command, report plus provenance
             : Cross-checks with neighbouring standards — VDI 2770, iiRDS
 ```
 

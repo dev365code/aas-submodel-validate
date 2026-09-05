@@ -33,6 +33,13 @@ jobs:
         run: python tools/battery_data_check.py
       - name: the battery rule table matches its generator
         run: python tools/extract_battery_rules.py --check
+      - name: the front door's pictures match their generator
+        # A terminal shot is the one asset that can go quietly false --
+        # the tool changes a sentence and the picture keeps the old one.
+        # `tests/test_door.py` asks the harder question, whether the tool
+        # still says what the picture shows; this one only asks whether
+        # the committed bytes are the ones the generator writes.
+        run: python tools/gen_door.py --check
 
   test:
     name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}
