@@ -196,11 +196,28 @@ def test_the_commands_in_the_picture_are_ones_this_project_offers(tmp_path,
     that shows a flag the tool does not have teaches a wrong thing that
     no gate about the README would ever see."""
     from aas_submodel_validate.cli import main
-    typed = [text for _dy, runs in _generator().VERDICT_LINES
-             for _x, _colour, text, _bold in runs
-             if not text.startswith("$ ") and text.startswith("smtv ")]
+    # By where it is drawn, not by how the text was split. A prompt run
+    # and its command used to be two runs, and the quote check skipped
+    # anything starting `$ ` while this one only looked at runs starting
+    # `smtv `. Merging them into one run -- same picture, same pixels --
+    # took a forged command past both.
+    typed = []
+    for _dy, runs in _generator().VERDICT_LINES:
+        line = " ".join(text for _x, _colour, text, _bold in runs).strip()
+        if line.startswith("$ "):
+            typed.append(line[2:].strip())
     assert typed, "the picture shows no command"
+    assert any(command.startswith("smtv ") for command in typed), (
+        "no line in the picture runs this tool")
     for command in typed:
+        if not command.startswith("smtv "):
+            # The install line is a line a reader copies, and no gate
+            # read it: the package could have been renamed in the
+            # picture and nothing would have said so.
+            assert command.split()[-1] == "aas-submodel-validate", (
+                "the picture types %r, which installs something other "
+                "than this package" % command)
+            continue
         words = command.split()[1:]
         argv = []
         for word in words:

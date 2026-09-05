@@ -6,12 +6,12 @@ saying what was refused and what to do about it."""
 from __future__ import annotations
 
 import argparse
-import contextlib
 import json
 import sys
 from typing import Optional
 
 from . import __version__, runner
+from ._terminal import survive
 from .example import NotBundled, bundled_example, example_name
 from .loader import UnreadablePath
 from .report import render
@@ -21,34 +21,8 @@ EXIT_FINDINGS = 1
 EXIT_ERROR = 2
 
 
-def _survive_the_terminal() -> None:
-    """Escape what the terminal cannot encode instead of raising.
-
-    What this tool writes of its own is ASCII, so the ordinary output
-    reads the same everywhere. What it repeats from elsewhere is not
-    ours to constrain: a section sign in an IDTA citation, an idShort
-    in any script, a path a reader chose. Without this, writing one of
-    those raises, the interpreter prints a traceback, and the process
-    leaves by 1 -- so a clean file and a file this reader refused come
-    back as the same number, and that number means "there are
-    findings". The exit code is the whole contract for a pipeline that
-    reads nothing else, and it was the thing that broke.
-
-    Not an exotic case: cp949 is the default code page on Korean
-    Windows and cp932 on Japanese, and neither has an em dash. CI is
-    UTF-8 everywhere, which is why nothing saw it.
-    """
-    for stream in (sys.stdout, sys.stderr):
-        reconfigure = getattr(stream, "reconfigure", None)
-        # Not a text stream -- a test's own, a pipe somebody replaced.
-        # Nothing to do, and nothing to break.
-        if reconfigure is not None:
-            with contextlib.suppress(ValueError, OSError):
-                reconfigure(errors="backslashreplace")
-
-
 def main(argv: Optional[list] = None) -> int:
-    _survive_the_terminal()
+    survive()
     parser = argparse.ArgumentParser(
         prog="smtv",
         description="Validate an AAS submodel against its IDTA template, offline.",

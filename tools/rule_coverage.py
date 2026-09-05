@@ -15,11 +15,14 @@ import json
 import sys
 from pathlib import Path
 
+from aas_submodel_validate._terminal import survive
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 
 def main() -> int:
+    survive()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--write", action="store_true",

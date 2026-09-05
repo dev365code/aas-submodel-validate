@@ -39,6 +39,8 @@ import re
 import sys
 from pathlib import Path
 
+from aas_submodel_validate._terminal import survive
+
 DATA = Path(__file__).resolve().parents[1] / "data" / "battery-passport"
 INDEXES = ("requirements-annex-xiii.json", "requirements-ec-datapoints.json",
            "requirements-longlist.json", "requirements-idta.json")
@@ -68,6 +70,7 @@ def _ledger(problems) -> dict:
 
 
 def main() -> int:
+    survive()
     if not DATA.is_dir():
         print("battery-data: no data/battery-passport in this tree "
               "(an sdist ships the checker, not the data); nothing to check")

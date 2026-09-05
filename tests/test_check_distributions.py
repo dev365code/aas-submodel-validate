@@ -366,3 +366,54 @@ def test_a_metadata_suffix_on_a_file_does_not_exempt_it():
     # to ask of it.
     assert not gate.is_build_metadata(
         "aas_submodel_validate-0.1.1.data/scripts/smtv")
+
+
+def _sdist_with(tmp_path, extra):
+    """An sdist-shaped tar whose members `extra` adds to, by hand."""
+    import io
+    import tarfile
+
+    made = tmp_path / "aas_submodel_validate-0.1.1.tar.gz"
+    with tarfile.open(made, "w:gz") as archive:
+        info = tarfile.TarInfo("aas_submodel_validate-0.1.1/PKG-INFO")
+        body = b"Metadata-Version: 2.4\nName: aas-submodel-validate\n"
+        info.size = len(body)
+        archive.addfile(info, io.BytesIO(body))
+        for member in extra:
+            archive.addfile(member, io.BytesIO(b"")
+                            if member.isfile() else None)
+    return made
+
+
+def test_a_symlink_is_a_member_too(tmp_path):
+    """`members()` kept only what `isfile()` accepted, on the reasoning
+    that directories are carried by tar and listed by no `git ls-files`.
+    A symbolic link is neither a file nor a directory, so it was dropped
+    silently -- and a link is a payload: unpacked, `passwd_leak ->
+    /etc/passwd` is a path out of the tree that this gate reported as
+    nothing at all."""
+    import tarfile
+
+    link = tarfile.TarInfo("aas_submodel_validate-0.1.1/passwd_leak")
+    link.type, link.linkname = tarfile.SYMTYPE, "/etc/passwd"
+    gate = _gate()
+    names = [name for name, _repository in gate.members(_sdist_with(tmp_path, [link]))]
+    assert any(name.endswith("passwd_leak") for name in names), (
+        "a symbolic link rode along and the gate never saw it: %s" % names)
+
+
+def test_the_directory_an_sdist_unpacks_into_has_to_be_its_own(tmp_path):
+    """A member's repository path is taken by dropping the first path
+    component, because an sdist puts everything under one directory
+    named for the distribution. Nothing checked that it *was* that
+    directory, so `WHATEVER/docs/scope.md` mapped to a tracked file and
+    passed -- one archive, two roots, and the second one unreported."""
+    import tarfile
+
+    stray = tarfile.TarInfo("WHATEVER/docs/scope.md")
+    stray.size = 0
+    gate = _gate()
+    pairs = dict(gate.members(_sdist_with(tmp_path, [stray])))
+    assert pairs["WHATEVER/docs/scope.md"] != "docs/scope.md", (
+        "a member under a directory that is not this distribution's was "
+        "read as if it were, so a tracked path vouched for it")

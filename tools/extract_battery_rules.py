@@ -39,6 +39,8 @@ import json
 import sys
 from pathlib import Path
 
+from aas_submodel_validate._terminal import survive
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "battery-passport"
 OUT = ROOT / "src" / "aas_submodel_validate" / "rules" / "battery_tables.py"
@@ -204,6 +206,7 @@ def render() -> str:
 
 
 def main() -> int:
+    survive()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()

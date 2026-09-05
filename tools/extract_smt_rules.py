@@ -62,6 +62,8 @@ import re
 import sys
 from pathlib import Path
 
+from aas_submodel_validate._terminal import survive
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -352,6 +354,7 @@ def _fmt(value, depth):
 
 
 def main() -> int:
+    survive()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()

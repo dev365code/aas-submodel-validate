@@ -24,6 +24,8 @@ import pathlib
 import re
 import sys
 
+from aas_submodel_validate._terminal import survive
+
 OUT = pathlib.Path(__file__).resolve().parent.parent / "docs" / "assets"
 MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"
 SANS = ("-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,"
@@ -186,6 +188,7 @@ def _stamp(text: str, name: str, drawn: str):
 
 
 def main(argv) -> int:
+    survive()
     checking = "--check" in argv
     OUT.mkdir(parents=True, exist_ok=True)
     page = README.read_text(encoding="utf-8") if README.is_file() else None

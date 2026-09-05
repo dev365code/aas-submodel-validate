@@ -19,6 +19,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+from aas_submodel_validate._terminal import survive
+
 ROOT = Path(__file__).resolve().parents[1]
 
 REPO = "admin-shell-io/submodel-templates"
@@ -154,6 +156,7 @@ def check() -> int:
 
 
 def main() -> int:
+    survive()
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--refresh", action="store_true")

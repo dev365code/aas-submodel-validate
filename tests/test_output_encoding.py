@@ -267,3 +267,34 @@ def test_no_string_in_the_source_carries_one_either():
     assert not offenders, (
         "these strings can reach a terminal and the common default code "
         "pages cannot encode them:\n  %s" % "\n  ".join(offenders))
+
+
+#: The scripts `make check` runs. A message one of them cannot encode is
+#: a traceback and an exit 1 from a gate that found nothing wrong -- the
+#: same lie the CLI told, one directory over, and the AST scan above
+#: does not reach here because these also write SVG and other files
+#: whose contents are not terminal output.
+GATE_SCRIPTS = ["rule_coverage.py --check", "extract_smt_rules.py --check",
+                "vendor_template.py --check", "extract_battery_rules.py --check",
+                "battery_data_check.py", "gen_door.py --check"]
+
+
+@pytest.mark.parametrize("script", GATE_SCRIPTS)
+@pytest.mark.parametrize("encoding", ["cp949", "cp932", "ascii", "utf-8"])
+def test_a_gate_does_not_die_of_its_own_output(script, encoding):
+    """Each of these prints a sentence when it passes. If a terminal
+    cannot encode that sentence the write raises, and `make check` fails
+    on a tree with nothing wrong in it -- reporting a defect that is the
+    reader's code page."""
+    name, _, flag = script.partition(" ")
+    environment = dict(os.environ, PYTHONIOENCODING=encoding,
+                       PYTHONPATH=str(ROOT / "src"))
+    done = subprocess.run(
+        [sys.executable, str(ROOT / "tools" / name)] + ([flag] if flag else []),
+        capture_output=True, env=environment, cwd=str(ROOT))
+    assert b"UnicodeEncodeError" not in done.stderr, (
+        "%s died writing its own output under %s:\n%s"
+        % (name, encoding, done.stderr.decode("utf-8", "replace")[-400:]))
+    assert done.returncode == 0, (
+        "%s failed under %s with %s"
+        % (name, encoding, done.stderr.decode("utf-8", "replace")[-400:]))

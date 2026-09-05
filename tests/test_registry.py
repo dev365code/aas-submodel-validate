@@ -803,6 +803,13 @@ def test_every_divergence_this_project_cites_exists():
             for line in (ROOT / "docs" / "divergences.md").read_text("utf-8").splitlines()
             if re.match(r"^\|\s*\d+\s*\|", line)}
     assert len(rows) > 30, "the divergences table did not parse"
+    # Numbered 1..N with nothing missing. Without this, a dangling
+    # citation could be answered by appending a row with that number and
+    # nothing in it -- the gate would go green and the reader following
+    # the pointer would arrive at an empty cell.
+    assert rows == set(range(1, max(rows) + 1)), (
+        "the divergences table skips %s"
+        % sorted(set(range(1, max(rows) + 1)) - rows))
     # Every file this repository tracks, not a list of directories.
     # The list was `src/`, `tests/`, `tools/` and two markdown files,
     # and it missed the one in `docs/assets/verdict.svg` -- the picture
@@ -819,8 +826,17 @@ def test_every_divergence_this_project_cites_exists():
                              capture_output=True, text=True)
     paths = [ROOT / name for name in tracked.stdout.split("\n") if name]
     assert len(paths) > 50, "git ls-files found nothing; is this a checkout?"
-    near = re.compile(r"divergences?(?:\.md)?[^\n]{0,24}?#\s*(\d+)"
-                      r"|#\s*(\d+)[^\n]{0,24}?divergences?(?:\.md)?")
+    # One direction, and then every number in the list that follows.
+    # The reverse alternative was written for citations that name the
+    # number first, and what it actually found was a CSS colour: on
+    # `docs/assets/verdict.svg` -- the file the comment above says this
+    # rewrite was for -- it matched the `7` of `#7d8a99` and never
+    # reached the `#37` a few hundred bytes later. And this repository
+    # writes runs of them, `#1--#5, #8` and `#26, #28`, of which only
+    # the first was ever read.
+    opener = re.compile(r"divergences?(?:\.md)?[`\s\\\"',(]{0,12}#")
+    number = re.compile(r"(\d{1,3})\b")
+    run = re.compile(r"(?:#\s*\d{1,3}\b[\s,;]*(?:--|-|and|or|to)?[\s]*)+")
     for path in paths:
         if path.suffix in (".aasx", ".pdf", ".xlsx") or not path.is_file():
             continue
@@ -829,8 +845,12 @@ def test_every_divergence_this_project_cites_exists():
         except (UnicodeDecodeError, OSError):
             continue
         text = re.sub(r"[\"\']\s*\n?\s*[\"\']", "", text)
-        for first, second in near.findall(text):
-            cited.setdefault(int(first or second), set()).add(path.name)
+        for opening in opener.finditer(text):
+            tail = run.match(text, opening.end() - 1)
+            if not tail:
+                continue
+            for found in number.findall(tail.group(0)):
+                cited.setdefault(int(found), set()).add(path.name)
     assert cited, "nothing in this tree cites a divergence at all"
     dangling = sorted((number, sorted(where)) for number, where in cited.items()
                       if number not in rows)

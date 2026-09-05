@@ -46,6 +46,8 @@ import sys
 import tarfile
 import zipfile
 
+from aas_submodel_validate._terminal import survive
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 
@@ -180,10 +182,23 @@ def members(artifact: pathlib.Path):
     """
     if artifact.name.endswith(".tar.gz"):
         with tarfile.open(artifact) as archive:
-            names = [m.name for m in archive.getmembers() if m.isfile()]
+            # Not `isfile()`. Directories are dropped because tar carries
+            # them and `git ls-files` lists none, and that reasoning
+            # covers directories -- it was written as "files only", so a
+            # symbolic link, which is neither, went past unseen. A link
+            # is a payload: unpacked, `passwd_leak -> /etc/passwd` is a
+            # path out of the tree, and this gate reported nothing.
+            names = [m.name for m in archive.getmembers() if not m.isdir()]
         # An sdist puts everything under one directory named for the
         # distribution; below that it is the repository's own layout.
-        return [(name, name.split("/", 1)[-1]) for name in names]
+        # Which directory is checked rather than assumed: dropping
+        # whatever the first component happens to be let a member under
+        # a second root borrow a tracked path and pass.
+        root = artifact.name[:-len(".tar.gz")]
+        return [(name,
+                 name.split("/", 1)[-1]
+                 if name.split("/", 1)[0] == root else name)
+                for name in names]
     with zipfile.ZipFile(artifact) as archive:
         names = [n for n in archive.namelist() if not n.endswith("/")]
         # What the build says it relocated, read from the build.
@@ -291,6 +306,7 @@ def tracked():
 
 
 def main() -> int:
+    survive()
     if not DIST.is_dir():
         print("no dist/ -- build the distributions first", file=sys.stderr)
         return 1
