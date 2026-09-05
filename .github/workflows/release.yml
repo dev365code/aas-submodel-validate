@@ -137,6 +137,14 @@ jobs:
           name: dist
           path: dist/
           if-no-files-found: error
+          # The whole argument for the ordering above -- sign and upload
+          # before the release exists, so a failure leaves the tag and
+          # nothing published -- rests on being able to re-run this job.
+          # The default is `false`, which means a run that uploaded and
+          # then died at `gh release create` cannot be re-run: the second
+          # attempt stops here with "an artifact with this name already
+          # exists". Recoverable in theory, stuck in practice.
+          overwrite: true
 
       - name: attach them to a GitHub Release
         env:

@@ -48,7 +48,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, python: "3.9" }
+          # Pinned to 24.04, not `latest`, because `actions/python-versions`
+          # publishes no 3.9 build for Ubuntu 26.04 -- 3.9.25 ships
+          # `linux-22.04` and `linux-24.04` and stops there, while every
+          # minor from 3.10 up has a 26.04 build. `ubuntu-26.04` is already
+          # a published label, so the day `ubuntu-latest` moves, this row
+          # stops being able to install the interpreter it exists to test.
+          # It would fail on any version of `setup-python`: the gap is in
+          # the image, not the action. `pyproject.toml` says 3.9 is the
+          # floor and a floor test that cannot run is not a floor test.
+          - { os: ubuntu-24.04, python: "3.9" }
           - { os: ubuntu-latest, python: "3.10" }
           - { os: ubuntu-latest, python: "3.11" }
           - { os: ubuntu-latest, python: "3.12" }
