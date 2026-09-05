@@ -216,7 +216,20 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # How much of the input a template answered for. Counted from the
     # same helper the presence rule uses, so the number and the finding
     # cannot disagree about what "judged" means.
-    report.submodels_seen = len(loaded.submodels)
+    templates = [submodel for submodel in loaded.submodels
+                 if detect.is_template(submodel)]
+    if templates:
+        report.notes.append(
+            "%d submodel%s in this input %s declared kind Template. A "
+            "template is a specification and not an instance, and every "
+            "rule here is a requirement on an instance, so %s not judged."
+            % (len(templates), "" if len(templates) == 1 else "s",
+               "is" if len(templates) == 1 else "are",
+               "it was" if len(templates) == 1 else "they were"))
+    # Templates are out of both counts rather than counted as unjudged:
+    # `--require-all-judged` is for coverage a caller can do something
+    # about, and nothing can make a specification into an instance.
+    report.submodels_seen = len(loaded.submodels) - len(templates)
     report.submodels_judged = len({id(submodel) for _pack, submodel
                                    in detect.matched(Context(loaded, rules.profiles.Selection(profile)))})
     report.findings.sort(key=_reading_order)

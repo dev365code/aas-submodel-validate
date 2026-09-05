@@ -140,7 +140,26 @@ def _d3(tables):
 #: well-formedness only and admits `eng`, `enm` and `english` alike --
 #: a language tag being well-formed says nothing about which language it
 #: names.
-_english = verification.is_bcp_47_for_english
+def _english(tag: str) -> bool:
+    """aas-core3's predicate, asked of the tag in its folded form.
+
+    Its pattern is `^(en|EN)(-.*)?$`, which takes all-lower and
+    all-upper and refuses `En` and `eN`. RFC 5646 §2.1.1 says the
+    opposite in as many words: subtags "are to be treated as case
+    insensitive ... there exist conventions for the capitalization of
+    some of the subtags, but these MUST NOT be taken to carry meaning."
+    A file writing `En` was told it had no English entry, on a line
+    that printed `languages present: En, de` directly above it -- a
+    finding on a conformant file, which is the one direction with no
+    second opinion.
+
+    Still borrowed, not copied. The question is the same function's;
+    what changed is that it is handed the spelling the standard says
+    means the same thing. `eng` stays refused: it is well-formed, it
+    means English, and IANA marks `en` as its preferred value -- that
+    is a different argument and it is in docs/divergences.md #35.
+    """
+    return verification.is_bcp_47_for_english((tag or "").lower())
 
 
 def _d4(tables):

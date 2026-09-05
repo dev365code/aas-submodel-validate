@@ -832,7 +832,10 @@ def test_a_class_id_under_another_system_is_not_this_rules_business(tmp_path):
 
 @pytest.mark.parametrize("tag,is_english", (
     ("en", True), ("EN", True), ("en-GB", True), ("EN-GB", True),
-    ("eN", False), ("En", False),
+    # Mixed case was refused until RFC 5646 §2.1.1 was read against it:
+    # capitalisation "MUST NOT be taken to carry meaning". The tag is
+    # folded before the question is asked; the question is unchanged.
+    ("eN", True), ("En", True), ("En-gb", True),
     ("eng", False), ("enm", False), ("english", False), ("de", False),
     ("", False),
 ))
@@ -860,8 +863,18 @@ def test_which_language_tags_count_as_english(tmp_path, tag, is_english):
     # these rows red together. Asserting only the function's behaviour
     # was measured insufficient -- a hand-rolled copy inside the rule
     # passed it.
-    assert handover_rules._english is verification.is_bcp_47_for_english
-    assert verification.is_bcp_47_for_english(tag) is is_english
+    # And it is the metamodel's verdict, not a copy that agreed on the
+    # day it was written. Identity used to say that, and cannot now
+    # that the tag is folded first, so the same thing is said as a law
+    # the wrapper obeys: whatever aas-core3 answers about the folded
+    # tag is what this answers, for every tag. A hand-rolled pattern
+    # would have to reproduce that function exactly to pass, which is
+    # the property identity was standing in for.
+    for probe in ("en", "EN", "En", "eN", "en-GB", "EN-gb", "eng", "enm",
+                  "english", "de", "de-DE", "", "x", "en_GB", "e-n"):
+        assert (handover_rules._english(probe)
+                is verification.is_bcp_47_for_english(probe.lower())), probe
+    assert verification.is_bcp_47_for_english(tag.lower()) is is_english
 
 
 def test_a_class_name_of_the_wrong_kind_is_the_files_defect_not_the_tools(tmp_path):
@@ -946,3 +959,37 @@ def test_no_rule_blames_itself_for_an_element_of_the_wrong_kind(tmp_path,
     for finding in findings.values():
         assert "could not run" not in finding.violation.message, \
             "%s crashed on a %s declared as a %s" % (finding.id, element, kind)
+
+
+@pytest.mark.parametrize("tag", ["en", "EN", "En", "eN", "en-US", "EN-us",
+                                 "en-GB", "En-gb"])
+def test_english_is_english_however_it_is_capitalised(tag):
+    """RFC 5646 §2.1.1: "language tags and their subtags ... are to be
+    treated as case insensitive ... there exist conventions for the
+    capitalization of some of the subtags, but these MUST NOT be taken
+    to carry meaning."
+
+    aas-core3's predicate is `^(en|EN)(-.*)?$`, which takes all-lower
+    and all-upper and refuses the two mixed spellings. This rule is a
+    MUST, so a file writing `En` was told it had no English entry -- on
+    a line that printed `languages present: En, de` directly above.
+
+    The tag is folded before the question is asked, which is not a
+    reading of our own: it is the same predicate, handed the tag in the
+    form the standard says means the same thing. `eng` stays refused --
+    it is a valid tag whose preferred value is `en`, and refusing it is
+    a different argument (docs/divergences.md #35)."""
+    from aas_submodel_validate.rules.handover import _english
+
+    assert _english(tag), (
+        "%r names English and this rule says it does not" % tag)
+
+
+@pytest.mark.parametrize("tag", ["eng", "de", "e", "english", "ены"])
+def test_what_is_not_english_stays_not_english(tag):
+    """The control. Folding case must not widen the answer to anything
+    else -- `eng` above all, which is well-formed, means English, and is
+    the tag IANA marks as not preferred."""
+    from aas_submodel_validate.rules.handover import _english
+
+    assert not _english(tag), "%r is not the tag this rule asks for" % tag

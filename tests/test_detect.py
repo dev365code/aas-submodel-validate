@@ -15,10 +15,14 @@ failures would be wrong.
 """
 from __future__ import annotations
 
+import copy
 import json
+from pathlib import Path
 
 from aas_submodel_validate import runner
-from builders import env_json, wearing_our_anchor_as_a_supplemental
+from builders import env_json, hd_env, wearing_our_anchor_as_a_supplemental
+
+ROOT = Path(__file__).resolve().parents[1]
 
 HANDOVER_ID = "0173-1#01-AHF578#003"
 TECHNICAL_DATA_ID = "0173-1#01-AHX837#002"
@@ -204,3 +208,61 @@ def test_an_input_declaring_nothing_says_so():
 
     assert "no submodel in the input declares" in _nearest_miss([_Sub()])
 
+
+
+def _template_kind(env):
+    """Mark every submodel in `env` as a template rather than an instance."""
+    for submodel in env["submodels"]:
+        submodel["kind"] = "Template"
+    return env
+
+
+def test_a_template_submodel_is_not_an_instance_and_is_not_judged(tmp_path):
+    """`ModellingKind.Template` means "specification of the common
+    features ... that such an instance can be instantiated using it".
+    A cardinality is a requirement on the instance; asking a template to
+    satisfy it is a category error.
+
+    The tool did ask. Run against the official 02004 template that this
+    project vendors as its own source of truth, it reported that the
+    template has no VDI 2770 classification and told the reader to add
+    one -- and no flag escaped it. That is a finding on a conformant
+    file, which is the direction this project calls the expensive one,
+    aimed at the file it measures everything else against."""
+    from aas_submodel_validate.cli import EXIT_OK, main
+
+    path = tmp_path / "template.json"
+    path.write_text(json.dumps(_template_kind(copy.deepcopy(hd_env()))), "utf-8")
+    assert main(["-q", str(path)]) == EXIT_OK, (
+        "a submodel declared as a template was judged as an instance")
+
+
+def test_the_vendored_templates_pass_the_tool_that_reads_them(tmp_path):
+    """The strongest form of the same test, and the one a stranger runs
+    first: point it at the published template. Every rule in this
+    project is generated from these three files."""
+    from aas_submodel_validate.cli import EXIT_OK, main
+
+    vendored = sorted((ROOT / "src" / "aas_submodel_validate" / "data"
+                       / "smt").rglob("template.json"))
+    assert len(vendored) == 3, vendored
+    for template in vendored:
+        assert main(["-q", "--allow-unmatched", str(template)]) == EXIT_OK, (
+            "%s is the template this project reads its rules out of, and "
+            "the tool reports defects in it" % template.name)
+
+
+def test_a_file_of_nothing_but_templates_says_so(tmp_path):
+    """And the sentence has to be the right one. Skipping templates
+    without saying anything would leave `SMT-D1` reporting that no
+    submodel declares an identifier this tool has a table for -- which
+    is false, and unhelpful: they declare it, they are simply not
+    instances."""
+    path = tmp_path / "templates.json"
+    path.write_text(json.dumps(_template_kind(copy.deepcopy(hd_env()))), "utf-8")
+    report = runner.run(path)
+    assert not [f for f in report.findings if f.id == "SMT-D1"], (
+        "the run says nothing here declares a known identifier, and one does")
+    assert any("template" in note.lower() for note in report.notes), (
+        "nothing in the report says why the submodel was not judged: %r"
+        % report.notes)

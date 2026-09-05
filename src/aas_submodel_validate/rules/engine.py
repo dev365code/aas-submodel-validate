@@ -68,8 +68,21 @@ def analyze(ctx, tables) -> Dict:
 
 
 def matched_submodels(ctx, tables) -> List:
+    """The instances a table answers for.
+
+    Two selectors used to decide what gets judged -- this one, and
+    `detect.matched` for the count and the presence rule -- and only one
+    of them learned that a submodel declaring `kind: Template` is a
+    specification rather than an instance. The 02004 template stopped
+    being judged and the other two went on being judged, which is the
+    shape this project keeps meeting: a repair that reaches one of two
+    siblings. `is_template` is asked here too, and it is the same
+    function.
+    """
+    from .detect import is_template
     return [submodel for submodel in ctx.loaded.submodels
-            if submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)
+            if not is_template(submodel)
+            and submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)
             and ctx.selection.answers(submodel, tables)]
 
 

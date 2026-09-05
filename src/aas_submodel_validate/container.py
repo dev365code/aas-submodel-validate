@@ -82,7 +82,16 @@ MAX_DIRECTORY_BYTES = MAX_PART_BYTES // 4
 #: Deliberately not `Exception`. A defect in this reader must not arrive
 #: dressed as a defect in the supplier's file.
 UNREADABLE = (zipfile.BadZipFile, NotImplementedError, RuntimeError,
-              EOFError, OSError, zlib.error)
+              EOFError, OSError, zlib.error, ValueError)
+# `ValueError` is here for `UnicodeDecodeError`, which is one of its
+# children. An entry name written in a legacy code page with the header
+# bit that claims UTF-8 set anyway -- what a packager on a Korean or
+# Japanese Windows produces -- raised it past every handler, so a file
+# nothing had read left by 1, which is the code for a verdict with
+# findings. The comment above describes the same shape one exception
+# family over, and the repair then named the family rather than the
+# question. The question is "can this reader open it", and anything
+# raised while trying is an answer to that.
 
 #: Byte order marks, longest first, because a UTF-32 mark begins with a
 #: UTF-16 one and the order is what tells them apart.

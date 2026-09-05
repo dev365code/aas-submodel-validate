@@ -1252,3 +1252,39 @@ def test_an_unreadable_relationship_part_is_not_a_clean_bill(tmp_path):
     report = runner.run(path)
     assert not report.ok, "a container this broken must not pass"
     assert {f.id for f in report.findings} & {"X1", "X5"}
+
+
+def test_a_name_that_is_not_utf8_is_refused_and_not_judged(tmp_path):
+    """A ZIP entry name in a legacy code page, with the header bit that
+    claims UTF-8 set anyway. That is what a packager on a Korean or
+    Japanese Windows produces, and the AAS payload inside is perfectly
+    conformant.
+
+    `UnicodeDecodeError` is a `ValueError`, and `ValueError` was not in
+    the tuple of things this reader treats as "could not open". So it
+    left by 1 with a traceback -- and 1 is the code for *a verdict with
+    findings*, about a file nothing had read. The comment above that
+    tuple describes this exact shape of defect from the last time it
+    happened, one exception family over.
+    """
+    import struct
+
+    from aas_submodel_validate.cli import EXIT_ERROR, main
+
+    good = tmp_path / "good.aasx"
+    build_aasx(good, payload=json.dumps(hd_env()).encode("utf-8"))
+    raw = bytearray(good.read_bytes())
+    # The central directory is where the names a reader sees live, so
+    # that is where the lie has to be: bit 11 of the flags says "this
+    # name is UTF-8" and the bytes under it are cp949.
+    entry = raw.find(b"PK\x01\x02")
+    assert entry > 0, "fixture shape changed; no central directory"
+    flags = struct.unpack_from("<H", raw, entry + 8)[0]
+    struct.pack_into("<H", raw, entry + 8, flags | 0x800)
+    raw[entry + 46:entry + 50] = b"\xbb\xe7\xc1\xf8"
+    broken = tmp_path / "cp949-name.aasx"
+    broken.write_bytes(bytes(raw))
+
+    assert main(["-q", str(broken)]) == EXIT_ERROR, (
+        "an archive this reader cannot read must leave by the code for "
+        "could-not-run; leaving by 1 says a verdict was reached")
