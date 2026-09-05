@@ -528,13 +528,23 @@ def test_a_consortium_reading_is_not_reported_as_the_law_speaking(tmp_path):
     published readings exist, which is why this is a warning and not an
     error. The document was honest and the sentence a reader sees was
     not."""
-    report = _run(tmp_path, _env(_technical_data(fade=False)))
-    said = _one(report, "BAT-R8").violation.detail or ""
-    assert "requires it" not in said, (
-        "the finding says a provision requires it; what is known is that "
-        "a published reading of that provision does: %r" % said)
+    finding = _one(report := _run(tmp_path, _env(_technical_data(fade=False))),
+                   "BAT-R8")
+    said = finding.violation.detail or ""
     assert "read" in said.lower() or "marks" in said.lower(), \
         "the finding does not say whose reading this is: %r" % said
+    # Every line of the finding a reader sees, not the one that was
+    # looked at when this was written. The evidence line was repaired
+    # and the remedy beneath it went on saying "the provision that
+    # requires it" -- one finding, two sentences, and the gate read one.
+    for label, sentence in (("saw", said), ("fix", finding.fix or ""),
+                            ("per", finding.spec or ""),
+                            ("message", finding.violation.message)):
+        assert "requires it" not in sentence, (
+            "the %s line says a provision requires it; what is known is "
+            "that a published reading of that provision does: %r"
+            % (label, sentence))
+    assert report is not None
 
 
 def test_the_finding_says_it_asks_about_presence_and_not_placement(tmp_path):

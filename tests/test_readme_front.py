@@ -12,6 +12,8 @@ import json
 import re
 from pathlib import Path
 
+import pytest
+
 from aas_submodel_validate import (
     rules,  # noqa: F401 - importing registers
     runner,
@@ -87,8 +89,23 @@ def test_the_rule_counts_are_the_registrys():
     assert "%d of them across three IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 5 and families["SMT"] == 2 and families["BAT"] == 2
-    assert "five are about the container" in FLOWED
-    assert "two decide which template answers" in FLOWED
+    # Counts, not a description. The sentence beneath this one said
+    # "five are about the container a submodel arrives in and two decide
+    # which template answers", and the paragraph sixteen lines further
+    # down -- which *is* derived from a measurement -- says three of the
+    # five are about the package, that X3 answers for a bare document
+    # and X5 for one arriving any way at all, and that SMT-D1 asks
+    # whether a known template applies rather than choosing between two.
+    # The guard pinned the summary as a string, so it held a wrong
+    # sentence in place. What the summary may not do is contradict the
+    # paragraph, so it no longer describes the split at all -- it says
+    # what the five have in common, which is that they are about the
+    # input rather than about a template.
+    assert "five are about the input itself" in FLOWED
+    assert "about the container" not in FLOWED.split("Of the nine")[1][:400], (
+        "the summary describes the five as container rules again; two of "
+        "them fire on a document with no container, which the paragraph "
+        "below derives from a run")
 
 
 def test_the_battery_join_figures_are_the_joins():
@@ -99,8 +116,18 @@ def test_the_battery_join_figures_are_the_joins():
     221 template elements matched nothing, 63 of the Commission's 71
     data points found no element -- and they are exactly the numbers
     that go quietly false the day the indexes are rebuilt."""
-    join = json.loads((ROOT / "data" / "battery-passport"
-                       / "requirements-join.json").read_text("utf-8"))
+    # The indexes are a repository publication and not a Python
+    # payload: `tools/check_distributions.py` fails a release that
+    # ships them, and the two tests in `test_battery_rules.py` that
+    # read the same file skip when it is absent. This one did not
+    # inherit that, so an unpacked sdist died on a missing file --
+    # eight minutes after a commit whose whole subject was an sdist
+    # carrying the tests and not what they read.
+    index = ROOT / "data" / "battery-passport" / "requirements-join.json"
+    if not index.is_file():
+        pytest.skip("the indexes are not in this tree (an sdist ships "
+                    "the table, not the indexes it came from)")
+    join = json.loads(index.read_text("utf-8"))
     counts = join["counts"]
     matched_nothing = counts["template_elements_matched_by_nothing"]
     elements = counts["template_elements"]

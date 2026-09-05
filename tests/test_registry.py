@@ -349,7 +349,7 @@ REMEDIES = {
         "either one.",
     "BAT-R8":
         "Provide the element, or record that this battery is outside "
-        "the provision that requires it. The template will not ask "
+        "the provision read as requiring it. The template will not ask "
         "for it -- that is the point of the finding.",
     "DBP2-D10":
         "Add a DigitalFile with contentType application/pdf (a PDF/A "

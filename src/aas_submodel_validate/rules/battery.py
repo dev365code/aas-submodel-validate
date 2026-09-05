@@ -183,8 +183,8 @@ def bat_r2_shared_identifier_without_a_table(ctx):
            "its own row cites, and docs/divergences.md #37 records whose "
            "reading of it this answers for",
       fix="Provide the element, or record that this battery is outside "
-          "the provision that requires it. The template will not ask for "
-          "it -- that is the point of the finding.")
+          "the provision read as requiring it. The template will not ask "
+          "for it -- that is the point of the finding.")
 def bat_r8_template_optional_but_law_requires(ctx):
     """Every row whose submodel is here, in table order, and the walk
     reads every element rather than the first: an absence past the first
@@ -211,7 +211,14 @@ def bat_r8_template_optional_but_law_requires(ctx):
                 # provision speaking. `docs/divergences.md` #37 has said
                 # so since the rule landed -- the document was careful
                 # and the sentence a reader sees was not.
-                spec="Regulation (EU) 2023/1542 %s" % clauses,
+                # The rule's own `spec` is unreachable now that every
+                # violation carries one, and it was where the pointer to
+                # the divergence lived -- so a reader lost the one line
+                # that says whose reading this is answering for. It
+                # travels with the clause instead.
+                spec="Regulation (EU) 2023/1542 %s; docs/divergences.md "
+                     "#37 for whose reading of it this answers"
+                     % clauses,
                 detail="%s %s makes it %s; %s is read as requiring it, for "
                        "every battery category the source names. Asked "
                        "anywhere under the submodel: this rule is about "

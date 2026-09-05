@@ -9,6 +9,7 @@ generator is checked against what is committed.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import types
 
@@ -45,14 +46,49 @@ def _the_verdict(tmp_path) -> str:
     re-deciding it -- and both disagreed with the drawing. The flags are
     read out of the command in the picture so the two cannot part.
     """
-    path = tmp_path / "battery-passport.json"
-    path.write_text(json.dumps(_env(_technical_data(fade=False))), encoding="utf-8")
+    (tmp_path / "battery-passport.json").write_text(
+        json.dumps(_env(_technical_data(fade=False))), encoding="utf-8")
     flags = [word for _dy, runs in _generator().VERDICT_LINES
              for _x, _colour, text, _bold in runs if text.startswith("smtv ")
              for word in text.split()[1:] if word.startswith("--")]
-    report = runner.run(path, allow_unmatched="--allow-unmatched" in flags,
-                        strict_meta=("info" if "--meta" in flags else False))
-    return " ".join(render(report, show_meta="--show-meta" in flags).split())
+    # Run from inside the directory, so the summary names the file the
+    # picture types rather than a temporary path no reader will ever see.
+    here = os.getcwd()
+    try:
+        os.chdir(tmp_path)
+        report = runner.run("battery-passport.json",
+                            allow_unmatched="--allow-unmatched" in flags,
+                            strict_meta=("info" if "--meta" in flags else False))
+        return render(report, show_meta="--show-meta" in flags)
+    finally:
+        os.chdir(here)
+
+
+def _quoted_lines(lines, elision):
+    """The picture's drawn runs, regrouped into the output lines they
+    quote.
+
+    A terminal line is one line and the drawing wraps it wherever the
+    picture is wide enough, so a run is not a line and comparing runs
+    to output is comparing the wrong things. Runs are joined back into
+    the line they came from -- a new one starts wherever a label or a
+    prompt does -- and the label is kept, because `fix` and `fix:` are
+    not the same word and a picture that drops the colon is quoting
+    something the tool does not print.
+    """
+    groups = []
+    for _dy, runs in lines:
+        texts = [text for _x, _colour, text, _bold in runs]
+        if elision in texts:
+            groups.append(elision)
+            continue
+        opens = any(x < 168 for x, _colour, _text, _bold in runs)
+        body = " ".join(" ".join(text.split()) for text in texts if text.strip())
+        if opens or not groups or groups[-1] == elision:
+            groups.append(body)
+        else:
+            groups[-1] = (groups[-1] + " " + body).strip()
+    return groups
 
 
 def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
@@ -61,27 +97,43 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
     terminal wraps where the window ends, so the comparison is of the
     text, not of the lines."""
     said = _the_verdict(tmp_path)
-    lines = _generator().VERDICT_LINES
-    typed = {index for index, (_dy, runs) in enumerate(lines)
-             if any(text == "$ " for _x, _colour, text, _bold in runs)}
-    elision = _generator().ELISION
-    labels = {"at", "saw", "per", "fix", "note", "warning ", "BAT-R8"}
-    drawn = [text for index, (_dy, runs) in enumerate(lines)
-             if index not in typed
-             for _x, _colour, text, _bold in runs if text not in labels]
-    prose = [text for text in drawn if text != elision]
-    assert prose, "the picture draws no sentence at all"
-    for text in prose:
-        assert " ".join(text.split()) in said, (
-            "the picture shows %r and the tool does not say it" % text)
+    printed = [" ".join(row.split()) for row in said.splitlines()]
+    generator = _generator()
+    elision = generator.ELISION
+    groups = _quoted_lines(generator.VERDICT_LINES, elision)
+    quotes = [text for text in groups
+              if text != elision and not text.startswith("$ ")]
+    assert quotes, "the picture draws no sentence at all"
+    # Whole lines, or a prefix that says it is one. Compared against the
+    # run joined into a single string -- which is what this did -- a
+    # quote could stop anywhere and pass, and one that stopped just
+    # before "not about where the template puts it" reversed the
+    # sentence and stayed green. The front page's text block was held to
+    # this and the picture above it, which is what a reader sees first,
+    # was not.
+    for text in quotes:
+        if text.endswith(elision):
+            stem = text[:-len(elision)].rstrip()
+            assert any(row.startswith(stem) for row in printed), (
+                "the picture quotes %r and no line the tool prints "
+                "begins that way" % stem)
+        else:
+            assert text in printed, (
+                "the picture shows %r and the tool prints no such line. "
+                "A quote that stops early is a quote that says something "
+                "else -- mark it with %s if it is a crop." % (text, elision))
     # The one string in the picture that is not the tool's: the mark
     # that says lines were left out. The picture is a crop -- the folded
     # metamodel line and one note are not in it -- and every sentence in
     # it being true does not make the picture true if it reads as the
     # whole run. The front page's text block is held to this; the
     # picture above it was not.
-    assert elision in drawn, (
-        "the picture is a crop of the run and draws no elision mark")
+    assert elision in groups, (
+        "the picture is a crop of the run -- lines are missing between "
+        "the remedy and the note -- and draws no elision mark")
+    assert len(quotes) < len(printed), (
+        "the picture claims to quote as many lines as the run printed, "
+        "so either it is not a crop or one of these is wrong")
 
 
 def test_the_commands_in_the_picture_are_ones_this_project_offers(tmp_path,

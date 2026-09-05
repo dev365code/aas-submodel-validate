@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=1e1df9db" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=0e9f01a5" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -29,8 +29,8 @@ $ smtv --allow-unmatched --meta info your-battery-passport.json
 warning BAT-R8   conformant to the template and not to the regulation: 'EnergyRoundTripEfficiencyFade' is absent
         at   EnergyRoundTripEfficiencyFade
         saw  IDTA 02035-4 V1.0.1 makes it ZeroToOne; Annex IV Part A (4) is read as requiring it, for every battery category the source names. Asked anywhere under the submodel: this rule is about the data being present, not about where the template puts it
-        per  Regulation (EU) 2023/1542 Annex IV Part A (4)
-        fix: Provide the element, or record that this battery is outside the provision that requires it. The template will not ask for it -- that is the point of the finding.
+        per  Regulation (EU) 2023/1542 Annex IV Part A (4); docs/divergences.md #37 for whose reading of it this answers
+        fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
 …
 0 error(s), 1 warning(s), 3 info — your-battery-passport.json · judged 0 of 1 submodel
 ```
@@ -236,9 +236,9 @@ speak to your file:
   also covers the emptiest case: an input holding no submodels at all,
   which the summary reports as `no submodels to judge`. That one already
   fails by default — nothing matched, so `SMT-D1` is an error — and
-  `--allow-unmatched` is what turns it into a pass. Give both and it
-  fails again, which is the combination a pipeline wants: unmatched
-  submodels are fine, an input with none is not.
+  `--allow-unmatched` is what turns it into a pass. The two flags
+  together say the thing neither says alone: an unmatched submodel is
+  not an error, and it is not coverage either.
 
 Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
 `.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
@@ -283,8 +283,10 @@ which is a different thing from a file that was read and failed.
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), 30 hand-written where a
 template file cannot speak. Of the nine that belong to no template,
-five are about the container a submodel arrives in and two decide which
-template answers. The last two read the battery
+five are about the input itself — how it is packaged, whether it parses,
+and how much of it this reader will take in — and two are about whether
+a template this tool knows applies, and which one. The last two read the
+battery
 passport against Regulation (EU) 2023/1542 rather than against a
 template, over IDTA 02035-1, 02035-4 and 02035-5: one names a submodel
 identifier that two published templates claim, and one reports an
