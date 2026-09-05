@@ -566,10 +566,7 @@ class AasxPackage:
         # after the read it exists to avoid -- and the caller walks all
         # of them. This changes no boundary: it is the same comparison,
         # reached earlier.
-        if self._read_total > MAX_TOTAL_PART_BYTES:
-            raise PartTooLarge(
-                "%s: its parts come to more than %d bytes together"
-                % (self.path, MAX_TOTAL_PART_BYTES))
+        self._refuse_if_the_parts_come_to_too_much()
         try:
             # Asking for a bounded number is what bounds the
             # decompressor: an unbounded read hands it the whole stream
@@ -596,11 +593,26 @@ class AasxPackage:
             # depend on which rule happened to cross the line.
             self._counted.add(name)
             self._read_total += len(data)
+        self._refuse_if_the_parts_come_to_too_much()
+        return data
+
+    def _refuse_if_the_parts_come_to_too_much(self):
+        """One refusal, asked at two moments.
+
+        Once before a read, so a part that would carry the container
+        over the line is not paid for first, and once after, so what the
+        read actually delivered is counted. The two moments are the
+        point; the sentence is not. Written out at both, it was a pair
+        that agrees on the day it is written and diverges quietly
+        afterwards -- the shape this project keeps finding in its own
+        rules, here in its container reader, and outside what the
+        message census could see until the census was widened to the
+        vocabulary a refused archive speaks in.
+        """
         if self._read_total > MAX_TOTAL_PART_BYTES:
             raise PartTooLarge(
                 "%s: its parts come to more than %d bytes together"
                 % (self.path, MAX_TOTAL_PART_BYTES))
-        return data
 
     # -- the OPC chain -------------------------------------------------------
     def relationships(self, source: str = "") -> List[Tuple[str, str, bool]]:

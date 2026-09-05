@@ -908,30 +908,107 @@ def test_no_two_places_say_the_same_thing_to_a_reader():
     import ast
     import collections
 
-    where = collections.defaultdict(set)
+    #: Everything in `src/` that carries a sentence to a reader. The
+    #: census read `Violation` alone, and the whole container-refusal
+    #: vocabulary -- what `X1`, `X2`, `X3` and `X5` print -- is written
+    #: in these instead, so none of it was ever counted. There was a
+    #: word-for-word duplicate sitting in it when this list was widened.
+    SPEAKS_TO_A_READER = (
+        "Violation", "LoadError", "ContainerError", "RefusedContent",
+        "NoRelationships", "PartTooLarge", "DirectoryTooLarge",
+        "UnreadablePart", "UnreadablePath",
+    )
+
+    def _local_names(tree):
+        """What those classes are called in this module.
+
+        `getattr(func, "id", ...)` saw a bare name and nothing else, so
+        `model.Violation(...)` and `from .model import Violation as V`
+        were both invisible -- two spellings anyone reaches for without
+        meaning to hide anything. The attribute spelling is read off the
+        call; the alias has to be read off the import that made it.
+        """
+        names = set(SPEAKS_TO_A_READER)
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                for alias in node.names:
+                    if (alias.name.rsplit(".", 1)[-1] in SPEAKS_TO_A_READER
+                            and alias.asname):
+                        names.add(alias.asname)
+        return names
+
+    def _called_name(func):
+        if isinstance(func, ast.Name):
+            return func.id
+        if isinstance(func, ast.Attribute):
+            return func.attr
+        return None
+
+    def _said(call):
+        """The message argument, positional or by keyword.
+
+        `message` is the dataclass's first field, so `Violation(message=
+        "...")` is legal and was not read at all.
+        """
+        if call.args:
+            return call.args[0]
+        for keyword in call.keywords:
+            if keyword.arg == "message":
+                return keyword.value
+        return None
+
+    def _literals(said):
+        """Every string literal the message is assembled from.
+
+        Unwrapping only `%` left `"a " + "b"` and `"...".format(x)`
+        building a sentence the census never saw. A `Name` -- a shared
+        constant -- is deliberately not unwrapped: one constant used
+        twice is one place, which is the shape this gate asks for.
+        """
+        while True:
+            if isinstance(said, ast.BinOp) and isinstance(said.op, ast.Mod):
+                said = said.left
+            elif (isinstance(said, ast.Call)
+                  and isinstance(said.func, ast.Attribute)
+                  and said.func.attr == "format"):
+                said = said.func.value
+            else:
+                break
+        if isinstance(said, ast.Constant) and isinstance(said.value, str):
+            return [said.value]
+        if isinstance(said, ast.JoinedStr):
+            return [piece.value for piece in said.values
+                    if isinstance(piece, ast.Constant)]
+        if isinstance(said, ast.BinOp) and isinstance(said.op, ast.Add):
+            return _literals(said.left) + _literals(said.right)
+        return []
+
+    where = collections.defaultdict(list)
     for path in sorted((ROOT / "src").rglob("*.py")):
         tree = ast.parse(path.read_text("utf-8"), str(path))
+        spellings = _local_names(tree)
         for node in ast.walk(tree):
             if not (isinstance(node, ast.Call)
-                    and getattr(node.func, "id", None) == "Violation"
-                    and node.args):
+                    and _called_name(node.func) in spellings):
                 continue
-            said = node.args[0]
-            parts = []
-            while isinstance(said, ast.BinOp) and isinstance(said.op, ast.Mod):
-                said = said.left
-            if isinstance(said, ast.Constant) and isinstance(said.value, str):
-                parts = [said.value]
-            elif isinstance(said, ast.JoinedStr):
-                parts = [piece.value for piece in said.values
-                         if isinstance(piece, ast.Constant)]
-            for text in parts:
+            said = _said(node)
+            if said is None:
+                continue
+            for text in _literals(said):
                 if len(text.strip()) > 20:
-                    where[" ".join(text.split())].add(path.name)
+                    # Call sites, not files. `where` held a set of
+                    # `path.name`, which folded two copies in one file
+                    # into one entry -- and this tree has `container.py`
+                    # twice, once under `rules/`, so two real files
+                    # collided as well. Two call sites are two places
+                    # wherever they sit.
+                    where[" ".join(text.split())].append(
+                        "%s:%d:%d" % (path.relative_to(ROOT),
+                                      node.lineno, node.col_offset))
 
     assert where, "no violation messages were read out of src/ at all"
     twinned = {said: sorted(files) for said, files in where.items()
-               if len(files) > 1 and said not in SAID_TWICE}
+               if len(set(files)) > 1 and said not in SAID_TWICE}
     assert not twinned, (
         "these sentences are built in more than one place, which is what "
         "a copied rule leaves behind -- share the body or record the pair "
