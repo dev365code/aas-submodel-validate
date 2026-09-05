@@ -446,3 +446,24 @@ def test_a_directory_that_unpacks_outside_the_tree_is_reported(tmp_path, name,
     assert (name in seen) is reported, (
         "%s (%s): expected %s, got %s"
         % (name, kind, "reported" if reported else "dropped", seen))
+
+
+def test_a_wheel_reports_a_member_that_unpacks_outside_it(tmp_path):
+    """The zip branch. The repair that taught the tar branch to report
+    an escaping directory said in its own message that the zip branch
+    four lines down had not been asked -- and the test written with it
+    builds only tars, so the branch it named is the branch it does not
+    cover."""
+    import zipfile
+
+    made = tmp_path / "aas_submodel_validate-0.1.1-py3-none-any.whl"
+    with zipfile.ZipFile(made, "w") as archive:
+        archive.writestr("aas_submodel_validate-0.1.1.dist-info/METADATA",
+                         "Metadata-Version: 2.4\nName: aas-submodel-validate\n")
+        archive.writestr("aas_submodel_validate/../../../tmp/pwned/", "")
+        archive.writestr("/tmp/rooted/", "")
+    seen = [name for name, _repository in _gate().members(made)]
+    for escaping in ("aas_submodel_validate/../../../tmp/pwned/", "/tmp/rooted/"):
+        assert escaping in seen, (
+            "%s unpacks outside the wheel and the gate dropped it: %s"
+            % (escaping, seen))

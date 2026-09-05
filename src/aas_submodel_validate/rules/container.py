@@ -10,6 +10,7 @@ from .. import container
 from ..container import MAX_PART_BYTES, MAX_TOTAL_PART_BYTES
 from ..model import Violation
 from ..registry import rule
+from .engine import has_scheme
 
 #: What X5 says to an input that is not a container. `None` means the
 #: rule's standing advice, which is the container's: it names a part to
@@ -152,6 +153,16 @@ def x4_supplementary_parts_exist(ctx):
             # `target` came back from the container already normalised;
             # asking through the same entry point as HD-D7 keeps the two
             # rules from ever disagreeing about what a name means.
-            if rel_type == SUPPL_REL and container.part(target) is None:
+            if rel_type != SUPPL_REL:
+                continue
+            # The same three questions `HD-D7` asks, not one of them.
+            # This asked only "does the archive hold it", so a
+            # relationship naming something outside the package -- which
+            # ECMA-376 Part 2 provides for, and which a conformant AASX
+            # may carry -- drew a SHOULD, with an `at` line printing a
+            # string that is in no file: `aasx/http:/example.com/…`.
+            if has_scheme(target):
+                continue
+            if container.part(target) is None:
                 yield Violation("an aas-suppl relationship names a part the "
                                 "archive does not hold", subject=target)

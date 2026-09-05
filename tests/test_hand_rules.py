@@ -1154,3 +1154,32 @@ def test_whitespace_around_a_vocabulary_value_is_not_the_defect(
     assert rule_id not in _findings(tmp_path, env), (
         "%s: %r drew %s, and the value is the one the rule asks for"
         % (label, pad % good, rule_id))
+
+
+@pytest.mark.parametrize("pad", ["%s", " %s", "%s ", "\t%s\n"])
+def test_two_identifier_pairs_are_the_same_pair_however_they_are_padded(
+        tmp_path, pad):
+    """`HDL4` compares two documents' `(domain, identifier)` pairs, and
+    both halves are plain `xs:string` -- so the metamodel channel has no
+    second opinion, which is the condition rows 31 and 34 give for
+    folding. Three rules folded and this one did not, so a space at the
+    end of one identifier made two identical pairs look different and
+    the duplicate went unreported."""
+    env = copy.deepcopy(hd_env())
+    documents = env["submodels"][0]["submodelElements"][0]["value"]
+    twin = copy.deepcopy(documents[0])
+
+    def stamp(node):
+        if isinstance(node, dict):
+            if node.get("idShort") in ("DocumentDomainId", "DocumentIdentifier"):
+                node["value"] = pad % node["value"]
+            for child in node.values():
+                stamp(child)
+        elif isinstance(node, list):
+            for child in node:
+                stamp(child)
+
+    stamp(twin)
+    documents.append(twin)
+    assert "HDL4" in _findings(tmp_path, env), (
+        "%r padding hid a duplicate identifier pair" % pad)

@@ -319,8 +319,15 @@ def test_the_three_counts_agree_about_one_input(tmp_path, instances,
     assert (summary["submodelsSeen"], summary["submodelsJudged"],
             summary["submodelsSpecified"]) == expected
     if templates:
-        assert "not judged" in render(report), (
-            "the summary says nothing about the ones set aside")
+        # The last line, not the report: the note above it also says
+        # "not judged", so reading the whole render could not tell the
+        # summary's clause from the note and the clause could be
+        # deleted whole while this stayed green.
+        summary_line = render(report).splitlines()[-1]
+        assert "not judged" in summary_line, (
+            "the summary line says nothing about the ones set aside: %r"
+            % summary_line)
+        assert str(templates) in summary_line
 
 
 @pytest.mark.parametrize("instances,templates,fails", [

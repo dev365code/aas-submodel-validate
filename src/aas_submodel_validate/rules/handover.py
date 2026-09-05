@@ -360,14 +360,26 @@ def _l3(tables):
     return check
 
 
+def _folded(value):
+    """A vocabulary value with its whitespace taken off.
+
+    Four rules read a value this way and three learned to fold; the
+    fourth compares two documents' identifier pairs, which are plain
+    `xs:string` and get no second opinion from the metamodel channel,
+    so a space at the end of one of them made two identical pairs look
+    different. Rows 31 and 34 of the divergences fold for that reason.
+    """
+    return value.strip() if isinstance(value, str) else value
+
+
 def _l4(tables):
     def check(ctx):
         seen = {}
         for subject, document in instances_of(ctx, "Document", tables):
             for document_id in children_of(child_of(document, "DocumentIds", tables) or document,
                                            "DocumentId", tables):
-                pair = (property_value(document_id, "DocumentDomainId", tables),
-                        property_value(document_id, "DocumentIdentifier", tables))
+                pair = (_folded(property_value(document_id, "DocumentDomainId", tables)),
+                        _folded(property_value(document_id, "DocumentIdentifier", tables)))
                 if None in pair:
                     continue
                 if pair in seen and seen[pair] != subject:

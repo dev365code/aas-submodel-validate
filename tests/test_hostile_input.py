@@ -1328,6 +1328,17 @@ def test_a_year_too_long_to_convert_is_a_finding_and_not_a_crash(tmp_path):
     path.write_text(json.dumps(env), "utf-8")
     assert main(["-q", str(path)]) in (EXIT_OK, EXIT_FINDINGS), (
         "a value this reader cannot convert must come back as a verdict")
+    # And a verdict, not a rule falling over. Exit code alone cannot
+    # tell those apart -- a crashed rule is reported as a finding and
+    # leaves by 1 like any other -- so the report is read: nothing in
+    # it may say a rule could not run.
+    from aas_submodel_validate.runner import COULD_NOT_RUN, run
+
+    crashed = [f for f in run(path).findings
+               if f.violation.message == COULD_NOT_RUN]
+    assert not crashed, (
+        "the year was converted after all and something fell over: %s"
+        % [f.id for f in crashed])
 
 
 @pytest.mark.parametrize("encoding", ["iso-8859-1", "iso-8859-15", "cp1252"])

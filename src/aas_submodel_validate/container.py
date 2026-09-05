@@ -251,6 +251,16 @@ def _as_declared(raw: bytes) -> bytes:
 
 
 def _as_utf8(raw: bytes, encoding: str) -> bytes:
+    """The bytes as UTF-8, or as they arrived if that cannot be done.
+
+    This is the one transform here that can grow: a legacy code page is
+    one byte per character and UTF-8 is up to four, so a part inside the
+    bound can leave it twice the size. The bound is measured on the
+    bytes that arrived, which was harmless while every conversion here
+    shrank or was the identity. A converted document that would break
+    it comes back unconverted -- the parser then answers for the bytes,
+    which is what this function does with everything it cannot handle.
+    """
     try:
         text = raw.decode(encoding)
     except (UnicodeError, LookupError):
@@ -262,7 +272,8 @@ def _as_utf8(raw: bytes, encoding: str) -> bytes:
         # rather than its decode child because `punycode` raises the
         # parent.
         return raw
-    return _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
+    converted = _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
+    return raw if len(converted) > MAX_PART_BYTES else converted
 
 
 def declares_doctype(raw: bytes) -> bool:

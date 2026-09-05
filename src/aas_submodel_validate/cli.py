@@ -233,6 +233,6 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         # told two were missing when one was.
         print("smtv: judged %d of %d submodel%s; --require-all-judged was given"
               % (report.submodels_judged, expected,
-                 "" if report.submodels_seen == 1 else "s"), file=sys.stderr)
+                 "" if expected == 1 else "s"), file=sys.stderr)
         failed = True
     return EXIT_FINDINGS if failed else EXIT_OK
