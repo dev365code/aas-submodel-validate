@@ -201,7 +201,16 @@ def members(artifact: pathlib.Path):
             # symbolic link, which is neither, went past unseen. A link
             # is a payload: unpacked, `passwd_leak -> /etc/passwd` is a
             # path out of the tree, and this gate reported nothing.
-            names = [m.name for m in archive.getmembers() if not m.isdir()]
+            members_ = archive.getmembers()
+            names = [m.name for m in members_ if not m.isdir()]
+            # A directory is dropped because `git ls-files` lists none,
+            # and that reasoning is about a directory the archive puts
+            # its own files in. It says nothing about one whose name
+            # climbs out of the tree, and `ROOT/../../../tmp/pwned`
+            # unpacks wherever that points. The name is the payload.
+            escaping = [m.name for m in members_
+                        if m.isdir() and ".." in m.name.split("/")]
+            names += escaping
         # An sdist puts everything under one directory named for the
         # distribution; below that it is the repository's own layout.
         # Which directory is checked rather than assumed: dropping

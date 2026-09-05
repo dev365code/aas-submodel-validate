@@ -36,7 +36,8 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
     "complete": true,
     "judged": true,
     "submodelsSeen": 1,
-    "submodelsJudged": 1
+    "submodelsJudged": 1,
+    "submodelsSpecified": 0
   },
   "notes": [],
   "findings": [
@@ -136,6 +137,7 @@ would have decided.
 | `judged` | boolean | Whether anything reached the rules at all. `false` means the input was refused or could not be opened, so there is no verdict here — only the reason. The run exits 2. |
 | `complete` | boolean | Whether everything this run was handed got read. `false` means an archive that would not open, a relationship chain that went nowhere, a part that would not parse, or a document over the reader's bound — what was not read was not judged, and a report that only said `ok: false` could not tell you which. |
 | `submodelsSeen` | integer | How many submodels the input holds. |
+| `submodelsSpecified` | integer | How many of `submodelsSeen` declared `kind: Template`. A template is a specification, and every rule here is a requirement on an instance, so those are set aside rather than judged and a note names them. Subtract this from `submodelsSeen` to get the number a caller can do something about — which is what `--require-all-judged` compares against. Additive under `schemaVersion` 1, like `options` before it. |
 | `submodelsJudged` | integer | How many of them a template this tool has a table for answered for. The difference is not a defect — an environment carries submodels this tool has no business judging — but without the number a report is silent about them: `SMT-D1` speaks only when *nothing* matched. This is the coverage figure that means something here; the fraction of rules that ran does not, because most rules are about other templates and their silence says nothing. |
 
 The two are ordered, and both are worth gating on. `judged: false`

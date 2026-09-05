@@ -1019,3 +1019,56 @@ def test_a_trailing_space_does_not_hide_the_classification(tmp_path):
             child["value"] = VDI2770_SYSTEM + " "
     assert "HD-D2" not in _findings(tmp_path, env), (
         "a trailing space made the mandatory classification invisible")
+
+
+@pytest.mark.parametrize("value,drawn", [
+    # The repair's own case: a substring test called this a URI and let
+    # a value that is a perfectly good part name walk past a MUST.
+    ("files/a://absent.pdf", True),
+    # Somewhere else's file. Not this container's question.
+    ("http://example.com/a.pdf", False),
+    ("https://example.com/a.pdf", False),
+    ("urn:iso:std:iso:1234", False),
+    ("mailto:docs@example.com", False),
+    ("data:application/pdf;base64,AAA=", False),
+    # A drive letter is a legal one-letter scheme in RFC 3986 and is a
+    # drive letter every time it appears in a File value. Reading it as
+    # a scheme let an absent Windows path stop being asked about.
+    ("C:\\docs\\manual.pdf", True),
+    ("c:/docs/manual.pdf", True),
+    # Whitespace is not a scheme's business. A leading space made this
+    # no scheme at all and drew a MUST on a file whose only fault was
+    # the space -- in the same commit that taught the classification
+    # rule to forgive exactly that.
+    (" http://example.com/a.pdf", False),
+    ("\thttps://example.com/a.pdf", False),
+])
+def test_which_file_values_are_this_containers_business(tmp_path, value, drawn):
+    """`HD-D7` asks whether a File value names a part the container
+    holds. A value naming something outside the container is not that
+    question, and the test for "outside" was `"://" in value` -- a
+    substring, not a scheme.
+
+    Nothing in the suite moved when that was replaced, in either
+    direction, and the replacement changed the verdict on five shapes
+    of value. A change to what a MUST rule decides, with no fixture
+    naming the shapes it decides differently, is a change nobody can
+    review."""
+    env = copy.deepcopy(hd_env())
+    placed = 0
+    for element in _document_version(env)["value"]:
+        if element.get("idShort") != "DigitalFiles":
+            continue
+        for entry in element["value"]:
+            entry["value"] = value
+            placed += 1
+    assert placed == 1, "the fixture no longer has exactly one File to set"
+    # In a container, because the branch under test is "the archive
+    # holds no part at this value" and a bare document has no archive
+    # to hold one.
+    packed = build_aasx(tmp_path / "p.aasx",
+                        payload=json.dumps(env).encode("utf-8"))
+    drawn_ids = {f.id for f in runner.run(packed).findings}
+    assert ("HD-D7" in drawn_ids) is drawn, (
+        "%r: expected HD-D7 %s, got %s"
+        % (value, "drawn" if drawn else "silent", sorted(drawn_ids)))

@@ -160,7 +160,10 @@ note    BAT-R8 reported 1 of the 9 elements this table holds; 8 of them need a b
 
 A verdict that reached the rules says how many submodels a template
 answered for — `judged 1 of 3 submodels`, or `no submodels to judge`
-when the input held none. An input that was refused carries no judged clause at
+when the input held none. A submodel that declares itself a template is
+a specification and not an instance, so it is set aside rather than
+judged: the summary says how many were, a note names them, and
+`--require-all-judged` does not ask for what cannot be given. An input that was refused carries no judged clause at
 all — it says `(not a full verdict: some of it was not read)`, because
 nothing was judged and a coverage figure about it would be an
 invention. An environment carries submodels this tool has no business

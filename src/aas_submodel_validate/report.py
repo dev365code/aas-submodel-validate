@@ -88,6 +88,11 @@ def render(report: Report, *, show_meta: bool = False) -> str:
     # number rather than a finding -- but a report that omits the number
     # lets a reader believe the whole file was judged.
     judged = ""
+    specified = ""
+    if report.submodels_specified:
+        specified = " (%d of them %s a specification, not judged)" % (
+            report.submodels_specified,
+            "is" if report.submodels_specified == 1 else "are")
     if not report.submodels_seen and report.judged:
         # Zero is falsy, so the clause below was suppressed on the one
         # input the front page calls the emptiest pass of the lot: an
@@ -95,7 +100,8 @@ def render(report: Report, *, show_meta: bool = False) -> str:
         # nothing about having judged nothing.
         judged = "; no submodels to judge"
     elif report.submodels_seen:
-        judged = "; judged %d of %d submodel%s" % (
+        judged = "; judged %d of %d submodel%s" + specified
+        judged = judged % (
             report.submodels_judged, report.submodels_seen,
             "" if report.submodels_seen == 1 else "s")
     if report.ok and not report.findings and not report.notes:

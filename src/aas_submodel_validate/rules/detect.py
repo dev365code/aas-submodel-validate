@@ -70,12 +70,33 @@ def is_template(submodel) -> bool:
     return getattr(kind, "name", str(kind or "")).upper() == "TEMPLATE"
 
 
+def instances(loaded):
+    """The submodels a verdict is about: everything that is not a
+    specification.
+
+    One place answers this. The question was asked in two of the nine
+    places that walk the submodels, and the seven that did not ask went
+    on judging the published templates -- so the same report said
+    "judged as Handover Documentation" and "no submodels to judge", and
+    the battery rule told a specification to add an element it is the
+    specification for. The commit that introduced the two named that
+    shape as the one this repository keeps meeting.
+    """
+    return [submodel for submodel in loaded.submodels
+            if not is_template(submodel)]
+
+
+def templates(loaded):
+    """The other half, for the sentence that says they were set aside."""
+    return [submodel for submodel in loaded.submodels
+            if is_template(submodel)]
+
+
 def matched(ctx):
     """Every (pack, submodel) pair the input actually brought, instances
     only -- see `is_template` for why a specification is not one."""
     return [(pack, submodel)
-            for submodel in ctx.loaded.submodels
-            if not is_template(submodel)
+            for submodel in instances(ctx.loaded)
             for pack in PACKS
             if submodel_declares(submodel, pack.semantic_id)]
 
@@ -136,8 +157,7 @@ def smt_d1_a_known_submodel_is_present(ctx):
     # declare a known identifier -- it declares one and is not an
     # instance. The note the runner adds says that; this saying the
     # other thing on top of it would be two answers to one question.
-    if ctx.loaded.submodels and all(is_template(submodel)
-                                    for submodel in ctx.loaded.submodels):
+    if ctx.loaded.submodels and not instances(ctx.loaded):
         return
     # "recognises" was true until the battery pack landed. That pack
     # knows identifiers this one has no template table for, and reports
@@ -146,4 +166,4 @@ def smt_d1_a_known_submodel_is_present(ctx):
     # same report.
     yield Violation("no submodel declares a semanticId this tool has a "
                     "template table for",
-                    detail=_nearest_miss(ctx.loaded.submodels))
+                    detail=_nearest_miss(instances(ctx.loaded)))

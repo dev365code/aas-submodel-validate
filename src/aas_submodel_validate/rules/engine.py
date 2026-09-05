@@ -79,10 +79,9 @@ def matched_submodels(ctx, tables) -> List:
     siblings. `is_template` is asked here too, and it is the same
     function.
     """
-    from .detect import is_template
-    return [submodel for submodel in ctx.loaded.submodels
-            if not is_template(submodel)
-            and submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)
+    from .detect import instances
+    return [submodel for submodel in instances(ctx.loaded)
+            if submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)
             and ctx.selection.answers(submodel, tables)]
 
 

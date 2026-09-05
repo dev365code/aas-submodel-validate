@@ -34,6 +34,7 @@ from ..model import Violation
 from ..registry import rule
 from ..semantics import candidate_values, submodel_declares
 from . import dbp_tables, hd_tables
+from .detect import instances
 
 RULE_ID = "SMT-D2"
 
@@ -220,7 +221,7 @@ def smt_d2_the_report_names_the_profile(ctx):
     question is how a verdict changes without the sentence that explains
     it changing with it.
     """
-    for submodel in ctx.loaded.submodels:
+    for submodel in instances(ctx.loaded):
         picked = ctx.selection.chosen(submodel)
         if picked is None:
             continue

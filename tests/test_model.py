@@ -79,7 +79,7 @@ V1_REQUIRED = {"schemaVersion", "toolVersion", "path", "ok", "options",
 #: this tool can say for certain is which bytes it read.
 V1_PROVENANCE = {"inputSha256", "engine", "envelope"}
 V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete", "judged",
-              "submodelsSeen", "submodelsJudged"}
+              "submodelsSeen", "submodelsJudged", "submodelsSpecified"}
 V1_OPTIONS = {"profile", "strictMeta", "allowUnmatched"}
 V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
               "detail", "fix", "title", "spec"}
@@ -150,7 +150,8 @@ def test_the_summary_counts_what_it_says_it_counts():
     assert document["summary"] == {"errors": 1, "warnings": 2, "info": 3,
                                    "rulesChecked": 123, "complete": True,
                                    "judged": True, "submodelsSeen": 0,
-                                   "submodelsJudged": 0}
+                                   "submodelsJudged": 0,
+                                   "submodelsSpecified": 0}
 
 
 def test_the_report_says_what_was_asked_of_it():
@@ -200,7 +201,8 @@ def test_the_report_says_what_the_types_promise():
     assert isinstance(document["summary"]["judged"], bool)
     assert isinstance(document["toolVersion"], str)
     for counter in ("errors", "warnings", "info", "rulesChecked",
-                    "submodelsSeen", "submodelsJudged"):
+                    "submodelsSeen", "submodelsJudged",
+                    "submodelsSpecified"):
         assert isinstance(document["summary"][counter], int), counter
     # The flags especially. `1 == True` in Python, so a value assertion
     # comparing the options dict passes while `json.dumps` writes

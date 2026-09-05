@@ -209,7 +209,8 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     # this channel should not decide a build, and it says so out loud.
     failed = not report.ok or (args.warnings_as_errors
                                and report.count(Severity.WARNING) > 0)
-    if args.require_all_judged and (report.submodels_judged < report.submodels_seen
+    expected = report.submodels_seen - report.submodels_specified
+    if args.require_all_judged and (report.submodels_judged < expected
                                     or not report.submodels_judged):
         # The report has carried this number since day one; a caller
         # reading only the exit code could not see it. An unjudged

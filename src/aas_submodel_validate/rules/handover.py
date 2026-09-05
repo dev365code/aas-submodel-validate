@@ -56,9 +56,20 @@ def _has_scheme(value: str) -> bool:
     scheme begins the reference and is `ALPHA *( ALPHA / DIGIT / "+" /
     "-" / "." )`, so the question is asked of the front of the string.
     """
-    head, sep, _rest = value.partition(":")
-    return bool(sep) and bool(head) and head[0].isalpha() and all(
-        character.isalnum() or character in "+-." for character in head)
+    head, sep, _rest = value.strip().partition(":")
+    if not sep or not head or not head[0].isalpha():
+        return False
+    if not all(character.isalnum() or character in "+-." for character in head):
+        return False
+    # A one-letter scheme is legal in RFC 3986 and, in a File value, is
+    # a Windows drive letter every time: `C:\docs\manual.pdf` stopped
+    # being asked whether it names a part the moment this function was
+    # written, which is a defect walking free rather than a foreign URI
+    # left alone. And the value is stripped first, because a leading
+    # space made `" http://..."` no scheme at all and drew a MUST on a
+    # file whose only fault was whitespace -- the same fault the
+    # classification rule had just been taught to forgive.
+    return len(head) > 1
 
 
 #: The exact spelling IDTA 02004-2-0 §2.3 says identifies the mandatory
@@ -131,7 +142,13 @@ def _d3(tables):
     def check(ctx):
         for subject, document in instances_of(ctx, "Document", tables):
             for classification in _vdi_classifications(document, tables):
+                # Folded like the system name beside it. Both are
+                # `xs:string` in the same collection and both feed a
+                # MUST; folding one and not the other made the same
+                # whitespace forgivable in one property and an error in
+                # the next.
                 class_id = property_value(classification, "ClassId", tables)
+                class_id = class_id.strip() if isinstance(class_id, str) else class_id
                 if class_id is not None and class_id not in VDI2770_CLASS_IDS:
                     yield Violation("ClassId is not a VDI 2770 Blatt 1:2020 class",
                                     subject=subject, detail="%r" % class_id)
@@ -405,7 +422,14 @@ def _l5(tables):
     def check(ctx):
         for subject, document in instances_of(ctx, "Document", tables):
             for classification in _vdi_classifications(document, tables):
-                spelling = property_value(classification, "ClassificationSystem", tables)
+                # The same reading D2 does. D2 learned to fold the
+                # whitespace and this did not, so a value that is the
+                # canonical spelling with a space around it stopped
+                # being a missing classification and became a
+                # non-canonical one -- with a remedy naming a spelling
+                # the file does not carry.
+                spelling = (property_value(classification,
+                                           "ClassificationSystem", tables) or "").strip()
                 if spelling != VDI2770_SYSTEM:
                     yield Violation("ClassificationSystem spells the VDI system "
                                     "non-canonically",

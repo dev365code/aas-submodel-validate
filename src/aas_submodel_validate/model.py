@@ -187,6 +187,12 @@ class Report:
     #: speaks only when *nothing* matched.
     submodels_seen: int = 0
     submodels_judged: int = 0
+    #: Of `submodels_seen`, how many said they are specifications rather
+    #: than instances. Subtracting them from `submodels_seen` was the
+    #: first attempt and it made that field lie: the schema says it is
+    #: how many submodels the input holds, and a file holding two came
+    #: back saying zero.
+    submodels_specified: int = 0
 
     def count(self, severity: Severity) -> int:
         return sum(1 for f in self.findings if f.severity is severity)
@@ -245,6 +251,7 @@ class Report:
                 "judged": self.judged,
                 "submodelsSeen": self.submodels_seen,
                 "submodelsJudged": self.submodels_judged,
+                "submodelsSpecified": self.submodels_specified,
             },
             "notes": self.notes,
             "findings": [f.as_dict() for f in self.findings],

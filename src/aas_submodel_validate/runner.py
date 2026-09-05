@@ -200,7 +200,7 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # did nothing contradicts the finding it just silenced.
     if profile in rules.profiles.KEYS and not any(
             rules.profiles.PROFILES and Context(loaded, selection).selection.chosen(submodel)
-            for submodel in loaded.submodels
+            for submodel in detect.instances(loaded)
             for selection in (rules.profiles.Selection(profile),)):
         report.notes.append(
             "--profile %s named a template no submodel here answers to, so it "
@@ -210,14 +210,13 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # table rather than quoted from a document, and marked as the floor
     # it is. A note and not a finding: it reports the reach of a check,
     # not a defect in the file.
-    coverage = rules.battery.coverage_note(loaded.submodels)
+    coverage = rules.battery.coverage_note(detect.instances(loaded))
     if coverage is not None:
         report.notes.append(coverage)
     # How much of the input a template answered for. Counted from the
     # same helper the presence rule uses, so the number and the finding
     # cannot disagree about what "judged" means.
-    templates = [submodel for submodel in loaded.submodels
-                 if detect.is_template(submodel)]
+    templates = detect.templates(loaded)
     if templates:
         report.notes.append(
             "%d submodel%s in this input %s declared kind Template. A "
@@ -226,10 +225,15 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             % (len(templates), "" if len(templates) == 1 else "s",
                "is" if len(templates) == 1 else "are",
                "it was" if len(templates) == 1 else "they were"))
-    # Templates are out of both counts rather than counted as unjudged:
-    # `--require-all-judged` is for coverage a caller can do something
-    # about, and nothing can make a specification into an instance.
-    report.submodels_seen = len(loaded.submodels) - len(templates)
+    # `submodels_seen` is what the input holds, which is what the schema
+    # says it is. Taking the templates out of it made that sentence
+    # false -- a file with two submodels reported zero -- and hid the
+    # thing the note exists to say. They are counted on their own, and
+    # `--require-all-judged` is what subtracts them, because that flag
+    # is about coverage a caller can do something about and nothing
+    # turns a specification into an instance.
+    report.submodels_seen = len(loaded.submodels)
+    report.submodels_specified = len(templates)
     report.submodels_judged = len({id(submodel) for _pack, submodel
                                    in detect.matched(Context(loaded, rules.profiles.Selection(profile)))})
     report.findings.sort(key=_reading_order)
