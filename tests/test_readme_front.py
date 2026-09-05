@@ -622,10 +622,14 @@ def test_every_picture_on_the_page_is_the_one_committed():
     # the collector took every `[label]: url` line, so adding an
     # ordinary link definition under the workflows prefix made up for a
     # deleted badge and the count check passed.
-    referenced = set(re.findall(r"!\[[^\]]*\]\[([^\]]+)\]", README))
+    # Folded: a markdown reference label is case-insensitive, and the
+    # comparison was not -- `![evil][Shot]` pointing at `[shot]:` was an
+    # image the collector did not count as one.
+    referenced = {label.lower() for label
+                  in re.findall(r"!\[[^\]]*\]\[([^\]]+)\]", README)}
     sources += [target for label, target
                 in re.findall(r"(?m)^\[([^\]]+)\]:\s*(\S+)\s*$", README)
-                if label in referenced]
+                if label.lower() in referenced]
     # Bound to hosts, not to a shape. The first version excused anything
     # whose path ended `/badge.svg`, which is a filename anyone can
     # choose: a picture served from another host under that name passed

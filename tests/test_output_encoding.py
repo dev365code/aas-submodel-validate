@@ -40,6 +40,21 @@ CODE_PAGES = ["cp949", "cp932", "cp437", "cp850", "iso8859-1", "ascii",
               "cp1252", "cp936", "utf-8"]
 
 
+def test_the_code_pages_this_is_for_are_still_in_the_list():
+    """The two this repair exists for. A list in a test file is a line
+    somebody can shorten, and deleting cp949 and cp932 leaves every
+    assertion here passing while the reason for all of them is gone --
+    they are the defaults on Korean and Japanese Windows, which is where
+    the em dash killed a run. cp1252 and cp936 are the control: they
+    encode everything, which is why a suite that only ever ran on UTF-8
+    saw none of it."""
+    for required in ("cp949", "cp932", "cp1252", "utf-8"):
+        assert required in CODE_PAGES, (
+            "%s left the list; it is either the case this was written "
+            "for or the control that shows why it was not caught"
+            % required)
+
+
 def _run(arguments, encoding):
     environment = dict(os.environ,
                        PYTHONIOENCODING=encoding,
