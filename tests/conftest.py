@@ -11,9 +11,25 @@ somebody saying so.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
+
+# Which copy of the package the suite judges. This is a src-layout
+# project, so `aas_submodel_validate` is not importable from the
+# repository root: `make check` exports PYTHONPATH and anything that
+# does not -- a bare `pytest`, an editor's run button -- falls through
+# to whatever is installed. On a machine that has ever run `pip install
+# aas-submodel-validate` that is the released version, and the suite
+# then reports on code the author did not write. The failing direction
+# wastes an afternoon; the passing direction is worse, because a
+# contributor sees green for a change that was never executed. Putting
+# the tree in front costs nothing and removes both.
+_TREE = Path(__file__).resolve().parents[1]
+for _entry in (_TREE / "src", _TREE / "tests"):
+    if str(_entry) not in sys.path:
+        sys.path.insert(0, str(_entry))
 
 FIRED: set = set()
 OBSERVED = Path(__file__).resolve().parents[1] / ".rule-coverage.json"

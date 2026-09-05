@@ -432,3 +432,39 @@ def test_every_label_the_text_report_prints_is_explained():
     for label in sorted(labels):
         assert "| `%s` |" % label in README, \
             "the text report prints a %r line and this page never says what it is" % label
+
+
+def test_every_picture_on_the_page_is_the_one_committed():
+    """A picture is served through GitHub's image proxy, which caches by
+    URL. Change the file and leave the URL alone and every reader keeps
+    the picture that was cached -- so the page goes on showing a verdict
+    the tool stopped printing, and nothing anywhere goes red.
+
+    That is not hypothetical: the terminal shot was regenerated when the
+    battery finding learned to cite the row's own clause, and the page
+    went on pointing at the version that cited the wrong annex. Three
+    tests already ask whether the committed picture is true; none of
+    them asked whether the page points at the committed picture.
+
+    So the query string is the file's hash, and this asserts it. The
+    branch in the URL moves, deliberately -- the pictures are checked
+    against a live run on every push, so what `main` holds is true of
+    `main` -- and the hash is what makes a changed picture reach a
+    reader who has already seen the old one."""
+    references = re.findall(
+        r"raw\.githubusercontent\.com/[^/]+/[^/]+/([^/]+)/([^\"'?\s]+)"
+        r"(?:\?v=([0-9a-f]+))?", README)
+    assert references, "the front page shows no pictures at all"
+    for branch, path, cachebuster in references:
+        picture = ROOT / path
+        assert picture.is_file(), (
+            "the page points at %s, which this repository does not have"
+            % path)
+        digest = hashlib.sha256(picture.read_bytes()).hexdigest()[:8]
+        assert cachebuster, (
+            "%s is referenced off %s with no ?v= -- change the file and "
+            "every reader who has seen it keeps the old one" % (path, branch))
+        assert cachebuster == digest, (
+            "%s has changed since the page was written: the URL says ?v=%s "
+            "and the committed file hashes to %s. Readers behind the image "
+            "proxy would keep the old picture." % (path, cachebuster, digest))
