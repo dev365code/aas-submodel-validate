@@ -557,3 +557,25 @@ def test_each_side_gets_its_own_cost_sentence(tmp_path):
     assert "are not made here" in finding.violation.detail
     assert "no longer requires (Version, Description)" in finding.violation.detail
 
+
+
+def test_the_note_about_a_profile_choosing_nothing_counts_templates_too(tmp_path):
+    """A template answers to a template's identifier, and this note asks
+    only whether the flag chose anything at all -- so it looks at every
+    submodel, not at the instances.
+
+    Narrowed to the instances it says the flag chose nothing while, four
+    lines further down the same report, the note about setting a
+    template aside says what the flag chose and why it was not judged.
+    Two notes in one report denying each other. Both fixtures beside
+    this one hold `kind: Instance` submodels only, so neither could see
+    the difference and the repair went in with nothing pinning it.
+    """
+    environment = hd_env()
+    environment["submodels"][0]["kind"] = "Template"
+    path = tmp_path / "template.json"
+    path.write_bytes(json.dumps(environment).encode("utf-8"))
+
+    report = runner.run(path, profile="02035-2")
+    assert not any("chose nothing" in note for note in report.notes), report.notes
+    assert any("kind Template" in note for note in report.notes), report.notes

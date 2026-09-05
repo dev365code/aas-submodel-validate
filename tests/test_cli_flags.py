@@ -666,3 +666,32 @@ def test_an_input_with_nothing_to_judge_says_so_on_the_screen(tmp_path, capsys):
     path = _write(tmp_path, json.dumps(hd_env()).encode("utf-8"))
     assert main([path]) == 0
     assert "judged 1 of 1 submodel" in capsys.readouterr().out.splitlines()[-1]
+
+
+def test_the_count_this_flag_prints_is_the_number_compared(tmp_path, capsys):
+    """`judged 0 of 1 submodel`, not `of 2`, and not `submodels`.
+
+    Two things this line got wrong, both on the input an exporter is
+    most likely to produce by accident -- a template beside the instance
+    it was built from. It printed the number *seen*, so a caller reading
+    only this line was told two submodels were missing when one was; and
+    it pluralised unconditionally, so the one case where the number is
+    one read as though it were not. Nothing pinned the pluralisation:
+    deleting it left the suite green.
+    """
+    environment = hd_env()
+    environment["submodels"][0]["kind"] = "Template"
+    environment["submodels"].append({
+        "id": "urn:test:not-a-template-this-tool-knows",
+        "modelType": "Submodel",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
+                                 "value": "urn:nothing:knows:this"}]}})
+    path = tmp_path / "template-and-stranger.json"
+    path.write_bytes(json.dumps(environment).encode("utf-8"))
+
+    assert main(["-q", "--allow-unmatched", "--require-all-judged",
+                 str(path)]) == 1
+    printed = capsys.readouterr().err.strip()
+    assert printed == ("smtv: judged 0 of 1 submodel; "
+                       "--require-all-judged was given"), printed

@@ -264,7 +264,11 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # collision chose nothing by design, and telling its user the flag
     # did nothing contradicts the finding it just silenced.
     if profile in rules.profiles.KEYS and not any(
-            rules.profiles.PROFILES and Context(loaded, selection).selection.chosen(submodel)
+            # `rules.profiles.PROFILES and ...` stood here. It is a
+            # module constant and never empty, so the conjunct changed
+            # no answer and no test could tell it was gone -- the same
+            # shape as the encoding guard removed beside it.
+            Context(loaded, selection).selection.chosen(submodel)
             # Every submodel, not the instances. This note says whether
             # the flag chose anything at all, and a template answers to
             # a template's identifier -- narrowing it made the note say
