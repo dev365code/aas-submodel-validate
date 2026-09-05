@@ -316,6 +316,34 @@ def declares_doctype(raw: bytes) -> bool:
 _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
 
 
+_SCHEME_FIRST = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+_SCHEME_REST = _SCHEME_FIRST | frozenset("0123456789+-.")
+
+
+def has_scheme(value: str) -> bool:
+    """Whether this string names something outside the container.
+
+    The test was `"://" in value`, which is a substring and not a
+    scheme: `files/a://absent.pdf` contains it, is a good part name once
+    normalised, and walked past a MUST. RFC 3986 §3.1 says a scheme
+    begins the reference and is `ALPHA *( ALPHA / DIGIT / "+" / "-" /
+    "." )` -- US-ASCII, which `str.isalpha()` is not, so the letters are
+    named rather than asked. A one-letter scheme is legal there and is a
+    Windows drive letter every time it turns up in a File value.
+
+    Here rather than beside the rule that first needed it, because two
+    layers ask it and the lower one is this. A File value asks before
+    the container is consulted; a relationship target has to be asked
+    *before it is resolved*, since resolving is what turns a URI into a
+    plausible part name -- and a copy in each place is a fork that
+    agrees on the day it is written.
+    """
+    head, sep, _rest = value.partition(":")
+    if not sep or len(head) < 2 or head[0] not in _SCHEME_FIRST:
+        return False
+    return all(character in _SCHEME_REST for character in head)
+
+
 def canonical_part_name(value: str):
     """The archive entry a part name refers to, or None if it names none.
 
@@ -575,8 +603,8 @@ class AasxPackage:
         return data
 
     # -- the OPC chain -------------------------------------------------------
-    def relationships(self, source: str = "") -> List[Tuple[str, str]]:
-        """(type, target) pairs of `source`'s relationships part.
+    def relationships(self, source: str = "") -> List[Tuple[str, str, bool]]:
+        """(type, target, external) triples of `source`'s relationships part.
 
         A target that reads as a part name comes back without its
         leading slash, ready to use as a ZIP entry name -- whether or
@@ -589,6 +617,20 @@ class AasxPackage:
         mark, and the parser reads several other encodings besides -- so
         the part is decoded the way the parser will read it before the
         guard below reads a byte of it.
+
+        `external` is OPC's own answer to whether the target is a part
+        of this package at all -- `TargetMode="External"`, which
+        ECMA-376 Part 2 provides and a conformant AASX may carry for a
+        supplementary file held on a server. It is carried out to the
+        rules rather than guessed at from the spelling of the target,
+        because the guess was wrong in a way nothing downstream could
+        undo: resolved against the source part's own directory,
+        `http://example.com/manual.pdf` became
+        `aasx/http:/example.com/manual.pdf` -- a well-formed part name,
+        matching no entry, present in no file, and printed at a reader
+        as the part their package was missing, under a remedy telling
+        them to add it or delete the relationship. Both would have them
+        break a correct package.
         """
         rels = _rels_name(source)
         if rels not in self._names:
@@ -614,6 +656,23 @@ class AasxPackage:
         resolved = []
         for el in root.iter(_RELATIONSHIP):
             target = el.get("Target", "")
+            # Nothing resolves a target that is not a part name, because
+            # resolving is what manufactured the name in the docstring
+            # above: joining a URI to a directory produces a string that
+            # is a valid part name and names nothing. Both come back
+            # exactly as written.
+            #
+            # Two questions, not one, and the flag answers only the
+            # first. `TargetMode` is what OPC declared. A scheme is what
+            # the target carries when nothing was declared -- a packager
+            # writing an absolute URI and omitting the mode, which OPC
+            # does not sanction and which still must not be resolved:
+            # asked after the join, the scheme is gone, because
+            # `aasx/http:/example.com/…` has none.
+            external = el.get("TargetMode") == "External"
+            if external or has_scheme(target):
+                resolved.append((el.get("Type", ""), target, external))
+                continue
             # Where the name starts from is the difference between the two
             # kinds of string; how it is spelled is not. The absolute
             # branch used to skip normalisation entirely, which left
@@ -625,13 +684,13 @@ class AasxPackage:
             # `part` tries the literal before the normalised reading, and
             # the loader looks parts up by exact name.
             name = self.part(candidate) or canonical_part_name(candidate) or target
-            resolved.append((el.get("Type", ""), name))
+            resolved.append((el.get("Type", ""), name, False))
         return resolved
 
     @property
     def origin(self) -> str:
         """The aasx-origin part the package-level relationships name."""
-        for rel_type, target in self.relationships(""):
+        for rel_type, target, _external in self.relationships(""):
             if rel_type == ORIGIN_REL:
                 return target
         raise ContainerError("%s declares no aasx-origin relationship" % self.path)
@@ -647,7 +706,7 @@ class AasxPackage:
         # declarations of a one-megabyte part reached sixteen times the
         # total from an archive of two kilobytes.
         targets = list(dict.fromkeys(
-            target for rel_type, target in self.relationships(self.origin)
+            target for rel_type, target, _external in self.relationships(self.origin)
             if rel_type == SPEC_REL))
         if not targets:
             raise ContainerError("%s declares no aas-spec relationship on its origin"

@@ -67,27 +67,6 @@ def analyze(ctx, tables) -> Dict:
     return cached
 
 
-def has_scheme(value: str) -> bool:
-    """Whether this File value names something outside the container.
-
-    The test was `"://" in value`, which is a substring and not a
-    scheme: `files/a://absent.pdf` contains it, is a good part name once
-    normalised, and walked past a MUST. RFC 3986 §3.1 says a scheme
-    begins the reference and is `ALPHA *( ALPHA / DIGIT / "+" / "-" /
-    "." )` -- US-ASCII, which `str.isalpha()` is not, so the letters are
-    named rather than asked. A one-letter scheme is legal there and is a
-    Windows drive letter every time it turns up in a File value.
-    """
-    head, sep, _rest = value.partition(":")
-    if not sep or len(head) < 2 or head[0] not in _SCHEME_FIRST:
-        return False
-    return all(character in _SCHEME_REST for character in head)
-
-
-_SCHEME_FIRST = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-_SCHEME_REST = _SCHEME_FIRST | frozenset("0123456789+-.")
-
-
 def file_part_violations(container, subject, value):
     """The two findings a File value can draw, for whichever rule asks.
 
@@ -102,7 +81,7 @@ def file_part_violations(container, subject, value):
     left a part that is in the archive drawing a MUST because its value
     carried a leading space.
     """
-    from ..container import canonical_part_name
+    from ..container import canonical_part_name, has_scheme
     from ..model import Violation
 
     if not isinstance(value, str):

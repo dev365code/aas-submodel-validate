@@ -111,6 +111,21 @@ letter, not a scheme.
 Both rules move together. They were the same rule written twice, word
 for word, and they share a body now.
 
+**A supplementary file kept outside the package is no longer reported
+missing.** OPC gives a relationship a `TargetMode`, and `External` says
+the target is not a part of this package -- how a conformant AASX
+points at a document held on a server. Nothing read it. The target was
+resolved against the source part's directory as though it were a
+relative part name, so `http://example.com/manual.pdf` became
+`aasx/http:/example.com/manual.pdf`: a well-formed part name, matching
+no entry, printed on the `at` line of an `X4` warning under a remedy
+telling the reader to add that part or delete the relationship. Both
+would have them break a correct package, and `-W` turned it into a
+failed build. `TargetMode` is read now, and a target carrying a URI
+scheme is left unresolved whether the mode was declared or not -- asked
+after that join, every scheme is gone. A relationship naming a part the
+archive genuinely does not hold is reported exactly as before.
+
 **Two keys are added to the JSON report and none is removed.**
 `summary.submodelsSpecified` counts the submodels set aside as
 specifications, and `options.meta` records the level `--meta` was given

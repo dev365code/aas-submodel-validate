@@ -24,7 +24,7 @@ import zipfile
 import pytest
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.container import AasxPackage, canonical_part_name
+from aas_submodel_validate.container import AasxPackage, canonical_part_name, has_scheme
 from builders import (
     CONTENT_TYPES,
     ORIGIN_REL,
@@ -376,3 +376,53 @@ def test_a_clash_resolves_to_the_entry_stored_first_in_either_order(tmp_path):
     with AasxPackage(_clash_archive(tmp_path / "ba.aasx", odd_b, odd_a)) as package:
         assert package.part(value) == odd_b
 
+
+
+#: Values where "is this a scheme?" answers differently depending on
+#: whether the letters are ASCII or whatever `str.isalnum()` calls a
+#: letter. RFC 3986 §3.1 is ASCII: `ALPHA *( ALPHA / DIGIT / "+" / "-"
+#: / "." )`. Python's predicates are Unicode, and a validator that read
+#: them as the grammar would take a package name written in Cyrillic
+#: for a URI and stop asking whether the archive holds it.
+NOT_A_SCHEME_BUT_ISALNUM_SAYS_SO = [
+    "caf\u00e9:manual.pdf",                 # a Latin letter with an accent
+    "\u0441\u043e:manual.pdf",              # Cyrillic es, o
+    "\uff48\uff54\uff54\uff50:x.pdf",       # fullwidth h t t p
+    "a\u00b2:manual.pdf",                   # superscript two is alphanumeric
+]
+
+
+@pytest.mark.parametrize("value", NOT_A_SCHEME_BUT_ISALNUM_SAYS_SO)
+def test_a_scheme_is_ascii_and_the_letters_are_named_not_asked(value):
+    """The letters of a scheme are written out in `container.py` rather
+    than asked of `str`, and nothing said why in a way a test could
+    fail on: swapping the frozensets back for `isalpha()`/`isalnum()`
+    left the whole suite green, so the next tidy-up puts it back.
+
+    Each value here is what the two readings disagree about. Reading
+    them as schemes would mean a File value or a relationship target
+    naming a real part -- in a package named in Korean, Russian or
+    Japanese, which is who this project is for -- being passed over as
+    somebody else's file, and the question "does the archive hold it"
+    never asked.
+    """
+    assert has_scheme(value) is False
+
+
+@pytest.mark.parametrize("value,expected", [
+    ("urn:iso:std:iso:1234", True),
+    ("mailto:docs@example.com", True),
+    ("http://example.com/manual.pdf", True),
+    ("a+b-c.d:x", True),                    # every character §3.1 allows
+    ("C:\\docs\\manual.pdf", False),        # a drive letter, not a scheme
+    ("files/a://absent.pdf", False),        # contains "://" and is a part name
+    ("aasx/http:/example.com/manual.pdf", False),   # a URI already resolved
+    ("1http:x", False),                     # a scheme starts with a letter
+])
+def test_what_the_scheme_test_answers(value, expected):
+    """Both edges, so the predicate cannot be widened or narrowed
+    without a red. The last two are the ones that cost something: a
+    substring test called the third a scheme and skipped a MUST, and
+    the fourth is what joining a URI to a directory produces -- asked
+    after that join, every scheme is gone."""
+    assert has_scheme(value) is expected

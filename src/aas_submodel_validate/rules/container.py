@@ -7,10 +7,9 @@ broken file three ways.
 from __future__ import annotations
 
 from .. import container
-from ..container import MAX_PART_BYTES, MAX_TOTAL_PART_BYTES
+from ..container import MAX_PART_BYTES, MAX_TOTAL_PART_BYTES, has_scheme
 from ..model import Violation
 from ..registry import rule
-from .engine import has_scheme
 
 #: What X5 says to an input that is not a container. `None` means the
 #: rule's standing advice, which is the container's: it names a part to
@@ -149,18 +148,30 @@ def x4_supplementary_parts_exist(ctx):
             # and the loader has already reported it as one -- X4 has no
             # true remedy for it and must not invent one.
             continue
-        for rel_type, target in relationships:
+        for rel_type, target, external in relationships:
             # `target` came back from the container already normalised;
             # asking through the same entry point as HD-D7 keeps the two
             # rules from ever disagreeing about what a name means.
             if rel_type != SUPPL_REL:
                 continue
-            # The same three questions `HD-D7` asks, not one of them.
-            # This asked only "does the archive hold it", so a
-            # relationship naming something outside the package -- which
-            # ECMA-376 Part 2 provides for, and which a conformant AASX
-            # may carry -- drew a SHOULD, with an `at` line printing a
-            # string that is in no file: `aasx/http:/example.com/…`.
+            # OPC's own answer, carried out from the relationships part
+            # rather than inferred here. This rule asks whether the
+            # archive holds a part, and for a target declared
+            # `TargetMode="External"` -- which ECMA-376 Part 2 provides
+            # for, and which a conformant AASX carrying a supplementary
+            # file held on a server does use -- there is no part for it
+            # to hold. Guessing from the spelling instead is what printed
+            # `aasx/http:/example.com/manual.pdf` at a reader: a string
+            # in no file, under a remedy telling them to add it or delete
+            # the relationship, both of which break a correct package.
+            if external:
+                continue
+            # And the same shape written without the declaration. A
+            # packager that omits `TargetMode` for an absolute URI has
+            # written something OPC does not sanction, but the question
+            # this rule asks still does not arise: there is no part name
+            # here either. Kept as the second answer rather than the
+            # first, because the first is the standard's.
             if has_scheme(target):
                 continue
             if container.part(target) is None:

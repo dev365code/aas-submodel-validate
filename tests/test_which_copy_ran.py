@@ -2,10 +2,29 @@
 from __future__ import annotations
 
 import pathlib
+import unicodedata
 
 import aas_submodel_validate
 
-TREE = pathlib.Path(__file__).resolve().parents[1]
+
+def _comparable(path: pathlib.Path) -> pathlib.Path:
+    """One normal form, so two spellings of a directory compare equal.
+
+    macOS stores a decomposed filename and hands it back from
+    `resolve()`; an editable install's import hook hands back the
+    composed spelling. On a checkout whose path is ASCII the two are the
+    same bytes and nothing here matters. On one that is not -- a
+    contributor working in Korean, German or Japanese, which is who this
+    project is built for -- they are different bytes for one directory,
+    and this guard failed on a tree it should have passed, telling the
+    contributor their suite was judging an installed copy when it was
+    not. A guard that cries wolf on a correct setup gets switched off,
+    and this is the guard that keeps a green from being meaningless.
+    """
+    return pathlib.Path(unicodedata.normalize("NFC", str(path)))
+
+
+TREE = _comparable(pathlib.Path(__file__).resolve().parents[1])
 
 
 def test_the_suite_ran_against_this_tree():
@@ -23,7 +42,7 @@ def test_the_suite_ran_against_this_tree():
 
     Found by chasing a front-page test that failed alone and passed
     under `make check`. The page was right; the import was not."""
-    imported = pathlib.Path(aas_submodel_validate.__file__).resolve()
+    imported = _comparable(pathlib.Path(aas_submodel_validate.__file__).resolve())
     assert TREE in imported.parents, (
         "the suite imported %s, which is not in this tree (%s) -- it is "
         "judging an installed copy, so its verdict is about that copy. "

@@ -25,8 +25,19 @@ CONTENT_TYPES = (
 
 
 def rels(pairs) -> bytes:
-    body = "".join('<Relationship Type="%s" Target="%s" Id="R%d" />' % (t, target, i)
-                   for i, (t, target) in enumerate(pairs))
+    """Write a relationships part from (type, target) pairs.
+
+    A pair may carry a third element, the `TargetMode`. OPC uses it to
+    say a target is not a part of this package at all -- the
+    authoritative answer to a question this project spent a while
+    guessing at from the spelling of the target -- and no builder here
+    could write one, so no test could ask what we do with it.
+    """
+    body = ""
+    for i, pair in enumerate(pairs):
+        mode = ' TargetMode="%s"' % pair[2] if len(pair) > 2 else ""
+        body += ('<Relationship Type="%s" Target="%s" Id="R%d"%s />'
+                 % (pair[0], pair[1], i, mode))
     return ('<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="%s">%s</Relationships>'
             % (RELS_NS, body)).encode("utf-8")
 
@@ -38,13 +49,27 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
                content_types: bool = True, root_rels: bool = True,
                origin_rel: bool = True, origin_rels: bool = True,
                spec_rel: bool = True, bom: bool = False,
-               files=(), suppl_targets=None, relative_targets: bool = False):
+               files=(), suppl_targets=None, relative_targets: bool = False,
+               suppl_external=(), suppl_verbatim=()):
     """Write an .aasx; every keyword exists so a test can break one link.
 
     `files` are (name, data) parts to store; `suppl_targets` declares the
     aas-suppl relationships on the spec part (defaults to every name in
     `files`, the honest container; pass a list to declare something the
     archive does not hold).
+
+    `suppl_external` declares aas-suppl relationships to URIs outside the
+    package, written the way ECMA-376 Part 2 says to write them -- an
+    absolute target with `TargetMode="External"`. A conformant AASX may
+    carry these and this builder could not make one, so nothing measured
+    what the rules do with them.
+
+    `suppl_verbatim` writes the target exactly as given and declares no
+    `TargetMode` at all -- what a packager produces when it puts an
+    absolute URI in a relationship and omits the mode OPC asks for. Not
+    conformant, and separate from `suppl_external` on purpose: the two
+    shapes are caught by different guards, and a fixture that only ever
+    produced one of them left the other free to be deleted.
 
     `relative_targets` writes each Target without a leading slash, which
     OPC resolves against the directory of the part whose relationships
@@ -72,11 +97,13 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
         archive.writestr(payload_name, payload)
         for name, data in files:
             archive.writestr(name, data)
-        if suppl:
+        if suppl or suppl_external or suppl_verbatim:
             directory, _, base = payload_name.rpartition("/")
+            pairs = [(SUPPL_REL, target(name, directory)) for name in suppl]
+            pairs += [(SUPPL_REL, uri, "External") for uri in suppl_external]
+            pairs += [(SUPPL_REL, uri) for uri in suppl_verbatim]
             archive.writestr("%s/_rels/%s.rels" % (directory, base),
-                             marker + rels([(SUPPL_REL, target(name, directory))
-                                            for name in suppl]))
+                             marker + rels(pairs))
     return path
 
 

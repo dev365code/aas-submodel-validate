@@ -83,7 +83,7 @@ def test_a_relationship_target_without_a_slash_resolves_against_its_part(tmp_pat
     with AasxPackage(path) as package:
         assert package.origin == "aasx/aasx-origin"
         assert package.spec_parts == ["aasx/env.json"]
-        suppl = [target for _type, target in package.relationships("aasx/env.json")]
+        suppl = [target for _type, target, _external in package.relationships("aasx/env.json")]
         assert suppl == ["aasx/files/manual.pdf"]
 
 
