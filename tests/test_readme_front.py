@@ -21,6 +21,31 @@ from builders import build_aasx, env_json
 
 ROOT = Path(__file__).resolve().parents[1]
 README = (ROOT / "README.md").read_text("utf-8")
+
+
+def _command_blocks() -> list:
+    """Every fenced block on the page that shows commands to type.
+
+    Both spellings: `sh` for a block of bare commands, `console` for one
+    that shows a prompt and its output. Reading only the first would
+    have let a redesign move every command into the other fence and
+    quietly blind the three gates below -- they look for repository
+    paths, for spellings of the tool nobody taught them, and for a first
+    verdict that needs no clone.
+
+    A `$ ` prompt is stripped and output lines are dropped, so what each
+    gate sees is the same shape either fence produces.
+    """
+    blocks = []
+    for fence in ("sh", "console"):
+        for body in re.findall("```%s\n(.*?)```" % fence, README, re.S):
+            if fence == "sh":
+                blocks.append(body)
+                continue
+            typed = [line[2:] for line in body.splitlines()
+                     if line.startswith("$ ")]
+            blocks.append("\n".join(typed) + "\n" if typed else "")
+    return [block for block in blocks if block.strip()]
 CHANGELOG = (ROOT / "CHANGELOG.md").read_text("utf-8")
 
 
@@ -188,7 +213,7 @@ def test_every_file_the_readme_tells_a_stranger_to_run_exists():
     prints. So: every path-shaped argument in a fenced `sh` block is
     resolved against the tree, unless it is plainly a stand-in for the
     reader's own file."""
-    blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
+    blocks = _command_blocks()
     assert blocks, "the README has no shell examples any more"
     # What an earlier line in the same block writes into the reader's
     # directory: a fetched example, a built archive. Those are not in
@@ -228,7 +253,7 @@ def test_the_first_verdict_needs_nothing_but_the_install():
     Pinned here the same way the templates are: a recorded hash beside
     it, and an entry in the attribution file, because it is IDTA's
     document and not this project's."""
-    blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
+    blocks = _command_blocks()
     published = [b for b in blocks if "install aas-submodel-validate" in b]
     assert published, "the README no longer shows how to use the published package"
     assert any("--example" in b for b in published), (
@@ -301,7 +326,7 @@ def test_the_gate_knows_every_way_this_page_starts_the_tool():
     has to be one of two known kinds, and a first word that is neither
     fails here rather than being skipped by the gate that matters."""
     unknown = []
-    for block in re.findall(r"```sh\n(.*?)```", README, re.S):
+    for block in _command_blocks():
         for line in block.splitlines():
             words = line.split("#", 1)[0].split()
             if not words:
@@ -335,7 +360,7 @@ def test_the_published_package_path_stands_without_the_repository():
     trap this exists for -- a README correction is invisible on PyPI
     until the next release, so the path has to be right *before* the tag,
     not after."""
-    blocks = re.findall(r"```sh\n(.*?)```", README, re.S)
+    blocks = _command_blocks()
     # `pip` or `pip3` or `python3 -m pip`; the block is identified by
     # what it installs, not by the spelling of the installer -- which is
     # itself one of the things the block now has to warn about.
