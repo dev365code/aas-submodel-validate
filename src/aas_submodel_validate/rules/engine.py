@@ -194,15 +194,29 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
             subject = _subject(path, element, index)
             actual = type(element).__name__
             if actual != row["kind"]:
+                # Its own remedy. A generated row's rule is about how
+                # many of an element there are, and its prescription
+                # says to provide one -- which, inherited here, tells
+                # the reader to add a second copy of the element they
+                # are looking at, and that is the cardinality finding
+                # this rule really is about.
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must be a %s" % (row["label"], row["kind"]),
-                    subject=subject, detail="found a %s" % actual))
+                    subject=subject, detail="found a %s" % actual,
+                    fix="Change this element from a %s to a %s. It is the "
+                        "right element -- the semanticId matched -- so "
+                        "adding another would be a second finding, not a "
+                        "fix for this one." % (actual, row["kind"])))
                 continue
             declared = getattr(element, "value_type", None)
             if row["value_type"] and declared is not None and declared.value != row["value_type"]:
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must carry valueType %s" % (row["label"], row["value_type"]),
-                    subject=subject, detail="found %s" % declared.value))
+                    subject=subject, detail="found %s" % declared.value,
+                    fix="Change this element's valueType from %s to %s. "
+                        "The element itself is the right one; only the "
+                        "type it declares for its value is not."
+                        % (declared.value, row["value_type"])))
             if row["allowed_idshort"] and element.id_short \
                     and not re.match(row["allowed_idshort"], element.id_short):
                 result["idshort_drift"].append(

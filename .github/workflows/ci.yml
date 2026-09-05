@@ -63,6 +63,13 @@ jobs:
           # where a checkout could hand the suite different bytes than the
           # ones whose hashes were recorded.
           - { os: windows-latest, python: "3.11" }
+          # The front page says Linux, macOS and Windows. Two of those
+          # were measured. Nothing here is compiled, so the claim was
+          # very probably true -- but "very probably" is the standard
+          # this project refuses everywhere else, and macOS is where a
+          # case-insensitive filesystem answers a path question
+          # differently from the machine the archive was built on.
+          - { os: macos-latest, python: "3.12" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

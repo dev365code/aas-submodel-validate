@@ -590,3 +590,66 @@ def test_only_properties_declare_a_value_type():
         for row in tables.ROWS:
             if row["value_type"]:
                 assert row["kind"] == "Property", row["id"]
+
+
+def test_a_wrong_kind_is_not_told_to_add_the_element_it_already_has(tmp_path):
+    """The remedy has to be a remedy for *this* violation.
+
+    A generated row carries one prescription -- "provide one or more
+    'Version' element(s) under ... with semanticId ..." -- because the
+    rule it belongs to is about how many there are. Two other violations
+    are filed under the same rule id, and neither is about how many: an
+    element that is there and is the wrong kind, and one that is there
+    and declares the wrong valueType. Both inherited the prescription,
+    so the tool answered "add it" about an element the reader is looking
+    at, and the one instruction it gave was the one that makes the file
+    worse -- adding a second element where one already exists is the
+    cardinality finding this rule really is about.
+    """
+    row = hd_tables.BY_LABEL["Version"]
+    env = copy.deepcopy(hd_env())
+    strip_row(env, row, hd_tables)
+    sid = {"type": "ExternalReference",
+           "keys": [{"type": "GlobalReference", "value": row["sid"]}]}
+    inject(env, hd_tables.BY_ID[row["parent"]], [
+        {"idShort": "Version", "modelType": "MultiLanguageProperty",
+         "semanticId": sid, "value": [{"language": "en", "text": "V1"}]}],
+           hd_tables)
+    path = _write(tmp_path, env)
+    wrong_kind = [f for f in runner.run(path).findings
+                  if f.id == row["id"] and "must be a" in f.violation.message]
+    assert wrong_kind, "no wrong-kind finding to read the remedy off"
+    for finding in wrong_kind:
+        assert "Provide" not in finding.fix, (
+            "the element is present and this remedy says to provide it: %r"
+            % finding.fix)
+        assert "MultiLanguageProperty" in finding.fix, (
+            "the remedy does not say what the element is today: %r"
+            % finding.fix)
+
+
+def test_a_wrong_value_type_is_not_told_to_add_the_element_either(tmp_path):
+    """The sibling branch of the one above, which had the same defect
+    and would have kept it: the element is present, it is the right kind
+    of element, and only the type it declares for its value is wrong.
+    Inheriting the row's cardinality prescription answered "provide one"
+    to a reader who has one."""
+    row = hd_tables.BY_LABEL["Version"]
+    env = copy.deepcopy(hd_env())
+    strip_row(env, row, hd_tables)
+    sid = {"type": "ExternalReference",
+           "keys": [{"type": "GlobalReference", "value": row["sid"]}]}
+    inject(env, hd_tables.BY_ID[row["parent"]], [
+        {"idShort": "Version", "modelType": row["kind"], "valueType": "xs:int",
+         "semanticId": sid, "value": "2"}], hd_tables)
+    path = _write(tmp_path, env)
+    wrong_type = [f for f in runner.run(path).findings
+                  if f.id == row["id"] and "valueType" in f.violation.message]
+    assert wrong_type, "no wrong-valueType finding to read the remedy off"
+    for finding in wrong_type:
+        assert "Provide" not in finding.fix, (
+            "the element is present and this remedy says to provide it: %r"
+            % finding.fix)
+        assert "xs:int" in finding.fix, (
+            "the remedy does not say what the element declares today: %r"
+            % finding.fix)

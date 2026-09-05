@@ -27,11 +27,20 @@ $ smtv --example
 ```console
 $ smtv --allow-unmatched --meta info your-battery-passport.json
 warning BAT-R8   conformant to the template and not to the regulation: 'EnergyRoundTripEfficiencyFade' is absent
-        at   TechnicalData/EnergyRoundTripEfficiencyFade
-        saw  IDTA 02035-4 V1.0.1 makes it ZeroToOne; Annex IV Part A (4) requires it, for every battery category the source names
-        per  Regulation (EU) 2023/1542 Annex VII; docs/divergences.md #37 for which reading this answers for
+        at   EnergyRoundTripEfficiencyFade
+        saw  IDTA 02035-4 V1.0.1 makes it ZeroToOne; Annex IV Part A (4) is read as requiring it, for every battery category the source names. Asked anywhere under the submodel: this rule is about the data being present, not about where the template puts it
+        per  Regulation (EU) 2023/1542 Annex IV Part A (4)
         fix: Provide the element, or record that this battery is outside the provision that requires it. The template will not ask for it -- that is the point of the finding.
+…
+0 error(s), 1 warning(s), 3 info — your-battery-passport.json · judged 0 of 1 submodel
 ```
+
+The `…` is two notes this excerpt leaves out — one of them the coverage
+figure further down. And the exit code is **0**: a disagreement with the
+regulation is a warning, so it does not fail your build unless you ask
+it to (`-W` makes a warning exit 1). That is deliberate. This tool answers for
+the template; the law is somebody's reading of the law, and reading is
+not a thing to fail a pipeline on without being told to.
 
 > [!TIP]
 > No install for a first try: `uvx --from aas-submodel-validate smtv --example` runs it in a throwaway environment.
@@ -368,8 +377,18 @@ reading it disagrees with can still be changed.
 
 ## Stewardship
 
-One maintainer, in the open, with the reasoning written down rather than
-remembered. Every chosen reading of a template is in
+One maintainer. That is the risk and it goes first: no company behind
+this, no consortium, and nobody else who could cut a release tomorrow.
+What can be done about it has been. The licence is Apache-2.0. Every
+generated file is written by a generator that travels in the source
+distribution beside it, the vendored official material carries the
+hashes it was verified against, and the test suite ships too — so a fork
+inherits a tree that can rebuild and re-check itself rather than a pile
+of output nobody can regenerate. That is the most one maintainer can
+honestly offer, and it is worth more than a promise about response
+times, which is why there is no promise about response times.
+
+Every chosen reading of a template is in
 [docs/divergences.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/divergences.md)
 with the evidence for it; what this project refuses to do is in
 [docs/scope.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md);

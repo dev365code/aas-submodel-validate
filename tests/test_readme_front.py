@@ -6,7 +6,9 @@ registry says 57 is the kind of small lie that outlives its excuse.
 """
 from __future__ import annotations
 
+import ast
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -468,3 +470,101 @@ def test_every_picture_on_the_page_is_the_one_committed():
             "%s has changed since the page was written: the URL says ?v=%s "
             "and the committed file hashes to %s. Readers behind the image "
             "proxy would keep the old picture." % (path, cachebuster, digest))
+
+
+def test_the_anatomy_block_is_what_the_tool_prints(tmp_path, monkeypatch):
+    """The finding this whole page is built around, quoted.
+
+    The picture of this verdict is checked against a live run on every
+    build and the block beneath it was checked against nothing, so when
+    the rule learned to cite its own row's clause the picture followed
+    and the text did not: for one commit the front page showed an `at`
+    line naming a path the walk never takes, a `saw` line saying the
+    provision "requires" what an industry reading requires, and a `per`
+    line citing the one annex nothing in the finding chose.
+
+    Same discipline as the picture, then. Every line quoted here has to
+    be a line the tool prints, with the flags the block itself types.
+    The block is an excerpt -- the run goes on to the notes and the
+    summary -- and the elision is marked, because a reader who cannot
+    see where output was cut cannot tell a short verdict from a
+    shortened one."""
+    from test_battery_rules import _env, _technical_data
+
+    block = [body for body in re.findall("```console\n(.*?)```", README, re.S)
+             if "BAT-R8" in body]
+    assert len(block) == 1, "expected exactly one BAT-R8 block on the page"
+    lines = block[0].splitlines()
+    typed = [line[2:] for line in lines if line.startswith("$ ")]
+    assert typed, "the block quotes output with no command above it"
+    flags = [word for command in typed for word in command.split()
+             if word.startswith("--")]
+
+    (tmp_path / "your-battery-passport.json").write_text(
+        json.dumps(_env(_technical_data(fade=False))), "utf-8")
+    monkeypatch.chdir(tmp_path)
+    said = " ".join(render(runner.run(
+        "your-battery-passport.json",
+        allow_unmatched="--allow-unmatched" in flags,
+        strict_meta=("info" if "--meta" in flags else False))).split())
+
+    quoted = [line for line in lines
+              if line and not line.startswith("$ ") and line.strip() != "…"]
+    assert quoted, "the block types a command and quotes no output"
+    for line in quoted:
+        assert " ".join(line.split()) in said, (
+            "the page quotes %r and the tool does not print it" % line)
+    assert any(line.strip() == "…" for line in lines), (
+        "this block is an excerpt -- the run continues past it -- and "
+        "nothing on the page says so")
+
+
+#: Flags on this page that are somebody else's, and whose. Anything not
+#: here has to be one of ours, and anything here has to still be on the
+#: page and still not be ours -- so the exemption cannot outlive its
+#: sentence or quietly cover a real flag.
+NOT_OURS = {
+    "--from": "uvx, in the no-install tip",
+    "--no-index": "pip, in the offline install route",
+    "--find-links": "pip, in the offline install route",
+    "--fix": "named in order to say this tool does not have it",
+}
+
+
+def test_every_flag_this_page_names_is_a_flag_the_tool_has():
+    """A flag in a sentence is as copyable as a flag in a code block.
+
+    The gate above this one reads the commands the page types, so a
+    made-up option inside a fenced block fails. Prose was unguarded, and
+    a sentence explaining that a regulatory finding does not fail a
+    build offered `--fail-on warning` to make it do so -- a flag this
+    tool has never had. The reader who tries it gets `unrecognized
+    arguments` and no idea which half of the sentence to believe.
+
+    Read out of the source rather than out of `--help`, because the
+    parser is built inside `main` and because `--help` is answered by
+    whichever copy of the package was imported."""
+    source = (ROOT / "src" / "aas_submodel_validate" / "cli.py").read_text("utf-8")
+    real = {"--help"}
+    for node in ast.walk(ast.parse(source)):
+        if (isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_argument"):
+            real.update(argument.value for argument in node.args
+                        if isinstance(argument, ast.Constant)
+                        and isinstance(argument.value, str)
+                        and argument.value.startswith("--"))
+    assert len(real) > 5, "no options were read out of cli.py at all"
+    named = set(re.findall(r"(?<![\w-])(--[a-z][a-z0-9-]+)", README))
+    borrowed = sorted(set(NOT_OURS) & real)
+    assert not borrowed, (
+        "%s is listed as another command's flag and this tool has it"
+        % borrowed)
+    stale = sorted(flag for flag in NOT_OURS if flag not in named)
+    assert not stale, (
+        "%s is excused here and no longer appears on the page" % stale)
+    unknown = sorted(named - real - set(NOT_OURS))
+    assert not unknown, (
+        "this page names options the tool does not have: %s. It has: %s. "
+        "If one of them belongs to another command the page tells a "
+        "reader to run, say so in NOT_OURS." % (unknown, sorted(real)))
