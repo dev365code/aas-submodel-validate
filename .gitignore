@@ -25,3 +25,10 @@ docs/private/
 /.claude/
 /docs/findings.md
 /docs/audits.md
+
+# The release workflow writes these into the workspace. Two of its
+# steps already use mktemp for exactly this reason, with a comment
+# saying a stray file is one `git add -A` from a commit; the third
+# does not, and this is the cheap half of that repair.
+/notes.md
+/offline/

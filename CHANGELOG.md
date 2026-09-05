@@ -101,11 +101,19 @@ interpreter printed a traceback, and the process left by 1: so a clean
 file and a file this reader refused came back as the same number, and
 that number means *there are findings*. The exit code is the whole
 contract for a pipeline that reads nothing else. What this tool writes
-of its own is ASCII now — the summary reads `… info -- file.json;
+of its own is ASCII now, but for the section sign in an IDTA clause —
+`§2.4` is how the standard spells it and how a reader has to spell it
+back, so it stays and the escape hatch carries it — the summary reads `… info -- file.json;
 judged 1 of 1 submodel` where it read `… info — file.json · judged …`
 — and what it repeats from elsewhere, a section sign in a citation or
-an idShort in any script, is escaped rather than raised on. The JSON
-report is unchanged: it was always ASCII.
+an idShort in any script, is escaped rather than raised on. One rule's
+sentence changed with them and that one does reach the JSON: the note
+about a submodel named for a template it does not declare joined its
+halves with an em dash, so `SMT-D1`'s `detail` (and the same text as a
+note under `--allow-unmatched`) now spells that `--`. Everything else
+in the report is byte-for-byte what 0.1.0 produced, and all of it was
+always ASCII — the encoder escapes, so a reader parsing JSON never saw
+the em dash to begin with.
 
 **A wrong-kind element is no longer told to add itself.** A generated
 row's rule is about how many of an element there are and carries one

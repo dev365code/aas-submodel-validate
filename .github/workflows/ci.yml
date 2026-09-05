@@ -182,7 +182,7 @@ jobs:
         # directory also holds the dependency wheel, whose metadata is
         # upstream's business and which fails `--strict`.
         run: |
-          pip install twine
+          pip install "twine>=6.1"
           twine check --strict dist/aas_submodel_validate-*
 
       - name: no distribution carries what it must not

@@ -80,10 +80,13 @@ def test_a_refusal_survives_it_too(encoding, tmp_path):
         % (encoding, done.returncode))
 
 
-#: The one character this project writes that is not ASCII. `IDTA
-#: 02004-2-0 §2.4` is how the standard spells that clause and how a
-#: reader has to spell it back; the escape hatch above carries it onto
-#: a terminal that cannot. Everything else has an ASCII spelling and
+#: The one character this project writes that is not ASCII, and the
+#: CHANGELOG says the same in the same words. `IDTA 02004-2-0 §2.4` is
+#: how the standard spells that clause and how a reader has to spell it
+#: back, so it stays; the escape hatch above carries it onto a terminal
+#: that cannot take it, where it shows as `\xa7` -- ugly, and legible
+#: enough to cite from. cp949 and cp932, the two this repair was for,
+#: encode it fine. Everything else has an ASCII spelling and
 #: has to use it.
 ALLOWED = {"\u00a7"}
 
@@ -188,3 +191,25 @@ def test_a_reader_who_typed_a_dash_is_told_what_that_means(capsys):
     said = capsys.readouterr().err
     assert "standard input" in said, (
         "the message does not say this tool has no such thing: %r" % said)
+
+
+def test_the_json_report_is_ascii_whatever_is_in_the_file():
+    """The CHANGELOG says a reader parsing JSON never saw the em dash
+    to begin with, which is a claim about the encoder and not about the
+    strings: `json.dumps` escapes above ASCII, so a section sign leaves
+    as `\\u00a7` and an idShort in Hangul leaves as escapes too. Worth
+    pinning rather than assuming -- `ensure_ascii` is a default, and a
+    default is a thing somebody can pass over."""
+    # Read on a UTF-8 stream, deliberately. Asking for this on an
+    # ASCII one measures the escape hatch and not the encoder: the
+    # stream would escape whatever the encoder emitted and the answer
+    # would be ASCII no matter what -- which is what the first version
+    # of this did, and turning `ensure_ascii` off left it green.
+    done = _run(["--example", "-f", "json", "--show-meta"], "utf-8")
+    assert done.returncode == 0, done.stderr
+    body = done.stdout.decode("utf-8")
+    assert '"schemaVersion"' in body, body[:200]
+    outside = sorted({character for character in body if ord(character) > 127})
+    assert not outside, (
+        "the JSON report carries %s; it is read by machines on hosts "
+        "whose encoding nobody chose" % outside)
