@@ -231,8 +231,20 @@ def test_a_template_submodel_is_not_an_instance_and_is_not_judged(tmp_path):
     aimed at the file it measures everything else against."""
     from aas_submodel_validate.cli import EXIT_OK, main
 
+    # A file that would fail if it were judged. The first version of
+    # this used a conformant one, so breaking the template check
+    # entirely left it green: it could not tell "not judged" from
+    # "judged and clean", which is the whole of what it claims to say.
+    env = copy.deepcopy(hd_env())
+    for submodel in env["submodels"]:
+        submodel["submodelElements"] = []
+    instance = tmp_path / "instance.json"
+    instance.write_text(json.dumps(copy.deepcopy(env)), "utf-8")
+    assert main(["-q", str(instance)]) != EXIT_OK, (
+        "the fixture is meant to fail when judged and it passes")
+
     path = tmp_path / "template.json"
-    path.write_text(json.dumps(_template_kind(copy.deepcopy(hd_env()))), "utf-8")
+    path.write_text(json.dumps(_template_kind(env)), "utf-8")
     assert main(["-q", str(path)]) == EXIT_OK, (
         "a submodel declared as a template was judged as an instance")
 

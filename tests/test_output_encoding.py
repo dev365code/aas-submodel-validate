@@ -48,6 +48,9 @@ def test_the_code_pages_this_is_for_are_still_in_the_list():
     the em dash killed a run. cp1252 and cp936 are the control: they
     encode everything, which is why a suite that only ever ran on UTF-8
     saw none of it."""
+    assert len(GATE_PAGES) == 4, (
+        "the gate scripts are checked against %s; that list is derived "
+        "from CODE_PAGES and one of them left it" % GATE_PAGES)
     for required in ("cp949", "cp932", "cp1252", "utf-8"):
         assert required in CODE_PAGES, (
             "%s left the list; it is either the case this was written "
@@ -294,8 +297,15 @@ GATE_SCRIPTS = ["rule_coverage.py --check", "extract_smt_rules.py --check",
                 "battery_data_check.py", "gen_door.py --check"]
 
 
+#: A subset of CODE_PAGES, and taken from it rather than written again:
+#: the guard that keeps cp949 and cp932 in that list could not see a
+#: second copy of the same list four hundred lines down.
+GATE_PAGES = [page for page in CODE_PAGES
+              if page in ("cp949", "cp932", "ascii", "utf-8")]
+
+
 @pytest.mark.parametrize("script", GATE_SCRIPTS)
-@pytest.mark.parametrize("encoding", ["cp949", "cp932", "ascii", "utf-8"])
+@pytest.mark.parametrize("encoding", GATE_PAGES)
 def test_a_gate_does_not_die_of_its_own_output(script, encoding):
     """Each of these prints a sentence when it passes. If a terminal
     cannot encode that sentence the write raises, and `make check` fails

@@ -36,10 +36,14 @@ jobs:
           python-version: "3.12"
 
       - name: the tag and the version agree
-        # Four places say the version -- the package, the build
-        # configuration, the tag and the CHANGELOG -- and a release where
-        # they disagree is one nobody can cite later. This comment said
-        # three and read three, and the one it left out is the one that
+        # Five places say the version -- the package, the build
+        # configuration, the tag, the CHANGELOG and the sample report in
+        # `docs/report-schema.md` -- and a release where they disagree is
+        # one nobody can cite later. The fifth is pinned by
+        # `tests/test_report_schema_doc.py` rather than here, so it dies
+        # in `make check` above; this comment said four and the document
+        # had five, which is how a launch checklist loses a line. It said
+        # three before that, and the one it left out is the one that
         # decides what the artifact is *called*: the two drifted, and a
         # tag pushed in that state would have passed every check here,
         # built a wheel named for the older version, and offered it to an
