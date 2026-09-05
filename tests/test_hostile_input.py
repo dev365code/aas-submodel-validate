@@ -1328,3 +1328,41 @@ def test_a_year_too_long_to_convert_is_a_finding_and_not_a_crash(tmp_path):
     path.write_text(json.dumps(env), "utf-8")
     assert main(["-q", str(path)]) in (EXIT_OK, EXIT_FINDINGS), (
         "a value this reader cannot convert must come back as a verdict")
+
+
+@pytest.mark.parametrize("encoding", ["iso-8859-1", "iso-8859-15", "cp1252"])
+def test_a_legacy_encoding_the_parser_reads_is_read_here_too(tmp_path, encoding):
+    """An XML document that declares a legacy code page and carries one
+    non-ASCII character in it.
+
+    `xml_as_utf8` says it decides the encoding "the way the parser
+    decides it", and the sibling test in this file says the standard is
+    "what every other reader does". ElementTree reads these, aas-core3
+    reads these, and this reader refused them -- the declaration was
+    dropped and the bytes handed to `raw.decode("utf-8-sig")`, which
+    raised, and the reader answered `X3 the document could not be read
+    as an AAS environment` with a remedy telling the author to fix
+    syntax that is not wrong. UTF-32 is refused by the same standard and
+    stays refused, which is what makes this a gap rather than a choice:
+    it is in neither list.
+
+    German-language industrial documents are the likeliest place for
+    one, which is this project's audience."""
+    from aas_submodel_validate.cli import EXIT_OK, main
+    from aas_submodel_validate.container import xml_as_utf8
+
+    body = ('<?xml version="1.0" encoding="%s"?>'
+            '<environment xmlns="https://admin-shell.io/aas/3/0">'
+            '<submodels><submodel><id>urn:a:b</id>'
+            '<idShort>Größe</idShort>'
+            '</submodel></submodels></environment>' % encoding)
+    path = tmp_path / ("legacy-%s.xml" % encoding)
+    path.write_bytes(body.encode(encoding))
+
+    # What the reader hands downstream has to be the document, decoded.
+    handed = xml_as_utf8(path.read_bytes())
+    assert b"Gr\xc3\xb6\xc3\x9fe" in handed, (
+        "%s: the declaration was dropped and the bytes went on as they "
+        "arrived" % encoding)
+    assert main(["-q", "--allow-unmatched", str(path)]) == EXIT_OK, (
+        "%s: a document every other reader reads was refused" % encoding)

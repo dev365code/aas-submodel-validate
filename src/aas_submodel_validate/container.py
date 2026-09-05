@@ -13,6 +13,7 @@ where every wheel crosses an air gap by hand.
 """
 from __future__ import annotations
 
+import codecs
 import posixpath
 import re
 import urllib.parse
@@ -128,6 +129,13 @@ _BOMS = ((b"\xff\xfe\x00\x00", None), (b"\x00\x00\xfe\xff", None),
 _DECLARED_ENCODING = re.compile(
     r'\A(﻿?<\?xml[^?>]*?)\s+encoding\s*=\s*(["\'])[^"\']*\2')
 
+#: The name itself, which the pattern above deliberately does not
+#: capture -- it exists to remove the declaration, not to read it. The
+#: first `=` in a prolog belongs to `version`, so taking the text after
+#: it reads `1.0` and calls that an encoding.
+_ENCODING_NAME = re.compile(
+    r'\A﻿?<\?xml[^?>]*?\s+encoding\s*=\s*(["\'])(?P<name>[^"\']+)\1')
+
 
 def _sniff(raw: bytes):
     """The encoding the parser will take an unmarked document for, or None.
@@ -188,7 +196,38 @@ def xml_as_utf8(raw: bytes) -> bytes:
     encoding = _sniff(raw)
     if encoding is not None:
         return _as_utf8(raw, encoding)
-    return raw
+    return _as_declared(raw)
+
+
+def _as_declared(raw: bytes) -> bytes:
+    """A document that names its own encoding, decoded as it says.
+
+    Without this the declaration was dropped and the bytes went on to a
+    `utf-8` decode that raised, so an `ISO-8859-1` document carrying one
+    accented character came back as "could not be read as an AAS
+    environment" -- with a remedy telling the author to fix syntax that
+    is not wrong. ElementTree reads it, aas-core3 reads it, and the
+    docstring above says this is decided the way the parser decides it.
+    UTF-32 is refused by that same standard and stays refused; the
+    legacy code pages were in neither list, which is what made this a
+    gap rather than a choice. German-language industrial documents are
+    the likeliest place for one.
+
+    Only the prolog is consulted, and only when it is ASCII -- which it
+    must be, since a parser has to read the declaration before it knows
+    the encoding.
+    """
+    declared = _ENCODING_NAME.match(raw[:200].decode("ascii", "ignore"))
+    if declared is None:
+        return raw
+    name = declared.group("name")
+    if not name or name.lower().replace("_", "-") in ("utf-8", "us-ascii", "ascii"):
+        return raw
+    try:
+        codecs.lookup(name)
+    except LookupError:
+        return raw                        # the parser will say what it is
+    return _as_utf8(raw, name)
 
 
 def _as_utf8(raw: bytes, encoding: str) -> bytes:
