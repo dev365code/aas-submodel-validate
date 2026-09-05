@@ -16,7 +16,7 @@ from . import (
     rules,  # noqa: F401  - importing registers every rule
 )
 from .loader import Loaded, load
-from .model import KINDS, META_KIND, Finding, Report, Rule, Violation
+from .model import KINDS, META_KIND, Finding, Report, Rule, Severity, Violation
 from .registry import all_rules
 from .rules import detect
 
@@ -32,16 +32,28 @@ COULD_NOT_RUN = "the rule itself could not run"
 #: the author for a crash in this validator, and the second to say the
 #: metamodel's own constraints may be ignored, left every gate green.
 #: When the relayed channel itself stops. Not `CRASH_REMEDY`: that
-#: sentence says the defect is the validator's, and this one is
-#: usually neither -- aas-core3 met something in the file its own code
+#: sentence says the defect is the validator's, and this one need not
+#: be -- aas-core3 may have met something in the file its own code
 #: cannot process, such as a year with more digits than CPython will
 #: convert. What the reader needs to know is that a channel went
 #: quiet, so the report is short of an answer rather than carrying a
 #: wrong one.
-RELAY_STOPPED = ("The metamodel channel stopped on this input, so this "
-                 "report does not say whether the metamodel is satisfied. "
-                 "The rest of the verdict stands. If the value it names "
-                 "looks ordinary, please report it.")
+#:
+#: It names no cause, and that is the repair. `except Exception` here
+#: catches every way the call can end -- a defect in this project that
+#: surfaces inside it, a `MemoryError`, an upstream defect that has
+#: nothing to do with the file -- and the sentence said "stopped on this
+#: input" about all of them, which blames the author for two of the
+#: three. It also told the reader to look at "the value it names", and
+#: on an Environment there is no value to name: the subject below is
+#: `None` for every input that holds one, so the one condition under
+#: which they were asked to file a report could never be evaluated.
+RELAY_STOPPED = ("The metamodel channel stopped, so this report does not "
+                 "say whether the metamodel is satisfied; the rest of the "
+                 "verdict stands. What stopped it is recorded beside this "
+                 "finding -- please report that, whether the cause turns "
+                 "out to be this file, this tool, or the library whose "
+                 "answers it relays.")
 
 CRASH_REMEDY = ("This is a defect in the validator, not in your file; "
                 "please report it.")
@@ -56,10 +68,18 @@ def execute(rules_to_run, ctx) -> List[Finding]:
         try:
             findings.extend(Finding(rule, violation) for violation in rule.fn(ctx))
         except Exception as exc:  # noqa: BLE001 - the isolation is the point
+            # At `error`, whatever the rule asks for. For the 23
+            # registered rules below MUST this arrived as a warning or
+            # as info and the run left by 0 -- a clean bill for a file
+            # this tool stopped checking, which is the one thing a
+            # pipeline reading only the exit code cannot survive. The
+            # relayed channel was given this repair; `execute` sits four
+            # lines above it and was not.
             findings.append(Finding(rule, Violation(
                 COULD_NOT_RUN,
                 detail="%s: %s" % (type(exc).__name__, exc),
-                fix=CRASH_REMEDY)))
+                fix=CRASH_REMEDY,
+                severity=Severity.ERROR)))
     return findings
 
 
@@ -150,6 +170,11 @@ def _meta_findings(loaded: Loaded, strict):
             # been loudly wrong.
             yield Finding(_meta_rule("error"), Violation(
                 COULD_NOT_RUN,
+                # A bare submodel has an id and an Environment has not,
+                # so this names the target where there is a name and
+                # stays quiet where there is none. The remedy no longer
+                # promises the reader a name, which is what made the
+                # quiet case a broken instruction rather than a blank.
                 subject=getattr(target, "id", None),
                 detail="%s: %s" % (type(exc).__name__, exc),
                 fix=RELAY_STOPPED))

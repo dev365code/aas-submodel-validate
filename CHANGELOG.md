@@ -47,6 +47,27 @@ longer fails on them — which is the caller saying so, rather than the
 tool deciding it for them. `--strict-meta` is the older spelling of
 `--meta error` and keeps working.
 
+**A check that could not run fails the run.** **`verdict`** — a rule
+that raises has always become a finding rather than a crash, so that
+one broken rule cannot hide the others. It was reported at the rule's
+own severity, which for the 23 registered rules asking for less than a
+MUST meant a warning or an info, and the run left by 0: a clean exit
+for a file this tool stopped checking, which is the one thing a
+pipeline reading nothing but the exit code cannot survive. Those
+findings are errors now. What the rule asks for is unchanged and still
+reads `SHOULD` under `priority` in the JSON — the severity is about the
+run, not about the file.
+
+The same holds for the relayed channel when it stops, and the sentence
+it prints no longer says the file is at fault. That call can end for
+reasons that are nothing to do with the input, and the remedy said
+"stopped on this input" about all of them; it also told the reader to
+look at "the value it names", where an environment gives it no value to
+name. It now says what is true in every case: the channel is quiet, the
+report is short of an answer rather than carrying a wrong one, the rest
+of the verdict stands, and what stopped it is recorded beside the
+finding.
+
 **`--require-all-judged`.** An environment holds submodels this tool has
 no business judging, so `judged 1 of 3` stays a number and the run still
 exits 0. A pipeline reading only the exit code saw success for a package

@@ -567,6 +567,12 @@ def test_every_rule_offers_a_remedy():
 #: taken from the fixtures cannot see a sentence no fixture reaches, and
 #: those are the ones nothing else is watching either.
 SHIPPED_REMEDIES = {
+    "runner/the-metamodel-channel-stopped":
+        "The metamodel channel stopped, so this report does not say "
+        "whether the metamodel is satisfied; the rest of the verdict "
+        "stands. What stopped it is recorded beside this finding -- "
+        "please report that, whether the cause turns out to be this "
+        "file, this tool, or the library whose answers it relays.",
     "HD-D9/DocumentedEntity":
         "Add the element this DocumentedEntity names to the submodel, "
         "or correct the reference's key path; a reference that "
@@ -690,6 +696,13 @@ def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
         built["X5/%s" % form] = container_rules._bounds_remedy(form)
     built["runner/a-rule-that-crashed"] = runner.CRASH_REMEDY
     built["runner/the-metamodel-channel"] = runner.META_REMEDY
+    # The comment above this constant in `runner.py` says both sentences
+    # beside it were unpinned and that rewriting one to blame the author
+    # for a defect in this validator left every gate green. A third
+    # sentence was then written *between that comment and the constants
+    # it describes*, and not added here -- so the census the comment
+    # exists for did not hold it either.
+    built["runner/the-metamodel-channel-stopped"] = runner.RELAY_STOPPED
     built["loader/payload-doctype"] = loader.PAYLOAD_DOCTYPE_REMEDY
     built["loader/directory-bound"] = loader.directory_bound_remedy()
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY

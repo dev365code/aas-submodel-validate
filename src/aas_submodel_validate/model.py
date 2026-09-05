@@ -85,6 +85,13 @@ class Violation:
     #: reader `per` is what to cite, and a constant on the rule sent them
     #: to a provision no row had chosen.
     spec: Optional[str] = None
+    #: How loudly THIS instance is reported, when the rule's own priority
+    #: is the wrong answer. One thing needs it: a rule that could not run
+    #: at all. What the rule asks for stays true in the report and stays
+    #: in `priority`; whether the run may be called clean is a different
+    #: question, and for a check that did not happen the answer is no
+    #: however little the check was asking for.
+    severity: Optional[Severity] = None
 
 
 @dataclass(frozen=True)
@@ -116,7 +123,7 @@ class Finding:
 
     @property
     def severity(self) -> Severity:
-        return self.rule.severity
+        return self.violation.severity or self.rule.severity
 
     @property
     def fix(self) -> Optional[str]:
