@@ -53,10 +53,9 @@ R8_ID = "BAT-R8"
 #: it says what this run could examine, and a run examines nothing when
 #: the input holds no submodel the table names.
 COVERAGE_NOTE = (
-    "%s looked at %d of the %d elements it can report without knowing "
-    "this battery's category; %d more are known to disagree and are not "
-    "reported, because whether the law requires them depends on a "
-    "category no rule here reads yet. Read from %s. Both figures are a "
+    "%s reported %d of the %d elements this table holds; %d of them need "
+    "a battery category no rule here reads yet, so whether the law "
+    "requires those is a question this run did not ask. Read from %s. Both figures are a "
     "floor, not a measurement: the templates cite no provision of the "
     "law, so the join behind the table matched attributes by name, and "
     "name matching misses every element whose label differs from the "
@@ -79,8 +78,13 @@ def coverage_note(submodels) -> str:
     cannot reach at all. What comes out is a lower bound on the
     disagreement, never a measurement of it.
     """
-    total = len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
     withheld = len(battery_tables.CONDITIONAL_ON_CATEGORY)
+    # Every row the table holds, the withheld ones included. Counting
+    # against the reportable rows alone made the sentence "1 of the 1",
+    # which is a number divided by itself wearing the look of complete
+    # coverage -- and the eight it does not ask about are named in the
+    # same breath, so they belong in the denominator that frames them.
+    total = len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL) + withheld
     # Distinct rows, not a sum over submodels: two ProductCondition
     # submodels in one file -- two battery modules, an ordinary shape --
     # made this say "10 of the 9".
@@ -175,8 +179,9 @@ def bat_r2_shared_identifier_without_a_table(ctx):
 
 @rule(R8_ID, kind="template", prio="SHOULD",
       title="elements the template permits absent that the regulation requires",
-      spec="Regulation (EU) 2023/1542 Annex VII; "
-           "docs/divergences.md #37 for which reading this answers for",
+      spec="Regulation (EU) 2023/1542; each finding names the provision "
+           "its own row cites, and docs/divergences.md #37 records whose "
+           "reading of it this answers for",
       fix="Provide the element, or record that this battery is outside "
           "the provision that requires it. The template will not ask for "
           "it -- that is the point of the finding.")
@@ -188,15 +193,32 @@ def bat_r8_template_optional_but_law_requires(ctx):
         for row in _rows_for(submodel):
             if _carries(submodel, row):
                 continue
+            clauses = ", ".join(row["citations"])
             yield Violation(
                 "conformant to the template and not to the regulation: "
                 "'%s' is absent" % row["element_id_short"],
-                subject="%s/%s" % (getattr(submodel, "id_short", None)
-                                   or "submodel", row["element_id_short"]),
-                detail="%s %s makes it %s; %s requires it, for every "
-                       "battery category the source names"
+                # The element's name, not a path. This used to synthesise
+                # `<submodel>/<element>`, which is a place the walk never
+                # went -- the element sits two collections down where it
+                # is present at all -- so the finding pointed at one
+                # location and accepted the identifier at any other.
+                subject=row["element_id_short"],
+                # Whose reading, and of what. The row's own citations,
+                # because a table joined from several sources cites a
+                # different provision on every line; and `read ... as
+                # requiring`, because the authority behind this row is a
+                # published reading of that provision and not the
+                # provision speaking. `docs/divergences.md` #37 has said
+                # so since the rule landed -- the document was careful
+                # and the sentence a reader sees was not.
+                spec="Regulation (EU) 2023/1542 %s" % clauses,
+                detail="%s %s makes it %s; %s is read as requiring it, for "
+                       "every battery category the source names. Asked "
+                       "anywhere under the submodel: this rule is about "
+                       "the data being present, not about where the "
+                       "template puts it"
                        % (row["template"], row["template_version"],
-                          row["cardinality"], ", ".join(row["citations"])))
+                          row["cardinality"], clauses))
 
 
 def _known_to_the_walk() -> frozenset:

@@ -280,7 +280,7 @@ def test_two_submodels_of_one_kind_do_not_inflate_what_was_read(tmp_path):
     report = _run(tmp_path, _env(_technical_data(fade=False),
                                  _technical_data(fade=False)))
     (note,) = [n for n in report.notes if "BAT-R8" in n]
-    assert "looked at 1 of the 1" in note
+    assert "reported 1 of the 9" in note
 
 
 def test_the_set_of_packs_the_walk_answers_for_is_the_registry_s(tmp_path):
@@ -329,14 +329,16 @@ def test_the_note_counts_what_it_reads_and_what_it_withholds(monkeypatch, tmp_pa
     table sits still."""
     report = _run(tmp_path, _env(_technical_data(fade=False)))
     (note,) = [n for n in report.notes if "BAT-R8" in n]
-    assert "looked at 1 of the 1" in note
-    assert "8 more are known to disagree" in note
+    assert "reported 1 of the 9" in note
+    assert "8 of them need a battery category" in note
 
     monkeypatch.setattr(battery_tables, "CONDITIONAL_ON_CATEGORY",
                         battery_tables.CONDITIONAL_ON_CATEGORY[:3])
     report = _run(tmp_path, _env(_technical_data(fade=False)))
     (note,) = [n for n in report.notes if "BAT-R8" in n]
-    assert "3 more are known to disagree" in note, "the withheld count is quoted"
+    assert "3 of them need a battery category" in note, \
+        "the withheld count is quoted"
+    assert "of the 4" in note, "the denominator does not follow the table"
 
 
 def test_a_run_the_pack_never_looked_at_says_nothing(tmp_path):
@@ -487,3 +489,89 @@ def test_the_divergence_row_counts_the_index_it_cites():
              "twelve": 12, "thirteen": 13}
     assert words[numbers.group(1)] == len(editions)
     assert words[numbers.group(2)] == shared
+
+
+# -- what a reader is told to cite, and on whose authority ------------------
+
+def test_the_clause_a_finding_cites_is_the_row_s_own(tmp_path):
+    """`per` is defined on the front page as the clause to cite when you
+    have to cite one, and it was a constant on the rule.
+
+    The rule said `Annex VII`; the row it is reporting cites `Annex IV
+    Part A (4)`; the passport obligation these tables were joined
+    against is Annex XIII. Three provisions, and the one printed was the
+    one nothing chose. A row is the only thing that knows which
+    provision it came from, so the sentence is built from it -- and a
+    second row with a different citation is what would have caught this
+    at the time.
+    """
+    report = _run(tmp_path, _env(_technical_data(fade=False)))
+    finding = _one(report, "BAT-R8")
+    row = next(r for r in battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
+               if r["element_id_short"] == "EnergyRoundTripEfficiencyFade")
+    for clause in row["citations"]:
+        # What the reader sees, not the rule's standing default: the
+        # first version of this asked `rule.spec` and would have passed
+        # a per-row citation that never reached the screen.
+        assert clause in finding.spec, (
+            "the row cites %r and the finding tells the reader to cite %r"
+            % (clause, finding.spec))
+
+
+def test_a_consortium_reading_is_not_reported_as_the_law_speaking(tmp_path):
+    """The row's authority is `longlist:77` -- the Battery Pass long
+    list, an industry reading -- and the finding said the provision
+    "requires it".
+
+    `docs/divergences.md` #37 is careful about this: the long list *or*
+    the Commission's guidance marks the attribute mandatory, and two
+    published readings exist, which is why this is a warning and not an
+    error. The document was honest and the sentence a reader sees was
+    not."""
+    report = _run(tmp_path, _env(_technical_data(fade=False)))
+    said = _one(report, "BAT-R8").violation.detail or ""
+    assert "requires it" not in said, (
+        "the finding says a provision requires it; what is known is that "
+        "a published reading of that provision does: %r" % said)
+    assert "read" in said.lower() or "marks" in said.lower(), \
+        "the finding does not say whose reading this is: %r" % said
+
+
+def test_the_finding_says_it_asks_about_presence_and_not_placement(tmp_path):
+    """The rule looks for the identifier anywhere under the submodel, so
+    an element buried in a collection nobody expects satisfies it -- and
+    with no table for 02035-4, no structural rule objects either. That
+    is defensible for a rule about what the law requires to be *there*,
+    and it is not what a reader assumes from a path.
+
+    The subject was a path this walk never took: `TechnicalData/<name>`,
+    synthesised, while the element sits two collections down. Pointing
+    at a place the element is not, and accepting it anywhere, is two
+    halves of one wrong impression."""
+    report = _run(tmp_path, _env(_technical_data(fade=False)))
+    finding = _one(report, "BAT-R8")
+    assert "/" not in finding.violation.subject, (
+        "the subject reads as a path and no path was walked: %r"
+        % finding.violation.subject)
+    said = finding.violation.detail or ""
+    assert "anywhere" in said, \
+        "the finding does not say it asks about presence, not placement"
+
+
+def test_the_coverage_note_does_not_divide_a_number_by_itself(tmp_path):
+    """`1 of the 1` reads as complete, and it is a tautology: the table
+    is its own denominator.
+
+    The honest denominator is one this rule already holds -- every row
+    the table carries, the eight withheld included -- so the sentence
+    says one of nine rather than one of one. The reading it has to avoid
+    is the one a regulator would take from a hundred per cent."""
+    report = _run(tmp_path, _env(_technical_data(fade=False)))
+    note = next((n for n in report.notes if n.startswith("BAT-R8")), None)
+    assert note, "the coverage note is gone"
+    everything = len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL) + \
+        len(battery_tables.CONDITIONAL_ON_CATEGORY)
+    assert "of the %d" % everything in note, (
+        "the note counts against something other than the whole table: %r"
+        % note)
+    assert "1 of the 1" not in note

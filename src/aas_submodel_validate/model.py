@@ -77,6 +77,11 @@ class Violation:
     #: Remedy for THIS instance, when it needs something more specific than
     #: the rule's standing advice.
     fix: Optional[str] = None
+    #: The clause THIS instance reads from, when a rule answers for a
+    #: table whose rows cite different provisions. The front page tells a
+    #: reader `per` is what to cite, and a constant on the rule sent them
+    #: to a provision no row had chosen.
+    spec: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -114,6 +119,10 @@ class Finding:
     def fix(self) -> Optional[str]:
         return self.violation.fix or self.rule.fix
 
+    @property
+    def spec(self) -> str:
+        return self.violation.spec or self.rule.spec
+
     def as_dict(self) -> dict:
         return {
             "rule": self.rule.id,
@@ -125,7 +134,7 @@ class Finding:
             "detail": self.violation.detail,
             "fix": self.fix,
             "title": self.rule.title,
-            "spec": self.rule.spec,
+            "spec": self.spec,
         }
 
 
