@@ -132,7 +132,21 @@ produce later.
 
 A verdict says how much of your file a template answered for, and the
 battery rules say how much of their own table they were able to answer
-for. Neither number is decoration. Here is that second one whole, as the
+for. Neither number is decoration.
+
+**One limit is worth knowing before you rely on a pass.** Matching goes
+by semanticId, so an element whose identifier is wrong matches no row —
+and the rules for everything *inside* it are rules about a row that was
+never reached. Measured across the 86 generated rules: a single wrong
+identifier turns twelve of them from a failing verdict into a passing
+one, and thirty-three report nothing at all. The realistic cause is not
+an attack but a version bump (`#002` to `#003`) or a typo in a
+hand-edited file. The near-miss lint catches a version drift, which is
+what it was built for, and catches nothing else. This is written up
+with the measurement in
+[docs/divergences.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/divergences.md)
+#23; closing it needs a rule this project does not have yet, and it is
+on the roadmap rather than in this release. Here is that second one whole, as the
 tool writes it — one line, unfolded:
 
 ```text

@@ -86,6 +86,30 @@ element. And the coverage note said `1 of the 1`, a number divided by
 itself wearing the look of complete coverage; the eight it withholds
 belong in the denominator that frames them.
 
+**A submodel that says it is a template is no longer judged as an
+instance.** `ModellingKind.Template` means a specification, and every
+rule here is a requirement on an instance — so pointed at the published
+IDTA templates, the ones this project generates its own rules from, the
+tool used to report that they have no VDI 2770 classification and tell
+the reader to add one. No flag escaped it, and a package holding a
+conformant instance beside the template it was built from came back as
+a failure. Templates are set aside, the report says which ones and why,
+and they are out of the coverage figure rather than counted as
+unjudged.
+
+**An archive this reader cannot open leaves by 2, whatever stopped it.**
+A ZIP entry name written in a legacy code page with the header bit that
+claims UTF-8 set anyway — what a packager on a Korean or Japanese
+Windows produces — raised past every handler and left by 1, which is the
+code for *a verdict with findings* about a file nothing had read.
+
+**`En` is English.** The metamodel's own predicate takes `en` and `EN`
+and refuses the mixed spellings, and RFC 5646 §2.1.1 says capitalisation
+must not be taken to carry meaning — so a file writing `En` was told it
+had no English entry, on a line printing `languages present: En, de`
+directly above. A trailing space no longer hides the mandatory VDI 2770
+classification either. Both were findings on conformant files.
+
 **Every finding prints the clause it answers for.** The JSON report has
 carried `spec` since the first release and the terminal never showed it,
 so the person writing "conforms: yes/no" into a report — who needs the

@@ -993,3 +993,29 @@ def test_what_is_not_english_stays_not_english(tag):
     from aas_submodel_validate.rules.handover import _english
 
     assert not _english(tag), "%r is not the tag this rule asks for" % tag
+
+
+def test_a_trailing_space_does_not_hide_the_classification(tmp_path):
+    """`"VDI 2770 Blatt 1:2020 "` names the mandatory system. Compared
+    byte for byte it named nothing, so HD-D2 -- a MUST, which moves the
+    exit code -- reported that the file has no VDI 2770 classification
+    and told the reader to add one, while the file plainly carried it.
+    `xs:string` admits trailing whitespace, so the metamodel channel has
+    no second opinion to offer either.
+
+    Two rows of this document already fold whitespace for exactly this
+    reason and say so: #34 for `xs:boolean`, because reading strictly
+    "would report a document as having no primary identifier when it
+    plainly marks one", and #31 for `xs:date`, because "a finding on a
+    conformant file is the one direction with no second opinion". Both
+    are attached to rules that do not move the exit code. The strict
+    reading was attached to one that does, which is the asymmetry this
+    project declares, backwards."""
+    from aas_submodel_validate.rules.handover import VDI2770_SYSTEM
+
+    env = copy.deepcopy(hd_env())
+    for child in _classification(env)["value"]:
+        if child.get("idShort") == "ClassificationSystem":
+            child["value"] = VDI2770_SYSTEM + " "
+    assert "HD-D2" not in _findings(tmp_path, env), (
+        "a trailing space made the mandatory classification invisible")

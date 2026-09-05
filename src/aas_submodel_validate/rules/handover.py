@@ -46,6 +46,21 @@ from .engine import (
 )
 from .values import valid_xs_date
 
+
+def _has_scheme(value: str) -> bool:
+    """Whether this File value names something outside the container.
+
+    The test was `"://" in value`, which is a substring and not a
+    scheme: `files/a://absent.pdf` contains it, is a perfectly good part
+    name once normalised, and walked past a MUST. RFC 3986 §3.1 says a
+    scheme begins the reference and is `ALPHA *( ALPHA / DIGIT / "+" /
+    "-" / "." )`, so the question is asked of the front of the string.
+    """
+    head, sep, _rest = value.partition(":")
+    return bool(sep) and bool(head) and head[0].isalpha() and all(
+        character.isalnum() or character in "+-." for character in head)
+
+
 #: The exact spelling IDTA 02004-2-0 §2.3 says identifies the mandatory
 #: classification system.
 VDI2770_SYSTEM = "VDI 2770 Blatt 1:2020"
@@ -80,7 +95,8 @@ def _vdi_classifications(document, tables):
     classifications = children_of(child_of(document, "DocumentClassifications", tables)
                                   or document, "DocumentClassification", tables)
     return [c for c in classifications
-            if property_value(c, "ClassificationSystem", tables) in VDI2770_SPELLINGS]
+            if (property_value(c, "ClassificationSystem", tables) or "").strip()
+            in VDI2770_SPELLINGS]
 
 
 def _file_labels(tables):
@@ -249,8 +265,10 @@ def _d7(tables):
         for label in labels:
             for subject, element in instances_of(ctx, label, tables):
                 value = getattr(element, "value", None)
-                if not isinstance(value, str) or not value.strip() or "://" in value:
+                if not isinstance(value, str) or not value.strip():
                     continue  # an empty value names nothing -- a different defect
+                if _has_scheme(value):
+                    continue  # somewhere else's file, not this container's
                 from ..container import canonical_part_name
                 if canonical_part_name(value) is None:
                     yield Violation("this File's value is not a part name",
