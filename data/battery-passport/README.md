@@ -1,5 +1,10 @@
 # Battery passport requirement indexes
 
+**Attribution, licences and the disclaimers each source asks to travel with
+its material are in [`NOTICE.md`](NOTICE.md) beside this file. Read it before
+reusing anything here: three of the four sources are CC BY 4.0, and one of
+them is a consolidated text that says of itself that it has no legal effect.**
+
 Machine-readable indexes of what an EU battery passport must contain, derived
 from four canonical sources and joined so the same obligation can be followed
 across all four: Regulation (EU) 2023/1542 Annex XIII (consolidated text

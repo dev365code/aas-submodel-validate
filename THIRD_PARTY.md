@@ -44,11 +44,22 @@ this project reports in its `meta` channel.
 
 `data/battery-passport/` holds indexes derived from four canonical
 sources -- EU Regulation 2023/1542 Annex XIII (EUR-Lex consolidated
-text), the Commission's data-point guidance, the Battery Pass
-consortium's attribute long list (CC BY 4.0), and IDTA 02035/02099
-submodel templates (CC BY 4.0). The sources are not mirrored here; each
+text), the Commission's data-point guidance, the BatteryPass-Ready
+Consortium's Data Attribute Longlist v1.3 (CC BY 4.0), and IDTA
+02035/02099 submodel templates (CC BY 4.0). The longlist is named by its
+edition on purpose: the earlier "Battery Pass" series is under a
+different, non-commercial licence, and only v1.3 is CC BY. The sources are not mirrored here; each
 is pinned by URL and sha256 in `data/battery-passport/sources.sha256`,
-and the bundle's own `README.md` carries the per-source attribution.
+and `data/battery-passport/NOTICE.md` carries the per-source attribution
+-- rightsholder, licence and its URI, the recommended citation where the
+source supplies one, the source's own disclaimer, and a statement of how
+the material was modified. **That directory is in the repository and in
+no distribution**, so a reader who has only this file has only this
+paragraph: the indexes and their notice are at
+<https://github.com/dev365code/aas-submodel-validate/tree/main/data/battery-passport>. This sentence used to point at the bundle's
+`README.md`, which names the licences and stops there: CC BY 4.0 §3(a)
+asks for the rest, and a licensing document asserting an attribution
+that is not there is worse than one that says nothing.
 
 Two pins of IDTA 02004 live in this repository and they are different
 files on purpose: this tool vendors and validates against **02004
