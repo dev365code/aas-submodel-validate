@@ -94,8 +94,8 @@ def _quoted_lines(lines, elision):
 def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
     """Drawn from an installed run, and pinned here so it cannot drift
     apart from one. The picture wraps where the drawing needs it and a
-    terminal wraps where the window ends, so the comparison is of the
-    text, not of the lines."""
+    terminal wraps where the window ends, so the runs are joined back
+    into the lines they came from and the comparison is of those."""
     said = _the_verdict(tmp_path)
     printed = [" ".join(row.split()) for row in said.splitlines()]
     generator = _generator()
@@ -111,17 +111,33 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
     # sentence and stayed green. The front page's text block was held to
     # this and the picture above it, which is what a reader sees first,
     # was not.
-    for text in quotes:
+    # In the order the tool prints them, and with every gap marked. The
+    # front page's text block was given both checks when reversing its
+    # lines was found to pass; the picture above it, which is what a
+    # reader sees first, kept neither -- so the remedy and the clause
+    # could be drawn the other way round, regenerate cleanly and stay
+    # green through every gate.
+    at = -1
+    for text in groups:
+        if text == elision or text.startswith("$ "):
+            continue
         if text.endswith(elision):
             stem = text[:-len(elision)].rstrip()
-            assert any(row.startswith(stem) for row in printed), (
-                "the picture quotes %r and no line the tool prints "
-                "begins that way" % stem)
+            where = [i for i, row in enumerate(printed) if row.startswith(stem)]
+            missing = ("the picture quotes %r and no line the tool prints "
+                       "begins that way" % stem)
         else:
-            assert text in printed, (
-                "the picture shows %r and the tool prints no such line. "
-                "A quote that stops early is a quote that says something "
-                "else -- mark it with %s if it is a crop." % (text, elision))
+            where = [i for i, row in enumerate(printed) if row == text]
+            missing = ("the picture shows %r and the tool prints no such "
+                       "line. A quote that stops early is a quote that says "
+                       "something else -- mark it with %s if it is a crop."
+                       % (text, elision))
+        assert where, missing
+        later = [index for index in where if index > at]
+        assert later, (
+            "the picture draws %r after a line the tool prints later; a "
+            "verdict is read downwards and this one is not" % text)
+        at = later[0]
     # The one string in the picture that is not the tool's: the mark
     # that says lines were left out. The picture is a crop -- the folded
     # metamodel line and one note are not in it -- and every sentence in

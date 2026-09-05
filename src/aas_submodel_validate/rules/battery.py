@@ -178,7 +178,8 @@ def bat_r2_shared_identifier_without_a_table(ctx):
 
 
 @rule(R8_ID, kind="template", prio="SHOULD",
-      title="elements the template permits absent that the regulation requires",
+      title="elements the template permits absent that a published "
+            "reading of the regulation requires",
       spec="Regulation (EU) 2023/1542; each finding names the provision "
            "its own row cites, and docs/divergences.md #37 records whose "
            "reading of it this answers for",

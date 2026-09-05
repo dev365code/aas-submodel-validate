@@ -166,7 +166,7 @@ differ.
 | `detail` | string or null | Context — usually the value that was seen. |
 | `fix` | string | One imperative sentence: what to change so this stops being reported. Every finding carries one. |
 | `title` | string | The rule's standing description, the same for every finding it produces. |
-| `spec` | string | Where the requirement lives, and always present. Usually a template and section; for a rule that reads a regulation rather than a template, the provision, built from the row being reported rather than fixed per rule; and for the rules about the input itself, the standard that governs the container or a pointer to this project's own documented bounds. |
+| `spec` | string | Where the requirement lives, and always present. Usually a template and section; for a rule that reads a regulation rather than a template, the provision, built from the row being reported rather than fixed per rule; for the rules about the container, the OPC or AASX standard that governs it; for the ones about what a document must be, the metamodel standard and its published schemas — which is also what the relayed `meta` channel cites; and for this reader's own size limits, a pointer to where they are written down. |
 
 `kind` is `meta` for findings relayed from
 [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s

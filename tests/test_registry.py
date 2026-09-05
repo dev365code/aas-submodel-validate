@@ -1,4 +1,5 @@
 """A rule id is a contract: registered once, forever findable."""
+import pathlib
 import re
 
 import pytest
@@ -521,7 +522,13 @@ def test_every_rule_says_where_its_requirement_lives():
     from is asking to be taken on trust, which is the one thing this
     tool is not for -- and a schema that offers `null` teaches every
     consumer to write a branch nothing will ever take."""
-    silent = sorted(rule.id for rule in all_rules() if not (rule.spec or "").strip())
+    # The relayed channel too. It is deliberately not a registered
+    # rule, so `all_rules()` cannot see it -- and it produces 77 of the
+    # 87 findings on the official example, which makes it the largest
+    # thing this gate was written for and the one it could not reach.
+    from aas_submodel_validate import runner
+    channels = list(all_rules()) + [runner._meta_rule(False)]
+    silent = sorted(rule.id for rule in channels if not (rule.spec or "").strip())
     assert not silent, (
         "these rules name no source for what they require: %s" % silent)
 
@@ -773,3 +780,38 @@ def test_the_decorator_hands_the_function_back():
     from aas_submodel_validate.rules import container as _c
     assert callable(_c.x1_is_a_zip)
 
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+def test_every_divergence_this_project_cites_exists():
+    """A pointer to a chosen reading is only worth the reading it
+    reaches.
+
+    Three files said a decision was recorded at `docs/divergences.md`
+    #4 and #4 records something else -- the decision they meant was not
+    in the document at all. That was found by reading, which does not
+    scale to the twenty-odd citations scattered through the code and
+    the suite. It scales to a gate.
+
+    The number existing is what can be checked here; whether the row
+    says what the citing line thinks it says cannot be, and is why the
+    rows are written as observation and reading rather than as a
+    label."""
+    rows = {int(line.split("|")[1].strip())
+            for line in (ROOT / "docs" / "divergences.md").read_text("utf-8").splitlines()
+            if re.match(r"^\|\s*\d+\s*\|", line)}
+    assert len(rows) > 30, "the divergences table did not parse"
+    cited: dict = {}
+    for path in sorted((ROOT / "src").rglob("*.py")) + sorted((ROOT / "tests").rglob("*.py")):
+        if path.name == "test_registry.py":
+            continue
+        text = path.read_text("utf-8")
+        for number in re.findall(r"divergences(?:\.md)?\s*#(\d+)", text):
+            cited.setdefault(int(number), set()).add(path.name)
+    assert cited, "nothing in this tree cites a divergence at all"
+    dangling = sorted((number, sorted(where)) for number, where in cited.items()
+                      if number not in rows)
+    assert not dangling, (
+        "these divergence numbers are cited and the document has no such "
+        "row: %s" % dangling)

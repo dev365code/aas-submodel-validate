@@ -99,10 +99,15 @@ def banner() -> str:
 
 
 # ── the real verdict, drawn ─────────────────────────────────────────────────
-#: Every string below is a substring of what the installed tool prints for
-#: this input, and `tests/test_door.py` asserts exactly that against a live
-#: run. Wrapping is the picture's own -- the terminal wraps where the window
-#: ends and an SVG has no window -- so the test compares the joined text.
+#: Every line below is a line the installed tool prints for this input,
+#: and `tests/test_door.py` asserts exactly that against a live run.
+#: Wrapping is the picture's own -- the terminal wraps where the window
+#: ends and an SVG has no window -- so the runs are joined back into the
+#: line they came from before the comparison. A line the picture cuts
+#: short ends in ELISION and has to be a prefix of the line it quotes:
+#: a quote that stops early without saying so is a quote that says
+#: something else, and one of them reversed a sentence by stopping just
+#: before its "not".
 G, D, E, A_, F, T, N = "#8fd0a8", "#7d8a99", "#e0604d", "#e8c268", "#5cb87f", "#d8dfe5", "#93a1ad"
 
 #: Drawn where lines were left out. The picture is a crop of a real run

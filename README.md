@@ -75,7 +75,7 @@ Five of the 125, in the words the tool actually prints:
 | `ClassificationSystem` written `VDI2770:2020` | **HDL5** · ClassificationSystem spells the VDI system non-canonically |
 | A `Document` with no VDI 2770 classification at all | **HD-D2** · no DocumentClassification declares the mandatory VDI 2770 classification system |
 | A `ClassName` given only in German | **HD-D4** · ClassName has no English entry — `saw languages present: de` |
-| A battery passport missing an element the law requires | **BAT-R8** · conformant to the template and not to the regulation |
+| A battery passport missing an element a published reading of the law requires | **BAT-R8** · conformant to the template and not to the regulation |
 
 Each of those five carries an `at`, a `saw` where there is evidence to show, the clause it reads from, and a sentence saying what to change.
 

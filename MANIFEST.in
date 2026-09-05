@@ -14,7 +14,6 @@ graft .github
 include Makefile MANIFEST.in
 include CONTRIBUTING.md SECURITY.md SUPPORT.md NOTICE THIRD_PARTY.md CHANGELOG.md
 global-exclude __pycache__/* *.pyc
-recursive-exclude tests .rule-coverage.json
 
 # The two pictures are named here because the suite reads them. They
 # were committed with the tests that check them and this list was not

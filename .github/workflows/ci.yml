@@ -171,6 +171,19 @@ jobs:
               sys.exit("the wheel carries test material it should not: %s" % strays[:5])
           print("wheel carries the template, and no corpus")
           PY
+      - name: the package index will accept the description
+        # `twine check` is what PyPI's renderer says before PyPI says
+        # it, and the release workflow has no equivalent -- by the time
+        # an upload is refused, the GitHub Release exists and the
+        # signature is already in a public log. Here rather than there,
+        # because a release line first exercised on the day of the
+        # release is one that dies on the day of the release. Narrowed
+        # to this project's own artifacts: the directory also holds the
+        # dependency wheel, whose metadata is upstream's business.
+        run: |
+          pip install twine
+          twine check --strict dist/aas_submodel_validate-*
+
       - name: no distribution carries what it must not
         # The same check the release runs. Here on every push, because a
         # release line first exercised on the day of the release is one

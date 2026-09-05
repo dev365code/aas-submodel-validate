@@ -16,7 +16,7 @@ disagreement; this reads its result and carries across only what a
 finding has to say.
 
 `CONDITIONAL_ON_CATEGORY` -- the rest of that disagreement, and no rule
-reads it. Seven of the nine elements are required for some categories
+reads it. Eight of the nine elements are required for some categories
 and not others: remaining capacity is required for light means of
 transport and voluntary for electric vehicles, and the capacity
 threshold for exhaustion inverts -- required for EVs, and the

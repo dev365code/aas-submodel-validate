@@ -64,7 +64,25 @@ def test_the_rule_counts_are_the_registrys():
     generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
     assert len(all_rules()) == 125
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS)) == (38, 26, 22)
-    assert "125 rules" in README
+    # Every place the page says it, not "somewhere on the page". The
+    # count appears four times -- the badge, the gallery, the roadmap
+    # and the table's heading -- and a substring check is satisfied by
+    # any one of them, so three could go stale in silence. The badge is
+    # the one a reader trusts most, being rendered as a picture, and it
+    # was the one nothing watched.
+    total = len(all_rules())
+    for where in ("[![templates](https://img.shields.io/badge/"
+                  "IDTA_templates-3_\u00b7_%d_rules" % total,
+                  "Five of the %d," % total,
+                  ": %d rules, %d of them generated" % (total, generated),
+                  "%d rules, " % total,
+                  "The rule counts (%d, %d)" % (total, generated)):
+        assert where in README, (
+            "the page should say %r and does not -- a count moved and "
+            "one of the places it is written did not" % where)
+    assert README.count(str(total)) >= 5, (
+        "the page names the rule count fewer times than the places that "
+        "are pinned above; one of them was deleted rather than updated")
     assert "%d generated" % generated in README
     # Each template's own row count is on the front page too, in the
     # table: a total alone would let one template's rows vanish into
@@ -553,14 +571,24 @@ def test_every_picture_on_the_page_is_the_one_committed():
     # to the badges, which is where a picture would naturally be added,
     # went past the host check, the hash check and the `?v=` check
     # together.
-    sources = re.findall(r'<img\s[^>]*?src="([^"]+)"', README)
+    sources = re.findall(r"""<img\s[^>]*?src=["']([^"']+)["']""", README)
     sources += [target for _alt, target
                 in re.findall(r"!\[([^\]]*)\]\(([^)\s]+)\)", README)]
+    sources += [target for _label, target
+                in re.findall(r"(?m)^\[([^\]]+)\]:\s*(\S+)\s*$", README)]
+    # Bound to hosts, not to a shape. The first version excused anything
+    # whose path ended `/badge.svg`, which is a filename anyone can
+    # choose: a picture served from another host under that name passed
+    # the host check, the hash check and the `?v=` check together.
+    shields = "https://img.shields.io/"
+    workflows = "https://github.com/%s/%s/actions/" % home.groups()
     badges = [target for target in sources
-              if target.startswith("https://img.shields.io/")
-              or target.endswith("/badge.svg")]
+              if target.startswith(shields) or target.startswith(workflows)]
     sources = [target for target in sources if target not in badges]
-    assert badges, "the badges are gone, or this gate stopped finding them"
+    assert len(badges) >= 4, (
+        "the front page carried four badges and this gate can see %d of "
+        "them; a badge was removed, or moved somewhere this cannot "
+        "read" % len(badges))
     assert sources, "the front page shows no pictures at all"
     references = []
     for source in sources:

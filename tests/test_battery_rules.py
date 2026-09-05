@@ -27,6 +27,7 @@ produced the table matched by name.
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -528,8 +529,7 @@ def test_a_consortium_reading_is_not_reported_as_the_law_speaking(tmp_path):
     published readings exist, which is why this is a warning and not an
     error. The document was honest and the sentence a reader sees was
     not."""
-    finding = _one(report := _run(tmp_path, _env(_technical_data(fade=False))),
-                   "BAT-R8")
+    finding = _one(_run(tmp_path, _env(_technical_data(fade=False))), "BAT-R8")
     said = finding.violation.detail or ""
     assert "read" in said.lower() or "marks" in said.lower(), \
         "the finding does not say whose reading this is: %r" % said
@@ -537,14 +537,29 @@ def test_a_consortium_reading_is_not_reported_as_the_law_speaking(tmp_path):
     # looked at when this was written. The evidence line was repaired
     # and the remedy beneath it went on saying "the provision that
     # requires it" -- one finding, two sentences, and the gate read one.
+    # Every line a reader sees, including the rule's standing title --
+    # which the JSON repeats on every finding the rule produces, and
+    # which went on saying "the regulation requires" after the four
+    # lines beneath it stopped. And the phrase, not one spelling of it:
+    # the first version of this looked for "requires it" exactly, so
+    # "the regulation requires the element" would have walked past.
     for label, sentence in (("saw", said), ("fix", finding.fix or ""),
                             ("per", finding.spec or ""),
-                            ("message", finding.violation.message)):
-        assert "requires it" not in sentence, (
-            "the %s line says a provision requires it; what is known is "
-            "that a published reading of that provision does: %r"
-            % (label, sentence))
-    assert report is not None
+                            ("message", finding.violation.message),
+                            ("title", finding.rule.title)):
+        flat = " ".join(sentence.split())
+        for hit in re.finditer(r"\b(regulation|law|provision)s?\b[^.]{0,24}?"
+                               r"\brequir", flat):
+            # Either side: "a published reading of the regulation
+            # requires" puts the qualifier in front, "the provision read
+            # as requiring it" puts it behind, and both are honest.
+            around = flat[max(0, hit.start() - 60):hit.end() + 40]
+            assert re.search(r"\bread(?:ing|s)?\b", around), (
+                "the %s line has the law itself requiring this, with "
+                "nothing beside it saying whose reading that is: %r"
+                % (label, flat))
+        assert "requires it" not in flat, (
+            "the %s line says a provision requires it: %r" % (label, flat))
 
 
 def test_the_finding_says_it_asks_about_presence_and_not_placement(tmp_path):
