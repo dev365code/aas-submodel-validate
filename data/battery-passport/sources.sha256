@@ -6,12 +6,22 @@
 # Submodel templates are pinned at commit a9664731a903b29ac5f45e23ab3a25c581f3d92f.
 # Check: cd sources && grep -v '^#' ../sources.sha256 | shasum -a 256 -c
 #
+# Fetch the EUR-Lex line with a fixed User-Agent or the digest will not
+# match. That page carries a browser-only analytics script with a
+# per-request id, so a browser fetch is never byte-stable while a fixed
+#   curl -sL -H 'User-Agent: curl/8' -o <path> <url>
+# is (measured: three fetches, identical bytes). What identifies the text
+# rather than the page is the consolidation string the document carries,
+# '02023R1542 - EN - 31.07.2025 - 002.004'; the digest below was re-pinned
+# on 2026-09-06 with that string unchanged, so the law did not move -- the
+# page furniture did, and the first command in REGENERATE.txt was failing.
+#
 # Battery Pass data attribute longlist (CC BY 4.0) | edition: v1.3, 25 March 2026 | fetched: 2026-08-27 | https://thebatterypass.eu/wp-content/uploads/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx
 2be2585bb29be1378807d6c5b829fc67414797542d32e5e014c5fe05bd13d8ba  batterypass/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx
 # European Commission guidance: Digital Batteries Passport - data points by category (CC BY 4.0) | edition: Version 2.0, 15 August 2026 (2nd edition) | fetched: 2026-08-27 | https://single-market-economy.ec.europa.eu/document/download/cd1e5e6c-4a4a-4b99-995a-49eb6916187e_en?filename=Digital%20Batteries%20Passport%20-%20data%20point%20by%20category.pdf
 e045a7668015520f4c353e72fb57a89bdd62baaf0a98e6f4aefc7f5f42819eb7  ec-dg-grow/digital-batteries-passport-data-point-by-category_v2.0.pdf
 # Regulation (EU) 2023/1542 consolidated text -- contains Annex XIII | edition: CELEX 02023R1542-20250731 (consolidated as at 2025-07-31) | fetched: 2026-08-27 | https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02023R1542-20250731
-a90c0055d949b7583c1c3161e49d1b413dd9d457c1189e578dfeaedaa2882409  eurlex/02023R1542-20250731_EN.html
+cbca54f9ae84da6683103d02bb00d89c35edb9c1b23a148d362332986a64fd29  eurlex/02023R1542-20250731_EN.html
 # IDTA 02035-1, Digital Battery Passport Part 1, Digital Nameplate | edition: V1.0 | fetched: 2026-08-27 | https://raw.githubusercontent.com/admin-shell-io/submodel-templates/a9664731a903b29ac5f45e23ab3a25c581f3d92f/published/Digital%20Battery%20Passport/1_Digital%20Nameplate/1/0/IDTA%2002035-1_DBP-Part-1_Digital%20Nameplate.json
 0eec79b05fde3d62a287248d6dd8d17643bfa2b0bb8e2e4cecad04a28b90ccfe  idta/02035-1_v1.0/IDTA 02035-1_DBP-Part-1_Digital Nameplate.json
 # IDTA 02035-1, Digital Battery Passport Part 1, Digital Nameplate | edition: V1.0 | fetched: 2026-08-27 | https://raw.githubusercontent.com/admin-shell-io/submodel-templates/a9664731a903b29ac5f45e23ab3a25c581f3d92f/published/Digital%20Battery%20Passport/1_Digital%20Nameplate/1/0/IDTA%2002035-1_DBP-Part-1_Digital%20Nameplate_without_examplevalues.json

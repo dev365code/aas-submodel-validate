@@ -7,7 +7,7 @@
    "provenance": [
     {
      "file": "eurlex/02023R1542-20250731_EN.html",
-     "sha256": "a90c0055d949b7583c1c3161e49d1b413dd9d457c1189e578dfeaedaa2882409",
+     "sha256": "cbca54f9ae84da6683103d02bb00d89c35edb9c1b23a148d362332986a64fd29",
      "version": "consolidated text 02023R1542-20250731"
     }
    ]
@@ -246,7 +246,7 @@
    "annex_point": "annex-xiii:1.h",
    "text": "minimal, nominal and maximum voltage, with temperature ranges when relevant;",
    "access": "public",
-   "mandatory": "unclear",
+   "mandatory": "conditional",
    "ec_datapoints": [
     "ec-datapoints:26",
     "ec-datapoints:27",
@@ -265,7 +265,7 @@
    "annex_point": "annex-xiii:1.i",
    "text": "original power capability (in Watts) and limits, with temperature range when relevant;",
    "access": "public",
-   "mandatory": "unclear",
+   "mandatory": "conditional",
    "ec_datapoints": [
     "ec-datapoints:29",
     "ec-datapoints:30"

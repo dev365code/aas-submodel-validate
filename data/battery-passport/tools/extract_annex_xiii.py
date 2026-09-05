@@ -54,7 +54,17 @@ ACCESS_BY_HEADING = (
     ("LEGITIMATE INTEREST", "legitimate-interest"),
 )
 
-# Softer qualifiers leave the reading open; "only for" closes it.
+# Both kinds of qualifier narrow an obligation that the chapeau has
+# already imposed; neither leaves it unstated. Annex XIII opens "A
+# battery passport SHALL include the following information", so a point
+# under it is required -- what a qualifier does is say when, or to what.
+# Reading a soft qualifier as `unclear` said the annex does not state
+# whether the thing is required, which is what `unclear` means in the
+# README beside this file, and it is not true of anything here: 1(h) and
+# 1(i) require voltage outright and attach "when relevant" only to the
+# temperature ranges that follow. They were the only two points it hit,
+# and they sat in the published summary table as the annex declining to
+# say whether voltage must be given.
 NARROWING = re.compile(r"\(?only for [^;.)]+\)?", re.I)
 SOFT_QUALIFIER = re.compile(
     r"(when relevant|where relevant|where applicable|if available|when applicable"
@@ -101,7 +111,7 @@ def read_obligation(text):
         return "conditional", narrowed.group(0).strip("()")
     soft = SOFT_QUALIFIER.search(text)
     if soft:
-        return "unclear", soft.group(0)
+        return "conditional", soft.group(0)
     return "yes", ""
 
 

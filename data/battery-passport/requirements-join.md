@@ -8,7 +8,7 @@ tool overwrites this file.
 
 | index | records | file | sha256 | edition |
 |---|---:|---|---|---|
-| annex-xiii | 34 | `eurlex/02023R1542-20250731_EN.html` | `a90c0055d949` | consolidated text 02023R1542-20250731 |
+| annex-xiii | 34 | `eurlex/02023R1542-20250731_EN.html` | `cbca54f9ae84` | consolidated text 02023R1542-20250731 |
 | ec-datapoints | 71 | `ec-dg-grow/digital-batteries-passport-data-point-by-category_v2.0.pdf` | `e045a7668015` | Version 2.0 |
 | longlist | 100 | `batterypass/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx` | `2be2585bb29b` | v1.3 |
 | idta-smt | 221 | `idta/02035-1_v1.0/IDTA 02035-1_DBP-Part-1_Digital Nameplate.json` | `0eec79b05fde` | IDTA 02035-1 V1.0 |
@@ -63,8 +63,8 @@ and is not named on its own by either restatement.
 | `annex-xiii:1.e` | public | yes | 20, 21, 22, 23 | 48, 49, 50, 51, 52, 53, 54, 83, 84 |  |
 | `annex-xiii:1.f` | public | yes | 24 | 55, 83, 84 |  |
 | `annex-xiii:1.g` | public | yes | 25 | 59, 83, 84 |  |
-| `annex-xiii:1.h` | public | unclear | 26, 27, 28 | 66, 67, 68, 83, 84 |  |
-| `annex-xiii:1.i` | public | unclear | 29, 30 | 69, 72, 83, 84 |  |
+| `annex-xiii:1.h` | public | conditional | 26, 27, 28 | 66, 67, 68, 83, 84 |  |
+| `annex-xiii:1.i` | public | conditional | 29, 30 | 69, 72, 83, 84 |  |
 | `annex-xiii:1.j` | public | yes | 31, 32 | 83, 84, 86 |  |
 | `annex-xiii:1.k` | public | conditional | 33 | 83, 84, 90 |  |
 | `annex-xiii:1.l` | public | yes | 34 | 83, 84, 92, 93 |  |
