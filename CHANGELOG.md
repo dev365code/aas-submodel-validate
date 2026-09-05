@@ -86,6 +86,18 @@ element. And the coverage note said `1 of the 1`, a number divided by
 itself wearing the look of complete coverage; the eight it withholds
 belong in the denominator that frames them.
 
+**A File value is checked against a scheme, not a substring.** The test
+for "this names something outside the container" was `"://" in value`,
+which is neither where a scheme is nor what one is made of (RFC 3986
+§3.1). Three verdicts move. `files/a://absent.pdf` is a part name and
+is asked about again, which is the repair. A Windows path,
+`C:\docs\manual.pdf`, stopped being asked the moment a one-letter
+scheme was read as a scheme, and is asked again -- in a File value a
+single letter before a colon is a drive letter every time. And a value
+with a leading space is stripped before the question, because
+whitespace is not a scheme's business and drawing a finding on a file
+whose only fault is a space is the direction with no second opinion.
+
 **A submodel that says it is a template is no longer judged as an
 instance.** `ModellingKind.Template` means a specification, and every
 rule here is a requirement on an instance — so pointed at the published

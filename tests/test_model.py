@@ -79,7 +79,7 @@ V1_REQUIRED = {"schemaVersion", "toolVersion", "path", "ok", "options",
 #: this tool can say for certain is which bytes it read.
 V1_PROVENANCE = {"inputSha256", "engine", "envelope"}
 V1_SUMMARY = {"errors", "warnings", "info", "rulesChecked", "complete", "judged",
-              "submodelsSeen", "submodelsJudged", "submodelsSpecified"}
+              "submodelsSeen", "submodelsJudged"}
 V1_OPTIONS = {"profile", "strictMeta", "allowUnmatched"}
 V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
               "detail", "fix", "title", "spec"}
@@ -92,7 +92,14 @@ V1_FINDING = {"rule", "kind", "severity", "priority", "message", "subject",
 #: the floor is worthless without it.
 ADDED_SINCE_V1 = set()
 ADDED_SINCE_V1_PROVENANCE = set()
-ADDED_SINCE_V1_SUMMARY = set()
+#: `submodelsSpecified` joins the two counts rather than changing
+#: either: a 0.1.0 reader takes `submodelsSeen` and `submodelsJudged`
+#: and reads what it read before, and the new one only says how many of
+#: the seen were specifications rather than instances. It was written
+#: into the floor first, which claimed shape 1 had shipped it -- the
+#: distinction these two lists exist to keep. Promote at the release
+#: that ships it.
+ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified"}
 #: `meta` joins `strictMeta` rather than replacing it: a 0.1.0 reader
 #: parses the boolean and keeps working, and the boolean is derived from
 #: the level so the two cannot disagree. Promote at the release that
