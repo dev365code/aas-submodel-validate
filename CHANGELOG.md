@@ -38,7 +38,8 @@ two thirds of which was never looked at; this makes that fail instead.
 On the official example that is 360 lines of output down to 53 — count
 them with `smtv --example` and `smtv --example --show-meta` — with the
 verdict no longer scrolled past. Counted, never dropped: the summary
-totals them and the JSON report is unchanged.
+totals them and the JSON report carries every one of
+them, folded or not.
 
 **The single file says what it needs.** `smtv.pyz` now names the Python
 version it requires instead of failing with a syntax error on an old
@@ -89,14 +90,37 @@ belong in the denominator that frames them.
 **A File value is checked against a scheme, not a substring.** The test
 for "this names something outside the container" was `"://" in value`,
 which is neither where a scheme is nor what one is made of (RFC 3986
-§3.1). Three verdicts move. `files/a://absent.pdf` is a part name and
-is asked about again, which is the repair. A Windows path,
-`C:\docs\manual.pdf`, stopped being asked the moment a one-letter
-scheme was read as a scheme, and is asked again -- in a File value a
-single letter before a colon is a drive letter every time. And a value
-with a leading space is stripped before the question, because
-whitespace is not a scheme's business and drawing a finding on a file
-whose only fault is a space is the direction with no second opinion.
+§3.1). Five shapes of value are judged differently from 0.1.0, and only one
+of them is judged more strictly.
+
+Stricter: `files/a://absent.pdf` contains `://`, is a good part name
+once normalised, and used to walk past the rule. It is asked about
+again.
+
+Looser, and worth reading if a pipeline of yours is green on this
+today: a value whose colon really does open a scheme is somebody
+else's file and is left alone. `urn:iso:std:iso:1234`,
+`mailto:docs@example.com` and `data:application/pdf;base64,…` drew
+`HD-D7` and `TD-D2` in 0.1.0 and draw nothing now. So does a part name
+carrying whitespace at either end -- `" aasx/files/manual.pdf "` -- and
+a File value that is only whitespace, which names nothing and is a
+different defect. A Windows path like `C:\docs\manual.pdf` is asked
+about exactly as it was: a single letter before a colon is a drive
+letter, not a scheme.
+
+Both rules move together. They were the same rule written twice, word
+for word, and they share a body now.
+
+**Two keys are added to the JSON report and none is removed.**
+`summary.submodelsSpecified` counts the submodels set aside as
+specifications, and `options.meta` records the level `--meta` was given
+at. Both are additive, so `schemaVersion` stays 1 and a reader written
+for 0.1.0 finds every field it looked for, unchanged --
+`options.strictMeta` included, which is now derived from the level so
+the two cannot disagree. Measured against 0.1.0 across twenty-four
+inputs: nothing removed, nothing renamed, and no field carrying a
+different kind of value. `finding.spec` is narrowed from "string or
+null" to always present, which is the compatible direction.
 
 **A submodel that says it is a template is no longer judged as an
 instance.** `ModellingKind.Template` means a specification, and every
@@ -147,7 +171,7 @@ sentence changed with them and that one does reach the JSON: the note
 about a submodel named for a template it does not declare joined its
 halves with an em dash, so `SMT-D1`'s `detail` (and the same text as a
 note under `--allow-unmatched`) now spells that `--`. Everything else
-in the report is byte-for-byte what 0.1.0 produced, and all of it was
+in the report is what 0.1.0 produced, but for the two keys added above, and all of it was
 always ASCII — the encoder escapes, so a reader parsing JSON never saw
 the em dash to begin with.
 

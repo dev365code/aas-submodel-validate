@@ -31,6 +31,18 @@ COULD_NOT_RUN = "the rule itself could not run"
 #: census can hold them. Both were unpinned: rewriting the first to blame
 #: the author for a crash in this validator, and the second to say the
 #: metamodel's own constraints may be ignored, left every gate green.
+#: When the relayed channel itself stops. Not `CRASH_REMEDY`: that
+#: sentence says the defect is the validator's, and this one is
+#: usually neither -- aas-core3 met something in the file its own code
+#: cannot process, such as a year with more digits than CPython will
+#: convert. What the reader needs to know is that a channel went
+#: quiet, so the report is short of an answer rather than carrying a
+#: wrong one.
+RELAY_STOPPED = ("The metamodel channel stopped on this input, so this "
+                 "report does not say whether the metamodel is satisfied. "
+                 "The rest of the verdict stands. If the value it names "
+                 "looks ordinary, please report it.")
+
 CRASH_REMEDY = ("This is a defect in the validator, not in your file; "
                 "please report it.")
 META_REMEDY = ("Fix the constraint aas-core3.0 names; these are IDTA 01001 "
@@ -140,7 +152,7 @@ def _meta_findings(loaded: Loaded, strict):
                 COULD_NOT_RUN,
                 subject=getattr(target, "id", None),
                 detail="%s: %s" % (type(exc).__name__, exc),
-                fix=CRASH_REMEDY))
+                fix=RELAY_STOPPED))
 
 
 #: Reading order: errors before warnings before notes; within a severity

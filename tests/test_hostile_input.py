@@ -1334,8 +1334,15 @@ def test_a_year_too_long_to_convert_is_a_finding_and_not_a_crash(tmp_path):
     # it may say a rule could not run.
     from aas_submodel_validate.runner import COULD_NOT_RUN, run
 
+    # Of this project's own rules. The relayed channel calls
+    # aas-core3's `is_xs_date`, which does convert the year, and there
+    # is nothing here that can stop it -- what the isolation guarantees
+    # is that it comes back as a finding instead of a traceback, which
+    # the exit code above already says. What this asserts is the other
+    # half: no rule *here* fell over, which is what stops being true if
+    # the conversion comes back into `values.py`.
     crashed = [f for f in run(path).findings
-               if f.violation.message == COULD_NOT_RUN]
+               if f.violation.message == COULD_NOT_RUN and f.id != "META"]
     assert not crashed, (
         "the year was converted after all and something fell over: %s"
         % [f.id for f in crashed])
