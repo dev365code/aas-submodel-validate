@@ -1,7 +1,7 @@
 """semanticId comparison: values, normalised, from any key.
 
-Two decisions live here and nowhere else (docs/divergences.md #4, and
-the matching policy behind #1--#3):
+Two decisions live here and nowhere else (docs/divergences.md #38 and
+#4, and the matching policy behind #1--#3):
 
 Values are collected from *every* key of a Reference, not keys[0] alone —
 real instances differ in how they stack keys, and a comparison that only

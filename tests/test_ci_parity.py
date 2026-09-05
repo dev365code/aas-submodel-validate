@@ -148,8 +148,10 @@ def test_the_matrix_measures_every_platform_the_page_claims():
     that reads this workflow -- parity asks whether `make check`'s
     commands appear somewhere in CI, not whether they appear on the
     machines the page says they run on. So the page is read for the
-    claim and the matrix for the measurement, and neither can move
-    without the other."""
+    claim and the matrix for the measurement. One direction only, which
+    is the one that matters: a platform the page claims has to be
+    measured. Dropping the claim and keeping the row is allowed -- a
+    runner nobody advertises is a runner doing extra work, not a lie."""
     readme = (ROOT / "README.md").read_text("utf-8")
     runners = set(re.findall(r"os:\s*([a-z0-9-]+)", WORKFLOW))
     assert runners, "no runners in the matrix at all"

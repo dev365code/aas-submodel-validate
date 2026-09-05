@@ -67,7 +67,8 @@ installer may be `pip3`, that `smtv` may need a `PATH` entry pip prints
 and nobody reads.
 
 **The battery finding cites the clause its own row cites.** `per` was a
-constant, `Annex VII`, on a rule whose rows cite `Annex IV Part A (4)`,
+constant, `Annex VII`, on a rule whose reported row cites `Annex IV
+Part A (4)`,
 about a passport obligation that lives in Annex XIII: three provisions,
 and the one printed was the one nothing chose. A row is the only thing
 that knows where it came from, so a violation now carries its own

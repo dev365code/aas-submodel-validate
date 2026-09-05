@@ -547,7 +547,20 @@ def test_every_picture_on_the_page_is_the_one_committed():
     assert home, "pyproject.toml names no GitHub Homepage to check against"
     ours = "raw.githubusercontent.com/%s/%s/" % home.groups()
 
+    # Both spellings. The first version read the HTML tag, on the
+    # reasoning that the two gates it replaced read the wrong thing --
+    # and then read the wrong thing itself: a markdown `![](...)` next
+    # to the badges, which is where a picture would naturally be added,
+    # went past the host check, the hash check and the `?v=` check
+    # together.
     sources = re.findall(r'<img\s[^>]*?src="([^"]+)"', README)
+    sources += [target for _alt, target
+                in re.findall(r"!\[([^\]]*)\]\(([^)\s]+)\)", README)]
+    badges = [target for target in sources
+              if target.startswith("https://img.shields.io/")
+              or target.endswith("/badge.svg")]
+    sources = [target for target in sources if target not in badges]
+    assert badges, "the badges are gone, or this gate stopped finding them"
     assert sources, "the front page shows no pictures at all"
     references = []
     for source in sources:
@@ -606,10 +619,10 @@ def test_the_anatomy_block_is_what_the_tool_prints(tmp_path, monkeypatch):
     (tmp_path / "your-battery-passport.json").write_text(
         json.dumps(_env(_technical_data(fade=False))), "utf-8")
     monkeypatch.chdir(tmp_path)
-    printed = {" ".join(row.split()) for row in render(runner.run(
+    printed_in_order = [" ".join(row.split()) for row in render(runner.run(
         "your-battery-passport.json",
         allow_unmatched="--allow-unmatched" in flags,
-        strict_meta=("info" if "--meta" in flags else False))).splitlines()}
+        strict_meta=("info" if "--meta" in flags else False))).splitlines()]
 
     # Whole lines, not substrings of the joined output. Compared against
     # one run-shaped string, a quote could stop early -- dropping the
@@ -619,16 +632,45 @@ def test_the_anatomy_block_is_what_the_tool_prints(tmp_path, monkeypatch):
     # never printed. The elision mark says a line is missing; nothing
     # said a line was shortened.
     quoted = [line for line in lines
-              if line and not line.startswith("$ ") and line.strip() != "…"]
-    assert quoted, "the block types a command and quotes no output"
+              if line and not line.startswith("$ ")]
+    assert [line for line in quoted if line.strip() != "…"], \
+        "the block types a command and quotes no output"
+    assert any(line.strip() == "…" for line in quoted), (
+        "this block is an excerpt -- the run continues past it -- and "
+        "nothing on the page says so")
+
+    # Where the mark is, not just that it is there. A `…` anywhere in
+    # the block satisfied "the elision is marked", including at the top,
+    # above the first line it was supposed to stand between -- and the
+    # quotes were compared as a set, so reversing them passed too. Both
+    # are the same omission: the block claims to be a run read
+    # downwards.
+    at, seen = -1, []
     for line in quoted:
-        assert " ".join(line.split()) in printed, (
+        if line.strip() == "…":
+            seen.append(None)
+            continue
+        flat = " ".join(line.split())
+        assert flat in printed_in_order, (
             "the page quotes %r and the tool prints no such line. A "
             "quote that stops early is a quote that says something "
             "else." % line)
-    assert any(line.strip() == "…" for line in lines), (
-        "this block is an excerpt -- the run continues past it -- and "
-        "nothing on the page says so")
+        index = printed_in_order.index(flat)
+        assert index > at, (
+            "%r is quoted after a line the tool prints later; this block "
+            "reads as a run and a run has an order" % line)
+        if seen and seen[-1] is None:
+            assert index > at + 1, (
+                "there is an elision mark before %r and the tool prints "
+                "nothing between it and the line above" % line)
+        at = index
+        seen.append(index)
+    assert seen and seen[0] is not None, (
+        "the block opens with an elision mark and nothing precedes it")
+    if seen[-1] is None:
+        assert at < len(printed_in_order) - 1, (
+            "the block ends with an elision mark and has already quoted "
+            "the run's last line, so there is nothing left to elide")
 
 
 #: Flags on this page that are somebody else's, and whose. Anything not

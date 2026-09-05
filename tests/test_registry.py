@@ -515,6 +515,17 @@ REMEDIES = {
 }
 
 
+def test_every_rule_says_where_its_requirement_lives():
+    """`docs/report-schema.md` says `spec` is always there, so it has to
+    be. A rule that reports a defect and cannot say what it is reading
+    from is asking to be taken on trust, which is the one thing this
+    tool is not for -- and a schema that offers `null` teaches every
+    consumer to write a branch nothing will ever take."""
+    silent = sorted(rule.id for rule in all_rules() if not (rule.spec or "").strip())
+    assert not silent, (
+        "these rules name no source for what they require: %s" % silent)
+
+
 def test_every_remedy_is_the_sentence_that_was_decided():
     """What a user is told to do, held to the word.
 

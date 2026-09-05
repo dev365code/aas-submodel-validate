@@ -415,7 +415,7 @@ def test_a_profile_that_chose_nothing_says_so(tmp_path):
 
 def test_a_profile_pair_never_silences_a_pack_outside_it(tmp_path):
     """A submodel may declare more than one identifier -- `candidate_values`
-    collects every key of the reference, deliberately (divergences #4).
+    collects every key of the reference, deliberately (divergences #38).
     When one of them belongs to a profile pair, the pair decides which of
     *its* two tables answers. It has nothing to say about anybody else's.
 

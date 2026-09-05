@@ -103,7 +103,11 @@ jobs:
           echo "reproducible: yes"
 
       - name: one checksum file beside them
-        run: cd dist && shasum -a 256 * > SHA256SUMS && cat SHA256SUMS
+        # `rm -f` first: the glob would otherwise take in a SHA256SUMS
+        # left by an earlier run and list the file inside itself, which
+        # is a checksum nobody can ever verify. A CI workspace is fresh
+        # and a maintainer re-running this by hand is not.
+        run: cd dist && rm -f SHA256SUMS && shasum -a 256 * > SHA256SUMS && cat SHA256SUMS
 
       - name: sign what was built
         # After this, `gh attestation verify smtv.pyz --repo <this>`

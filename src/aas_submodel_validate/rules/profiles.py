@@ -175,7 +175,7 @@ class Selection:
         A profile pair decides between *its own two* tables and says
         nothing about anybody else's. A submodel can declare more than one
         identifier -- `candidate_values` collects every key of the
-        reference on purpose (docs/divergences.md #4) -- and the first
+        reference on purpose (docs/divergences.md #38) -- and the first
         version of this returned False for every table but the chosen one,
         so a Technical Data submodel that also named 02004's anchor lost
         the whole 02003 pack, silently.
