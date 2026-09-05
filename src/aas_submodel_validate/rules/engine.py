@@ -67,6 +67,58 @@ def analyze(ctx, tables) -> Dict:
     return cached
 
 
+def has_scheme(value: str) -> bool:
+    """Whether this File value names something outside the container.
+
+    The test was `"://" in value`, which is a substring and not a
+    scheme: `files/a://absent.pdf` contains it, is a good part name once
+    normalised, and walked past a MUST. RFC 3986 §3.1 says a scheme
+    begins the reference and is `ALPHA *( ALPHA / DIGIT / "+" / "-" /
+    "." )` -- US-ASCII, which `str.isalpha()` is not, so the letters are
+    named rather than asked. A one-letter scheme is legal there and is a
+    Windows drive letter every time it turns up in a File value.
+    """
+    head, sep, _rest = value.partition(":")
+    if not sep or len(head) < 2 or head[0] not in _SCHEME_FIRST:
+        return False
+    return all(character in _SCHEME_REST for character in head)
+
+
+_SCHEME_FIRST = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+_SCHEME_REST = _SCHEME_FIRST | frozenset("0123456789+-.")
+
+
+def file_part_violations(container, subject, value):
+    """The two findings a File value can draw, for whichever rule asks.
+
+    `HD-D7` and `TD-D2` were verbatim twins -- same three branches, same
+    three sentences -- and the repair that replaced the substring test
+    reached one of them. So one rule reported a defect the other stayed
+    silent about, in both directions, and both are MUST. A copy is a
+    fork that looks like agreement; there is one body.
+
+    The value is folded once, here, and every branch reads the folded
+    one. Folding it for two of the three questions and not the third
+    left a part that is in the archive drawing a MUST because its value
+    carried a leading space.
+    """
+    from ..container import canonical_part_name
+    from ..model import Violation
+
+    if not isinstance(value, str):
+        return
+    folded = value.strip()
+    if not folded or has_scheme(folded):
+        return              # empty names nothing; a scheme is somewhere else's
+    if canonical_part_name(folded) is None:
+        yield Violation("this File's value is not a part name",
+                        subject=subject,
+                        detail="%s climbs out of the package" % value)
+    elif container.part(folded) is None:
+        yield Violation("the container holds no part at this File's value",
+                        subject=subject, detail=value)
+
+
 def matched_submodels(ctx, tables) -> List:
     """The instances a table answers for.
 

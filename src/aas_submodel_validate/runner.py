@@ -111,8 +111,24 @@ def _meta_findings(loaded: Loaded, strict):
     # submodels and the report called itself complete.
     targets = loaded.environments or loaded.submodels
     for target in targets:
-        for error in verification.verify(target):
-            yield Finding(rule, Violation(error.cause, subject=str(error.path)))
+        # Isolated like every other rule. "A rule that raises becomes a
+        # finding, not a crash -- one broken rule must not hide the
+        # others" is written down as a non-negotiable, and the one
+        # channel this reader does not own was the one channel it was
+        # not applied to. A date whose year runs past CPython's 4,300
+        # digit limit for `int()` made aas-core3 raise inside
+        # `verify()`, and the exception left through `main`: traceback,
+        # no report, and exit 1 -- which is the code for a verdict with
+        # findings, about a file nothing finished reading.
+        try:
+            for error in verification.verify(target):
+                yield Finding(rule, Violation(error.cause,
+                                              subject=str(error.path)))
+        except Exception as exc:                     # noqa: BLE001
+            yield Finding(rule, Violation(
+                COULD_NOT_RUN,
+                subject=getattr(target, "id", None) or "",
+                detail="%s: %s" % (type(exc).__name__, exc)))
 
 
 #: Reading order: errors before warnings before notes; within a severity
@@ -200,7 +216,13 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # did nothing contradicts the finding it just silenced.
     if profile in rules.profiles.KEYS and not any(
             rules.profiles.PROFILES and Context(loaded, selection).selection.chosen(submodel)
-            for submodel in detect.instances(loaded)
+            # Every submodel, not the instances. This note says whether
+            # the flag chose anything at all, and a template answers to
+            # a template's identifier -- narrowing it made the note say
+            # the flag chose nothing while the note beside it said why
+            # the thing it chose was set aside. Two notes denying each
+            # other in one report.
+            for submodel in loaded.submodels
             for selection in (rules.profiles.Selection(profile),)):
         report.notes.append(
             "--profile %s named a template no submodel here answers to, so it "
@@ -218,12 +240,16 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # cannot disagree about what "judged" means.
     templates = detect.templates(loaded)
     if templates:
+        named = ", ".join(sorted(
+            str(getattr(submodel, "id_short", None)
+                or getattr(submodel, "id", None) or "(unnamed)")
+            for submodel in templates))
         report.notes.append(
-            "%d submodel%s in this input %s declared kind Template. A "
+            "%d submodel%s in this input %s declared kind Template (%s). A "
             "template is a specification and not an instance, and every "
             "rule here is a requirement on an instance, so %s not judged."
             % (len(templates), "" if len(templates) == 1 else "s",
-               "is" if len(templates) == 1 else "are",
+               "is" if len(templates) == 1 else "are", named,
                "it was" if len(templates) == 1 else "they were"))
     # `submodels_seen` is what the input holds, which is what the schema
     # says it is. Taking the templates out of it made that sentence

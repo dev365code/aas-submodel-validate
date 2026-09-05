@@ -20,6 +20,7 @@ from ..registry import rule
 from . import td_tables
 from .engine import (
     analyze,
+    file_part_violations,
     instances_of,
     matched_submodels,
     property_value,
@@ -83,19 +84,10 @@ def td_d2_files_exist(ctx):
     container = ctx.loaded.container
     if container is None:
         return
-    from ..container import canonical_part_name
     for label in ("CompanyLogo", "ImageFile"):
         for subject, element in _instances(ctx, label):
-            value = getattr(element, "value", None)
-            if not isinstance(value, str) or not value.strip() or "://" in value:
-                continue
-            if canonical_part_name(value) is None:
-                yield Violation("this File's value is not a part name",
-                                subject=subject,
-                                detail="%s climbs out of the package" % value)
-            elif container.part(value) is None:
-                yield Violation("the container holds no part at this File's value",
-                                subject=subject, detail=value)
+            yield from file_part_violations(container, subject,
+                                            getattr(element, "value", None))
 
 
 @rule("TD-D3", kind="template", prio="SHOULD",

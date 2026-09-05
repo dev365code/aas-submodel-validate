@@ -185,6 +185,21 @@ def is_build_metadata(path: str) -> bool:
     return len(parts) == 1 and parts[0] in METADATA_FILES
 
 
+def _escapes(name: str) -> bool:
+    """Whether unpacking this name writes outside the directory it is
+    unpacked into.
+
+    Directories are dropped from the comparison because `git ls-files`
+    lists none, and that reasoning is about a directory the archive
+    puts its own files in. It says nothing about one whose name climbs
+    out of the tree or starts at the root -- `os.path.join(dest,
+    "/tmp/pwned")` is `/tmp/pwned`. The check was written for `..` in a
+    tar and the zip branch four lines down was not asked at all, which
+    is the shape this file has now met three times.
+    """
+    return name.startswith("/") or ".." in name.replace("\\", "/").split("/")
+
+
 def members(artifact: pathlib.Path):
     """(name in the archive, path in the repository), files only.
 
@@ -208,9 +223,8 @@ def members(artifact: pathlib.Path):
             # its own files in. It says nothing about one whose name
             # climbs out of the tree, and `ROOT/../../../tmp/pwned`
             # unpacks wherever that points. The name is the payload.
-            escaping = [m.name for m in members_
-                        if m.isdir() and ".." in m.name.split("/")]
-            names += escaping
+            names += [m.name for m in members_
+                      if m.isdir() and _escapes(m.name)]
         # An sdist puts everything under one directory named for the
         # distribution; below that it is the repository's own layout.
         # Which directory is checked rather than assumed: dropping
@@ -222,7 +236,8 @@ def members(artifact: pathlib.Path):
                  if name.split("/", 1)[0] == root else name)
                 for name in names]
     with zipfile.ZipFile(artifact) as archive:
-        names = [n for n in archive.namelist() if not n.endswith("/")]
+        names = [n for n in archive.namelist()
+                 if not n.endswith("/") or _escapes(n)]
         # What the build says it relocated, read from the build.
         metadata = [n for n in names if n.endswith(".dist-info/METADATA")]
         declared = _licence_files(

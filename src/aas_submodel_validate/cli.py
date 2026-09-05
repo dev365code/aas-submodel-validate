@@ -209,9 +209,15 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     # this channel should not decide a build, and it says so out loud.
     failed = not report.ok or (args.warnings_as_errors
                                and report.count(Severity.WARNING) > 0)
+    # What the caller can be given: the submodels that are instances.
+    # Failing when there are none of those punishes a file of pure
+    # specifications for being one, which is the case the front page
+    # says this flag does not ask about -- but an input holding no
+    # submodels at all is still the emptiest pass of the lot and still
+    # fails, which is what `--help` says.
     expected = report.submodels_seen - report.submodels_specified
     if args.require_all_judged and (report.submodels_judged < expected
-                                    or not report.submodels_judged):
+                                    or not report.submodels_seen):
         # The report has carried this number since day one; a caller
         # reading only the exit code could not see it. An unjudged
         # submodel is not a defect in the file -- an environment holds
@@ -222,8 +228,11 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         # failed a file with one unjudged submodel and passed one with
         # none at all: the risk ordering backwards, on the input an
         # exporter is most likely to produce by accident.
+        # The number compared, not the number seen: with a template in
+        # the file those differ, and a caller reading only this line was
+        # told two were missing when one was.
         print("smtv: judged %d of %d submodel%s; --require-all-judged was given"
-              % (report.submodels_judged, report.submodels_seen,
+              % (report.submodels_judged, expected,
                  "" if report.submodels_seen == 1 else "s"), file=sys.stderr)
         failed = True
     return EXIT_FINDINGS if failed else EXIT_OK

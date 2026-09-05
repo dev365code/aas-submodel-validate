@@ -417,3 +417,32 @@ def test_the_directory_an_sdist_unpacks_into_has_to_be_its_own(tmp_path):
     assert pairs["WHATEVER/docs/scope.md"] != "docs/scope.md", (
         "a member under a directory that is not this distribution's was "
         "read as if it were, so a tracked path vouched for it")
+
+
+@pytest.mark.parametrize("name,kind,reported", [
+    ("aas_submodel_validate-0.1.1/../../../tmp/pwned", "dir", True),
+    ("/tmp/pwned", "dir", True),
+    ("aas_submodel_validate-0.1.1/docs", "dir", False),
+    ("aas_submodel_validate-0.1.1/../evil.py", "file", True),
+])
+def test_a_directory_that_unpacks_outside_the_tree_is_reported(tmp_path, name,
+                                                               kind, reported):
+    """A directory is dropped from the comparison because `git ls-files`
+    lists none, and that reasoning is about a directory the archive puts
+    its own files in. One whose name climbs out, or starts at the root,
+    writes somewhere else when it is unpacked -- `os.path.join(dest,
+    "/tmp/pwned")` is `/tmp/pwned`. The first repair asked about `..`
+    in a tar and left the root case and the zip branch."""
+    import tarfile
+
+    entry = tarfile.TarInfo(name)
+    if kind == "dir":
+        entry.type = tarfile.DIRTYPE
+    else:
+        entry.size = 0
+    gate = _gate()
+    seen = [member for member, _repository
+            in gate.members(_sdist_with(tmp_path, [entry]))]
+    assert (name in seen) is reported, (
+        "%s (%s): expected %s, got %s"
+        % (name, kind, "reported" if reported else "dropped", seen))

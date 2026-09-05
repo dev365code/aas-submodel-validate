@@ -16,8 +16,11 @@ from __future__ import annotations
 import copy
 import json
 
+import pytest
+
 from aas_submodel_validate import runner
 from builders import build_aasx, td_env
+from test_hand_rules import FILE_VALUES
 
 LOGO = "aasx/files/logo.png"
 IMAGE = "aasx/files/front.png"
@@ -295,3 +298,40 @@ def test_a_dangling_reference_after_a_foreign_one_is_still_reported(tmp_path):
     finding = _ids(tmp_path, env)["TD-D3"]
     assert finding.violation.detail == "no element at key path Nowhere"
 
+
+
+@pytest.mark.parametrize("value,drawn", FILE_VALUES)
+def test_td_d2_reads_a_file_value_the_way_hd_d7_does(tmp_path, value, drawn):
+    """The same table the handover rule is held to, asked here.
+
+    The two rules were verbatim twins -- same three branches, same three
+    sentences -- and the repair that replaced `"://" in value` with a
+    scheme test reached one of them. Four of these values came back
+    differently from the two rules for a day, in both directions, and
+    both rules are MUST. They share a body now; this is what says so if
+    somebody copies it apart again."""
+    env = copy.deepcopy(td_env())
+    # Both labels this rule reads. Setting one and leaving the other is
+    # how the same test on the handover side first passed for the wrong
+    # reason: the untouched File went on drawing the finding.
+    placed = 0
+    def stamp(node):
+        nonlocal placed
+        if isinstance(node, dict):
+            if node.get("idShort") in ("CompanyLogo", "ImageFile"):
+                node["value"] = value
+                placed += 1
+            for child in node.values():
+                stamp(child)
+        elif isinstance(node, list):
+            for child in node:
+                stamp(child)
+    stamp(env)
+    assert placed, "the fixture has no File for this rule to read"
+    packed = build_aasx(tmp_path / "p.aasx",
+                        payload=json.dumps(env).encode("utf-8"),
+                        files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+    drawn_ids = {f.id for f in runner.run(packed).findings}
+    assert ("TD-D2" in drawn_ids) is drawn, (
+        "%r: expected TD-D2 %s, got %s"
+        % (value, "drawn" if drawn else "silent", sorted(drawn_ids)))

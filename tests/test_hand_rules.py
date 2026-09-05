@@ -1072,3 +1072,85 @@ def test_which_file_values_are_this_containers_business(tmp_path, value, drawn):
     assert ("HD-D7" in drawn_ids) is drawn, (
         "%r: expected HD-D7 %s, got %s"
         % (value, "drawn" if drawn else "silent", sorted(drawn_ids)))
+
+
+#: The values that decide what a File value is, and the two rules that
+#: decide it. `HD-D7` and `TD-D2` were verbatim twins and the repair
+#: that replaced a substring test with a scheme test reached one of
+#: them, so for a day one reported a defect the other stayed silent
+#: about -- in both directions, both MUST. One table, asked of both.
+FILE_VALUES = [
+    ("files/a://absent.pdf", True),
+    ("http://example.com/a.pdf", False),
+    ("urn:iso:std:iso:1234", False),
+    ("mailto:docs@example.com", False),
+    ("data:application/pdf;base64,AAA=", False),
+    ("C:\\docs\\manual.pdf", True),
+    ("c:/docs/manual.pdf", True),
+    (" http://example.com/a.pdf", False),
+    ("\thttps://example.com/a.pdf", False),
+    # A part the archive holds, with whitespace around it. Folding the
+    # value for the scheme question and not for the two that follow
+    # drew a MUST on a file whose only fault was a space.
+    (" aasx/files/manual.pdf ", False),
+    ("aasx/files/manual.pdf\n", False),
+]
+
+
+@pytest.mark.parametrize("value,drawn", FILE_VALUES)
+def test_hd_d7_reads_a_file_value_the_way_td_d2_does(tmp_path, value, drawn):
+    env = copy.deepcopy(hd_env())
+    placed = 0
+    for element in _document_version(env)["value"]:
+        if element.get("idShort") != "DigitalFiles":
+            continue
+        for entry in element["value"]:
+            entry["value"] = value
+            placed += 1
+    assert placed == 1, "the fixture no longer has exactly one File to set"
+    packed = build_aasx(tmp_path / "p.aasx",
+                        payload=json.dumps(env).encode("utf-8"),
+                        files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+    drawn_ids = {f.id for f in runner.run(packed).findings}
+    assert ("HD-D7" in drawn_ids) is drawn, (
+        "%r: expected HD-D7 %s, got %s"
+        % (value, "drawn" if drawn else "silent", sorted(drawn_ids)))
+
+
+#: The values a rule reads out of a closed vocabulary, and whether
+#: whitespace around them changes the answer. Four rules read one this
+#: way; three learned to fold and the fourth did not, and two mutations
+#: of the folding survived a review round because nothing asked them
+#: together.
+@pytest.mark.parametrize("rule_id,label,good", [
+    ("HD-D2", "ClassificationSystem", "VDI 2770 Blatt 1:2020"),
+    ("HD-D3", "ClassId", "03-02"),
+    ("HD-D6", "StatusValue", "Released"),
+])
+@pytest.mark.parametrize("pad", ["%s", " %s", "%s ", " %s ", "\t%s\n"])
+def test_whitespace_around_a_vocabulary_value_is_not_the_defect(
+        tmp_path, rule_id, label, good, pad):
+    """XML Schema's `xs:string` admits whitespace, so the metamodel
+    channel has no second opinion to offer, and a finding on a
+    conformant file is the direction with none. Rows 31 and 34 of the
+    divergences fold for exactly that reason."""
+    env = copy.deepcopy(hd_env())
+    placed = 0
+
+    def stamp(node):
+        nonlocal placed
+        if isinstance(node, dict):
+            if node.get("idShort") == label:
+                node["value"] = pad % good
+                placed += 1
+            for child in node.values():
+                stamp(child)
+        elif isinstance(node, list):
+            for child in node:
+                stamp(child)
+
+    stamp(env)
+    assert placed, "the fixture has no %s to set" % label
+    assert rule_id not in _findings(tmp_path, env), (
+        "%s: %r drew %s, and the value is the one the rule asks for"
+        % (label, pad % good, rule_id))

@@ -1288,3 +1288,43 @@ def test_a_name_that_is_not_utf8_is_refused_and_not_judged(tmp_path):
     assert main(["-q", str(broken)]) == EXIT_ERROR, (
         "an archive this reader cannot read must leave by the code for "
         "could-not-run; leaving by 1 says a verdict was reached")
+
+
+def test_a_year_too_long_to_convert_is_a_finding_and_not_a_crash(tmp_path):
+    """A date whose year runs to 4,301 digits.
+
+    CPython refuses `int()` over 4,300 digits -- a denial-of-service
+    guard added in 3.9.14, 3.10.7 and 3.11 -- and aas-core3's own
+    `is_xs_date` calls it. That call happens inside the relayed
+    metamodel channel, which is the one channel this reader runs
+    without isolation, so the exception left through `main` and the
+    process died with a traceback and exit 1.
+
+    One is the code for *a verdict with findings*, so a pipeline could
+    not tell a crash from a judgement, and `-f json` handed it an empty
+    stdout to parse. The first line of this file says what that must
+    never be: untrusted input fails as findings or exit 2, never as a
+    crash. And the same file, on an interpreter one patch level older,
+    came back `ok`.
+    """
+    import copy
+
+    from aas_submodel_validate.cli import EXIT_FINDINGS, EXIT_OK, main
+
+    env = copy.deepcopy(hd_env())
+
+    def stamp(node):
+        if isinstance(node, dict):
+            if node.get("idShort") == "StatusSetDate":
+                node["value"] = "9" + "0" * 4300 + "-01-01"
+            for value in node.values():
+                stamp(value)
+        elif isinstance(node, list):
+            for value in node:
+                stamp(value)
+
+    stamp(env)
+    path = tmp_path / "long-year.json"
+    path.write_text(json.dumps(env), "utf-8")
+    assert main(["-q", str(path)]) in (EXIT_OK, EXIT_FINDINGS), (
+        "a value this reader cannot convert must come back as a verdict")

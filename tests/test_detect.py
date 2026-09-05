@@ -19,7 +19,10 @@ import copy
 import json
 from pathlib import Path
 
+import pytest
+
 from aas_submodel_validate import runner
+from aas_submodel_validate.report import render
 from builders import env_json, hd_env, wearing_our_anchor_as_a_supplemental
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -278,3 +281,75 @@ def test_a_file_of_nothing_but_templates_says_so(tmp_path):
     assert any("template" in note.lower() for note in report.notes), (
         "nothing in the report says why the submodel was not judged: %r"
         % report.notes)
+
+
+#: (instances, templates) in the input, and what the three counts must
+#: say. Four mutations of the counting survived a whole review round --
+#: subtracting templates from `seen` again, pinning `specified` to zero,
+#: dropping the subtraction in `--require-all-judged`, removing the
+#: clause from the summary -- because nothing anywhere read these three
+#: numbers together.
+COUNTS = [(1, 0, (1, 1, 0)), (0, 1, (1, 0, 1)), (1, 1, (2, 1, 1)),
+          (2, 1, (3, 2, 1)), (0, 2, (2, 0, 2))]
+
+
+@pytest.mark.parametrize("instances,templates,expected", COUNTS)
+def test_the_three_counts_agree_about_one_input(tmp_path, instances,
+                                                templates, expected):
+    """`submodelsSeen` is what the input holds, `submodelsSpecified` how
+    many said they are specifications, `submodelsJudged` how many a
+    table answered for. The first is the schema's own sentence, and
+    taking the templates out of it made that sentence false."""
+    env = copy.deepcopy(hd_env())
+    one = env["submodels"][0]
+    env["submodels"] = []
+    for index in range(instances + templates):
+        copied = copy.deepcopy(one)
+        copied["id"] = "%s/%d" % (copied["id"], index)
+        if index >= instances:
+            copied["kind"] = "Template"
+        env["submodels"].append(copied)
+    path = tmp_path / "counts.json"
+    path.write_text(json.dumps(env), "utf-8")
+    report = runner.run(path)
+    got = (report.submodels_seen, report.submodels_judged,
+           report.submodels_specified)
+    assert got == expected, "(seen, judged, specified)"
+    summary = report.as_dict()["summary"]
+    assert (summary["submodelsSeen"], summary["submodelsJudged"],
+            summary["submodelsSpecified"]) == expected
+    if templates:
+        assert "not judged" in render(report), (
+            "the summary says nothing about the ones set aside")
+
+
+@pytest.mark.parametrize("instances,templates,fails", [
+    (1, 0, False),      # judged everything there was
+    (1, 1, False),      # the template is not coverage a caller can give
+    (0, 1, False),      # nothing but specifications: nothing to require
+    (0, 0, True),       # no submodels at all -- the emptiest pass of the lot
+])
+def test_require_all_judged_asks_only_for_what_can_be_given(tmp_path, instances,
+                                                            templates, fails):
+    """The subtraction was dead code for a template-only input: `or not
+    submodels_judged` fired anyway, so the flag failed a file whose only
+    fault was being a specification -- which the front page says it does
+    not do, while `--help` says it fails when there was nothing to
+    judge. Both are true of different inputs and the code now tells
+    them apart."""
+    from aas_submodel_validate.cli import EXIT_FINDINGS, EXIT_OK, main
+
+    env = copy.deepcopy(hd_env())
+    one = env["submodels"][0]
+    env["submodels"] = []
+    for index in range(instances + templates):
+        copied = copy.deepcopy(one)
+        copied["id"] = "%s/%d" % (copied["id"], index)
+        if index >= instances:
+            copied["kind"] = "Template"
+        env["submodels"].append(copied)
+    path = tmp_path / "require.json"
+    path.write_text(json.dumps(env), "utf-8")
+    got = main(["-q", "--allow-unmatched", "--require-all-judged", str(path)])
+    assert got == (EXIT_FINDINGS if fails else EXIT_OK), (
+        "%d instance(s) + %d template(s) left by %d" % (instances, templates, got))

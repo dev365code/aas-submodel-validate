@@ -37,6 +37,7 @@ from .engine import (
     analyze,
     child_of,
     children_of,
+    file_part_violations,
     idshort_remedy,
     instances_of,
     matched_submodels,
@@ -45,32 +46,6 @@ from .engine import (
     resolve_in_submodel,
 )
 from .values import valid_xs_date
-
-
-def _has_scheme(value: str) -> bool:
-    """Whether this File value names something outside the container.
-
-    The test was `"://" in value`, which is a substring and not a
-    scheme: `files/a://absent.pdf` contains it, is a perfectly good part
-    name once normalised, and walked past a MUST. RFC 3986 §3.1 says a
-    scheme begins the reference and is `ALPHA *( ALPHA / DIGIT / "+" /
-    "-" / "." )`, so the question is asked of the front of the string.
-    """
-    head, sep, _rest = value.strip().partition(":")
-    if not sep or not head or not head[0].isalpha():
-        return False
-    if not all(character.isalnum() or character in "+-." for character in head):
-        return False
-    # A one-letter scheme is legal in RFC 3986 and, in a File value, is
-    # a Windows drive letter every time: `C:\docs\manual.pdf` stopped
-    # being asked whether it names a part the moment this function was
-    # written, which is a defect walking free rather than a foreign URI
-    # left alone. And the value is stripped first, because a leading
-    # space made `" http://..."` no scheme at all and drew a MUST on a
-    # file whose only fault was whitespace -- the same fault the
-    # classification rule had just been taught to forgive.
-    return len(head) > 1
-
 
 #: The exact spelling IDTA 02004-2-0 §2.3 says identifies the mandatory
 #: classification system.
@@ -261,7 +236,12 @@ def _d5(tables):
 def _d6(tables):
     def check(ctx):
         for subject, version in instances_of(ctx, "DocumentVersion", tables):
+            # Folded like the three beside it. The spelling is exact on
+            # purpose -- the official example writes `released` and
+            # draws this five times, which is a recorded choice -- and
+            # the whitespace is not part of that choice.
             status = property_value(version, "StatusValue", tables)
+            status = status.strip() if isinstance(status, str) else status
             if status is not None and status not in ("InReview", "Released"):
                 yield Violation("StatusValue is outside the vocabulary",
                                 subject=subject, detail="%r" % status)
@@ -281,19 +261,8 @@ def _d7(tables):
             return
         for label in labels:
             for subject, element in instances_of(ctx, label, tables):
-                value = getattr(element, "value", None)
-                if not isinstance(value, str) or not value.strip():
-                    continue  # an empty value names nothing -- a different defect
-                if _has_scheme(value):
-                    continue  # somewhere else's file, not this container's
-                from ..container import canonical_part_name
-                if canonical_part_name(value) is None:
-                    yield Violation("this File's value is not a part name",
-                                    subject=subject,
-                                    detail="%s climbs out of the package" % value)
-                elif container.part(value) is None:
-                    yield Violation("the container holds no part at this File's value",
-                                    subject=subject, detail=value)
+                yield from file_part_violations(container, subject,
+                                                getattr(element, "value", None))
     return check
 
 

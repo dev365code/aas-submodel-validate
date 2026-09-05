@@ -43,12 +43,32 @@ def valid_xs_date(value: str) -> bool:
     matched = _XS_DATE.match(" ".join(value.split()))
     if not matched:
         return False
-    year, month, day = int(matched.group(1)), int(matched.group(2)), int(matched.group(3))
-    if year == 0:
-        return False
+    digits, month, day = (matched.group(1), int(matched.group(2)),
+                          int(matched.group(3)))
+    negative = digits.startswith("-")
+    plain = digits.lstrip("-")
+    if not plain.strip("0"):
+        return False                     # there is no year zero
     if not 1 <= month <= 12:
         return False
-    astronomical = abs(year) - 1 if year < 0 else year
+    # Whether a year is a leap year turns on its remainder mod 400, and
+    # that is decided by the last four digits -- 10000 is 400 x 25. So
+    # the whole year never has to become an integer, which matters
+    # because XML Schema puts no bound on how many digits it may have
+    # and CPython refuses `int()` past 4,300 of them. aas-core3 does
+    # convert, and that raised inside the relayed channel; here it is
+    # not asked.
+    tail = int(plain[-4:] or "0")
+    if negative:
+        # `-0001` is 1 BCE and the astronomical year is one greater,
+        # which is what the leap rule divides. Subtracting one from a
+        # tail of all zeroes borrows from digits that were not kept,
+        # and the answer is the same however many there are: the four
+        # digits become 9999. There is no year zero, so something above
+        # them is non-zero and the borrow always has somewhere to come
+        # from.
+        tail = 9999 if tail == 0 else tail - 1
+    astronomical = tail
     leap = (astronomical % 4 == 0
             and (astronomical % 100 != 0 or astronomical % 400 == 0))
     days_in = (31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)[month - 1]
