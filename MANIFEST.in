@@ -8,12 +8,23 @@ include docs/divergences.md
 include docs/report-schema.md
 include docs/rule-coverage.json
 include docs/scope.md
+include docs/assets/door.svg
+include docs/assets/verdict.svg
 graft .github
 include Makefile MANIFEST.in
 include CONTRIBUTING.md SECURITY.md SUPPORT.md NOTICE THIRD_PARTY.md CHANGELOG.md
 global-exclude __pycache__/* *.pyc
 recursive-exclude tests .rule-coverage.json
 
+# The two pictures are named here because the suite reads them. They
+# were committed with the tests that check them and this list was not
+# touched, so an sdist carried the checkers and not the files: unpacked
+# and run the way the paragraph at the top of this file promises, four
+# tests failed. It did not show up locally, because setuptools carries
+# `SOURCES.txt` forward from a previous build -- on a machine that had
+# built the sdist before, the pictures were in it; on a clean checkout,
+# which is every checkout CI makes, they were not.
+#
 # `docs/` is named file by file above rather than grafted. A rule that
 # excludes something says the something exists, and this file ships
 # inside the sdist -- three exclusions used to sit here spelling out

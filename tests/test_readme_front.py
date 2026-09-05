@@ -453,10 +453,32 @@ def test_every_picture_on_the_page_is_the_one_committed():
     against a live run on every push, so what `main` holds is true of
     `main` -- and the hash is what makes a changed picture reach a
     reader who has already seen the old one."""
-    references = re.findall(
-        r"raw\.githubusercontent\.com/[^/]+/[^/]+/([^/]+)/([^\"'?\s]+)"
-        r"(?:\?v=([0-9a-f]+))?", README)
-    assert references, "the front page shows no pictures at all"
+    # Every picture, found by the tag rather than by the host, because
+    # the two gates on this page that could have caught a picture served
+    # from somewhere else both read something a picture is not written
+    # in: this one read the proxy host, and the relative-link gate reads
+    # markdown `](...)`. An `<img src="docs/assets/verdict.svg">` -- dead
+    # on the package index, which is the entire reason that gate exists
+    # -- passed both.
+    project = (ROOT / "pyproject.toml").read_text("utf-8")
+    home = re.search(r'(?m)^Homepage = "https://github\.com/([^/"]+)/([^/"]+)"',
+                     project)
+    assert home, "pyproject.toml names no GitHub Homepage to check against"
+    ours = "raw.githubusercontent.com/%s/%s/" % home.groups()
+
+    sources = re.findall(r'<img\s[^>]*?src="([^"]+)"', README)
+    assert sources, "the front page shows no pictures at all"
+    references = []
+    for source in sources:
+        assert source.startswith("https://" + ours), (
+            "%s is not served from this repository's raw host (%s). A "
+            "relative path is dead on the package index; another "
+            "owner's host is not this project's picture." % (source, ours))
+        rest = source.split(ours, 1)[1]
+        branch, _, tail = rest.partition("/")
+        path, _, query = tail.partition("?")
+        references.append(
+            (branch, path, query[2:] if query.startswith("v=") else ""))
     for branch, path, cachebuster in references:
         picture = ROOT / path
         assert picture.is_file(), (
@@ -503,17 +525,26 @@ def test_the_anatomy_block_is_what_the_tool_prints(tmp_path, monkeypatch):
     (tmp_path / "your-battery-passport.json").write_text(
         json.dumps(_env(_technical_data(fade=False))), "utf-8")
     monkeypatch.chdir(tmp_path)
-    said = " ".join(render(runner.run(
+    printed = {" ".join(row.split()) for row in render(runner.run(
         "your-battery-passport.json",
         allow_unmatched="--allow-unmatched" in flags,
-        strict_meta=("info" if "--meta" in flags else False))).split())
+        strict_meta=("info" if "--meta" in flags else False))).splitlines()}
 
+    # Whole lines, not substrings of the joined output. Compared against
+    # one run-shaped string, a quote could stop early -- dropping the
+    # part of a clause that says which annex, or the part of a remedy
+    # that says what not to do -- and pass, and a quote could run across
+    # a line boundary and stitch two true lines into a sentence the tool
+    # never printed. The elision mark says a line is missing; nothing
+    # said a line was shortened.
     quoted = [line for line in lines
               if line and not line.startswith("$ ") and line.strip() != "…"]
     assert quoted, "the block types a command and quotes no output"
     for line in quoted:
-        assert " ".join(line.split()) in said, (
-            "the page quotes %r and the tool does not print it" % line)
+        assert " ".join(line.split()) in printed, (
+            "the page quotes %r and the tool prints no such line. A "
+            "quote that stops early is a quote that says something "
+            "else." % line)
     assert any(line.strip() == "…" for line in lines), (
         "this block is an excerpt -- the run continues past it -- and "
         "nothing on the page says so")
@@ -528,6 +559,7 @@ NOT_OURS = {
     "--no-index": "pip, in the offline install route",
     "--find-links": "pip, in the offline install route",
     "--fix": "named in order to say this tool does not have it",
+    "-m": "python, in `python3 -m pip` and `python3 -m aas_submodel_validate`",
 }
 
 
@@ -553,9 +585,15 @@ def test_every_flag_this_page_names_is_a_flag_the_tool_has():
             real.update(argument.value for argument in node.args
                         if isinstance(argument, ast.Constant)
                         and isinstance(argument.value, str)
-                        and argument.value.startswith("--"))
+                        and argument.value.startswith("-"))
     assert len(real) > 5, "no options were read out of cli.py at all"
+    # Short spellings too. The sentence that made this gate necessary
+    # offered a flag the tool does not have, and the repair moved it to
+    # `-W` -- into the half of the option space the first version of
+    # this gate could not see. The page teaches `-W`, `-f` and `-q`, and
+    # nothing was watching any of them.
     named = set(re.findall(r"(?<![\w-])(--[a-z][a-z0-9-]+)", README))
+    named |= set(re.findall(r"(?<![\w-])(-[A-Za-z])(?![\w-])", README))
     borrowed = sorted(set(NOT_OURS) & real)
     assert not borrowed, (
         "%s is listed as another command's flag and this tool has it"

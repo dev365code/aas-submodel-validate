@@ -129,3 +129,48 @@ def test_the_ruff_version_is_pinned_the_same_everywhere():
     version = re.search(r"RUFF_VERSION\s*:=\s*(\S+)", makefile).group(1)
     assert "ruff==%s" % version in workflow, "ci.yml ruff pin != Makefile RUFF_VERSION"
     assert '"ruff==%s"' % version in pyproject, "pyproject dev ruff pin != Makefile RUFF_VERSION"
+
+
+#: The words the front page uses for platforms, and the runner that
+#: measures each. The page claims all three in its first four lines; two
+#: of them were measured, and what protected the third was a YAML
+#: comment saying why the row was added.
+RUNNERS = {"Linux": "ubuntu-latest",
+           "macOS": "macos-latest",
+           "Windows": "windows-latest"}
+
+
+def test_the_matrix_measures_every_platform_the_page_claims():
+    """A claim on the front page and a row in the matrix are one fact
+    written twice, and only one of them was pinned.
+
+    Deleting the macOS row leaves every test green, including the one
+    that reads this workflow -- parity asks whether `make check`'s
+    commands appear somewhere in CI, not whether they appear on the
+    machines the page says they run on. So the page is read for the
+    claim and the matrix for the measurement, and neither can move
+    without the other."""
+    readme = (ROOT / "README.md").read_text("utf-8")
+    runners = set(re.findall(r"os:\s*([a-z0-9-]+)", WORKFLOW))
+    assert runners, "no runners in the matrix at all"
+    for platform, runner in RUNNERS.items():
+        if re.search(r"(?<![\w-])%s(?![\w-])" % platform, readme):
+            assert runner in runners, (
+                "the front page claims %s and no CI job runs on %s, so "
+                "the claim is not measured anywhere" % (platform, runner))
+
+
+def test_the_recorded_hashes_are_checked_on_every_platform():
+    """`vendor_template.py --check` runs twice on purpose, and the
+    second one is load-bearing: end-of-line damage is a property of the
+    checkout, so a hash verified only on the machine that wrote the file
+    verifies nothing about the machine that unpacks it. The workflow
+    says that in a comment. A comment is not a gate -- delete the
+    matrix copy and everything stays green, leaving the lint job's
+    single-OS run looking like the same check."""
+    jobs = WORKFLOW.split("\n  test:", 1)
+    assert len(jobs) == 2, "no `test:` job in this workflow to look inside"
+    matrix_job = jobs[1].split("\n  wheel:", 1)[0]
+    assert "vendor_template.py --check" in matrix_job, (
+        "the vendored-bytes check is not in the job that runs on every "
+        "platform, so nothing measures what a checkout did to the bytes")

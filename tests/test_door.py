@@ -122,3 +122,28 @@ def test_the_banner_carries_no_number_that_can_go_stale(name):
     if name == "door.svg":
         assert not re.search(r"\d", text), \
             "the banner shows %r, and nothing regenerates it" % text.strip()
+
+
+def test_every_picture_ships_in_the_source_distribution():
+    """`MANIFEST.in` names what `docs/` ships, file by file, on purpose --
+    and it was written before there were pictures. So the two SVGs were
+    committed, the suite that checks them was committed, and neither the
+    packaging list nor anything else noticed that an sdist carried the
+    checker without the thing it checks. Unpacked and run the way
+    `MANIFEST.in` promises, four tests failed on files that were not
+    there.
+
+    Not caught locally, because setuptools carries `SOURCES.txt`
+    forward from a previous build: on a machine that had ever built this
+    sdist the pictures were in it, and on a clean checkout -- which is
+    every checkout CI makes -- they were not.
+
+    Asserted against the generator rather than against a listing of the
+    directory, so a third picture cannot be added without this saying
+    where it has to be named."""
+    manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
+    for name in _generator().PICTURES:
+        assert "docs/assets/%s" % name in manifest, (
+            "docs/assets/%s is drawn by the generator and MANIFEST.in "
+            "does not name it, so an sdist ships the tests that read it "
+            "and not the file" % name)
