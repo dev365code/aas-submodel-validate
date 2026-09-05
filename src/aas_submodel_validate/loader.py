@@ -216,6 +216,17 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
 
 def load(path) -> Loaded:
     path = Path(path)
+    if str(path) == "-":
+        # Half the tools on a machine read standard input when given
+        # this, and this one does not: it seeks inside archives and
+        # bounds what it reads before reading it, neither of which a
+        # pipe allows. "no such file: -" is true and teaches nothing --
+        # a reader cannot tell a tool that has no such feature from one
+        # that lost the file.
+        raise UnreadablePath(
+            "this reader does not take standard input: it seeks inside "
+            "containers and bounds what it reads before reading it. "
+            "Give it a path")
     if not path.exists():
         raise UnreadablePath("no such file: %s" % path)
     # Whether there is a file to read at all is one question, asked once,

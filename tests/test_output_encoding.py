@@ -151,3 +151,16 @@ def test_no_finding_writes_a_character_the_common_code_pages_lack(tmp_path,
         assert not found, (
             "the tool writes %s of its own accord: %s"
             % (found, "; ".join(UNSPELLABLE[character] for character in found)))
+
+
+def test_a_reader_who_typed_a_dash_is_told_what_that_means(capsys):
+    """`-` is how half the tools on a machine mean "read standard
+    input", and this one does not read standard input. It answered "no
+    such file: -", which is true and teaches nothing: a reader cannot
+    tell a tool that has no such feature from one that lost the file."""
+    from aas_submodel_validate.cli import main
+
+    assert main(["-"]) == 2
+    said = capsys.readouterr().err
+    assert "standard input" in said, (
+        "the message does not say this tool has no such thing: %r" % said)

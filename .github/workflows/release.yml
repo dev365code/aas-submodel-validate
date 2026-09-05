@@ -151,13 +151,23 @@ jobs:
           - `smtv.pyz` — one file, for a machine with no package manager.
             Needs only a Python: `python3 smtv.pyz --example` gives a verdict
             with no file of your own, no repository and no network.
+            On Windows that spelling is `py smtv.pyz --example` — the
+            installer from python.org makes `py.exe` and `python.exe`,
+            and `python3` there opens the Microsoft Store instead.
           - the two `.whl` files — for a machine that has pip but no index.
             Put both in a directory and run
             `python3 -m pip install --no-index --find-links . aas-submodel-validate`
             (`pip3` works too, where that is the spelling). The
             `aas_core3_0-…` wheel is the one dependency; without it that
             command has nothing to resolve. Under 400 KB together.
-          - the `.tar.gz` — the source, for anyone building it themselves.
+          - the `.tar.gz` — the source, for anyone building it themselves,
+            and the only asset carrying `docs/`. Building it needs an
+            index of its own (`setuptools`), so it is not the offline
+            route — the two wheels above are. A finding's `per` line
+            cites `docs/divergences.md` for the reading it answers for;
+            that document is in here and in the repository, and not in
+            the wheel or the single file. Carry it too if you may have
+            to argue with a verdict offline.
           - `SHA256SUMS` — the checksums for everything above.
 
           **Was it corrupted on the way?** Run this where the files
@@ -168,7 +178,14 @@ jobs:
           `--ignore-missing` because you were probably told to carry one
           file, and without it `shasum` calls the ones you did not bring
           failures and exits 1. (`sha256sum -c` where that is the
-          spelling.)
+          spelling.) Windows has neither; compare by eye against the
+          line in `SHA256SUMS`:
+
+              certutil -hashfile smtv.pyz SHA256
+
+          The commands below are written for a Unix shell. In `cmd` the
+          line continuation is `^` and in PowerShell it is a backtick;
+          the simplest thing is to put each command on one line.
 
           **Who built it?** A checksum cannot answer that; the signature
           can. It needs GitHub, so do it on a machine that can reach it:

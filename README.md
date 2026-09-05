@@ -100,7 +100,7 @@ A file can be perfectly valid against the AAS metamodel and still not be the sub
 | Door | For | Command |
 |---|---|---|
 | **Terminal** | a machine with pip | `pip3 install aas-submodel-validate` then `smtv file.aasx` |
-| **Single file** | a machine with no package manager | carry `smtv.pyz`, run `python3 smtv.pyz file.aasx` |
+| **Single file** | a machine with no package manager | carry `smtv.pyz`, run `python3 smtv.pyz file.aasx` (`py smtv.pyz file.aasx` on Windows) |
 | **A build** | a pipeline that reads exit codes | `smtv -q -W file.aasx` — 0 pass, 1 findings, 2 could not run |
 
 The same rules and the same verdict behind all three. There is no browser door and no hosted service; nothing here uploads a file anywhere, because nothing here opens a socket.

@@ -76,7 +76,7 @@ report needs the second one.
 | `schemaVersion` | integer | The shape. `1`. |
 | `toolVersion` | string | The version of `aas-submodel-validate` that wrote the report. |
 | `provenance` | object | What was judged, by what, and who vouches for it; see below. |
-| `path` | string | The input, as it was given on the command line. |
+| `path` | string | The input, as it was given on the command line — or, under `--example`, the name of the example file carried in the package, because that is the file the verdict is about and no path was typed. |
 | `ok` | boolean | No finding at `error` severity. `-W` raises the bar for the exit code without changing `ok`, and so does `summary.judged`: a run that judged nothing exits 2 whatever `ok` says. |
 | `options` | object | What was asked of this run; see below. |
 | `summary` | object | Counts; see below. |

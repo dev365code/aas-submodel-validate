@@ -86,6 +86,14 @@ element. And the coverage note said `1 of the 1`, a number divided by
 itself wearing the look of complete coverage; the eight it withholds
 belong in the denominator that frames them.
 
+**Every finding prints the clause it answers for.** The JSON report has
+carried `spec` since the first release and the terminal never showed it,
+so the person writing "conforms: yes/no" into a report — who needs the
+citation more than anyone — had to re-run with `-f json` to get it. It
+prints now, under `per`. On the bundled official example that is a line
+added to all 87 findings, which is the most visible difference between
+this release and 0.1.0; nothing about a verdict changes.
+
 **The verdict line survives a terminal that cannot spell it.** Every run
 ended with an em dash, and cp949 — the default code page on Korean
 Windows — has none, nor does cp932 on Japanese. Writing it raised, the
