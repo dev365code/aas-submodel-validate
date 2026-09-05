@@ -171,8 +171,22 @@ def corrupt_part(path, entry: str, how: str):
 
 
 def env_json(semantic_value: str = "0173-1#01-AHF578#003") -> bytes:
-    """A minimal, metamodel-valid AAS environment with one submodel."""
+    """A minimal, metamodel-valid AAS environment with one submodel.
+
+    Takes the semanticId to give that submodel -- not an environment.
+    Handed a dict, it used to build a submodel whose semanticId was the
+    repr of somebody's whole environment, write it out, and let the
+    container come back `X3: could not be read`. Every input built that
+    way then produced the same verdict, so a corpus of thirty could
+    report that nothing had moved. To serialise an environment of your
+    own, `json.dumps(env).encode("utf-8")` is the whole of it.
+    """
     import json
+    if not isinstance(semantic_value, str):
+        raise TypeError(
+            "env_json takes a semanticId string, not %s -- to serialise an "
+            "environment use json.dumps(env).encode('utf-8')"
+            % type(semantic_value).__name__)
     return json.dumps({"submodels": [{
         "id": "urn:test:submodel",
         "modelType": "Submodel",

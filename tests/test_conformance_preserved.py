@@ -31,14 +31,26 @@ exists to catch, wearing the other hat.
 """
 from __future__ import annotations
 
+import json
 import re
 import zipfile
 
 import pytest
 
 from aas_submodel_validate import runner
-from builders import build_aasx, env_json, hd_env
+from builders import build_aasx, hd_env
 from test_official_material import AASX_EXAMPLE
+
+
+def _environment():
+    """A metamodel-valid environment, serialised.
+
+    Written out rather than taken from `env_json`, which builds its own
+    from a semanticId string: handed `hd_env()` it produced a container
+    that would not parse, and every fixture below then measured the same
+    `X3` instead of the rule it was written for.
+    """
+    return json.dumps(hd_env()).encode("utf-8")
 
 
 def _members(path):
@@ -306,7 +318,7 @@ SUPPL_SHAPES = [
      for name, kwargs, expected, why in SUPPL_SHAPES])
 def test_x4_asks_only_where_there_is_a_part_to_hold(
         tmp_path, kwargs, expected, why):
-    path = build_aasx(tmp_path / "suppl.aasx", payload=env_json(hd_env()),
+    path = build_aasx(tmp_path / "suppl.aasx", payload=_environment(),
                       **kwargs)
     fired = {finding.id for finding in runner.run(str(path)).findings}
     assert ("X4" in fired) is expected, why
@@ -326,7 +338,7 @@ def test_no_finding_names_a_path_the_archive_could_not_hold(tmp_path, kwargs):
     delete the relationship. Whatever any rule decides to say about
     these containers, it may not say it about a string like that.
     """
-    path = build_aasx(tmp_path / "suppl.aasx", payload=env_json(hd_env()),
+    path = build_aasx(tmp_path / "suppl.aasx", payload=_environment(),
                       **kwargs)
     for finding in runner.run(str(path)).findings:
         printed = " ".join(str(part) for part in

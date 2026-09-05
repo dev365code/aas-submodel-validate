@@ -3,16 +3,34 @@
 ## 0.1.1 — unreleased
 
 Still 125 rules, 86 generated from the vendored template files as
-before: no rule checks anything it did not check in 0.1.0, and no
-verdict changes. Most of this is about *reaching* a verdict — what
-someone who installed 0.1.0 from the package index, took it from the
-release page, or read the front page could not do. The exceptions are
-at the end: the line every run finishes with is spelled differently, so
-that a terminal which cannot encode it stops killing the run; three
-findings say something different from what they said, and each of them
-was saying something untrue; and every finding now prints the clause it
-answers for, which the JSON has carried since 0.1.0 and the screen
-never showed.
+before, and no rule checks anything it did not check in 0.1.0. Most of
+this release is about *reaching* a verdict — what someone who installed
+0.1.0 from the package index, took it from the release page, or read
+the front page could not do.
+
+**Some verdicts do change, and if you run this in a pipeline they are
+the part to read.** Every paragraph below that moves what this tool
+reports is marked **`verdict`**, so you can find them without reading
+the rest.
+
+Thirty-two inputs were put through both versions and sixteen come back
+judged differently. Fifteen of the sixteen go the quiet way — a finding
+in 0.1.0 and silence here, an exit code that falls — which is the
+direction nothing downstream reports: a build that is red on one of
+these today goes green without saying so, and all but one of them was a
+finding on a file that was conformant all along. The sixteenth is the
+one new refusal, and it is named as such where it appears.
+
+That is measured rather than recalled: `tools/verdict_diff.py` runs the
+released version and this one over the same inputs and prints what came
+back different. Earlier drafts of this section were written from what
+had been *changed*, which is a different list from what *moved* — they
+undercounted these shapes, named one as having moved when it had not,
+told a reader to check whether their build was green when it would have
+been red, and missed the largest un-refusal here entirely.
+
+The corpus is not every input in the world, and a shape it does not
+carry is one this note cannot speak for.
 
 **The first verdict needs nothing of your own.** IDTA's published example
 travels in the package now, and `smtv --example` judges it — no file of
@@ -53,9 +71,9 @@ in the archive. `gh attestation verify` answers for releases from this
 one on; the 0.1.0 artifacts were built before the workflow signed
 anything and have no attestation to find.
 
-**`--rules` refuses what it would have ignored.** It lists the rules and
-judges nothing, so every flag about judging is a question it does not
-answer: `-q`, `-f json`, `-W`, `--allow-unmatched`,
+**`--rules` refuses what it would have ignored.** **`verdict`** — it
+lists the rules and judges nothing, so every flag about judging is a
+question it does not answer: `-q`, `-f json`, `-W`, `--allow-unmatched`,
 `--require-all-judged`, `--show-meta`, `--profile` and a path all exit 2
 now, naming what would have been dropped. Six of those — `-q`,
 `-f json`, `-W`, `--allow-unmatched`, `--profile` and a path — were
@@ -90,31 +108,46 @@ belong in the denominator that frames them.
 **A File value is checked against a scheme, not a substring.** The test
 for "this names something outside the container" was `"://" in value`,
 which is neither where a scheme is nor what one is made of (RFC 3986
-§3.1). Five shapes of value are judged differently from 0.1.0, and only one
-of them is judged more strictly.
+§3.1). **`verdict`** — eight shapes of value are judged differently from
+0.1.0, and one of the eight is judged more strictly.
 
-Stricter: `files/a://absent.pdf` contains `://`, is a good part name
-once normalised, and used to walk past the rule. It is asked about
-again.
+Stricter, and the only new refusal in this release:
+`files/a://absent.pdf` contains `://`, is a good part name once
+normalised, and used to walk past the rule. It is asked about again,
+and if the archive does not hold that part this now draws `HD-D7` at
+MUST and exits 1 where 0.1.0 exited 0.
 
-Looser, and worth reading if a pipeline of yours is green on this
-today: a value whose colon really does open a scheme is somebody
-else's file and is left alone. `urn:iso:std:iso:1234`,
-`mailto:docs@example.com` and `data:application/pdf;base64,…` drew
-`HD-D7` and `TD-D2` in 0.1.0 and draw nothing now. So does a part name
-carrying whitespace at either end -- `" aasx/files/manual.pdf "` -- and
-a File value that is only whitespace, which names nothing and is a
-different defect. A Windows path like `C:\docs\manual.pdf` is asked
-about exactly as it was: a single letter before a colon is a drive
-letter, not a scheme.
+Looser — **read this if a pipeline of yours is red on any of them
+today, because it will go green without saying so.** All seven drew
+`HD-D7` and `TD-D2` at MUST in 0.1.0, so they failed a build, and each
+was a conformant file:
+
+- a value whose colon really does open a scheme is somebody else's
+  file and is left alone: `urn:iso:std:iso:1234`,
+  `mailto:docs@example.com`, `data:application/pdf;base64,…`;
+- the same written in capitals, `URN:ISO:STD:ISO:1234`, because RFC
+  3986 §3.1 says a scheme is compared case-insensitively;
+- a scheme that is not a URL and not registered anywhere,
+  `rev2:manual.pdf` — the rule asks whether the value is a part name,
+  and a scheme means it is not, whatever the scheme turns out to name;
+- a part name carrying whitespace at either end,
+  `" aasx/files/manual.pdf "`, or ending in a newline.
+
+Unchanged, and named because an earlier draft of this note said
+otherwise: a File value that is only whitespace names nothing, and
+0.1.0 passed over it exactly as this version does. A Windows path like
+`C:\docs\manual.pdf` is asked about exactly as it was — a single letter
+before a colon is a drive letter, not a scheme — and so is a value that
+climbs out of the package, `../outside.pdf`.
 
 Both rules move together. They were the same rule written twice, word
 for word, and they share a body now.
 
 **A supplementary file kept outside the package is no longer reported
-missing.** OPC gives a relationship a `TargetMode`, and `External` says
-the target is not a part of this package -- how a conformant AASX
-points at a document held on a server. Nothing read it. The target was
+missing.** **`verdict`** — OPC gives a relationship a `TargetMode`, and
+`External` says the target is not a part of this package -- how a
+conformant AASX points at a document held on a server. Nothing read it.
+The target was
 resolved against the source part's directory as though it were a
 relative part name, so `http://example.com/manual.pdf` became
 `aasx/http:/example.com/manual.pdf`: a well-formed part name, matching
@@ -138,9 +171,10 @@ different kind of value. `finding.spec` is narrowed from "string or
 null" to always present, which is the compatible direction.
 
 **A submodel that says it is a template is no longer judged as an
-instance.** `ModellingKind.Template` means a specification, and every
-rule here is a requirement on an instance — so pointed at the published
-IDTA templates, the ones this project generates its own rules from, the
+instance.** **`verdict`** — `ModellingKind.Template` means a
+specification, and every rule here is a requirement on an instance — so
+pointed at the published IDTA templates, the ones this project generates
+its own rules from, the
 tool used to report that they have no VDI 2770 classification and tell
 the reader to add one. No flag escaped it, and a package holding a
 conformant instance beside the template it was built from came back as
@@ -148,18 +182,49 @@ a failure. Templates are set aside, the report says which ones and why,
 and they are out of the coverage figure rather than counted as
 unjudged.
 
+**An XML document written in a legacy code page is read instead of
+refused.** **`verdict`** — and this is the largest un-refusal in the
+release. A payload declaring `ISO-8859-1` or `windows-1252`, written in
+it, is a well-formed XML document: §4.3.3 lets a document be written in
+any encoding it declares, and this is what a German, Korean or Japanese
+Windows editor produces without being asked. 0.1.0 decoded every
+payload as UTF-8, met a byte that is not, and stopped — `X3: the
+document could not be read as an AAS environment`, **exit 2**, nothing
+judged, under a remedy telling the author to *open the named document
+and fix the syntax its parser rejects*. The syntax was not wrong, there
+was nothing for them to fix, and no flag reached past it.
+
+The declaration is read now and the document is decoded the way it says
+to. Measured on the official example rewritten into each: **exit 2 → exit
+0**, and the verdict is the one the UTF-8 original gets. Because the
+file is judged at all now, findings appear that 0.1.0 never reached —
+on the example, `HD-D6`, `HD-D10`, `HDL2` and `HDL5`. They are not new
+rules and not stricter reading; they are what was always there behind a
+document that was never opened. UTF-8 and UTF-16, marked or not, are
+read exactly as before.
+
 **An archive this reader cannot open leaves by 2, whatever stopped it.**
-A ZIP entry name written in a legacy code page with the header bit that
-claims UTF-8 set anyway — what a packager on a Korean or Japanese
+**`verdict`** — a ZIP entry name written in a legacy code page with the
+header bit that claims UTF-8 set anyway — what a packager on a Korean or
+Japanese
 Windows produces — raised past every handler and left by 1, which is the
 code for *a verdict with findings* about a file nothing had read.
 
-**`En` is English.** The metamodel's own predicate takes `en` and `EN`
-and refuses the mixed spellings, and RFC 5646 §2.1.1 says capitalisation
-must not be taken to carry meaning — so a file writing `En` was told it
-had no English entry, on a line printing `languages present: En, de`
-directly above. A trailing space no longer hides the mandatory VDI 2770
-classification either. Both were findings on conformant files.
+**`En` is English.** **`verdict`** — the metamodel's own predicate takes
+`en` and `EN` and refuses the mixed spellings, and RFC 5646 §2.1.1 says
+capitalisation must not be taken to carry meaning — so a file writing
+`En` was told it had no English
+entry, on a line printing `languages present: En, de` directly above. A
+trailing space no longer hides the mandatory VDI 2770 classification
+either. Both were findings on conformant files.
+
+The relayed channel has not moved with it. aas-core3 asks
+`is_bcp_47_for_english`, which is `^(en|EN)(-.*)?$`, so it accepts `EN`
+and refuses `En` — and that channel carries its reading, not ours. On
+the official example rewritten into title case that is sixty-five
+further relayed findings, reported and counted as upstream's and never
+as this tool's. `--meta info` is where a caller says what to do with
+them.
 
 **Every finding prints the clause it answers for.** The JSON report has
 carried `spec` since the first release and the terminal never showed it,
@@ -169,8 +234,9 @@ prints now, under `per`. On the bundled official example that is a line
 added to all 87 findings, which is the most visible difference between
 this release and 0.1.0; nothing about a verdict changes.
 
-**The verdict line survives a terminal that cannot spell it.** Every run
-ended with an em dash, and cp949 — the default code page on Korean
+**The verdict line survives a terminal that cannot spell it.**
+**`verdict`** — every
+run ended with an em dash, and cp949 — the default code page on Korean
 Windows — has none, nor does cp932 on Japanese. Writing it raised, the
 interpreter printed a traceback, and the process left by 1: so a clean
 file and a file this reader refused came back as the same number, and
