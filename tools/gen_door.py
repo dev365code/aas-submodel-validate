@@ -18,8 +18,10 @@ of a verdict that no longer matches the verdict is worse than no picture.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import pathlib
+import re
 import sys
 
 OUT = pathlib.Path(__file__).resolve().parent.parent / "docs" / "assets"
@@ -84,7 +86,7 @@ BANNER = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 408" role="
 <g filter="url(#smear)">%(smear)s
 <animateTransform attributeName="transform" type="rotate" from="0 470 100" to="360 470 100" dur="16s" repeatCount="indefinite"/></g>
 <text x="470" y="206" font-family="%(mono)s" font-size="12.5" letter-spacing="3.4" fill="#93a1ad" text-anchor="middle">STANDARDS, JUDGED OFFLINE</text>
-<text x="470" y="262" font-family="%(mono)s" font-size="40" font-weight="700" fill="#e8edf2" text-anchor="middle">aas-submodel-validate<tspan fill="#8fb8dd">.</tspan></text>
+<text x="470" y="262" font-family="%(mono)s" font-size="42" font-weight="700" fill="#e8edf2" text-anchor="middle">aas-submodel-validate<tspan fill="#8fb8dd">.</tspan></text>
 <text x="470" y="292" font-family="%(sans)s" font-size="15.5" fill="#c6d2dc" text-anchor="middle">Asset Administration Shell submodels, judged against their</text>
 <text x="470" y="313" font-family="%(sans)s" font-size="15.5" fill="#c6d2dc" text-anchor="middle">IDTA template — offline, and every finding tells you how to fix it.</text>
 <text x="470" y="345" font-family="%(mono)s" font-size="15" font-weight="700" fill="#e8edf2" text-anchor="middle">AI proposes. <tspan fill="#8fb8dd">Rules judge.</tspan> People decide.</text>
@@ -103,6 +105,13 @@ def banner() -> str:
 #: ends and an SVG has no window -- so the test compares the joined text.
 G, D, E, A_, F, T, N = "#8fd0a8", "#7d8a99", "#e0604d", "#e8c268", "#5cb87f", "#d8dfe5", "#93a1ad"
 
+#: Drawn where lines were left out. The picture is a crop of a real run
+#: -- the folded metamodel line and one note are not in it -- and a
+#: reader who cannot see where output was cut cannot tell a short
+#: verdict from a shortened one. The same mark, for the same reason, as
+#: the block on the front page.
+ELISION = "\u2026"
+
 VERDICT_LINES = [
     (21, [(28, G, "$ ", 1), (46, T, "pip install aas-submodel-validate", 0)]),
     (30, [(28, G, "$ ", 1), (46, T, "smtv --allow-unmatched --meta info battery-passport.json", 0)]),
@@ -116,6 +125,7 @@ VERDICT_LINES = [
           (168, D, "Regulation (EU) 2023/1542 Annex IV Part A (4)", 0)]),
     (17, [(140, N, "fix", 1), (168, F, "Provide the element, or record that this battery is", 0)]),
     (26, [(168, F, "outside the provision that requires it.", 0)]),
+    (17, [(168, D, ELISION, 0)]),
     (19, [(140, N, "note", 1),
           (180, N, "reported 1 of the 9 elements this table holds;", 0)]),
     (24, [(180, N, "8 of them need a battery category no rule here reads yet", 0)]),
@@ -149,19 +159,45 @@ def verdict() -> str:
 PICTURES = {"door.svg": banner, "verdict.svg": verdict}
 
 
+README = OUT.parent.parent / "README.md"
+
+
+def _stamp(text: str, name: str, drawn: str):
+    """The front page's `?v=` for one picture, set to that picture's
+    hash. GitHub serves these through an image proxy that caches by URL,
+    so a changed file behind an unchanged address reaches nobody who has
+    already seen the old one. Writing the picture and restamping the
+    page were two steps and one of them was forgotten, which is exactly
+    the shape of defect the pictures exist not to have."""
+    digest = hashlib.sha256(drawn.encode("utf-8")).hexdigest()[:8]
+    stamped, count = re.subn(r"(%s\?v=)[0-9a-f]+" % re.escape(name),
+                             r"\g<1>" + digest, text)
+    return stamped, count, digest
+
+
 def main(argv) -> int:
     checking = "--check" in argv
     OUT.mkdir(parents=True, exist_ok=True)
+    page = README.read_text(encoding="utf-8") if README.is_file() else None
     stale = []
     for name, draw in PICTURES.items():
         drawn = draw()
         path = OUT / name
+        if page is not None:
+            page, seen, digest = _stamp(page, name, drawn)
+            if not seen:
+                stale.append("%s (the front page does not name it)" % name)
+            elif checking and ("%s?v=%s" % (name, digest)) not in \
+                    README.read_text(encoding="utf-8"):
+                stale.append("%s (the front page's ?v= is not its hash)" % name)
         if checking:
             if not path.is_file() or path.read_text(encoding="utf-8") != drawn:
                 stale.append(name)
             continue
         path.write_text(drawn, encoding="utf-8")
         print("%s  %d KB" % (name, len(drawn) // 1024))
+    if page is not None and not checking:
+        README.write_text(page, encoding="utf-8")
     if stale:
         print("out of date, regenerate with tools/gen_door.py: %s"
               % ", ".join(stale), file=sys.stderr)

@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/door.svg?v=4c090ce4" alt="aas-submodel-validate — Asset Administration Shell submodels, judged against their IDTA template: offline, and every finding tells you how to fix it. AI proposes, rules judge, people decide." width="100%">
+  <img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/door.svg?v=d32ec2b3" alt="aas-submodel-validate — Asset Administration Shell submodels, judged against their IDTA template: offline, and every finding tells you how to fix it. AI proposes, rules judge, people decide." width="100%">
 
 [![CI](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aas-submodel-validate?label=PyPI&color=2f6fb3)](https://pypi.org/project/aas-submodel-validate/)
@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=60275d63" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=d006dddc" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -35,8 +35,11 @@ warning BAT-R8   conformant to the template and not to the regulation: 'EnergyRo
 0 error(s), 1 warning(s), 3 info — your-battery-passport.json · judged 0 of 1 submodel
 ```
 
-The `…` is two notes this excerpt leaves out — one of them the coverage
-figure further down. And the exit code is **0**: a disagreement with the
+The `…` is three lines: the one that accounts for the `3 info` — the
+relayed metamodel findings, folded into a count unless you ask for them
+— and two notes, one of which is the coverage figure further down.
+Notes are printed and not counted; the folded line is counted and not
+printed in full. And the exit code is **0**: a disagreement with the
 regulation is a warning, so it does not fail your build unless you ask
 it to (`-W` makes a warning exit 1). That is deliberate. This tool answers for
 the template; the law is somebody's reading of the law, and reading is
@@ -143,8 +146,9 @@ note    BAT-R8 reported 1 of the 9 elements this table holds; 8 of them need a b
 
 A verdict that reached the rules says how many submodels a template
 answered for — `judged 1 of 3 submodels`, or `no submodels to judge`
-when the input held none. An input that was refused says that instead,
-because nothing was judged and a coverage figure about it would be an
+when the input held none. An input that was refused carries no judged clause at
+all — it says `(not a full verdict: some of it was not read)`, because
+nothing was judged and a coverage figure about it would be an
 invention. An environment carries submodels this tool has no business
 judging, so an unjudged one is a number and not a finding;
 `--require-all-judged` turns that number into an exit code when your
@@ -228,8 +232,12 @@ speak to your file:
   has no business judging, so `judged 1 of 3` is a number rather than a
   finding and the run still exits 0. If your pipeline reads only the exit
   code, this makes partial coverage fail rather than pass quietly. It
-  also fails an input holding no submodels at all — the emptiest pass of
-  the lot, which the summary reports as `no submodels to judge`.
+  also covers the emptiest case: an input holding no submodels at all,
+  which the summary reports as `no submodels to judge`. That one already
+  fails by default — nothing matched, so `SMT-D1` is an error — and
+  `--allow-unmatched` is what turns it into a pass. Give both and it
+  fails again, which is the combination a pipeline wants: unmatched
+  submodels are fine, an input with none is not.
 
 Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
 `.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
@@ -270,10 +278,12 @@ which is a different thing from a file that was read and failed.
 
 ## What it checks
 
-125 rules, 123 of them across three IDTA templates — 86 generated from the vendored
+125 rules, 116 of them across three IDTA templates — 86 generated from the vendored
 official template files (cardinality, element kinds, value types,
-semantic identifiers at every nesting level), the rest hand-written
-where a template file cannot speak. The other two read the battery
+semantic identifiers at every nesting level), 30 hand-written where a
+template file cannot speak. Of the nine that belong to no template,
+five are about the container a submodel arrives in and two decide which
+template answers. The last two read the battery
 passport against Regulation (EU) 2023/1542 rather than against a
 template, over IDTA 02035-1, 02035-4 and 02035-5: one names a submodel
 identifier that two published templates claim, and one reports an

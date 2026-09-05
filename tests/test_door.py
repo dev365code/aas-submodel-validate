@@ -64,14 +64,24 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
     lines = _generator().VERDICT_LINES
     typed = {index for index, (_dy, runs) in enumerate(lines)
              if any(text == "$ " for _x, _colour, text, _bold in runs)}
+    elision = _generator().ELISION
     labels = {"at", "saw", "per", "fix", "note", "warning ", "BAT-R8"}
-    prose = [text for index, (_dy, runs) in enumerate(lines)
+    drawn = [text for index, (_dy, runs) in enumerate(lines)
              if index not in typed
              for _x, _colour, text, _bold in runs if text not in labels]
+    prose = [text for text in drawn if text != elision]
     assert prose, "the picture draws no sentence at all"
     for text in prose:
         assert " ".join(text.split()) in said, (
             "the picture shows %r and the tool does not say it" % text)
+    # The one string in the picture that is not the tool's: the mark
+    # that says lines were left out. The picture is a crop -- the folded
+    # metamodel line and one note are not in it -- and every sentence in
+    # it being true does not make the picture true if it reads as the
+    # whole run. The front page's text block is held to this; the
+    # picture above it was not.
+    assert elision in drawn, (
+        "the picture is a crop of the run and draws no elision mark")
 
 
 def test_the_commands_in_the_picture_are_ones_this_project_offers(tmp_path,

@@ -18,7 +18,7 @@ from aas_submodel_validate import (
 )
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.report import render
-from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
+from aas_submodel_validate.rules import battery_tables, dbp_tables, hd_tables, td_tables
 from builders import build_aasx, env_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +50,13 @@ def _command_blocks() -> list:
     return [block for block in blocks if block.strip()]
 CHANGELOG = (ROOT / "CHANGELOG.md").read_text("utf-8")
 
+#: The page with its line breaks flattened. A sentence on this page is
+#: wrapped where the paragraph needed it, so a phrase asserted as
+#: written is a phrase that fails the day somebody reflows the
+#: paragraph -- which says nothing about whether the claim is still
+#: true. Prose is checked against this; code blocks are not.
+FLOWED = " ".join(README.split())
+
 
 def test_the_rule_counts_are_the_registrys():
     generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
@@ -63,6 +70,53 @@ def test_the_rule_counts_are_the_registrys():
     assert "| 38 |" in README
     assert "| 26 |" in README
     assert "| 22 |" in README
+    # And the split between what belongs to a template and what does
+    # not. The page said 123 across three templates, which is 125 minus
+    # the two battery rules -- it counted the five container rules and
+    # the two that decide which template answers as if they were a
+    # template's own. Every number in that sentence is derived here, so
+    # a rule moving between those groups moves the sentence.
+    families = {}
+    for rule in all_rules():
+        for family in ("HD", "TD", "DBP", "X", "SMT", "BAT"):
+            if rule.id.startswith(family):
+                families[family] = families.get(family, 0) + 1
+                break
+    template_rules = families["HD"] + families["TD"] + families["DBP"]
+    assert template_rules == 116, families
+    assert "%d of them across three IDTA templates" % template_rules in FLOWED
+    assert "%d hand-written" % (template_rules - generated) in FLOWED
+    assert families["X"] == 5 and families["SMT"] == 2 and families["BAT"] == 2
+    assert "five are about the container" in FLOWED
+    assert "two decide which template answers" in FLOWED
+
+
+def test_the_battery_join_figures_are_the_joins():
+    """Four numbers on the front page that came from a file rather than
+    from a run, and were the only numbers on it that nothing checked.
+
+    They are what makes the battery section's honesty legible -- 179 of
+    221 template elements matched nothing, 63 of the Commission's 71
+    data points found no element -- and they are exactly the numbers
+    that go quietly false the day the indexes are rebuilt."""
+    join = json.loads((ROOT / "data" / "battery-passport"
+                       / "requirements-join.json").read_text("utf-8"))
+    counts = join["counts"]
+    matched_nothing = counts["template_elements_matched_by_nothing"]
+    elements = counts["template_elements"]
+    unmatched = counts["guidance_data_points_unmatched"]
+    data_points = unmatched + counts["guidance_data_points_matched_by_name"]
+    assert ("%d of %d template elements matching nothing"
+            % (matched_nothing, elements)) in FLOWED
+    assert ("%d of the Commission's %d guidance data points"
+            % (unmatched, data_points)) in FLOWED
+    # The rule table is the disagreements the join found by name, and
+    # the page calls them "those nine rows".
+    rows = (len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
+            + len(battery_tables.CONDITIONAL_ON_CATEGORY))
+    assert rows == counts["name_matches_where_the_readings_differ"], (
+        "the rule table and the join disagree about how many rows there are")
+    assert "Those nine rows" in FLOWED and rows == 9
 
 
 def _x_rules_drawn_by(paths):

@@ -70,7 +70,7 @@ directory of names at 16 MiB.
 
 ## 0.1.0 — 2026-09-04
 
-First release: 125 rules, 123 of them across three IDTA templates — *Handover
+First release: 125 rules, 116 of them across three IDTA templates — *Handover
 Documentation* 2.0.1, *Technical Data* 2.0.1 and *Digital Battery
 Passport part 2* 1.0 — of which 86 are generated from the vendored
 official template files. The `meta` channel
