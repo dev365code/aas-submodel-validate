@@ -13,7 +13,6 @@ where every wheel crosses an air gap by hand.
 """
 from __future__ import annotations
 
-import codecs
 import posixpath
 import re
 import urllib.parse
@@ -208,8 +207,21 @@ def xml_as_utf8(raw: bytes) -> bytes:
             # go downstream as UTF-8 still claiming to be something
             # else -- which the parser then refuses for a different
             # reason than the one it arrived with.
-            converted = _as_declared(raw[len(bom):])
-            return converted if converted is not raw[len(bom):] else raw
+            # Compared against the same object, not a fresh slice of the
+            # same bytes. `raw[len(bom):]` on the right built a new one
+            # every time, so the identity test was true whatever
+            # happened and the branch that hands the document back
+            # untouched could never run: every marked document had its
+            # mark taken off. Harmless for a marked UTF-8 document, since
+            # nothing downstream minds -- and not harmless for the UTF-32
+            # rows above, which are here to be *recognised* and not read.
+            # Those reach this branch too, and came out as UTF-32 with
+            # the mark removed: bytes no reader in the ecosystem opens,
+            # inspected by every guard below as though they were what
+            # arrived.
+            body = raw[len(bom):]
+            converted = _as_declared(body)
+            return raw if converted is body else converted
     encoding = _sniff(raw)
     if encoding is not None:
         return _as_utf8(raw, encoding)
@@ -243,10 +255,15 @@ def _as_declared(raw: bytes) -> bytes:
     name = declared.group("name")
     if not name or name.lower().replace("_", "-") in ("utf-8", "us-ascii", "ascii"):
         return raw
-    try:
-        codecs.lookup(name)
-    except LookupError:
-        return raw                        # the parser will say what it is
+    # A name Python has never heard of is handed on for the parser to
+    # answer for, and that happens one function down: `_as_utf8` catches
+    # `LookupError` and returns the bytes as they arrived. There used to
+    # be a `codecs.lookup` here saying the same thing first, and it had
+    # no case of its own -- measured across every name either of them
+    # rejects, `lookup` never refuses one that `decode` accepts. Two
+    # guards with no case between them are not two guards: neither can
+    # be tested, so either can be deleted without a red, which is how a
+    # guard leaves a codebase.
     return _as_utf8(raw, name)
 
 
