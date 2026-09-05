@@ -3,10 +3,12 @@
 ## 0.1.1 — unreleased
 
 Still 125 rules, 86 generated from the vendored template files as
-before: nothing here changes what is checked. Everything is about
-reaching a verdict rather than about the verdict — what someone who
-installed 0.1.0 from the package index, took it from the release page,
-or read the front page could not do.
+before: no rule checks anything it did not check in 0.1.0, and no
+verdict changes. Most of this is about *reaching* a verdict — what
+someone who installed 0.1.0 from the package index, took it from the
+release page, or read the front page could not do. The exceptions are
+at the end: three findings say something different from what they said,
+and each of them was saying something untrue.
 
 **The first verdict needs nothing of your own.** IDTA's published example
 travels in the package now, and `smtv --example` judges it — no file of
@@ -63,6 +65,30 @@ JSON field for a channel is `kind`, so a reader filtering on `.channel`
 no longer gets an empty result with nothing to explain it; and that the
 installer may be `pip3`, that `smtv` may need a `PATH` entry pip prints
 and nobody reads.
+
+**The battery finding cites the clause its own row cites.** `per` was a
+constant, `Annex VII`, on a rule whose rows cite `Annex IV Part A (4)`,
+about a passport obligation that lives in Annex XIII: three provisions,
+and the one printed was the one nothing chose. A row is the only thing
+that knows where it came from, so a violation now carries its own
+`spec` the way it already carried its own `fix`. The JSON field is the
+same shape and a different value. The same finding no longer says the
+provision "requires" the element — its authority is a published
+industry reading, which is why the rule is a warning and why
+`docs/divergences.md` #37 has been careful about it since the rule
+landed. `at` named a path the walk never takes and now names the
+element. And the coverage note said `1 of the 1`, a number divided by
+itself wearing the look of complete coverage; the eight it withholds
+belong in the denominator that frames them.
+
+**A wrong-kind element is no longer told to add itself.** A generated
+row's rule is about how many of an element there are and carries one
+remedy: provide one. Two violations filed under the same rule id are
+not about how many — an element that is present and is the wrong kind,
+and one that declares the wrong valueType — and both inherited that
+remedy, so the tool answered "provide a Version" to a reader looking at
+one. Following it produces the cardinality violation the rule is really
+for. Both now say what the element is today and what to change it to.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's

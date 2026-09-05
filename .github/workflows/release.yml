@@ -182,6 +182,10 @@ jobs:
                 --bundle sha256:<digest>.jsonl \
                 --custom-trusted-root trusted_root.jsonl
 
+          The bundle is named for the digest. A colon is not a filename
+          character on Windows, so `gh` writes `sha256-<digest>.jsonl`
+          there -- use the name it actually wrote.
+
           The tool itself reaches no network, ever.
           NOTES
           python - <<'SUB'

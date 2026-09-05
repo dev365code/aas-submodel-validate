@@ -166,7 +166,7 @@ differ.
 | `detail` | string or null | Context — usually the value that was seen. |
 | `fix` | string | One imperative sentence: what to change so this stops being reported. Every finding carries one. |
 | `title` | string | The rule's standing description, the same for every finding it produces. |
-| `spec` | string or null | Where the requirement lives — the template and section. |
+| `spec` | string or null | Where the requirement lives: the template and section, or — for a rule that reads a regulation rather than a template — the provision, built from the row being reported rather than fixed per rule. |
 
 `kind` is `meta` for findings relayed from
 [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s

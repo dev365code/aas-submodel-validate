@@ -113,7 +113,7 @@ G, D, E, A_, F, T, N = "#8fd0a8", "#7d8a99", "#e0604d", "#e8c268", "#5cb87f", "#
 ELISION = "\u2026"
 
 VERDICT_LINES = [
-    (21, [(28, G, "$ ", 1), (46, T, "pip install aas-submodel-validate", 0)]),
+    (21, [(28, G, "$ ", 1), (46, T, "pip3 install aas-submodel-validate", 0)]),
     (30, [(28, G, "$ ", 1), (46, T, "smtv --allow-unmatched --meta info battery-passport.json", 0)]),
     (19, [(28, A_, "warning ", 1), (100, A_, "BAT-R8", 1),
           (168, T, "conformant to the template and not to the regulation:", 0)]),

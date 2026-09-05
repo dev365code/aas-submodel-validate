@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=d006dddc" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=1e1df9db" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -168,7 +168,7 @@ breath.
 - **Offline, always.** No network call in any code path. The single-file build is an ordinary zip with no compiled artefacts — a reviewer can read every line of it before it crosses a threshold.
 - **Deterministic.** Two builds of one tree produce the same bytes; two runs over one file produce the same report, ordered.
 - **Every chosen reading is written down.** Where the published template and its own published example disagree — and they do — [docs/divergences.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/divergences.md) records which reading this tool follows and the evidence for it.
-- **The tests are checked against their own mutations.** A gate that has never been made to fail is a gate nobody has tested.
+- **A gate is not trusted here until it has been made to fail.** One that has never failed is one nobody has tested, and it is indistinguishable from one that cannot.
 
 ## Roadmap
 
@@ -208,7 +208,8 @@ What it refuses to do is written down in [docs/scope.md](https://github.com/dev3
 `-W` fails on every warning, including the ones relayed from
 aas-core3.0 about the metamodel. Those are not always somebody else's
 problem — on the official example, 45 of the 77 are about the submodel
-itself and most of those clear by deleting one idShort — so they are
+itself, and most of those clear by deleting an idShort the metamodel
+says should not be there — so they are
 warnings like any other until you say otherwise:
 
     smtv -q -W --meta info your-submodel.aasx
