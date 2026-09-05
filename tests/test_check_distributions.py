@@ -330,3 +330,39 @@ def test_an_empty_index_is_not_an_answer(tmp_path, monkeypatch, capsys):
 
 def test_a_note_planted_inside_a_metadata_directory_is_not_exempt():
     assert not _gate().is_build_metadata(DIST_INFO + "/notes.md")
+
+
+def test_a_metadata_suffix_on_a_file_does_not_exempt_it():
+    """`.dist-info`, `.egg-info` and `.data` name directories the build
+    system writes, and the check that recognises them read the suffix
+    off any path segment -- including the last one, which is a file. A
+    file called `evil.data` anywhere in a distribution answered "yes,
+    the build wrote me", and the tracked-files rule let it past: an
+    untracked payload in a wheel, reported as nothing.
+
+    What makes a metadata directory a directory is that something is
+    inside it."""
+    gate = _gate()
+    for planted in ("aas_submodel_validate/evil.data",
+                    "aas_submodel_validate/notes.egg-info",
+                    "anything.dist-info",
+                    "aas_submodel_validate/data/smt/x.dist-info"):
+        assert not gate.is_build_metadata(planted), (
+            "%s is a file wearing a directory's suffix and the gate "
+            "excused it" % planted)
+    # The control: the same names with something inside them are what
+    # the suffix is for, and they stay exempt.
+    for real in ("aas_submodel_validate-0.1.1.dist-info/RECORD",
+                 "aas_submodel_validate-0.1.1.dist-info/METADATA",
+                 "aas_submodel_validate.egg-info/PKG-INFO",
+                 "aas_submodel_validate.egg-info/SOURCES.txt"):
+        assert gate.is_build_metadata(real), (
+            "%s is what the build system writes and the gate stopped "
+            "recognising it" % real)
+    # Not a control, an observation kept where somebody will see it: a
+    # `.data/` payload is reported rather than exempted, before this
+    # change and after. Nothing in this project puts one there, and if
+    # something ever does, the tracked-files rule is the right question
+    # to ask of it.
+    assert not gate.is_build_metadata(
+        "aas_submodel_validate-0.1.1.data/scripts/smtv")

@@ -1,6 +1,7 @@
 """A rule id is a contract: registered once, forever findable."""
 import pathlib
 import re
+import subprocess
 
 import pytest
 
@@ -802,28 +803,34 @@ def test_every_divergence_this_project_cites_exists():
             for line in (ROOT / "docs" / "divergences.md").read_text("utf-8").splitlines()
             if re.match(r"^\|\s*\d+\s*\|", line)}
     assert len(rows) > 30, "the divergences table did not parse"
-    # Every spelling, and everywhere. The first version read
-    # `divergences #N` in `src/` and `tests/` and saw 39 of 59: it
-    # missed the singular `divergence #N`, the backticked
-    # `` `docs/divergences.md` #37 ``, and a citation split across two
-    # string literals -- which is how the one every BAT-R8 finding
-    # carries was written. It also skipped this file, on no reason: the
-    # pattern does not match its own source, and skipping it threw away
-    # four real citations.
+    # Every file this repository tracks, not a list of directories.
+    # The list was `src/`, `tests/`, `tools/` and two markdown files,
+    # and it missed the one in `docs/assets/verdict.svg` -- the picture
+    # the front page shows. A list of places to look is a list somebody
+    # has to keep; the tracked files are the tree.
+    #
+    # Spelling is the same problem one level down, so the number is
+    # taken from anything within a few words of the document's name,
+    # in either order, and adjacent string literals are joined first
+    # because a citation written across two of them is one sentence to
+    # a reader and two to a scanner.
     cited: dict = {}
-    sources = (sorted((ROOT / "src").rglob("*.py"))
-               + sorted((ROOT / "tests").rglob("*.py"))
-               + sorted((ROOT / "tools").rglob("*.py"))
-               + [ROOT / "README.md", ROOT / "CHANGELOG.md"])
-    citation = re.compile(r"divergences?(?:\.md)?[`\s\\\"]*#\s*(\d+)")
-    for path in sources:
-        if not path.is_file():
+    tracked = subprocess.run(["git", "ls-files"], cwd=str(ROOT),
+                             capture_output=True, text=True)
+    paths = [ROOT / name for name in tracked.stdout.split("\n") if name]
+    assert len(paths) > 50, "git ls-files found nothing; is this a checkout?"
+    near = re.compile(r"divergences?(?:\.md)?[^\n]{0,24}?#\s*(\d+)"
+                      r"|#\s*(\d+)[^\n]{0,24}?divergences?(?:\.md)?")
+    for path in paths:
+        if path.suffix in (".aasx", ".pdf", ".xlsx") or not path.is_file():
             continue
-        # Joined first: a citation written across two adjacent string
-        # literals is one sentence to a reader and two to a scanner.
-        text = re.sub(r'"\s*\n\s*"', "", path.read_text("utf-8"))
-        for number in citation.findall(text):
-            cited.setdefault(int(number), set()).add(path.name)
+        try:
+            text = path.read_text("utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        text = re.sub(r"[\"\']\s*\n?\s*[\"\']", "", text)
+        for first, second in near.findall(text):
+            cited.setdefault(int(first or second), set()).add(path.name)
     assert cited, "nothing in this tree cites a divergence at all"
     dangling = sorted((number, sorted(where)) for number, where in cited.items()
                       if number not in rows)

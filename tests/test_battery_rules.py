@@ -27,7 +27,6 @@ produced the table matched by name.
 from __future__ import annotations
 
 import json
-import re
 
 import pytest
 
@@ -519,6 +518,30 @@ def test_the_clause_a_finding_cites_is_the_row_s_own(tmp_path):
             % (clause, finding.spec))
 
 
+#: What BAT-R8 says, in the five places a reader can read it.
+#: Frozen rather than pattern-matched: see the test below for why.
+BAT_R8_SENTENCES = {
+    "saw":
+        "IDTA 02035-4 V1.0.1 makes it ZeroToOne; Annex IV Part A (4) is "
+        "read as requiring it, for every battery category the source names. "
+        "Asked anywhere under the submodel: this rule is about the data "
+        "being present, not about where the template puts it",
+    "fix":
+        "Provide the element, or record that this battery is outside the "
+        "provision read as requiring it. The template will not ask for it "
+        "-- that is the point of the finding.",
+    "per":
+        "Regulation (EU) 2023/1542 Annex IV Part A (4); docs/divergences.md "
+        "#37 for whose reading of it this answers",
+    "message":
+        "conformant to the template and not to the regulation: "
+        "'EnergyRoundTripEfficiencyFade' is absent",
+    "title":
+        "elements the template permits absent that a published reading of "
+        "the regulation requires",
+}
+
+
 def test_a_consortium_reading_is_not_reported_as_the_law_speaking(tmp_path):
     """The row's authority is `longlist:77` -- the Battery Pass long
     list, an industry reading -- and the finding said the provision
@@ -537,34 +560,30 @@ def test_a_consortium_reading_is_not_reported_as_the_law_speaking(tmp_path):
     # looked at when this was written. The evidence line was repaired
     # and the remedy beneath it went on saying "the provision that
     # requires it" -- one finding, two sentences, and the gate read one.
-    # Every line a reader sees, including the rule's standing title --
-    # which the JSON repeats on every finding the rule produces, and
-    # which went on saying "the regulation requires" after the four
-    # lines beneath it stopped. And the phrase, not one spelling of it:
-    # the first version of this looked for "requires it" exactly, so
-    # "the regulation requires the element" would have walked past.
-    for label, sentence in (("saw", said), ("fix", finding.fix or ""),
-                            ("per", finding.spec or ""),
-                            ("message", finding.violation.message),
-                            ("title", finding.rule.title)):
-        flat = " ".join(sentence.split())
-        # Case-insensitive, because `the Regulation (EU) 2023/1542
-        # requires` walked past a pattern written in lower case; the
-        # instrument's own name and its number count as naming it; and
-        # the verb is any of the ones that mean the same thing, because
-        # "makes this mandatory" says exactly what "requires" says.
-        for hit in re.finditer(
-                r"\b(regulations?|laws?|provisions?|directives?|statutes?"
-                r"|annexe?s?\s+[IVXL]+|2023/1542)\b[^.]{0,80}?"
-                r"\b(requir|mandat|oblig|demand|compel)", flat, re.I):
-            # Either side: "a published reading of the regulation
-            # requires" puts the qualifier in front, "the provision read
-            # as requiring it" puts it behind, and both are honest.
-            around = flat[max(0, hit.start() - 60):hit.end() + 40]
-            assert re.search(r"\bread(?:ing|s)?\b", around), (
-                "the %s line has the law itself requiring this, with "
-                "nothing beside it saying whose reading that is: %r"
-                % (label, flat))
+    # Pinned, not pattern-matched. Two rounds of this were a list of
+    # nouns and a list of verb stems, and both rounds ended with a
+    # reviewer walking past them -- passive voice, `makes it
+    # compulsory`, `prescribes`, a full stop inside `Art.` closing the
+    # window. A list of ways to say a thing is a list somebody has to
+    # keep, and the thing being said here is short enough to hold
+    # whole.
+    #
+    # So the sentences a reader sees are frozen. Changing one is a
+    # deliberate act with this test in front of it, and the question to
+    # ask when it goes red is the one that matters: does the new
+    # sentence say the law requires this, or that somebody's published
+    # reading of the law does?
+    seen = {label: " ".join((sentence or "").split())
+            for label, sentence in (("saw", said), ("fix", finding.fix or ""),
+                                    ("per", finding.spec or ""),
+                                    ("message", finding.violation.message),
+                                    ("title", finding.rule.title))}
+    assert seen == BAT_R8_SENTENCES, (
+        "BAT-R8 says something it did not say before. If the new wording "
+        "still puts the requirement on a published reading rather than "
+        "on the law itself, update BAT_R8_SENTENCES; if it does not, "
+        "that is the defect this test is here for.")
+    for label, flat in seen.items():
         assert "requires it" not in flat, (
             "the %s line says a provision requires it: %r" % (label, flat))
 

@@ -213,3 +213,57 @@ def test_the_json_report_is_ascii_whatever_is_in_the_file():
     assert not outside, (
         "the JSON report carries %s; it is read by machines on hosts "
         "whose encoding nobody chose" % outside)
+
+
+def test_no_string_in_the_source_carries_one_either():
+    """Every string literal this package can print, read out of the
+    source rather than out of a run.
+
+    The gates above read what one command wrote and what the registry
+    holds, and between them they missed nine places a character can
+    reach a terminal: the `--rules` format, argparse's description,
+    epilog and per-flag help, `parser.error`, three `smtv:` lines on
+    stderr, the loader's exception text, and the message of any rule
+    the fixtures do not happen to fire. Each was found by planting an
+    em dash and watching the suite stay green.
+
+    Planting them one at a time is how that list got to nine and why it
+    is not ten. A run only proves the paths it took; the source is all
+    of them, and it is one `ast.walk` away."""
+    import ast
+
+    #: Bytes this package matches on rather than prints. A byte order
+    #: mark is what a real .rels file starts with, and recognising one
+    #: means holding one.
+    NOT_PRINTED = {"\ufeff"}
+
+    offenders = []
+    for path in sorted((ROOT / "src").rglob("*.py")):
+        tree = ast.parse(path.read_text("utf-8"), str(path))
+        # Docstrings are for whoever opens the file, not for a
+        # terminal, and this project writes long ones. Collected by
+        # identity so a string that happens to equal a docstring is
+        # still read.
+        prose = set()
+        for holder in ast.walk(tree):
+            if isinstance(holder, (ast.Module, ast.ClassDef,
+                                   ast.FunctionDef, ast.AsyncFunctionDef)):
+                first = (holder.body or [None])[0]
+                if (isinstance(first, ast.Expr)
+                        and isinstance(first.value, ast.Constant)
+                        and isinstance(first.value.value, str)):
+                    prose.add(id(first.value))
+        for node in ast.walk(tree):
+            if (not isinstance(node, ast.Constant)
+                    or not isinstance(node.value, str)
+                    or id(node) in prose):
+                continue
+            found = sorted({character for character in node.value
+                            if ord(character) > 127} - ALLOWED - NOT_PRINTED)
+            if found:
+                offenders.append("%s:%d %s in %r"
+                                 % (path.name, node.lineno, found,
+                                    node.value[:60]))
+    assert not offenders, (
+        "these strings can reach a terminal and the common default code "
+        "pages cannot encode them:\n  %s" % "\n  ".join(offenders))

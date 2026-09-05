@@ -117,6 +117,11 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
     # reader sees first, kept neither -- so the remedy and the clause
     # could be drawn the other way round, regenerate cleanly and stay
     # green through every gate.
+    # Both ends, which the first version of this could not see: `at >= 0`
+    # skipped the check on the first quote, so dropping the opening line
+    # -- the finding itself -- regenerated clean and passed everything,
+    # and `gap` was never read after the loop, so a mark at the bottom
+    # with nothing below it passed too.
     at, gap = -1, False
     for text in groups:
         if text == elision:
@@ -147,17 +152,16 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
         # the mark somewhere no line was missing. The front page's text
         # block has had both halves since the day reversing its lines
         # was found to pass.
-        if at >= 0:
-            skipped = later[0] - at - 1
-            if gap:
-                assert skipped, (
-                    "there is an elision mark before %r and the tool "
-                    "prints nothing between it and the line above" % text)
-            else:
-                assert not skipped, (
-                    "the picture goes straight from the line above to "
-                    "%r and the tool prints %d line(s) between them, "
-                    "with nothing to say so" % (text, skipped))
+        skipped = later[0] - at - 1
+        if gap:
+            assert skipped, (
+                "there is an elision mark before %r and the tool prints "
+                "nothing between it and the line above it" % text)
+        else:
+            assert not skipped, (
+                "the picture goes straight from %s to %r and the tool "
+                "prints %d line(s) between them, with nothing to say so"
+                % ("the top" if at < 0 else "the line above", text, skipped))
         gap = False
         at = later[0]
     # The one string in the picture that is not the tool's: the mark
@@ -166,6 +170,18 @@ def test_every_sentence_in_the_picture_is_one_the_tool_prints(tmp_path):
     # it being true does not make the picture true if it reads as the
     # whole run. The front page's text block is held to this; the
     # picture above it was not.
+    # And the tail. A mark below the last quote says lines follow it;
+    # one that is the last thing in the picture when the summary was
+    # already quoted says nothing follows, which is a different claim.
+    trailing = len(printed) - 1 - at
+    if gap:
+        assert trailing > 0, (
+            "the picture ends with an elision mark and has already "
+            "quoted the run's last line")
+    else:
+        assert trailing == 0, (
+            "the picture stops %d line(s) before the run does, with "
+            "nothing to say so" % trailing)
     assert elision in groups, (
         "the picture is a crop of the run -- lines are missing between "
         "the remedy and the note -- and draws no elision mark")

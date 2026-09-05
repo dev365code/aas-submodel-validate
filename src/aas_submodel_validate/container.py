@@ -492,12 +492,14 @@ class AasxPackage:
     def relationships(self, source: str = "") -> List[Tuple[str, str]]:
         """(type, target) pairs of `source`'s relationships part.
 
-        A target that names a part comes back without its leading slash,
-        ready to use as a ZIP entry name. One that names nothing -- a
-        directory, a path that climbs out of the package, a target no
-        part answers to -- comes back as it was written, slash and all,
-        which matches no entry and so resolves to nothing. That is the
-        answer those deserve. Real-world .rels files start with a UTF-8 byte order
+        A target that reads as a part name comes back without its
+        leading slash, ready to use as a ZIP entry name -- whether or
+        not the archive holds that part, because whether a name is
+        well formed and whether it is present are two questions and
+        `canonical_part_name` answers only the first. A target that
+        reads as no part name at all -- a directory, a path that climbs
+        out of the package -- comes back as it was written, slash and
+        all, which matches no entry and so resolves to nothing. Real-world .rels files start with a UTF-8 byte order
         mark, and the parser reads several other encodings besides -- so
         the part is decoded the way the parser will read it before the
         guard below reads a byte of it.

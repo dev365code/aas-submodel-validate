@@ -127,7 +127,15 @@ def _licence_files(text: str) -> tuple:
 
 
 def _in_metadata_dir(path: str) -> bool:
-    return any(part.endswith(METADATA_DIRS) for part in path.split("/"))
+    """Whether any *directory* on this path is one the build writes.
+
+    The last segment is a file, and a file is not a directory however it
+    is spelled: this read the suffix off every segment, so `evil.data`
+    matched, `rest` came back empty, and the caller answered "the build
+    system wrote this" about a planted payload. What makes a metadata
+    directory a directory is that something is inside it.
+    """
+    return any(part.endswith(METADATA_DIRS) for part in path.split("/")[:-1])
 
 
 def is_build_metadata(path: str) -> bool:
