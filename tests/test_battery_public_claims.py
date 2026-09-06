@@ -436,3 +436,31 @@ def test_the_only_non_uri_claim_states_which_templates_it_is_about():
     entry = _squeezed("divergences-public.md")
     assert "Among the seven parts, Part 4's value is also the only one that is not a URI" in entry
     assert "holds twelve templates, not seven" in entry
+
+
+def test_every_annex_point_records_the_amendment_marker_it_falls_under():
+    """A consolidated text marks its passages: `B` for the text as
+    adopted, `M`/`C` for what an amendment or a corrigendum replaced. The
+    extractor's own docstring says a marker applies from where it appears
+    until the next one, and that each point records which one it fell
+    under "rather than being silently" dropped.
+
+    Sixteen of the thirty-four recorded no marker at all. Not because
+    they fall outside one -- the marker governing them is `▼B`, and it is
+    stated before Annex XIII begins, so slicing the annex out of the
+    document left it on the other side of the cut. A reader asking which
+    of these obligations are original text and which arrived by amendment
+    got an empty string for the first sixteen, and an empty string reads
+    as "not amended" exactly where the answer was never looked up."""
+    records = _index("requirements-annex-xiii.json")["records"]
+    unmarked = [r["id"] for r in records if not r["consolidation_marker"]]
+    assert not unmarked, "%d points carry no marker: %s" % (len(unmarked), unmarked)
+
+    tally = _index("requirements-annex-xiii.json")["counts"]["by_consolidation_marker"]
+    assert "" not in tally, tally
+    assert sum(tally.values()) == len(records) == 34
+    # `amended_in_consolidation` is derived from the marker, so a missing
+    # marker made it false. It must now be true exactly for the non-`B`.
+    for record in records:
+        expected = not record["consolidation_marker"].startswith("B")
+        assert record["amended_in_consolidation"] is expected, record["id"]

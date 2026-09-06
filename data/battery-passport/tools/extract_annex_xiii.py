@@ -86,14 +86,31 @@ def to_lines(raw_html):
 
 
 def slice_annex(lines):
+    """The annex, and the amendment marker already in force where it starts.
+
+    A marker applies from where it appears until the next one, and the
+    one governing the opening of Annex XIII is stated far earlier in the
+    document -- the last marker before the annex is a plain B, roughly
+    nine hundred lines up. Returning the slice alone threw that away, and
+    every point before the annex's own first marker recorded no marker at
+    all: sixteen of thirty-four, all of block 1. An empty marker in a
+    consolidated text reads as "not amended", which is the same answer
+    the field gives when nothing was looked up, so the mistake was
+    invisible in the output it produced.
+    """
     try:
         start = lines.index(START)
     except ValueError:
         raise SystemExit("%r not found -- is this the consolidated text?" % START)
+    in_force = ""
+    for line in lines[:start]:
+        found = AMENDMENT_MARKER.match(line)
+        if found:
+            in_force = found.group(1) or ""
     for i in range(start + 1, len(lines)):
         if lines[i] == END:
-            return lines[start:i]
-    return lines[start:]
+            return lines[start:i], in_force
+    return lines[start:], in_force
 
 
 def classify_access(heading):
@@ -123,13 +140,12 @@ def main(argv=None):
 
     with open(args.html, encoding="utf-8", errors="replace") as fh:
         lines = to_lines(fh.read())
-    annex = slice_annex(lines)
+    annex, marker = slice_annex(lines)
 
     records, notes = [], []
     block_number = block_heading = block_chapeau = ""
     access = "n/a"
     pending_letter = None
-    marker = ""
     sub_index = 0
     last_point_id = None
 
