@@ -173,17 +173,15 @@ def _analyze(ctx, tables) -> Dict:
         "near_misses": [],     # (subject path, seen value, expected value)
         "idshort_drift": [],   # (subject, id_short, pattern, is a list child)
         "reftype_drift": [],   # (subject path, seen type, template type)
-        #: How many submodels this pack answered for. Zero means the file
-        #: is not this template's business, which is not the same as a
-        #: template whose scopes went unentered -- and the difference is
-        #: everything to `rows_not_reached` below.
-        "submodels": 0,
-        #: Rule ids the walk never put, and the elements that cost them.
-        "not_entered": [],     # row ids
-        "unrecognised": [],    # (subject path, the row ids it took with it)
+        #: Rule ids that were below a scope this walk did not enter,
+        #: *proposed*. Not an answer on its own: the same row is walked
+        #: once per item of a list, so a row missed in one item and
+        #: asked in another lands here and is subtracted afterwards
+        #: against `instances`. Reporting this list directly said
+        #: twenty-six rules went unasked when twenty-two of them ran.
+        "lost_candidates": [],
     }
     for submodel in matched_submodels(ctx, tables):
-        result["submodels"] += 1
         root = submodel.id_short or "submodel"
         reference = submodel.semantic_id
         expected = tables.TEMPLATE_SUBMODEL_SID_TYPE
@@ -208,26 +206,36 @@ def _descendant_ids(row) -> List[str]:
 def rows_not_reached(ctx) -> List[str]:
     """Rule ids this run never put, in the order the tables declare them.
 
-    A generated rule lives inside a scope, and `_scope` writes an
-    `instances` key for every row it considers -- so a row missing from
-    that dict was never considered at all. That happens for exactly one
-    reason: the element opening its scope matched no row, so the walk
-    did not recurse and the whole subtree left the run with it.
+    Two steps, and the second is the one the first version of this
+    skipped. `_scope` proposes the rows below a scope it did not enter;
+    those proposals are per scope, and the same rows are walked once per
+    item of a list. So every proposal is checked against `instances` --
+    the walk's own record of the rows it looked at, anywhere -- and a
+    row some other scope asked is taken back off. Without that
+    subtraction a two-item list reported twenty-six rules unasked with
+    twenty-two of them run, and one of the twenty-two printed as an
+    error in the same report.
 
-    Only for packs that answered for at least one submodel. A Handover
-    file is not a Technical Data file, and listing all twenty-six
-    Technical Data rows against it would bury the signal in noise --
-    the run did not fail to ask those, it was never their run.
+    A row is proposed only where the reader has already reported
+    something that explains the loss: a near-miss in that scope, or an
+    element of the wrong kind claiming the row. There is no way to tell
+    a supplier's own element from a template element with a typo by
+    looking at it, and the template states a minimum rather than a
+    whitelist (docs/divergences.md #19), so guessing was what made a
+    conformant file with one extra property report a rule unasked.
     """
     analysed = ctx.__dict__.get("_smt_analysis") or {}
-    missed = []
-    for module_name, result in analysed.items():
-        if not result.get("submodels"):
-            continue
-        tables = sys.modules.get(module_name)
-        if tables is None:      # pragma: no cover - the module is imported to get here
-            continue
-        missed.extend(result["not_entered"])
+    missed, considered = [], set()
+    for result in analysed.values():
+        missed.extend(result["lost_candidates"])
+        # Every row any scope looked at. `_scope` writes an `instances`
+        # key for each row it considers, so this is the walk's own record
+        # -- and subtracting it is what the first version left out. A
+        # list of two items walks the same rows twice; a row missed in
+        # the second item and asked in the first was written down as
+        # unasked, and nothing took it back off.
+        considered |= set(result["instances"])
+    missed = [rid for rid in missed if rid not in considered]
     # Ordered by the tables, deduplicated: one unrecognised element in a
     # list of three strands the same rows three times, and a reader
     # counting the list would read that as three times the loss.
@@ -308,6 +316,9 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
     #: Per scope, not per run: the same row id appears in every item of a
     #: list, and a row that matched in one item has been entered.
     claimed_by = {}
+    #: How many near misses stood before this scope was walked, so the
+    #: block at the end can tell whether one was found *here*.
+    near_misses_here = len(result["near_misses"])
 
     for row in rows:
         # One element belongs to at most one row: the first row it matches
@@ -362,6 +373,12 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                         "right element -- the semanticId matched -- so "
                         "adding another would be a second finding, not a "
                         "fix for this one." % (actual, row["kind"])))
+                # Reported, and not recursed into -- so everything
+                # below this row left the run with it, and nothing said
+                # so. Twenty-one rules on the measured case, nine of
+                # them mandatory, behind one `Property` wearing a list's
+                # identifier.
+                result["lost_candidates"].extend(_descendant_ids(row))
                 continue
             declared = getattr(element, "value_type", None)
             if row["value_type"] and declared is not None and declared.value != row["value_type"]:
@@ -386,32 +403,23 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                        subject, result,
                        in_list=(row["kind"] == "SubmodelElementList"))
 
-    # What the scope held that no row claimed, and what that cost.
+    # What this scope did not enter, and only where the reader has
+    # already said something is wrong.
     #
-    # A row that matched nothing is not by itself a gap: an optional
-    # element that is simply absent leaves its row empty and its
-    # children unasked, and that is the ordinary shape of nearly every
-    # conformant file. The first version of this counted those, and a
-    # clean Handover document reported five rules not asked -- a field
-    # that cries on conformant input is a field readers learn to skip.
+    # The first version asked whether any element here went unclaimed
+    # and had a truthy `value`. That is not a test for children -- a
+    # `Property`'s value is its string -- so a manufacturer's own
+    # property tripped it, and `docs/divergences.md` #19 promises those
+    # pass without comment. It also missed an empty collection, which
+    # genuinely could have opened a subtree. Both directions wrong, on a
+    # guess about what an unidentified element was meant to be.
     #
-    # The gap is an element that is *here* and matched nothing. Then the
-    # walk did not recurse into something the file does carry, and the
-    # rules for whichever row it was meant to be were never put. Those
-    # candidate rows are the ones in this scope that matched nothing and
-    # open a subtree.
-    stranded = [(index, element) for index, element, _c, _m in indexed
-                if index not in claimed and getattr(element, "value", None)]
-    if stranded:
-        lost = []
-        for row in rows:
-            if row["children"] and not claimed_by.get(row["id"]):
-                lost.extend(_descendant_ids(row))
-        if lost:
-            result["not_entered"].extend(lost)
-            for index, element in stranded:
-                result["unrecognised"].append((_subject(path, element, index), lost))
-
+    # There is no way to tell a supplier's own element from a template
+    # element with a typo by looking at it; that is the policy question
+    # #23 names and it is still open. So this claims a loss only where
+    # the reader has already reported a defect that explains it: the
+    # near-miss lint fired here, or a row matched an element of the
+    # wrong kind and the walk therefore did not recurse.
     for index, element, candidates, _main_empty in indexed:
         if index in claimed or not candidates:
             continue
@@ -421,6 +429,11 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
             if near:
                 result["near_misses"].append((subject,) + near)
                 break
+
+    if near_misses_here < len(result["near_misses"]):
+        for row in rows:
+            if row["children"] and not claimed_by.get(row["id"]):
+                result["lost_candidates"].extend(_descendant_ids(row))
 
 
 def _near_miss(candidates, match_values):

@@ -180,18 +180,20 @@ class Report:
     #: `warning` or `info`. The flags move the verdict, so a document
     #: that does not carry them cannot be compared with another.
     meta: str = "warning"
-    #: Rule ids this run never put, because the scope they live in was
-    #: never entered. A generated rule sits inside a scope, and a scope
+    #: Rule ids that were below a scope this run did not enter, and that
+    #: no other scope asked either -- a list is walked once per item, so
+    #: a row missed in one and asked in another is not one of these. A generated rule sits inside a scope, and a scope
     #: opens only when an element matches the row that names it; an
     #: element whose semanticId matches no row is not recursed into, and
     #: every rule beneath it leaves the run (docs/divergences.md #23).
     #:
     #: The report said nothing, because nothing was wrong with what was
     #: checked. Measured on this project's own fixtures: a typo inside a
-    #: path segment of one identifier silences 24 of 69 measurable rows
-    #: and produces a report byte-identical to the conformant one. Two
-    #: such documents were indistinguishable, which is the sentence every
-    #: field above was added to answer.
+    #: path segment of one identifier silences 18 of the 69 measurable
+    #: rows, and on the terminal the two reports read the same. (The JSON
+    #: never did: `provenance.inputSha256` differs for any two files, so
+    #: a consumer diffing stored reports always had that. What it did not
+    #: have is any statement of what the run failed to ask.)
     #:
     #: Not a claim about the file, and it moves no verdict. The template
     #: states a minimum and not a whitelist (#19), so an element matching

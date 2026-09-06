@@ -2,97 +2,110 @@
 
 ## 0.1.2 — unreleased
 
-Still 125 rules, 86 generated from the vendored template files, and no
-rule checks anything it did not check in 0.1.1. This release is about
-the two places that could disagree with each other about one question.
+Still 125 rules, 86 generated from the vendored template files. Two
+rules answer differently than they did in 0.1.1 and both are marked
+below.
 
-**One entry point where there were two.** Two places in this reader turn
-a string into a part: supplemental relationship resolution and the File
-rule. They asked in opposite orders — the container tried what the
-archive literally holds and interpreted after, while the File rule
-folded the value's surrounding whitespace and then asked — and
-`docs/divergences.md` #18 recorded four archives where they disagree.
+**One way into the normaliser where there were two orders.** Three call
+sites turn a string into a part: supplemental relationship resolution
+inside the package, the `X4` rule that reports a relationship naming a
+part the archive does not hold, and the File rule. They did not ask in
+the same order — `part()` tried what the archive literally holds and
+interpreted afterwards, while the File rule folded the value's
+surrounding whitespace and then asked, so the literal steps never saw
+the spelling the archive holds. `docs/divergences.md` #18 recorded four
+archives where they disagree.
 
-The sharpest of the four is why this is a fix and not a tidy-up: an
-archive holding an entry named `aasx/files/manual.pdf ` and a File value
-naming it exactly. `part()` returns that entry, and the report said the
-container holds no part at that value, because the rule folded the space
-away before asking and so the literal step never saw the spelling the
-archive holds. One reader contradicting itself in one page is worse to
-act on than either answer alone.
+The sharpest: an archive holding an entry named `aasx/files/manual.pdf `
+and a File value naming it exactly. `part()` returns that entry and the
+report said the container holds no part at that value. A reader that
+contradicts itself on one page is worse to act on than either answer.
 
-The folding now happens inside `part()`, after the literal steps rather
-than before them, and both callers come through it. What is *not* folded
-is the archive's own entry names: an archive holding
-`aasx/files/manual.pdf ` and a File value of `/aasx/files/manual.pdf`
-stays refused, because matching that would mean the reader supplying a
-character the value does not have.
+The folding is now inside `part()`, after the literal steps rather than
+before, and every caller comes through it. What is deliberately not
+folded is the archive's own entry names: an archive holding
+`aasx/files/manual.pdf ` against a value of `/aasx/files/manual.pdf`
+stays refused, because reading a value's whitespace is reading a
+spelling and reading the archive's would be supplying a character the
+value does not carry.
 
-**`verdict`** — Thirty-six inputs were put through 0.1.1 and this tree,
-and one comes back judged differently: the archive above. `HD-D7` is no
-longer drawn on it and its exit code falls from 1 to 0. That is the
-quiet direction — a pipeline red on such a file today goes green without
-saying so — and it is a false refusal being withdrawn: the file the
-value names is in the package.
+**`verdict`** — two of the 38 corpus inputs are judged differently.
 
-The corpus grew from 32 inputs to 36 to make that sentence possible. On
-the 32 it had, the change measured as nothing moved, because every
-File-value input packed the same plain entry name and none of them could
-tell the two orders apart. An input that cannot distinguish the versions
-is not coverage, and a denominator that counts it says otherwise.
+`HD-D7` is no longer drawn on that archive and its exit code falls from
+1 to 0: a false refusal withdrawn, because the file the value names is
+in the package.
 
-**A report now says what it could not ask.** A generated rule sits
-inside a scope, and a scope opens only when an element matches the row
-that names it. An element whose `semanticId` matches no row is not
-recursed into, and every rule beneath it leaves the run — quietly, with
-nothing wrong in what remained. `docs/divergences.md` #23 has recorded
-that since 0.1.0.
+`X4` moved with it, at a call site the corpus could not see. A
+supplemental relationship whose target carries surrounding whitespace
+(`/aasx/files/manual.pdf` followed by a tab) drew `an aas-suppl
+relationship names a part the archive does not hold` and now draws
+nothing, because the same folding reaches relationship resolution. The
+exit code does not move — `X4` is a warning — but a report that named a
+missing part stops naming it, and the part was never missing.
 
-`tools/scope_silence.py` measures what it is worth. Of the 86 generated
-rows, 69 appear in this project's fixtures; a typo inside a path segment
-of one identifier leaves **24 of the 69 saying nothing at all**, and the
-report it produces is byte-identical to the conformant one. A version
-bump — the last character — leaves none of them silent, because the
-near-miss lint is built for exactly that and catches all 18 it touches.
-The gap is the hand-written typo, not the version bump.
+That second line was traced by hand to every caller of `part()`; the
+corpus held no whitespace relationship target and reported one moved
+verdict where there were two. Two inputs were added so the instrument
+can see it. A comparison that has no case for the thing that changed
+reports a confident zero, and this file exists to stop a release note
+resting on one.
 
-`summary.rulesNotAsked` closes the half of #23 that is not a policy
-question. Whether an element matching no row is a *defect* is the
-template's business — it states a minimum, not a whitelist (#19) — but
-whether this run looked inside it is this reader's, and it now says. The
-key lists the rule ids a scope took with it. It draws no finding, moves
-no exit code, and makes no claim about the file. The terminal line says
-the same sentence: `; 1 rule not asked — an element matched no row of
-the template, so this run did not look inside it`.
+**A report says what it could not ask.** A generated rule sits inside a
+scope, and a scope opens only when an element matches the row that names
+it, so what is below an unentered scope leaves the run — quietly, with
+nothing wrong in what remained (`docs/divergences.md` #23).
 
-Only where an element is **present** and matched nothing. An optional
-element that is simply absent leaves its rows unasked too, and counting
-those made a clean Handover document report five — a field that cries on
-conformant input is one readers learn to skip.
+`summary.rulesNotAsked` lists the rule ids that happened to. It draws no
+finding, moves no exit code, and makes no claim about the file. The
+terminal line says the same thing: `; 1 rule not asked -- an element
+matched no row of the template, so this run did not look inside it`.
 
-**The first file it spoke about is this project's own reference
-material.** The official IDTA 02004 example carries a list whose
-`semanticId` is `…/EntityForDocumentation`, the *item's* identifier,
-where the template names the list's `…/EntitiesForDocumentation`
-(divergence #2, recorded since 0.1.0). The lint reports the element and
-always did. What no report said is that `HD-E38` — mandatory inside that
-list, one or more — was never put. The example still passes on nine
-findings, none of them an error, and now says: one rule not asked.
+**It reports a loss only where this reader has already said something is
+wrong**, and that narrowing is what makes it true. Two such places: a
+row matched an element of the *wrong kind*, so the walk reported the
+kind and did not recurse; or the near-miss lint fired in that scope, so
+the reader has already said an identifier there looks like one it knows.
+Every proposal is then checked against the walk's own record of the rows
+it looked at, because the same rows are walked once per item of a list.
 
-**`verdict`** — none of this is one. Over the 36 corpus inputs the only
-verdict that moves is the entry-point case above; 36 of 36 gain the new
-summary key, which is additive under `schemaVersion` 1 and invisible to
-a consumer that does not read it. `verdict_diff` was extended to see the
-key at all — it compares findings, severities and exit codes, so it
-would have reported this change as nothing moved, on an instrument with
-no case for the thing that changed. It now counts shape changes apart
-from verdict changes rather than folding them in, because folding them
-in made all 36 "judged differently" the day the key landed and buried
-the one that was.
+The first version of this did none of that and was wrong in both
+directions at once. It guessed that any unclaimed
+element with a truthy `value` meant a lost subtree — which is a
+`Property`'s own string, so one manufacturer property on a conformant
+file reported a rule unasked, and `docs/divergences.md` #19 promises
+those pass without comment. And it accumulated per-scope misses run-wide
+without subtracting: a two-item list reported 26 rules unasked with 22
+of them run, one of which printed as an error in the same report. Both
+are pinned now.
+
+What it deliberately does not cover: a typo in the middle of a path
+segment, which defeats the near-miss lint (#22). `tools/scope_silence.py`
+measures that at **18 of the 69** generated rows the fixtures carry — a
+version bump, the last character, leaves none of them silent because the
+lint catches all 18 it touches. Reporting the middle-segment case means
+deciding an unidentifiable element is evidence of a defect, and the
+template states a minimum and not a whitelist. That is the policy
+question #23 names and it is still open.
+
+**The one file it speaks about today is our own reference material.**
+IDTA's 02004 example carries a list whose `semanticId` is the item's
+identifier where the template names the list's (divergence #2, recorded
+since 0.1.0, and the lint has reported the element every run). What no
+report said is that `HD-E38` — mandatory inside that list — was never
+put. The example still passes on ten findings, none of them an error,
+and now says: one rule not asked.
+
+`entry_points.txt` is compared against `pyproject.toml`. It is exempt
+from the distribution gate's tracked-files rule by name and is the one
+member of a distribution that becomes an executable on a PATH; nothing
+read it. Seven tampered wheels are reported, including a payload in
+`[gui_scripts]`, which the first version of that check passed because it
+read `console_scripts` by name.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
 directory of names at 16 MiB.
+
 
 ## 0.1.1 — 2026-09-05
 

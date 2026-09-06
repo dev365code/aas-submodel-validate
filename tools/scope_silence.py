@@ -9,7 +9,7 @@ a number that was true once.
 Two shapes of wrong identifier, and they are not equally dangerous:
 
 - **tail** -- the last character, which is what a template version bump
-  writes (`.../2/0` to `.../2/1`, `#003` to `#004`). The near-miss lint
+  writes -- the last character of `.../2/0` or of `...#003`. The near-miss lint
   exists for exactly this and catches it.
 - **middle** -- a character inside a path segment that is not the last,
   which is what a hand-edited file gets. #22 records that this defeats
@@ -19,9 +19,12 @@ The difference between the two numbers is the whole argument for the
 lint, and for what is still missing after it.
 
 Neither number is a verdict on a file anyone has. Both are measured
-against the fixtures in `tests/builders.py`, which are conformant by
-construction -- so a rule going quiet here is a rule that would have
-gone quiet on a real file with the same defect.
+against the fixtures in `tests/builders.py`, and two of the three are
+not clean as this tool packages them: the Technical Data fixture names
+image parts the tool does not pack, and the battery fixture is short of
+six mandatory elements. So what is counted is only what a drift *adds*
+to each pack's own base findings -- a rule going quiet here is a rule
+that would have gone quiet on a real file with the same defect.
 """
 from __future__ import annotations
 
@@ -47,20 +50,49 @@ PACKS = (("hd", hd_tables, hd_env), ("td", td_tables, td_env), ("dbp", dbp_table
 LINTS = ("HDL1", "HDL2", "TDL1", "TDL2")
 
 
+def _other(character: str) -> str:
+    """A character that is not the one given, of the same kind.
+
+    The first version substituted a fixed `9` and a fixed `Z`, which is
+    not a substitution when the character was already that. Ten of the
+    eighty-six rows ended `...9#003`, so `head[:-1] + "9#"` handed back
+    the identifier unchanged -- and an unmodified fixture of course
+    produced no new finding, so every one of them was counted among the
+    rows that "say nothing at all". Seven of the published twenty-four
+    were rows with no typo in them.
+    """
+    if character.isdigit():
+        return "8" if character != "8" else "7"
+    if character.isupper():
+        return "Z" if character != "Z" else "Y"
+    return "z" if character != "z" else "y"
+
+
 def drift(value: str, mode: str) -> str:
-    """The same identifier, spelled one character wrong."""
+    """The same identifier, spelled one character wrong.
+
+    Every branch asserts it changed something; a measurement whose
+    mutation silently did nothing reports the cleanest possible result.
+    """
     if mode == "tail":
-        return value[:-1] + ("1" if value[-1] != "1" else "2")
-    if "/" in value:
+        # A version bump increments; it does not reset to 1. `#003`
+        # became `#001` under the first version, which is a spelling no
+        # template ever published and reads backwards in a report.
+        drifted = value[:-1] + _other(value[-1])
+    elif "/" in value and any(len(p) > 3 for p in value.split("/")[1:-1]):
         parts = value.split("/")
         for index in range(len(parts) - 2, 0, -1):
             if len(parts[index]) > 3:
-                parts[index] = parts[index][:2] + "Z" + parts[index][3:]
-                return "/".join(parts)
-    if "#" in value:
+                parts[index] = parts[index][:2] + _other(parts[index][2]) + parts[index][3:]
+                break
+        drifted = "/".join(parts)
+    elif "#" in value:
         head, _, tail = value.rpartition("#")
-        return head[:-1] + "9#" + tail
-    return value[:2] + "Z" + value[3:]
+        drifted = head[:-1] + _other(head[-1]) + "#" + tail
+    else:
+        drifted = value[:2] + _other(value[2]) + value[3:]
+    assert drifted != value, "the mutation changed nothing: %r" % value
+    return drifted
 
 
 def _wear(node, sid: str, mode: str, changed: list) -> None:

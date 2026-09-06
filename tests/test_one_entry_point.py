@@ -8,8 +8,13 @@ decides which entry a value lands on when an archive holds two spellings
 of one name, and in the fourth case it decided whether the report agreed
 with itself.
 
-Every archive here holds the file the value names. A finding is this
-reader inventing a defect in a package that has what it says it has.
+Three of the four archives here hold the file their value names, and a
+finding on those is this reader inventing a defect in a package that has
+what it says it has. The fourth is the opposite case and is here on
+purpose: a value of `../evil.step` names no part at all, the archive
+holds the file it would reach, and the finding is required. Both
+directions, because the repair for #18 could have been made by
+loosening until everything resolved.
 """
 from __future__ import annotations
 
@@ -125,7 +130,7 @@ def test_a_wrong_identifier_takes_rules_out_of_the_run_by_the_measured_amount():
     move together, and because the split between the two shapes is the
     argument for the near-miss lint: a version bump -- the last character
     -- leaves every affected row still speaking through the lint, and a
-    typo inside a path segment leaves 24 of them saying nothing at all.
+    typo inside a path segment leaves 18 of them saying nothing at all.
     """
     import sys
     from pathlib import Path
@@ -138,4 +143,18 @@ def test_a_wrong_identifier_takes_rules_out_of_the_run_by_the_measured_amount():
     assert len(absent) == 17, "the fixtures now carry a different set of rows"
 
     tried, mute, lint_only, _detail, absent = scope_silence.measure("middle")
-    assert (tried, len(mute), len(lint_only)) == (69, 24, 0)
+    assert (tried, len(mute), len(lint_only)) == (69, 18, 0)
+
+    # Every row is really mutated. The first version substituted a fixed
+    # `9`, so ten identifiers ending `...9#00N` came back unchanged --
+    # and an unmodified fixture produces no new finding, so all of them
+    # were counted among the rows that "say nothing at all". Seven of a
+    # published twenty-four were rows with no typo in them.
+    from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
+
+    for tables in (hd_tables, td_tables, dbp_tables):
+        for row in tables.ROWS:
+            if row.get("sid"):
+                for mode in ("tail", "middle"):
+                    assert scope_silence.drift(row["sid"], mode) != row["sid"], (
+                        row["id"], mode)

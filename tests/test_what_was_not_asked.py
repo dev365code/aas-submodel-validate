@@ -1,34 +1,54 @@
-"""A run that could not put half its questions has to say so.
+"""A run that could not put a question has to say so -- and only then.
 
-`docs/divergences.md` #23: a generated rule lives inside a scope, and a
-scope is entered only when an element matches the row that opens it. An
-element whose `semanticId` matches no row is not entered, so every rule
-beneath it leaves the run -- and the report said nothing, because
-nothing was wrong with what *was* checked.
+`docs/divergences.md` #23: a generated rule sits inside a scope, and a
+scope opens only when an element matches the row that names it. What is
+below an unentered scope leaves the run.
 
-`tools/scope_silence.py` measures how much that is worth: a typo inside
-a path segment of one identifier silences 24 of the 69 measurable rows
-and produces a report **byte-identical** to the conformant one. Two such
-documents were indistinguishable, which is the same sentence every other
-field on `Report` was added to answer.
+The first version of this field tried to report every such loss and got
+it wrong in both directions at once. It reported rules that other
+scopes had asked -- twenty-six listed, twenty-two of them considered,
+because a list of two items walks the same rows twice and only the
+second item's misses were written down. And it fired on a manufacturer's
+own property, which `docs/divergences.md` #19 promises passes without
+comment: one added `Property` on a conformant file, and the file was
+told a rule went unasked.
 
-This is not a claim about the file. The template states a minimum, not a
-whitelist (#19), so an element matching no row is not by itself a
-defect. What is reportable is that this run did not look inside it.
+So the contract here is narrower, and it is the narrowing that makes it
+true: **this field reports a loss only where the reader has already said
+something is wrong.** Two such places, and no others:
+
+- a row matched an element of the wrong kind. The walk reports that and
+  does not recurse, so the subtree is gone -- and nothing said so.
+- the near-miss lint fired in a scope. The reader has already said an
+  identifier there looks like one it knows.
+
+A manufacturer's own element draws neither, so it costs nothing. An
+optional element that is simply absent draws neither either.
+
+What this deliberately does not cover: a typo in the middle of a path
+segment, which defeats the near-miss lint (#22) and leaves 18 of the 69
+measurable rows silent (`tools/scope_silence.py`). Reporting those means
+deciding that an unidentifiable element is evidence of a defect, and the
+template states a minimum and not a whitelist (#19). That is the policy
+question #23 names, and it is still open.
 """
 from __future__ import annotations
 
 import copy
 import json
-import sys
 from pathlib import Path
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.rules import td_tables
-from builders import build_aasx, td_env
+from aas_submodel_validate.rules import hd_tables
+from builders import build_aasx, hd_env, td_env
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-import scope_silence  # noqa: E402
+MANUFACTURER = {
+    "idShort": "AcmeNote", "modelType": "Property", "valueType": "xs:string",
+    "value": "internal",
+    "semanticId": {"type": "ExternalReference",
+                   "keys": [{"type": "GlobalReference",
+                             "value": "https://acme.example/own/note"}]},
+}
 
 
 def _judge(tmp_path, environment, tag):
@@ -38,128 +58,161 @@ def _judge(tmp_path, environment, tag):
     return runner.run(str(path))
 
 
-def _drifted(label, mode="middle"):
-    sid = td_tables.BY_LABEL[label]["sid"]
-    environment = copy.deepcopy(td_env())
-    changed = []
-    scope_silence._wear(environment, sid, mode, changed)
-    assert changed, "the fixture does not carry %s" % label
-    return environment
-
-
-def test_a_conformant_file_is_asked_everything(tmp_path):
-    """The denominator. If this is not empty on a clean file the field
-    below is noise, and a reader learns to skip it."""
-    assert _judge(tmp_path, td_env(), "clean").not_asked == []
-
-
-def test_an_unrecognised_scope_says_which_rules_it_took_with_it(tmp_path):
-    """`ProductClassifications` opens a subtree. Misspell one segment of
-    its identifier and the walk does not enter it -- the same findings,
-    the same exit code, and seven rules never put."""
-    report = _judge(tmp_path, _drifted("ProductClassifications"), "typo")
-    clean = _judge(tmp_path, td_env(), "clean2")
-
-    assert {f.id for f in report.findings} == {f.id for f in clean.findings}, (
-        "this test is worthless if the findings already differ")
-    assert report.not_asked, "the two reports are still indistinguishable"
-    assert "TD-E12" in report.not_asked, report.not_asked
-    assert "TD-E11" not in report.not_asked, (
-        "the row that failed to match was reached; it is its children that were not")
-
-
-def test_the_count_matches_what_the_instrument_measures(tmp_path):
-    """The field and `tools/scope_silence.py` have to be measuring the
-    same thing, or one of them is describing a run nobody had."""
-    for label in ("ProductClassifications", "TechnicalPropertyAreas", "ProductImages"):
-        report = _judge(tmp_path, _drifted(label), "m-" + label)
-        assert report.not_asked, label
-        for rule_id in report.not_asked:
-            assert rule_id.startswith(("TD-", "HD-", "DBP2-")), rule_id
-
-
-def test_a_pack_whose_submodel_is_absent_is_not_reported_as_unasked(tmp_path):
-    """A Handover file is not a Technical Data file, and listing every
-    Technical Data rule against it would bury the signal in the noise
-    the first version of this made."""
-    from builders import hd_env
-
-    report = _judge(tmp_path, hd_env(), "hd-only")
-    assert not [r for r in report.not_asked if r.startswith("TD-")], report.not_asked
-
-
-def test_the_json_report_carries_it(tmp_path):
-    """A consumer comparing two stored reports is the reader this exists
-    for; the field has to survive serialisation."""
-    report = _judge(tmp_path, _drifted("ProductClassifications"), "json")
-    document = report.as_dict()
-    assert document["summary"]["rulesNotAsked"] == report.not_asked
-    assert document["summary"]["rulesNotAsked"], document["summary"]
-    # Round-trips: the CLI prints this with `json.dumps`.
-    assert json.loads(json.dumps(document))["summary"]["rulesNotAsked"] == report.not_asked
-
-
-def test_the_person_at_the_terminal_is_told_too(tmp_path):
-    """The JSON key is for a pipeline. The screen is where somebody
-    decides whether to ship, and until now it printed the same line for
-    a file that was asked everything and one that was not."""
-    from aas_submodel_validate.report import render
-
-    clean = render(_judge(tmp_path, td_env(), "clean3"))
-    typo = render(_judge(tmp_path, _drifted("ProductClassifications"), "typo3"))
-    assert clean != typo, "the screen still cannot tell them apart"
-    assert "not asked" not in clean
-    assert "rules not asked" in typo
-    assert "did not look inside it" in typo
-
-
-def test_one_unasked_rule_is_not_called_rules(tmp_path):
-    """Plural agreement, because this line is read by people and a tool
-    that writes '1 rules' reads as one nobody proofread."""
-    from aas_submodel_validate.report import render
-
-    report = _judge(tmp_path, _drifted("ProductClassifications"), "plural")
-    report.not_asked = report.not_asked[:1]
-    assert "1 rule not asked" in render(report)
-    report.not_asked = report.not_asked * 2
-    assert "2 rules not asked" in render(report)
-
-
-def _find_by_sid(node, sid):
+def _find(node, sid):
     if isinstance(node, dict):
         for key in (node.get("semanticId") or {}).get("keys") or []:
             if key.get("value") == sid:
                 return node
         for value in node.values():
-            found = _find_by_sid(value, sid)
+            found = _find(value, sid)
             if found is not None:
                 return found
     elif isinstance(node, list):
         for value in node:
-            found = _find_by_sid(value, sid)
+            found = _find(value, sid)
             if found is not None:
                 return found
     return None
 
 
-def test_the_same_rule_lost_twice_is_reported_once(tmp_path):
-    """A list with two items, both carrying the same unrecognised child:
-    the scope is walked once per item, so the same three rows are
-    stranded twice. A reader counting the list would read that as twice
-    the loss, and `24 rules not asked` is a number people will quote."""
-    from aas_submodel_validate.rules import hd_tables
-    from builders import hd_env
+def _versions_as_a_property(environment):
+    """A `Property` wearing the `DocumentVersions` list identifier: the
+    row matches, the kind is wrong, the walk reports it and does not
+    recurse."""
+    versions = _find(environment, hd_tables.BY_LABEL["DocumentVersions"]["sid"])
+    versions.clear()
+    versions.update({
+        "idShort": "DocumentVersions", "modelType": "Property",
+        "valueType": "xs:string", "value": "not a list",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
+                                 "value": hd_tables.BY_LABEL["DocumentVersions"]["sid"]}]},
+    })
+    return environment
 
+
+def _considered(path):
+    """The walk's own record of which rows it looked at."""
+    from aas_submodel_validate import rules as R
+    from aas_submodel_validate.runner import Context, all_rules, execute, load
+
+    ctx = Context(load(str(path)), R.profiles.Selection(None))
+    execute(all_rules(), ctx)
+    seen = set()
+    for result in ctx.__dict__.get("_smt_analysis", {}).values():
+        seen |= set(result["instances"])
+    return seen
+
+
+# -- the two directions it got wrong ----------------------------------------
+
+
+def test_no_rule_is_called_unasked_when_some_scope_asked_it(tmp_path):
+    """A `Documents` list of two: the first item claims every row, the
+    second is short of one and carries a supplier property. The rows the
+    first item asked were written down as unasked because the second
+    item's scope missed them, and nothing subtracted.
+
+    Measured before the repair: 26 reported, 22 of them considered."""
     environment = copy.deepcopy(hd_env())
-    documents = _find_by_sid(environment, hd_tables.BY_LABEL["Documents"]["sid"])
-    assert len(documents["value"]) == 1, "the fixture shape moved"
-    documents["value"].append(copy.deepcopy(documents["value"][0]))
+    documents = _find(environment, hd_tables.BY_LABEL["Documents"]["sid"])
+    full = documents["value"][0]
+    lean = copy.deepcopy({k: v for k, v in full.items() if k != "value"})
+    lean["idShort"] = "SecondDoc"
+    lean["value"] = [copy.deepcopy(full["value"][0]), copy.deepcopy(MANUFACTURER)]
+    documents["value"].append(lean)
 
-    changed = []
-    scope_silence._wear(environment, hd_tables.BY_LABEL["DocumentId"]["sid"],
-                        "middle", changed)
-    assert len(changed) == 2, changed
+    path = build_aasx(tmp_path / "pair.aasx",
+                      payload=json.dumps(environment).encode("utf-8"),
+                      files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+    report = runner.run(str(path))
+    overlap = set(report.not_asked) & _considered(path)
+    assert not overlap, sorted(overlap)
 
-    not_asked = _judge(tmp_path, environment, "twice").not_asked
-    assert not_asked == sorted(set(not_asked), key=not_asked.index)
-    assert len(not_asked) == len(set(not_asked)) == 3, not_asked
+
+def test_a_manufacturers_own_element_costs_nothing(tmp_path):
+    """#19: "A manufacturer's own properties pass without comment." One
+    added property turned a clean report into one claiming a rule went
+    unasked, which is a comment."""
+    clean = _judge(tmp_path, hd_env(), "clean")
+    environment = copy.deepcopy(hd_env())
+    environment["submodels"][0]["submodelElements"].append(copy.deepcopy(MANUFACTURER))
+    plus = _judge(tmp_path, environment, "plus")
+    assert clean.not_asked == [] and plus.not_asked == [], plus.not_asked
+    assert {f.id for f in plus.findings} == {f.id for f in clean.findings}
+
+    # And several of them, in several scopes, which is what a real
+    # supplier file looks like.
+    environment = copy.deepcopy(hd_env())
+    documents = _find(environment, hd_tables.BY_LABEL["Documents"]["sid"])
+    documents["value"][0]["value"].append(copy.deepcopy(MANUFACTURER))
+    environment["submodels"][0]["submodelElements"].append(copy.deepcopy(MANUFACTURER))
+    assert _judge(tmp_path, environment, "many").not_asked == []
+
+
+def test_a_conformant_file_is_asked_everything(tmp_path):
+    for label, make in (("hd", hd_env), ("td", td_env)):
+        assert _judge(tmp_path, make(), "clean-" + label).not_asked == [], label
+
+
+# -- the two it reports, both of them already reported as wrong -------------
+
+
+def test_an_element_of_the_wrong_kind_takes_its_subtree_and_says_so(tmp_path):
+    """A `Property` wearing a list's identifier. The walk matches the
+    row, reports the kind, and does not recurse -- so the subtree left
+    the run and the report said nothing. Twenty-one rules on the
+    measured case, nine of them mandatory."""
+    report = _judge(tmp_path, _versions_as_a_property(copy.deepcopy(hd_env())), "wrongkind")
+    assert any(f.id == "HD-E13" for f in report.findings), \
+        "the kind finding this hangs off is gone"
+    assert report.not_asked, "the subtree left the run and nothing said so"
+    assert "HD-E17" in report.not_asked, report.not_asked
+
+
+def test_a_near_miss_names_what_it_cost(tmp_path):
+    """The official example is the case: its `Entities` list wears the
+    item's identifier, the lint says so every run, and `HD-E38` --
+    mandatory inside that list -- was never put."""
+    import aas_submodel_validate as package
+
+    example = Path(package.__file__).parent / "data/example/idta-02004-2.0.aasx"
+    report = runner.run(str(example))
+    assert report.ok
+    assert any(f.id == "HDL2" for f in report.findings)
+    assert report.not_asked == ["HD-E38"], report.not_asked
+
+
+# -- shape --------------------------------------------------------------
+
+
+def test_the_order_is_the_tables_order_and_does_not_move(tmp_path):
+    """The first version's only ordering assertion compared the list to
+    itself sorted by its own index, which is true of any list. Deleting
+    the ordering entirely left the suite green and the output varying
+    with `PYTHONHASHSEED`, on a key whose whole purpose is that two
+    stored reports can be compared."""
+    from aas_submodel_validate.rules import td_tables
+
+    report = _judge(tmp_path, _versions_as_a_property(copy.deepcopy(hd_env())), "order")
+    assert len(report.not_asked) > 1, report.not_asked
+
+    order = [row["id"] for row in list(hd_tables.ROWS) + list(td_tables.ROWS)]
+    assert report.not_asked == sorted(report.not_asked, key=order.index)
+    assert len(report.not_asked) == len(set(report.not_asked))
+
+
+def test_the_json_report_carries_it(tmp_path):
+    report = _judge(tmp_path, _versions_as_a_property(copy.deepcopy(hd_env())), "json")
+    document = report.as_dict()
+    assert document["summary"]["rulesNotAsked"] == report.not_asked
+    assert json.loads(json.dumps(document))["summary"]["rulesNotAsked"] == report.not_asked
+
+
+def test_the_person_at_the_terminal_is_told_too(tmp_path):
+    from aas_submodel_validate.report import render
+
+    typo = render(_judge(tmp_path, _versions_as_a_property(copy.deepcopy(hd_env())), "term"))
+    clean = render(_judge(tmp_path, hd_env(), "term-clean"))
+    assert "not asked" not in clean
+    assert "rules not asked" in typo

@@ -192,7 +192,21 @@ def build_corpus(into: Path):
             ("an absolute URI, no TargetMode",
              {"suppl_verbatim": ["http://example.com/m.pdf"]}),
             ("a part the archive does not hold",
-             {"suppl_targets": ["aasx/files/absent.pdf"]})]:
+             {"suppl_targets": ["aasx/files/absent.pdf"]}),
+            # Surrounding whitespace on a target. `X4` answers through
+            # the same `part()` as the File rule, so the entry-point
+            # change reached it -- and no input here could see that, so
+            # the tool reported one moved verdict where there were two.
+            # The instrument having no case for the thing that changed
+            # is the failure this file exists to prevent.
+            # With the part packed: the question is whether the reader
+            # finds it through the whitespace, not whether it is there.
+            ("a target with a trailing tab, the part present",
+             {"suppl_verbatim": ["/aasx/files/manual.pdf\t"],
+              "files": [("aasx/files/manual.pdf", b"%PDF-1.4 ")]}),
+            ("a target with a leading space, the part present",
+             {"suppl_verbatim": [" /aasx/files/manual.pdf"],
+              "files": [("aasx/files/manual.pdf", b"%PDF-1.4 ")]})]:
         cases.append(("an aas-suppl relationship: %s" % label,
                       build_aasx(into / ("suppl-%d.aasx" % len(cases)),
                                  payload=payload, **kwargs)))

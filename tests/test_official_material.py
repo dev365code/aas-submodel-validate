@@ -171,7 +171,7 @@ def test_the_official_example_costs_one_mandatory_rule_and_now_says_so():
     What no report said is the consequence. The list matched no row, so
     the walk did not enter it, and `HD-E38` -- `EntityForDocumentation`,
     which the template makes mandatory inside that list, one or more --
-    was never put. The example passes, correctly, on nine findings none
+    was never put. The example passes, correctly, on ten findings none
     of which rises to an error; and one rule was not asked of it.
 
     So this project's own reference material is the demonstration of
