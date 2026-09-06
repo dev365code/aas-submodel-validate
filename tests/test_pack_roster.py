@@ -206,3 +206,51 @@ def test_the_file_rule_names_no_file_in_its_own_body():
                if isinstance(node, ast.Constant) and isinstance(node.value, str)}
     assert not spelled & set(handover._file_labels(hd_tables)), \
         "D7 spells a File label; its reach must come from the table"
+
+
+def test_no_rule_module_reaches_past_the_reader_into_aas_core3():
+    """Three modules may import the library and none of them is a rule.
+
+    `loader.py` turns bytes into a model and `runner.py` relays the
+    metamodel channel: reading and relaying *are* the dependency.
+    `upstream.py` is the seam for everything else. A rule asks questions
+    about a model this project already has, so a rule importing the
+    library is a layer boundary crossed for the convenience of one call
+    -- and `aas_core3` is pinned `>=1.1.4` with its own CI stopping at
+    Python 3.12, so the day a 2.x renames something, every direct import
+    is a separate repair in a separate file.
+
+    Read out of the source rather than out of `sys.modules`: an import
+    that runs only on a branch the fixtures do not take is still an
+    import.
+    """
+    import ast
+    from pathlib import Path
+
+    allowed = {"loader.py", "runner.py", "upstream.py"}
+    package = Path(__file__).resolve().parents[1] / "src/aas_submodel_validate"
+    offenders = []
+    for source in sorted(package.rglob("*.py")):
+        if source.name in allowed:
+            continue
+        tree = ast.parse(source.read_text("utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module or ""]
+            else:
+                continue
+            for name in names:
+                if name == "aas_core3" or name.startswith("aas_core3."):
+                    offenders.append("%s:%d imports %s"
+                                     % (source.relative_to(package), node.lineno, name))
+    assert not offenders, offenders
+
+    # And the seam is not empty: a boundary nothing crosses is a
+    # boundary nobody drew.
+    from aas_submodel_validate import upstream
+
+    assert upstream.is_english_language_tag("en")
+    assert not upstream.is_english_language_tag("de")
+    assert not upstream.is_multi_language_property(object())

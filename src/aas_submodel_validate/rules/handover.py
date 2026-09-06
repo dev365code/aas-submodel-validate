@@ -28,11 +28,9 @@ the shape this repository keeps finding in its own gates.
 """
 from __future__ import annotations
 
-import aas_core3.verification as verification
-from aas_core3.types import MultiLanguageProperty
-
 from ..model import Violation
 from ..registry import rule
+from ..upstream import is_english_language_tag, is_multi_language_property
 from .engine import (
     analyze,
     child_of,
@@ -169,7 +167,7 @@ def _english(tag: str) -> bool:
     means English, and IANA marks `en` as its preferred value -- that
     is a different argument and it is in docs/divergences.md #35.
     """
-    return verification.is_bcp_47_for_english((tag or "").lower())
+    return is_english_language_tag(tag)
 
 
 def _d4(tables):
@@ -202,7 +200,7 @@ def _d4(tables):
                 # wrong kind is that rule's to report, so this one stays
                 # silent; an *empty* one is this rule's, because the
                 # metamodel allows it and the row accepts it.
-                if not isinstance(name, MultiLanguageProperty):
+                if not is_multi_language_property(name):
                     continue
                 languages = {entry.language for entry in (name.value or [])}
                 english = any(_english(lang) for lang in languages)
