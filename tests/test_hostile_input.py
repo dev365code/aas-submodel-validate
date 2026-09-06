@@ -1468,3 +1468,71 @@ def test_the_whole_report_is_bounded_by_the_findings_it_carries(tmp_path):
     assert report.findings, "the fixture stopped producing a finding"
     assert len(render(report)) < 6000, len(render(report))
     assert len(json.dumps(report.as_dict())) < 9000, len(json.dumps(report.as_dict()))
+
+
+# -- work a refused or unreferenced member may cost --------------------------
+
+
+def _archive_of(path, members, referenced=False):
+    """A conformant package plus `members` compressible entries, either
+    referenced by a supplemental relationship or not referenced at all."""
+    import zipfile
+
+    from builders import CONTENT_TYPES, ORIGIN_REL, SPEC_REL, hd_env, rels
+
+    suppl = [("http://admin-shell.io/aasx/relationships/aasx-suppl",
+              "/aasx/files/big%05d.bin" % index) for index in range(members)]
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")] + (suppl if referenced else [])))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/files/manual.pdf", b"%PDF-1.4")
+        for index in range(members):
+            archive.writestr("aasx/files/big%05d.bin" % index, b"\0" * 2_000_000)
+    return path
+
+
+@pytest.mark.parametrize("referenced", [False, True])
+def test_members_this_reader_never_opens_cost_it_nothing(tmp_path, referenced):
+    """A filter in front of a counter deletes the counter: if an item is
+    rejected before its cost is charged, an input where everything is
+    rejected does unbounded work. A sibling project measured a small
+    upload inflating to 400 MB of member and taking nine seconds, with a
+    clean report at the end.
+
+    It does not arise here, and the reason is structural rather than
+    lucky. This reader opens only what the relationship chain hands it;
+    a supplemental target is asked for by *name*, which takes no bytes
+    out of the archive; and `read` compares the member's **declared**
+    size against the bound before anything is decompressed. There is no
+    point at which a member is inflated and then discarded.
+
+    So this asserts the byte ledger rather than a stopwatch. Two hundred
+    members declaring 400 MB -- above the 256 MB total bound -- in an
+    archive of a few hundred kilobytes, and the reader charges itself
+    for the payload and the one file it was pointed at.
+    """
+    from aas_submodel_validate import container
+
+    path = _archive_of(tmp_path / "many.aasx", 200, referenced=referenced)
+    declared = 200 * 2_000_000
+    assert declared > container.MAX_TOTAL_PART_BYTES
+    assert path.stat().st_size < 2_000_000, "the fixture stopped being compressible"
+
+    report = runner.run(str(path))
+    assert report.complete and report.judged
+    assert [f.id for f in report.findings] == [], [f.id for f in report.findings]
+
+    # The ledger the bound is kept on. Everything the reader actually
+    # took out of the archive, against everything the archive declares.
+    with container.AasxPackage(str(path)) as package:
+        #  walks the chain from the origin, so this is the
+        # whole of what the reader is handed.
+        for part in package.spec_parts:
+            package.read(part)
+        charged = package._read_total
+    assert charged < 100_000, charged
+    assert charged * 100 < declared, (charged, declared)
