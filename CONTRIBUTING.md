@@ -67,3 +67,32 @@ not, watch the violation test fail, then implement. Every rule carries a
 the requirement restated in the imperative — and every rule id must fire
 somewhere in the suite. Match by semanticId, never by idShort
 (docs/divergences.md explains why, with the template's own words).
+
+## Adding a gate
+
+A rule is born red, and so is a gate. A check under `tools/` or a
+property under `tests/` is a claim that something cannot go wrong
+unnoticed, and the only evidence for that claim is a state of the tree
+where it says so.
+
+So break the thing it watches, deliberately, and watch it fail. Not
+reread it — break it. Corrupt the file, drop the record, revert the
+repair, and run the gate. Then put it back.
+
+This is written down because four guards here were green and asked
+nothing:
+
+- a test asserting `"83" in table` against a whole document, satisfied
+  by two characters inside a hash — every mention of what it was
+  checking could be deleted and it passed;
+- a comparison of two versions across thirty-two inputs, none of which
+  could tell the two apart, reporting no differences with confidence;
+- a mutation written to prove a guard, comparing an enum against a
+  string, so it changed nothing and the guard was never tested;
+- an exemption granted by filename to the one member of a distribution
+  that becomes an executable on your PATH.
+
+Every one was found by corrupting an input. None would have been found
+by reading the code, and all four had been read.
+
+A gate that has never been red is a comment.
