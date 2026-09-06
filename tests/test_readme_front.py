@@ -835,3 +835,37 @@ def test_the_page_promises_the_unasked_clause_the_example_actually_prints():
     assert "1 rule not asked" in render(report)
     # And the reason the page gives: a list wearing its item's identifier.
     assert any(f.id == "HDL2" for f in report.findings)
+
+
+def test_the_page_does_not_promise_a_bound_the_reader_does_not_keep(tmp_path):
+    """"Why trust the answer" now claims a hostile archive cannot make
+    this reader do unbounded work, with a number in it. The number is
+    the one the suite measures, and a page that says three orders of
+    magnitude while the reader charges itself more than that is the kind
+    of claim a security reviewer checks first."""
+    import json
+    import zipfile
+
+    from aas_submodel_validate import container
+    from builders import CONTENT_TYPES, ORIGIN_REL, SPEC_REL, hd_env, rels
+
+    page = re.sub(r"\s+", " ", README)
+    assert "three orders of magnitude below what the file claimed" in page
+    assert "two hundred members declaring 400 MB" in page
+
+    path = tmp_path / "declared.aasx"
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/files/manual.pdf", b"%PDF-1.4")
+        for index in range(200):
+            archive.writestr("aasx/files/big%05d.bin" % index, b"\0" * 2_000_000)
+
+    with container.AasxPackage(str(path)) as package:
+        for part in package.spec_parts:
+            package.read(part)
+        charged = package._read_total
+    assert charged * 1000 < 200 * 2_000_000, (charged, "the page says three orders of magnitude")
