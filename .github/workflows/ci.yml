@@ -190,9 +190,10 @@ jobs:
           PY
       - name: the package index will accept the description
         # `twine check` is what PyPI's renderer says before PyPI says
-        # it, and the release workflow has no equivalent -- by the time
-        # an upload is refused, the GitHub Release exists and the
-        # signature is already in a public log. Here rather than there,
+        # it. The release workflow runs it too, on the bytes it is about
+        # to sign; this comment said it had no equivalent, which was true
+        # when it was written and is the reason the flag was added there.
+        # Here as well rather than only there,
         # because a release line first exercised on the day of the
         # release is one that dies on the day of the release. Narrowed
         # to this project's own artifacts: on the release run the same

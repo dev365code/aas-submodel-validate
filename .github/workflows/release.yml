@@ -5,8 +5,12 @@
 # "the hash on the release page is the hash of the file I carried in" is
 # the entire trust story -- and then publishes the same bytes to PyPI.
 #
-# Until pypi.org trusts this repository for this project, the publish job
-# fails visibly, on purpose, without touching the GitHub Release above.
+# The publish job is last on purpose and touches nothing above it. When
+# pypi.org did not yet trust this repository it failed there, visibly,
+# with the GitHub Release already made -- which is the ordering to keep
+# even now that it does trust it, because the next thing that can refuse
+# an upload is the metadata, not the identity. This comment described the
+# trust as pending; 0.1.1 published from here on 2026-09-05.
 name: release
 
 on:
@@ -105,6 +109,24 @@ jobs:
           python tools/build_zipapp.py -o /tmp/again.pyz
           cmp dist/smtv.pyz /tmp/again.pyz
           echo "reproducible: yes"
+
+      - name: the package index will accept the description
+        # CI runs this on every push and argues, correctly, that a
+        # release line first exercised on release day dies on release
+        # day. It is here as well because the two runs check different
+        # bytes: CI checks a wheel it built, this checks the wheel that
+        # is about to be signed, attached and uploaded. The ordering
+        # below puts the GitHub Release and a public signature before
+        # the upload, so a refusal there is a refusal with the release
+        # already made -- and `twine check` is the one refusal that can
+        # be moved in front of it for two seconds.
+        #
+        # Narrowed to this project's own artifacts: `dist/` also holds
+        # the dependency wheel fetched for the offline route, whose
+        # metadata is upstream's business and fails `--strict`.
+        run: |
+          pip install "twine>=6.1"
+          twine check --strict dist/aas_submodel_validate-*
 
       - name: one checksum file beside them
         # `rm -f` first: the glob would otherwise take in a SHA256SUMS

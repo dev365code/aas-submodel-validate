@@ -695,3 +695,36 @@ def test_the_count_this_flag_prints_is_the_number_compared(tmp_path, capsys):
     printed = capsys.readouterr().err.strip()
     assert printed == ("smtv: judged 0 of 1 submodel; "
                        "--require-all-judged was given"), printed
+
+
+def test_the_rule_listing_and_the_advertised_count_reconcile(capsys):
+    """`--rules` is a published listing and nothing compared it to the
+    registry it is built from.
+
+    The number a reader gets is not the number the front page
+    advertises: `smtv --rules | wc -l` is 126 and the badge says 125
+    rules. Both are right -- the extra line is the relayed metamodel
+    channel, which is not one of this project's rules -- and the
+    difference is stated nowhere, so the first thing a careful reader
+    does with the two numbers is disbelieve one of them. (This session
+    disbelieved the registry, went looking, and found the answer in a
+    third file.)
+
+    So: every rule listed once, exactly one line that is not a rule, and
+    that line named.
+    """
+    from aas_submodel_validate.registry import all_rules
+
+    assert main(["--rules"]) == 0
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.strip()]
+    listed = [line.split()[0] for line in lines]
+
+    assert len(listed) == len(set(listed)), "a rule is listed twice"
+    registered = [rule.id for rule in all_rules()]
+    assert set(registered) <= set(listed), sorted(set(registered) - set(listed))
+
+    extra = [line for line in lines if line.split()[0] not in set(registered)]
+    assert len(extra) == 1, [line.split()[0] for line in extra]
+    assert extra[0].split()[0] == "META"
+    assert extra[0].split()[1] == "meta", "the one non-rule line must say so in its kind"
+    assert len(lines) == len(registered) + 1
