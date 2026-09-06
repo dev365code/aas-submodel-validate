@@ -55,7 +55,7 @@ is the thing this project refuses, so those files are judged exactly as
 before and the coverage note counts what was withheld from *them* rather
 than from the table.
 
-**`verdict`** — six of the 45 corpus inputs are judged differently.
+**`verdict`** — eight of the 47 corpus inputs are judged differently.
 
 `HD-D7` is no longer drawn on that archive and its exit code falls from
 1 to 0: a false refusal withdrawn, because the file the value names is
@@ -81,6 +81,34 @@ verdict where there were two. Two inputs were added so the instrument
 can see it. A comparison that has no case for the thing that changed
 reports a confident zero, and this file exists to stop a release note
 resting on one.
+
+**A list that declares it holds something the template does not.** The
+generator has read `typeValueListElement` off the templates since the
+tables existed -- twenty-one rows carry the item type their list is
+declared for -- and no rule read one.
+
+Mostly that cost nothing, and measuring says why: the metamodel asks
+whether the items agree with the list's own declaration (`AASd-108`) and
+whether a value type is present where one is needed (`AASd-109`), both
+relayed here; and where those are silent, the item row's own cardinality
+catches the file first, because a `1..*` item row cannot be satisfied by
+an empty list.
+
+Four Technical Data rows have a `0..*` item row. There a list that
+declares the wrong item type and carries no items is metamodel-clean,
+satisfies every row, and said nothing at all. Neither the metamodel nor
+the item row can ask the question that is left, because it is not about
+the items: it is whether the declaration agrees with the template.
+
+Only a disagreement is reported. A list that declines to declare an item
+type is not a case a document can reach -- the schema requires the field
+and the payload does not parse -- which replaced a test asserting the
+rule stays quiet for such a file. It did stay quiet, because nothing was
+judged at all.
+
+**`verdict`** -- a Technical Data list declaring `File` where the
+template declares `SubmodelElementCollection` now draws its row's
+finding. Two inputs added; the corpus reports eight of 47.
 
 **A value that no part name can carry is told so, and which character
 it was.** `canonical_part_name`'s first paragraph has said since 0.1.0

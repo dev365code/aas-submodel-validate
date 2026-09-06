@@ -397,6 +397,33 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                 # identifier.
                 result["lost_candidates"].extend(_descendant_ids(row))
                 continue
+            # What a list says it will hold, against what the template
+            # says it holds. The metamodel asks whether the items agree
+            # with the list's own declaration (AASd-108) and whether a
+            # value type is present where one is needed (AASd-109); both
+            # are relayed and neither compares the declaration to the
+            # template, which is not a question the metamodel can ask.
+            #
+            # Everywhere else the item row catches this first: an item
+            # row of `1..*` cannot be satisfied by an empty list. Four
+            # rows are `0..*`, and there a list that declares the wrong
+            # item type and carries none is metamodel-clean, satisfies
+            # every row, and said nothing at all.
+            #
+            # Only a disagreement. `typeValueListElement` is optional in
+            # the metamodel and a file that says nothing is not a file
+            # that says something wrong.
+            listed = getattr(element, "type_value_list_element", None)
+            if row["list_type"] and listed is not None and listed.value != row["list_type"]:
+                result["violations"].setdefault(row["id"], []).append(Violation(
+                    "'%s' is declared to hold %s; the template holds %s"
+                    % (row["label"], listed.value, row["list_type"]),
+                    subject=subject, detail="typeValueListElement is %s" % listed.value,
+                    fix="Change this list's typeValueListElement from %s to "
+                        "%s. This is about what the list says it will hold, "
+                        "not about what is in it -- an empty list declaring "
+                        "the wrong item type is the case nothing else here "
+                        "reports." % (listed.value, row["list_type"])))
             declared = getattr(element, "value_type", None)
             if row["value_type"] and declared is not None and declared.value != row["value_type"]:
                 result["violations"].setdefault(row["id"], []).append(Violation(

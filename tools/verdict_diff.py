@@ -189,6 +189,39 @@ def build_corpus(into: Path):
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[(entry, b"%PDF-1.4 ")])))
 
+    # A Technical Data list that declares an item type the template does
+    # not. Four rows have a `0..*` item row, and there a list carrying no
+    # items is metamodel-clean and satisfies every row -- so nothing here
+    # could see the check that reads the declaration.
+    from builders import td_env  # noqa: E402
+
+    def _wearing(node, sid):
+        if isinstance(node, dict):
+            for key in (node.get("semanticId") or {}).get("keys") or []:
+                if key.get("value") == sid:
+                    return node
+            for value in node.values():
+                found = _wearing(value, sid)
+                if found is not None:
+                    return found
+        elif isinstance(node, list):
+            for value in node:
+                found = _wearing(value, sid)
+                if found is not None:
+                    return found
+        return None
+
+    from aas_submodel_validate.rules import td_tables  # noqa: E402
+
+    for label in ("ProductImages", "SpecificDescriptions"):
+        environment = td_env()
+        listed = _wearing(environment, td_tables.BY_LABEL[label]["sid"])
+        listed["typeValueListElement"] = "File"
+        listed.pop("value", None)
+        written = into / ("listtype-%s.json" % label)
+        written.write_text(json.dumps(environment), encoding="utf-8")
+        cases.append(("a %s list declaring it holds File" % label, written))
+
     # A battery passport that states its own category. `BAT-R8` withheld
     # eight rows because their obligation turns on a category and nothing
     # read one; the template makes the category mandatory and names its
