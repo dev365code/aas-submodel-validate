@@ -158,3 +158,48 @@ def test_a_wrong_identifier_takes_rules_out_of_the_run_by_the_measured_amount():
                 for mode in ("tail", "middle"):
                     assert scope_silence.drift(row["sid"], mode) != row["sid"], (
                         row["id"], mode)
+
+
+def test_the_rows_a_middle_typo_silences_are_identifiers_nothing_can_separate():
+    """Why the other half of #23 is not built, kept as a measurement.
+
+    The proposal was to extend the near-miss lint to structural
+    similarity -- an element one segment off a row's identifier is
+    probably a typo, and a manufacturer's own identifier is near
+    nothing. That works for an IRI. It cannot work here.
+
+    Seventeen of the eighteen rows a middle-segment typo silences are
+    ECLASS IRDIs, and adjacent ECLASS codes are *different real
+    properties*: `0173-1#02-ABH994#003` and `0173-1#02-ABH995#003` are
+    both rows of these tables. So the typo and the legitimate neighbour
+    sit at the same distance, and no bound separates them without an
+    ECLASS dictionary this project deliberately does not carry.
+
+    Kept as a test rather than a sentence so the argument fails loudly
+    if it stops being true: templates whose IRDIs are far apart would
+    make the extension worth revisiting.
+    """
+    import itertools
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import scope_silence
+    from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
+
+    rows = {row["id"]: row for tables in (hd_tables, td_tables, dbp_tables)
+            for row in tables.ROWS}
+    _tried, mute, _lint, _detail, _absent = scope_silence.measure("middle")
+    irdis = [rid for rid in mute if rows[rid]["sid"].startswith("0173-1#")]
+    assert len(mute) == 18 and len(irdis) == 17, (len(mute), len(irdis))
+
+    def apart(left, right):
+        return sum(1 for a, b in zip(left, right) if a != b) + abs(len(left) - len(right))
+
+    published = sorted({row["sid"] for row in rows.values()
+                        if row.get("sid", "").startswith("0173-1#")})
+    neighbours = [(a, b) for a, b in itertools.combinations(published, 2) if apart(a, b) == 1]
+    assert neighbours, (
+        "no two published IRDIs are one character apart any more -- the "
+        "reason #23's second half was left unbuilt may no longer hold")
+    assert len(neighbours) >= 30, len(neighbours)
