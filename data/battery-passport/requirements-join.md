@@ -40,6 +40,8 @@ lower bounds until a citation-bearing bridge exists.
 | annex points named only through their parent | 6 |
 | annex points a broader citation reaches without naming | 19 |
 | citations unresolved in consolidated text | 1 |
+| citations checked against the annex | 115 |
+| citations no index here can resolve | 53 |
 | template elements | 221 |
 | template elements matched by name | 42 |
 | distinct attribute names those elements reach | 37 |
@@ -54,7 +56,12 @@ lower bounds until a citation-bearing bridge exists.
 ## Every point of the annex, and who restates it
 
 `through parent` means the point is a sub-item of a point that is cited,
-and is not named on its own by either restatement.
+and is not named on its own by either restatement. That set is a subset of
+`annex points with neither` above -- a point reached only through its parent
+has nothing of its own -- so the two counts cannot disagree in the direction
+a reader expects, and reading 6 and 6 as twelve points would be wrong: they
+are the same six. Their being equal is the fact worth having, and it is that
+every point no restatement names has a parent that is named.
 
 The last column is not coverage. A citation of a whole block -- `Annex XIII
 (1)`, which has nineteen lettered points beneath it -- reaches every point in

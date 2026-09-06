@@ -106,6 +106,8 @@
   "annex_points_named_only_through_their_parent": 6,
   "annex_points_a_broader_citation_reaches_without_naming": 19,
   "citations_unresolved_in_consolidated_text": 1,
+  "citations_checked_against_the_annex": 115,
+  "citations_no_index_here_can_resolve": 53,
   "template_elements": 221,
   "template_elements_matched_by_name": 42,
   "distinct_attribute_names_those_elements_reach": 37,

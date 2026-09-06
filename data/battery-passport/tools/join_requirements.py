@@ -125,7 +125,12 @@ def render_markdown(doc):
     add("## Every point of the annex, and who restates it")
     add("")
     add("`through parent` means the point is a sub-item of a point that is cited,")
-    add("and is not named on its own by either restatement.")
+    add("and is not named on its own by either restatement. That set is a subset of")
+    add("`annex points with neither` above -- a point reached only through its parent")
+    add("has nothing of its own -- so the two counts cannot disagree in the direction")
+    add("a reader expects, and reading 6 and 6 as twelve points would be wrong: they")
+    add("are the same six. Their being equal is the fact worth having, and it is that")
+    add("every point no restatement names has a parent that is named.")
     add("")
     add("The last column is not coverage. A citation of a whole block -- `Annex XIII")
     add("(1)`, which has nineteen lettered points beneath it -- reaches every point in")
@@ -257,6 +262,12 @@ def main(argv=None):
     cited = {}          # canonical citation -> {"ec": [...], "longlist": [...]}
     contained = {}      # same, for points a broader citation reaches but does not name
     dangling = []       # citations that name a provision the annex does not have
+    # How much of the citing was looked at. Only Annex XIII citations can
+    # be resolved here, because nothing in this directory indexes Annex VI
+    # or the articles of the regulation -- so `dangling` is a count of
+    # what failed among the ones that were checked, and its name has
+    # always sounded like a count over all of them.
+    checked = unresolvable = 0
     for source, records, field in (
         ("ec-datapoints", guidance, "legal_source"),
         ("longlist", longlist, "legal_reference"),
@@ -265,7 +276,9 @@ def main(argv=None):
             for key in citations(r.get(field, "")):
                 cited.setdefault(key, {}).setdefault(source, []).append(r["id"])
                 if not key.startswith("annex-xiii:"):
+                    unresolvable += 1
                     continue
+                checked += 1
                 named, names_them = points_named_by(key)
                 for point in named:
                     if point != key:
@@ -404,6 +417,8 @@ def main(argv=None):
                 or a["reached_by_a_broader_citation"]["longlist_rows"]
             ),
             "citations_unresolved_in_consolidated_text": len(dangling),
+            "citations_checked_against_the_annex": checked,
+            "citations_no_index_here_can_resolve": unresolvable,
             "template_elements": len(elements),
             "template_elements_matched_by_name": len(name_matches),
             # Read as coverage, the line above says more than it means.

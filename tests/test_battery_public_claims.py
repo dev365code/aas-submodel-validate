@@ -464,3 +464,44 @@ def test_every_annex_point_records_the_amendment_marker_it_falls_under():
     for record in records:
         expected = not record["consolidation_marker"].startswith("B")
         assert record["amended_in_consolidation"] is expected, record["id"]
+
+
+def test_the_join_says_how_much_of_the_citing_it_actually_checked(join, cites):
+    """`citations_unresolved_in_consolidated_text` is 1, and its name
+    claims a scope the code does not have: only Annex XIII citations are
+    resolved against anything, because nothing here indexes Annex VI or
+    the articles. Of the 168 citations the two restatements make, 115 are
+    checked and 53 are not, and a count of one unresolved reads very
+    differently once you know which."""
+    instances = [c for ids in cites.values() for c in ids]
+    checked = [c for c in instances if c.startswith("annex-xiii:")]
+    counts = join["counts"]
+    assert counts["citations_checked_against_the_annex"] == len(checked) == 115
+    assert counts["citations_no_index_here_can_resolve"] == len(instances) - len(checked) == 53
+    assert counts["citations_checked_against_the_annex"] + counts[
+        "citations_no_index_here_can_resolve"
+    ] == len(instances) == 168
+
+
+def test_the_two_counts_that_always_show_the_same_number_say_why(join):
+    """`annex points with neither` and `annex points named only through
+    their parent` both read 6, and they are the same six points. The
+    second is a subset of the first by construction -- a point reached
+    only through its parent has nothing of its own -- so two adjacent
+    rows of the table can never disagree in the direction a reader might
+    expect, and looking at 6 and 6 it is natural to think twelve points
+    are involved. Where they are equal it means something worth saying:
+    every point no restatement names has a parent that is named."""
+    neither = {
+        a["annex_point"]
+        for a in join["annex_coverage"]
+        if not a["ec_datapoints"] and not a["longlist_rows"]
+    }
+    through_parent = {
+        a["annex_point"] for a in join["annex_coverage"] if a["cited_only_through_its_parent"]
+    }
+    assert through_parent <= neither, sorted(through_parent - neither)
+    table = (DATA / "requirements-join.md").read_text("utf-8")
+    assert "is a subset of" in table
+    if through_parent == neither:
+        assert "every point no restatement names has a parent that is" in table
