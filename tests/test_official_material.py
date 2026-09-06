@@ -160,3 +160,31 @@ def test_a_repaired_copy_comes_back_clean(tmp_path):
     path.write_text(json.dumps(document), "utf-8")
     report = runner.run(path)
     assert [f.id for f in report.findings if f.id != "META"] == []
+
+
+def test_the_official_example_costs_one_mandatory_rule_and_now_says_so():
+    """Divergence #2: the example's `Entites` list wears the *child's*
+    singular IRI, `.../EntityForDocumentation`, where the template names
+    the list's, `.../EntitiesForDocumentation`. The entry says that is
+    reported and not silently matched, and `HDL2` above is that report.
+
+    What no report said is the consequence. The list matched no row, so
+    the walk did not enter it, and `HD-E38` -- `EntityForDocumentation`,
+    which the template makes mandatory inside that list, one or more --
+    was never put. The example passes, correctly, on nine findings none
+    of which rises to an error; and one rule was not asked of it.
+
+    So this project's own reference material is the demonstration of
+    divergence #23, and it took a field on the report to see it."""
+    for source in (JSON_EXAMPLE, AASX_EXAMPLE):
+        report = runner.run(source)
+        assert report.ok, source
+        assert report.not_asked == ["HD-E38"], (source, report.not_asked)
+
+    from aas_submodel_validate.rules import hd_tables
+
+    lost = hd_tables.BY_ID["HD-E38"]
+    assert lost["card"] == (1, None), "the row stopped being mandatory"
+    assert lost["parent"] == "HD-E37"
+    assert hd_tables.BY_ID["HD-E37"]["sid"].endswith("/EntitiesForDocumentation")
+    assert lost["sid"].endswith("/EntityForDocumentation")

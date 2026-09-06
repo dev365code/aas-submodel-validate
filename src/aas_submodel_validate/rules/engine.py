@@ -27,6 +27,7 @@ singular/plural mix-up would sail through.
 from __future__ import annotations
 
 import re
+import sys
 from typing import Dict, List
 
 from ..model import Violation
@@ -172,8 +173,17 @@ def _analyze(ctx, tables) -> Dict:
         "near_misses": [],     # (subject path, seen value, expected value)
         "idshort_drift": [],   # (subject, id_short, pattern, is a list child)
         "reftype_drift": [],   # (subject path, seen type, template type)
+        #: How many submodels this pack answered for. Zero means the file
+        #: is not this template's business, which is not the same as a
+        #: template whose scopes went unentered -- and the difference is
+        #: everything to `rows_not_reached` below.
+        "submodels": 0,
+        #: Rule ids the walk never put, and the elements that cost them.
+        "not_entered": [],     # row ids
+        "unrecognised": [],    # (subject path, the row ids it took with it)
     }
     for submodel in matched_submodels(ctx, tables):
+        result["submodels"] += 1
         root = submodel.id_short or "submodel"
         reference = submodel.semantic_id
         expected = tables.TEMPLATE_SUBMODEL_SID_TYPE
@@ -184,6 +194,54 @@ def _analyze(ctx, tables) -> Dict:
                in_list=False)
     return result
 
+
+
+def _descendant_ids(row) -> List[str]:
+    """Every rule id beneath a row, which is what leaves the run with it."""
+    out = []
+    for child in row["children"]:
+        out.append(child["id"])
+        out.extend(_descendant_ids(child))
+    return out
+
+
+def rows_not_reached(ctx) -> List[str]:
+    """Rule ids this run never put, in the order the tables declare them.
+
+    A generated rule lives inside a scope, and `_scope` writes an
+    `instances` key for every row it considers -- so a row missing from
+    that dict was never considered at all. That happens for exactly one
+    reason: the element opening its scope matched no row, so the walk
+    did not recurse and the whole subtree left the run with it.
+
+    Only for packs that answered for at least one submodel. A Handover
+    file is not a Technical Data file, and listing all twenty-six
+    Technical Data rows against it would bury the signal in noise --
+    the run did not fail to ask those, it was never their run.
+    """
+    analysed = ctx.__dict__.get("_smt_analysis") or {}
+    missed = []
+    for module_name, result in analysed.items():
+        if not result.get("submodels"):
+            continue
+        tables = sys.modules.get(module_name)
+        if tables is None:      # pragma: no cover - the module is imported to get here
+            continue
+        missed.extend(result["not_entered"])
+    # Ordered by the tables, deduplicated: one unrecognised element in a
+    # list of three strands the same rows three times, and a reader
+    # counting the list would read that as three times the loss.
+    order = {row["id"]: index for index, row in enumerate(_all_rows(analysed))}
+    return sorted(set(missed), key=lambda rid: order.get(rid, len(order)))
+
+
+def _all_rows(analysed) -> List:
+    rows = []
+    for module_name in analysed:
+        tables = sys.modules.get(module_name)
+        if tables is not None:
+            rows.extend(tables.ROWS)
+    return rows
 
 
 def idshort_remedy(in_list: bool, pattern: str) -> str:
@@ -247,6 +305,9 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                 not candidate_values(element.semantic_id))
                for index, element in enumerate(elements)]
     claimed = set()
+    #: Per scope, not per run: the same row id appears in every item of a
+    #: list, and a row that matched in one item has been entered.
+    claimed_by = {}
 
     for row in rows:
         # One element belongs to at most one row: the first row it matches
@@ -259,6 +320,8 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                    and _matches_row(candidates, main_empty, type(element).__name__,
                                     row, in_list)]
         claimed.update(index for index, _ in matched)
+        if matched:
+            claimed_by[row["id"]] = True
 
         # Only kind-matching elements are navigable, so only they go into
         # `instances`: a Property wearing a collection's id is a kind
@@ -322,6 +385,32 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                 _scope(row["children"], getattr(element, "value", None) or [],
                        subject, result,
                        in_list=(row["kind"] == "SubmodelElementList"))
+
+    # What the scope held that no row claimed, and what that cost.
+    #
+    # A row that matched nothing is not by itself a gap: an optional
+    # element that is simply absent leaves its row empty and its
+    # children unasked, and that is the ordinary shape of nearly every
+    # conformant file. The first version of this counted those, and a
+    # clean Handover document reported five rules not asked -- a field
+    # that cries on conformant input is a field readers learn to skip.
+    #
+    # The gap is an element that is *here* and matched nothing. Then the
+    # walk did not recurse into something the file does carry, and the
+    # rules for whichever row it was meant to be were never put. Those
+    # candidate rows are the ones in this scope that matched nothing and
+    # open a subtree.
+    stranded = [(index, element) for index, element, _c, _m in indexed
+                if index not in claimed and getattr(element, "value", None)]
+    if stranded:
+        lost = []
+        for row in rows:
+            if row["children"] and not claimed_by.get(row["id"]):
+                lost.extend(_descendant_ids(row))
+        if lost:
+            result["not_entered"].extend(lost)
+            for index, element in stranded:
+                result["unrecognised"].append((_subject(path, element, index), lost))
 
     for index, element, candidates, _main_empty in indexed:
         if index in claimed or not candidates:

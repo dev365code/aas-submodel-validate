@@ -37,7 +37,8 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
     "judged": true,
     "submodelsSeen": 1,
     "submodelsJudged": 1,
-    "submodelsSpecified": 0
+    "submodelsSpecified": 0,
+    "rulesNotAsked": []
   },
   "notes": [],
   "findings": [
@@ -138,6 +139,7 @@ would have decided.
 | `complete` | boolean | Whether everything this run was handed got read. `false` means an archive that would not open, a relationship chain that went nowhere, a part that would not parse, or a document over the reader's bound — what was not read was not judged, and a report that only said `ok: false` could not tell you which. |
 | `submodelsSeen` | integer | How many submodels the input holds. |
 | `submodelsSpecified` | integer | How many of `submodelsSeen` declared `kind: Template`. A template is a specification, and every rule here is a requirement on an instance, so those are set aside rather than judged and a note names them. Subtract this from `submodelsSeen` to get the number a caller can do something about — which is what `--require-all-judged` compares against. Additive under `schemaVersion` 1, like `options` before it. |
+| `rulesNotAsked` | array of string | Rule ids this run never put. A generated rule sits inside a scope, and a scope opens only when an element matches the row that names it; an element whose `semanticId` matches no row is not recursed into, and every rule beneath it leaves the run (`docs/divergences.md` #23). Empty on a file whose scopes were all entered — which every conformant file is. **Not a claim about the file and it moves no verdict**: the template states a minimum and not a whitelist (#19), so an element matching no row is not by itself a defect; what this reports is that the run did not look inside it. Read it when a report has no findings: `errors: 0` with a non-empty `rulesNotAsked` is a different answer from `errors: 0` with an empty one, and until this key existed the two serialised identically. Additive under `schemaVersion` 1. |
 | `submodelsJudged` | integer | How many of them a template this tool has a table for answered for. The difference is not a defect — an environment carries submodels this tool has no business judging — but without the number a report is silent about them: `SMT-D1` speaks only when *nothing* matched. This is the coverage figure that means something here; the fraction of rules that ran does not, because most rules are about other templates and their silence says nothing. |
 
 The two are ordered, and both are worth gating on. `judged: false`

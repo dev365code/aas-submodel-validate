@@ -250,8 +250,14 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # accepted is one whose own bounds already held.
     report = Report(path=str(path),
                     input_sha256=_digest(path, container.MAX_TOTAL_PART_BYTES))
-    report.findings = execute(rules_to_run,
-                              Context(loaded, rules.profiles.Selection(profile)))
+    # Held rather than discarded: the walk's own record of which rows it
+    # considered lives on the context, and `not_asked` is the difference
+    # between that and the tables. Built inline before, so the one thing
+    # that knows what the run failed to ask was thrown away at the end of
+    # the expression that produced the findings.
+    ctx = Context(loaded, rules.profiles.Selection(profile))
+    report.findings = execute(rules_to_run, ctx)
+    report.not_asked = rules.engine.rows_not_reached(ctx)
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
         unmatched = [f for f in report.findings if f.id == detect.RULE_ID]

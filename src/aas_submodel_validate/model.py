@@ -180,6 +180,24 @@ class Report:
     #: `warning` or `info`. The flags move the verdict, so a document
     #: that does not carry them cannot be compared with another.
     meta: str = "warning"
+    #: Rule ids this run never put, because the scope they live in was
+    #: never entered. A generated rule sits inside a scope, and a scope
+    #: opens only when an element matches the row that names it; an
+    #: element whose semanticId matches no row is not recursed into, and
+    #: every rule beneath it leaves the run (docs/divergences.md #23).
+    #:
+    #: The report said nothing, because nothing was wrong with what was
+    #: checked. Measured on this project's own fixtures: a typo inside a
+    #: path segment of one identifier silences 24 of 69 measurable rows
+    #: and produces a report byte-identical to the conformant one. Two
+    #: such documents were indistinguishable, which is the sentence every
+    #: field above was added to answer.
+    #:
+    #: Not a claim about the file, and it moves no verdict. The template
+    #: states a minimum and not a whitelist (#19), so an element matching
+    #: no row is not by itself a defect -- what is reportable is that
+    #: this run did not look inside it.
+    not_asked: List[str] = field(default_factory=list)
     allow_unmatched: bool = False
     #: The digest of the bytes this run read, or None when there were
     #: none to read. A report that says a file failed and does not say
@@ -259,6 +277,11 @@ class Report:
                 "submodelsSeen": self.submodels_seen,
                 "submodelsJudged": self.submodels_judged,
                 "submodelsSpecified": self.submodels_specified,
+                # Also additive. A consumer diffing two stored reports is
+                # the reader this key exists for: without it a file whose
+                # identifier drifted and a conformant one serialise to the
+                # same bytes.
+                "rulesNotAsked": self.not_asked,
             },
             "notes": self.notes,
             "findings": [f.as_dict() for f in self.findings],

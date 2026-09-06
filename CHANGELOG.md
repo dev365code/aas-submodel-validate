@@ -41,6 +41,55 @@ File-value input packed the same plain entry name and none of them could
 tell the two orders apart. An input that cannot distinguish the versions
 is not coverage, and a denominator that counts it says otherwise.
 
+**A report now says what it could not ask.** A generated rule sits
+inside a scope, and a scope opens only when an element matches the row
+that names it. An element whose `semanticId` matches no row is not
+recursed into, and every rule beneath it leaves the run — quietly, with
+nothing wrong in what remained. `docs/divergences.md` #23 has recorded
+that since 0.1.0.
+
+`tools/scope_silence.py` measures what it is worth. Of the 86 generated
+rows, 69 appear in this project's fixtures; a typo inside a path segment
+of one identifier leaves **24 of the 69 saying nothing at all**, and the
+report it produces is byte-identical to the conformant one. A version
+bump — the last character — leaves none of them silent, because the
+near-miss lint is built for exactly that and catches all 18 it touches.
+The gap is the hand-written typo, not the version bump.
+
+`summary.rulesNotAsked` closes the half of #23 that is not a policy
+question. Whether an element matching no row is a *defect* is the
+template's business — it states a minimum, not a whitelist (#19) — but
+whether this run looked inside it is this reader's, and it now says. The
+key lists the rule ids a scope took with it. It draws no finding, moves
+no exit code, and makes no claim about the file. The terminal line says
+the same sentence: `; 1 rule not asked — an element matched no row of
+the template, so this run did not look inside it`.
+
+Only where an element is **present** and matched nothing. An optional
+element that is simply absent leaves its rows unasked too, and counting
+those made a clean Handover document report five — a field that cries on
+conformant input is one readers learn to skip.
+
+**The first file it spoke about is this project's own reference
+material.** The official IDTA 02004 example carries a list whose
+`semanticId` is `…/EntityForDocumentation`, the *item's* identifier,
+where the template names the list's `…/EntitiesForDocumentation`
+(divergence #2, recorded since 0.1.0). The lint reports the element and
+always did. What no report said is that `HD-E38` — mandatory inside that
+list, one or more — was never put. The example still passes on nine
+findings, none of them an error, and now says: one rule not asked.
+
+**`verdict`** — none of this is one. Over the 36 corpus inputs the only
+verdict that moves is the entry-point case above; 36 of 36 gain the new
+summary key, which is additive under `schemaVersion` 1 and invisible to
+a consumer that does not read it. `verdict_diff` was extended to see the
+key at all — it compares findings, severities and exit codes, so it
+would have reported this change as nothing moved, on an instrument with
+no case for the thing that changed. It now counts shape changes apart
+from verdict changes rather than folding them in, because folding them
+in made all 36 "judged differently" the day the key landed and buried
+the one that was.
+
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
 directory of names at 16 MiB.

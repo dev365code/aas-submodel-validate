@@ -25,6 +25,7 @@ generated:
 
 vendored:
 	$(PYTHON) tools/vendor_template.py --check
+	$(PYTHON) tools/gen_door.py --check
 
 exercised:
 	$(PYTHON) tools/rule_coverage.py --check

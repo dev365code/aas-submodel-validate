@@ -87,6 +87,19 @@ def render(report: Report, *, show_meta: bool = False) -> str:
     # A submodel this tool has no table for is not a defect, so it is a
     # number rather than a finding -- but a report that omits the number
     # lets a reader believe the whole file was judged.
+    # The same debt as `incomplete`, one layer further in. `incomplete`
+    # is about what was read; this is about what was asked of what was
+    # read. A conformant file and one with a typo inside a path segment
+    # of a single identifier print the same line, and the second was put
+    # two dozen fewer questions -- the JSON grew `rulesNotAsked` for
+    # exactly that, and the sentence three comments down says the person
+    # at the terminal is owed the same thing.
+    unasked = ""
+    if report.not_asked:
+        unasked = ("; %d rule%s not asked -- an element matched no row of the "
+                   "template, so this run did not look inside it"
+                   % (len(report.not_asked),
+                      "" if len(report.not_asked) == 1 else "s"))
     judged = ""
     specified = ""
     if report.submodels_specified:
@@ -111,8 +124,8 @@ def render(report: Report, *, show_meta: bool = False) -> str:
         # "rules registered", not "rules checked": a Technical Data file
         # is not judged by 02004's fifty-two, and a run that says it
         # checked them has told the reader something it did not do.
-        lines.append("ok -- %s (%d rules registered%s)%s"
-                     % (report.path, report.checked, judged, incomplete))
+        lines.append("ok -- %s (%d rules registered%s%s)%s"
+                     % (report.path, report.checked, judged, unasked, incomplete))
     else:
         # The third count is INFO findings. It said "note(s)" and the
         # report has notes of its own, printed above and not counted
@@ -122,7 +135,8 @@ def render(report: Report, *, show_meta: bool = False) -> str:
         # file summarises as one error, which is what a judged file that
         # failed looks like -- the JSON report grew a field to tell those
         # apart and the person at the terminal is owed the same sentence.
-        lines.append("%d error(s), %d warning(s), %d info -- %s%s%s"
+        lines.append("%d error(s), %d warning(s), %d info -- %s%s%s%s"
                      % (report.count(Severity.ERROR), report.count(Severity.WARNING),
-                        report.count(Severity.INFO), report.path, judged, incomplete))
+                        report.count(Severity.INFO), report.path, judged, unasked,
+                        incomplete))
     return "\n".join(lines)

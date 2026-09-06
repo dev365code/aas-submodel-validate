@@ -99,7 +99,12 @@ ADDED_SINCE_V1_PROVENANCE = set()
 #: into the floor first, which claimed shape 1 had shipped it -- the
 #: distinction these two lists exist to keep. Promote at the release
 #: that ships it.
-ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified"}
+#: `rulesNotAsked` joins them the same way: a 0.1.1 reader takes the
+#: counters and reads what it read before, and the new key answers a
+#: question the counters cannot -- whether `errors: 0` means the file
+#: was asked everything or that a scope was never entered. Promote at
+#: the release that ships it.
+ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified", "rulesNotAsked"}
 #: `meta` joins `strictMeta` rather than replacing it: a 0.1.0 reader
 #: parses the boolean and keeps working, and the boolean is derived from
 #: the level so the two cannot disagree. Promote at the release that
@@ -158,7 +163,8 @@ def test_the_summary_counts_what_it_says_it_counts():
                                    "rulesChecked": 123, "complete": True,
                                    "judged": True, "submodelsSeen": 0,
                                    "submodelsJudged": 0,
-                                   "submodelsSpecified": 0}
+                                   "submodelsSpecified": 0,
+                                   "rulesNotAsked": []}
 
 
 def test_the_report_says_what_was_asked_of_it():
@@ -206,6 +212,11 @@ def test_the_report_says_what_the_types_promise():
     assert isinstance(document["findings"], list)
     assert isinstance(document["summary"]["complete"], bool)
     assert isinstance(document["summary"]["judged"], bool)
+    # A list of strings, not a count: a consumer that only wants the
+    # number can take its length, and one that wants to know which rules
+    # went unasked cannot recover them from a number.
+    assert isinstance(document["summary"]["rulesNotAsked"], list)
+    assert all(isinstance(x, str) for x in document["summary"]["rulesNotAsked"])
     assert isinstance(document["toolVersion"], str)
     for counter in ("errors", "warnings", "info", "rulesChecked",
                     "submodelsSeen", "submodelsJudged",

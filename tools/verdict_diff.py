@@ -202,7 +202,20 @@ def build_corpus(into: Path):
 # -- running both versions --------------------------------------------------
 
 def _judge(src: Path, target: Path):
-    """One version's verdict on one input: ids, severities and exit code."""
+    """One version's verdict on one input: ids, severities, exit code --
+    and what it did not ask.
+
+    The last is not a verdict and does not move an exit code, which is
+    exactly why it belongs here. A change that adds it reports as "0
+    moved" against a comparison that cannot see it, and this tool's whole
+    job is to stop a release note saying "nothing changed" on the
+    strength of an instrument with no case for the thing that changed.
+    A version that has no such key reports `None`. That is a change of
+    shape and not of verdict, and it is counted apart: folding it in made
+    every one of the thirty-six inputs "judged differently" the moment
+    the key was added, which is true and buries the one whose verdict
+    actually moved. An instrument that reports everything reports
+    nothing."""
     run = subprocess.run(
         [sys.executable, "-m", "aas_submodel_validate", str(target), "-f", "json"],
         capture_output=True, text=True,
@@ -216,19 +229,35 @@ def _judge(src: Path, target: Path):
         (f.get("rule"), f.get("severity")) for f in report.get("findings", []))
     ours = [f for f in findings if f[0] != "META"]
     relayed = len(findings) - len(ours)
-    return (tuple(ours), relayed, run.returncode)
+    summary = report.get("summary") or {}
+    not_asked = summary.get("rulesNotAsked")
+    if not_asked is not None:
+        not_asked = tuple(not_asked)
+    return (tuple(ours), relayed, run.returncode, not_asked)
+
+
+def _verdict_of(judged):
+    """The part a pipeline acts on. `rulesNotAsked` is deliberately not
+    in here: it changes no exit code and fails no build."""
+    return judged[:3] if len(judged) > 2 else judged
 
 
 def _describe(verdict):
     if len(verdict) == 2:
         return "%s (exit %d)" % verdict
-    ours, relayed, code = verdict
+    ours, relayed, code, not_asked = verdict
     counts = {}
     for _rule, severity in ours:
         counts[severity] = counts.get(severity, 0) + 1
     parts = ["%d %s" % (counts[k], k) for k in ("error", "warning", "info")
              if k in counts] or ["nothing"]
-    return "%s, %d relayed (exit %d)" % (", ".join(parts), relayed, code)
+    if not_asked is None:
+        unasked = ", says nothing about what it did not ask"
+    elif not_asked:
+        unasked = ", %d not asked (%s)" % (len(not_asked), ", ".join(not_asked))
+    else:
+        unasked = ", asked everything"
+    return "%s, %d relayed (exit %d)%s" % (", ".join(parts), relayed, code, unasked)
 
 
 def main(argv=None):
@@ -257,25 +286,43 @@ def main(argv=None):
         print("%s -> working tree, over %d inputs\n" % (tag, len(corpus)))
 
         moved = 0
+        gained_the_key, reshaped = 0, 0
         for label, target in corpus:
             before = _judge(old / "src", Path(target))
             after = _judge(ROOT / "src", Path(target))
-            if before == after:
+            # Counted apart, and stated once at the end. A key one
+            # version does not have is a change of shape, and if it is
+            # folded into "judged differently" every input moves the day
+            # it lands.
+            if len(before) > 3 and len(after) > 3:
+                if before[3] is None and after[3] is not None:
+                    gained_the_key += 1
+                elif before[3] != after[3]:
+                    reshaped += 1
+            if _verdict_of(before) == _verdict_of(after):
                 continue
             moved += 1
             print("  %s" % label)
             print("      %-14s %s" % (tag, _describe(before)))
             print("      %-14s %s" % ("working tree", _describe(after)))
-            if len(before) == 3 and len(after) == 3:
-                gone = sorted(set(before[0]) - set(after[0]))
-                new = sorted(set(after[0]) - set(before[0]))
-                if gone:
-                    print("      no longer drawn: %s" % ", ".join(r for r, _ in gone))
-                if new:
-                    print("      newly drawn:     %s" % ", ".join(r for r, _ in new))
+            gone = sorted(set(before[0]) - set(after[0]))
+            new = sorted(set(after[0]) - set(before[0]))
+            if gone:
+                print("      no longer drawn: %s" % ", ".join(r for r, _ in gone))
+            if new:
+                print("      newly drawn:     %s" % ", ".join(r for r, _ in new))
             print()
 
         print("%d of %d inputs are judged differently." % (moved, len(corpus)))
+        if gained_the_key:
+            print("%d of %d gained `summary.rulesNotAsked`, which is additive and "
+                  "moves no verdict -- a consumer that does not read the key sees "
+                  "what it saw before." % (gained_the_key, len(corpus)))
+        if reshaped:
+            print("%d of %d report a different `summary.rulesNotAsked` between two "
+                  "versions that both have it. That is not a verdict either, and it "
+                  "is the one place a reader learns a rule stopped being put."
+                  % (reshaped, len(corpus)))
         print("Every one of them belongs in the CHANGELOG, and the ones whose "
               "exit code falls belong there twice: a pipeline that is red on "
               "them today goes quiet, and nothing downstream reports that.")
