@@ -94,7 +94,7 @@ def _ledger(problems) -> dict:
     return pins
 
 
-def _check_join(known, problems) -> None:
+def _check_join(known, provenance, problems) -> None:
     """The join, against the four indexes it was built from.
 
     A different question from the one `tests/test_battery_public_claims.py`
@@ -112,27 +112,89 @@ def _check_join(known, problems) -> None:
         return
     join = json.loads(path.read_text("utf-8"))
 
-    for name, index in join.get("indexes", {}).items():
-        filename = "requirements-%s.json" % name.replace("idta-smt", "idta")
-        if filename not in known:
-            problems.append("%s: names an index this checker does not know: %s" % (JOIN, name))
-        elif index.get("records") != len(known[filename]):
+    declared = join.get("indexes", {})
+    # Over the four this checker knows, not over what the join declares.
+    # Iterating the join's own keys meant a join that simply omits an
+    # index -- the shape a half-finished regeneration leaves -- passed,
+    # and the summary line said all four agreed.
+    for filename in INDEXES:
+        name = filename[len("requirements-"):-len(".json")]
+        name = "idta-smt" if name == "idta" else name
+        index = declared.get(name)
+        if index is None:
+            problems.append("%s: declares no %s" % (JOIN, name))
+            continue
+        if index.get("records") != len(known[filename]):
             problems.append("%s: says %s holds %s records, it holds %d"
                             % (JOIN, filename, index.get("records"), len(known[filename])))
+        # And the pins. `requirements-join.md` prints these digests in a
+        # source table a reader is invited to check, and nothing compared
+        # them to anything: re-pin a source, update the index and the
+        # ledger, forget the join, and the published page kept quoting
+        # the old digest with every gate green. That is the exact
+        # sequence this repository ran a day earlier.
+        theirs = {p["file"]: p["sha256"] for p in provenance[filename]}
+        for entry in index.get("provenance", []):
+            source, digest = entry.get("file"), entry.get("sha256")
+            if theirs.get(source) != digest:
+                problems.append("%s: pins %s at %s..., %s says %s..."
+                                % (JOIN, source, str(digest)[:12], filename,
+                                   str(theirs.get(source))[:12]))
+        for source in theirs:
+            if source not in {e.get("file") for e in index.get("provenance", [])}:
+                problems.append("%s: %s pins %s and the join does not carry it"
+                                % (JOIN, filename, source))
+    for name in declared:
+        if name not in {"idta-smt"} | {f[len("requirements-"):-len(".json")] for f in INDEXES}:
+            problems.append("%s: names an index this checker does not know: %s" % (JOIN, name))
 
     # Every record id the join hands a reader has to exist. A stale id in
     # a published table is a reader following a reference to nothing.
+    # All six lists, not the two in the coverage table: the other four are
+    # equally published and were walked by nothing.
+    ELEMENTS = "requirements-idta.json"
     for point in join.get("annex_coverage", []):
-        buckets = [(k, point.get(k, [])) for k in _JOIN_REFERS_TO]
+        where = point.get("annex_point")
         reached = point.get("reached_by_a_broader_citation", {})
-        buckets += [(k, reached.get(k, [])) for k in _JOIN_REFERS_TO]
-        for field, ids in buckets:
-            for record_id in ids:
-                if record_id not in known[_JOIN_REFERS_TO[field]]:
+        for field, filename in _JOIN_REFERS_TO.items():
+            for record_id in list(point.get(field, [])) + list(reached.get(field, [])):
+                if record_id not in known[filename]:
                     problems.append("%s: %s cites %s, which no index carries"
-                                    % (JOIN, point.get("annex_point"), record_id))
+                                    % (JOIN, where, record_id))
+    for match in join.get("name_matches", []):
+        if match.get("element") not in known[ELEMENTS]:
+            problems.append("%s: name_matches names %s, which no index carries"
+                            % (JOIN, match.get("element")))
+        for field, filename in _JOIN_REFERS_TO.items():
+            for record_id in match.get(field, []):
+                if record_id not in known[filename]:
+                    problems.append("%s: %s matches %s, which no index carries"
+                                    % (JOIN, match.get("element"), record_id))
+    for element in join.get("template_elements_matched_by_nothing", []):
+        if element not in known[ELEMENTS]:
+            problems.append("%s: unmatched list names %s, which no index carries"
+                            % (JOIN, element))
+    for entry in join.get("readings_that_differ_by_name", []):
+        if entry.get("element") not in known[ELEMENTS]:
+            problems.append("%s: readings_that_differ_by_name names %s, which no index carries"
+                            % (JOIN, entry.get("element")))
+    every_record = known["requirements-ec-datapoints.json"] | known["requirements-longlist.json"]
+    for entry in join.get("readings_that_differ_by_citation", []):
+        for ids in entry.get("readings", {}).values():
+            for record_id in ids:
+                if record_id not in every_record:
+                    problems.append("%s: %s lists %s, which no index carries"
+                                    % (JOIN, entry.get("citation"), record_id))
+    for entry in join.get("citations_without_a_matching_annex_point", []):
+        if entry.get("cited_by") not in every_record:
+            problems.append("%s: an unresolved citation is credited to %s, which no index carries"
+                            % (JOIN, entry.get("cited_by")))
 
     # A count is a promise about a list in the same file.
+    counts = join.get("counts")
+    if not isinstance(counts, dict):
+        problems.append("%s: carries no counts" % JOIN)
+        counts = {}
     for count, field in (
         ("annex_points", "annex_coverage"),
         ("template_elements_matched_by_name", "name_matches"),
@@ -141,12 +203,42 @@ def _check_join(known, problems) -> None:
         ("citations_where_the_readings_differ", "readings_that_differ_by_citation"),
         ("citations_unresolved_in_consolidated_text", "citations_without_a_matching_annex_point"),
     ):
-        stated, listed = join["counts"].get(count), join.get(field)
+        stated, listed = counts.get(count), join.get(field)
         if listed is None:
             problems.append("%s: counts %s and carries no %s" % (JOIN, count, field))
         elif stated != len(listed):
             problems.append("%s: counts.%s says %s, %s holds %d"
                             % (JOIN, count, stated, field, len(listed)))
+
+    # And the counts computed from the lists rather than from the
+    # generator. Five of them were paired with nothing at all, so a join
+    # could say no annex point lacks a restatement, or that every
+    # longlist row matched, and both gates passed.
+    coverage = join.get("annex_coverage", [])
+
+    def _broader(point):
+        reached = point.get("reached_by_a_broader_citation", {})
+        return bool(reached.get("ec_datapoints") or reached.get("longlist_rows"))
+
+    for count, measured in (
+        ("annex_points_with_a_guidance_data_point",
+         sum(1 for a in coverage if a.get("ec_datapoints"))),
+        ("annex_points_with_a_longlist_row",
+         sum(1 for a in coverage if a.get("longlist_rows"))),
+        ("annex_points_with_neither",
+         sum(1 for a in coverage if not a.get("ec_datapoints") and not a.get("longlist_rows"))),
+        ("annex_points_named_only_through_their_parent",
+         sum(1 for a in coverage if a.get("cited_only_through_its_parent"))),
+        ("annex_points_a_broader_citation_reaches_without_naming",
+         sum(1 for a in coverage if _broader(a))),
+        ("longlist_rows_matched_by_name",
+         len({i for m in join.get("name_matches", []) for i in m.get("longlist_rows", [])})),
+        ("guidance_data_points_matched_by_name",
+         len({i for m in join.get("name_matches", []) for i in m.get("ec_datapoints", [])})),
+    ):
+        if counts.get(count) != measured:
+            problems.append("%s: counts.%s says %s, the lists give %d"
+                            % (JOIN, count, counts.get(count), measured))
 
 
 def main() -> int:
@@ -158,6 +250,7 @@ def main() -> int:
     problems = []
     ledger = _ledger(problems)
     known = {}
+    provenance = {}
 
     for name in INDEXES:
         index = json.loads((DATA / name).read_text("utf-8"))
@@ -172,6 +265,7 @@ def main() -> int:
         # in the gate.
         ids = [record.get("id") for record in records]
         known[name] = {i for i in ids if i}
+        provenance[name] = index["provenance"]
         for position, record_id in enumerate(ids):
             if not record_id:
                 problems.append("%s: records[%d] carries no id" % (name, position))
@@ -189,7 +283,7 @@ def main() -> int:
                                 % (name, source, digest[:12],
                                    (ledger.get(source) or "nothing")[:12]))
 
-    _check_join(known, problems)
+    _check_join(known, provenance, problems)
 
     skipped = []
     sys.path.insert(0, str(DATA / "tools"))

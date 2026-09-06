@@ -104,7 +104,7 @@
   "annex_points_with_a_longlist_row": 25,
   "annex_points_with_neither": 6,
   "annex_points_named_only_through_their_parent": 6,
-  "annex_points_a_broader_citation_reaches_without_naming": 19,
+  "annex_points_a_broader_citation_reaches_without_naming": 25,
   "citations_unresolved_in_consolidated_text": 1,
   "citations_checked_against_the_annex": 115,
   "citations_no_index_here_can_resolve": 53,
@@ -593,8 +593,12 @@
    "ec_datapoints": [],
    "longlist_rows": [],
    "reached_by_a_broader_citation": {
-    "ec_datapoints": [],
-    "longlist_rows": []
+    "ec_datapoints": [
+     "ec-datapoints:48"
+    ],
+    "longlist_rows": [
+     "longlist:44"
+    ]
    },
    "cited_only_through_its_parent": true
   },
@@ -606,8 +610,12 @@
    "ec_datapoints": [],
    "longlist_rows": [],
    "reached_by_a_broader_citation": {
-    "ec_datapoints": [],
-    "longlist_rows": []
+    "ec_datapoints": [
+     "ec-datapoints:48"
+    ],
+    "longlist_rows": [
+     "longlist:44"
+    ]
    },
    "cited_only_through_its_parent": true
   },
@@ -619,8 +627,12 @@
    "ec_datapoints": [],
    "longlist_rows": [],
    "reached_by_a_broader_citation": {
-    "ec_datapoints": [],
-    "longlist_rows": []
+    "ec_datapoints": [
+     "ec-datapoints:48"
+    ],
+    "longlist_rows": [
+     "longlist:44"
+    ]
    },
    "cited_only_through_its_parent": true
   },
@@ -632,8 +644,12 @@
    "ec_datapoints": [],
    "longlist_rows": [],
    "reached_by_a_broader_citation": {
-    "ec_datapoints": [],
-    "longlist_rows": []
+    "ec_datapoints": [
+     "ec-datapoints:48"
+    ],
+    "longlist_rows": [
+     "longlist:44"
+    ]
    },
    "cited_only_through_its_parent": true
   },
@@ -645,8 +661,12 @@
    "ec_datapoints": [],
    "longlist_rows": [],
    "reached_by_a_broader_citation": {
-    "ec_datapoints": [],
-    "longlist_rows": []
+    "ec_datapoints": [
+     "ec-datapoints:48"
+    ],
+    "longlist_rows": [
+     "longlist:44"
+    ]
    },
    "cited_only_through_its_parent": true
   },
@@ -658,8 +678,12 @@
    "ec_datapoints": [],
    "longlist_rows": [],
    "reached_by_a_broader_citation": {
-    "ec_datapoints": [],
-    "longlist_rows": []
+    "ec_datapoints": [
+     "ec-datapoints:48"
+    ],
+    "longlist_rows": [
+     "longlist:44"
+    ]
    },
    "cited_only_through_its_parent": true
   },

@@ -114,7 +114,7 @@ def cites():
 # -- the two properties -----------------------------------------------------
 
 
-def test_a_differing_reading_rests_only_on_records_that_cite_the_provision(join, cites):
+def test_a_differing_reading_rests_only_on_records_that_cite_the_provision(join, cites, names):
     """`divergences-public.md` entry 7 names ten provisions the guidance
     and the longlist read differently, and says of each that it lists
     what was read. A record reaches that list through its citation, so a
@@ -127,7 +127,11 @@ def test_a_differing_reading_rests_only_on_records_that_cite_the_provision(join,
         citation = entry["citation"]
         for reading, ids in entry["readings"].items():
             for rid in ids:
-                if citation not in cites.get(rid, ()):
+                # `names`, not string equality: a citation of a block whose
+                # only content is one point identifies that point, and this
+                # file says so ten lines up. Asking the question two ways in
+                # one test file is how a suite comes to contradict itself.
+                if not names(cites.get(rid, ()), citation):
                     wrong.append("%s: %s (%s) does not cite it" % (citation, rid, reading))
     assert not wrong, "readings filed under a provision the record never cites:\n" + "\n".join(wrong)
 
@@ -299,15 +303,30 @@ def test_the_join_table_still_shows_the_citations_it_stopped_counting(join):
     for a missing fact."""
     table = (DATA / "requirements-join.md").read_text("utf-8")
     assert "reached without being named" in table
-    reached = {
-        rid.split(":")[-1]
-        for point in join["annex_coverage"]
-        for rid in point["reached_by_a_broader_citation"]["ec_datapoints"]
-        + point["reached_by_a_broader_citation"]["longlist_rows"]
-    }
-    assert reached, "nothing is being reported as reached-without-being-named"
-    for rid in reached:
-        assert rid in table
+
+    # Per row and per cell. The first version asked `rid in table` with
+    # `rid` a two-character number, which a sha256 fragment in the source
+    # listing satisfies: every mention of 83 and 84 could be deleted from
+    # the table and the assertion still passed. A substring search over a
+    # whole document is not a test of a column.
+    rows = {}
+    for line in table.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 7 and cells[0].startswith("`annex-xiii:"):
+            rows[cells[0].strip("`")] = {c for c in cells[5].split(",") if c.strip() != "-"}
+    assert rows, "no coverage rows parsed out of the table"
+
+    shown_somewhere = False
+    for point in join["annex_coverage"]:
+        broader = point["reached_by_a_broader_citation"]
+        expected = {
+            rid.split(":")[-1]
+            for rid in broader["ec_datapoints"] + broader["longlist_rows"]
+        }
+        cell = {c.strip() for c in rows[point["annex_point"]]}
+        assert expected == cell, (point["annex_point"], sorted(expected), sorted(cell))
+        shown_somewhere = shown_somewhere or bool(expected)
+    assert shown_somewhere, "nothing is being reported as reached-without-being-named"
 
 
 def test_the_join_says_how_many_names_its_matched_elements_actually_reach(join):
@@ -505,3 +524,116 @@ def test_the_two_counts_that_always_show_the_same_number_say_why(join):
     assert "is a subset of" in table
     if through_parent == neither:
         assert "every point no restatement names has a parent that is" in table
+
+
+# -- what the demotion mechanism owes, found by attacking it ----------------
+
+
+def test_a_citation_of_a_point_that_has_sub_items_reports_reaching_them(join, cites, names):
+    """The first version of the demotion split the same relation in two
+    by an accident, and then fixed only half of it.
+
+    `Annex XIII 2 (c)` is cited by `ec-datapoints:48` and `longlist:44`,
+    and 2(c) has six sub-items. Because 2(c) has a row of its own in the
+    annex index, the code returned early and never looked at them -- so
+    six points reached by a broader citation were reported as reached by
+    nothing, three lines under a new paragraph saying such a record "is
+    shown against each and counted against none". The accident that used
+    to decide the counts was still deciding the reporting."""
+    reached = {}
+    for point in join["annex_coverage"]:
+        key = point["annex_point"]
+        parent = key.rsplit(".", 1)[0] if "." in key else None
+        if parent is None:
+            continue
+        for rid, citations in cites.items():
+            if parent in citations and not names(citations, key):
+                reached.setdefault(key, set()).add(rid)
+
+    for key, expected in reached.items():
+        entry = next(a for a in join["annex_coverage"] if a["annex_point"] == key)
+        shown = set(
+            entry["reached_by_a_broader_citation"]["ec_datapoints"]
+            + entry["reached_by_a_broader_citation"]["longlist_rows"]
+        )
+        assert expected <= shown, (key, sorted(expected - shown))
+    assert "annex-xiii:2.c.1" in reached, "the case this test exists for has gone"
+
+
+def test_the_two_ways_of_saying_reached_but_not_named_cannot_disagree(join):
+    """`cited_only_through_its_parent` and the demotion column describe
+    one relation. Held apart, one row could say a point is named through
+    its parent while the column beside it says the same citation reaches
+    it without naming it."""
+    for point in join["annex_coverage"]:
+        broader = point["reached_by_a_broader_citation"]
+        has_broader = bool(broader["ec_datapoints"] or broader["longlist_rows"])
+        direct = bool(point["ec_datapoints"] or point["longlist_rows"])
+        assert point["cited_only_through_its_parent"] == (has_broader and not direct), (
+            point["annex_point"],
+            point["cited_only_through_its_parent"],
+            has_broader,
+            direct,
+        )
+
+
+def test_a_block_that_is_not_a_provision_is_not_published_as_one(join):
+    """`readings_that_differ_by_citation` walks every key the join
+    collected, and a block citation puts its own key in there --
+    `annex-xiii:1`, which the change declares names nothing and which has
+    no row in the coverage table. One guidance row citing the block the
+    way the two lifetime rows do would publish it under "where two
+    restatements of the same provision disagree", which is the same
+    one-citation-many-provisions error the change removed."""
+    points = {r["id"] for r in _index("requirements-annex-xiii.json")["records"]}
+    for entry in join["readings_that_differ_by_citation"]:
+        citation = entry["citation"]
+        if not citation.startswith("annex-xiii:"):
+            continue
+        assert citation in points, "%s is a block, not a provision" % citation
+
+
+def test_everything_a_citation_names_is_credited_to_it(join, cites, names):
+    """The mirror of the floor property, which only checked one way.
+    Every test written for the demotion verified that a credited record
+    names its point; none verified that a naming record is credited, so
+    a change that dropped credits was green."""
+    for point in join["annex_coverage"]:
+        key = point["annex_point"]
+        expected = {rid for rid, citations in cites.items() if names(citations, key)}
+        shown = set(point["ec_datapoints"] + point["longlist_rows"])
+        assert expected <= shown, (key, sorted(expected - shown))
+
+
+def test_the_citation_parser_reads_these_strings_the_way_a_person_does():
+    """Every other property in this file builds its ground truth by
+    calling the generator's own parser, so a change to that parser moves
+    both sides of the comparison and the suite stays green while the
+    published counts move. Measured: widening one character class in
+    `ANNEX_XIII` drops 1(f) -- restated word for word by two documents --
+    to restated by neither, with 1096 tests passing.
+
+    This is the one place the parser is asked against an answer written
+    by hand. The strings are copied out of the two indexes; the keys are
+    what a reader of Annex XIII would say they name."""
+    tool = _join_tool()
+    for written, expected in (
+        ("BR Annex XIII 1 (f)", ["annex-xiii:1.f"]),
+        ("Annex XIII (1f)", ["annex-xiii:1.f"]),
+        ("Annex XIII 1(n)", ["annex-xiii:1.n"]),
+        ("Annex XIII (2c);", ["annex-xiii:2.c"]),
+        ("BR Annex XIII 2 (c)", ["annex-xiii:2.c"]),
+        ("Annex XIII 3", ["annex-xiii:3"]),
+        ("Annex XIII (1)", ["annex-xiii:1"]),
+        ("BR Annex XIII 1 (t)", ["annex-xiii:1.t"]),
+        ("Annex XIII 4 (a)", ["annex-xiii:4.a"]),
+    ):
+        assert tool.citations(written) == expected, written
+
+    # And the letters really are distinguished, one from another. The
+    # mutation above survived because nothing asked.
+    letters = {
+        chr(code): tool.citations("Annex XIII 1 (%s)" % chr(code))
+        for code in range(ord("a"), ord("t") + 1)
+    }
+    assert all(v == ["annex-xiii:1.%s" % k] for k, v in letters.items()), letters

@@ -132,12 +132,18 @@ def render_markdown(doc):
     add("are the same six. Their being equal is the fact worth having, and it is that")
     add("every point no restatement names has a parent that is named.")
     add("")
-    add("The last column is not coverage. A citation of a whole block -- `Annex XIII")
-    add("(1)`, which has nineteen lettered points beneath it -- reaches every point in")
-    add("the block without naming any of them, so the record is shown against each and")
-    add("counted against none. Two longlist rows about expected lifetime cite that")
-    add("block in passing; reading them as a restatement of all nineteen would put")
+    add("The last column is not coverage. A citation reaches everything under the")
+    add("provision it names, and naming a provision is not naming its parts: `Annex")
+    add("XIII (1)` has nineteen lettered points beneath it and picks out none of them,")
+    add("and `Annex XIII 2 (c)` names 2(c) and reaches its six sub-items without")
+    add("naming any. Both are shown in that column and counted in neither of the two")
+    add("before it. Two longlist rows about expected lifetime cite the whole of point")
+    add("1 in passing; reading them as a restatement of all nineteen would put")
     add("nineteen obligations above the floor on the strength of one citation.")
+    add("")
+    add("A citation that goes a level deeper than a point -- `2 (c) (iv)` -- would be")
+    add("read as naming 2(c). No citation in either document does; if one appears, it")
+    add("will be credited to the point above the one it names.")
     add("")
     add("| annex point | access | required | guidance data points | longlist rows |"
         " reached without being named | |")
@@ -207,6 +213,8 @@ def main(argv=None):
     ap.add_argument("--dir", default=".")
     ap.add_argument("--out", default="requirements-join.json")
     ap.add_argument("--md", default="", help="also write the join table as markdown")
+    ap.add_argument("--check", action="store_true",
+                    help="write nothing; fail if what is on disk is not what this writes")
     args = ap.parse_args(argv)
 
     indexes = {}
@@ -251,12 +259,22 @@ def main(argv=None):
         published as a floor, and a credit nobody made is the one kind
         of error a floor cannot absorb.
         """
+        beneath = sorted(k for k in annex_keys if k.startswith(citation + "."))
         if citation in annex_keys:
-            return [citation], True
+            # A point that is itself a record and also has sub-items:
+            # the citation names the point and reaches what is under it.
+            # Returning early here was the first version's mistake -- it
+            # reported the six sub-items of 2(c) as reached by nothing,
+            # under a paragraph saying such a record is shown against
+            # each and counted against none. Same relation, split in two
+            # by whether the superior has a row of its own, which is the
+            # accident this function exists to stop deciding anything.
+            return [citation], beneath
         if citation in annex_prefixes:
-            beneath = sorted(k for k in annex_keys if k.startswith(citation + "."))
-            return beneath, len(beneath) == 1
-        return [], False
+            if len(beneath) == 1:
+                return beneath, []
+            return [], beneath
+        return [], []
 
     # -- join by citation ---------------------------------------------------
     cited = {}          # canonical citation -> {"ec": [...], "longlist": [...]}
@@ -279,12 +297,13 @@ def main(argv=None):
                     unresolvable += 1
                     continue
                 checked += 1
-                named, names_them = points_named_by(key)
+                named, reaches = points_named_by(key)
                 for point in named:
                     if point != key:
-                        reached = cited if names_them else contained
-                        reached.setdefault(point, {}).setdefault(source, []).append(r["id"])
-                if not named:
+                        cited.setdefault(point, {}).setdefault(source, []).append(r["id"])
+                for point in reaches:
+                    contained.setdefault(point, {}).setdefault(source, []).append(r["id"])
+                if not named and not reaches:
                     dangling.append(
                         {
                             "citation": key,
@@ -298,8 +317,6 @@ def main(argv=None):
     for key, record in sorted(annex_ids.items()):
         hits = cited.get("annex-xiii:%s" % key, {})
         broader = contained.get("annex-xiii:%s" % key, {})
-        parent = "annex-xiii:%s" % key.rsplit(".", 1)[0] if "." in key else ""
-        parent_hits = cited.get(parent, {}) if parent else {}
         annex_coverage.append(
             {
                 "annex_point": "annex-xiii:%s" % key,
@@ -312,8 +329,12 @@ def main(argv=None):
                     "ec_datapoints": sorted(set(broader.get("ec-datapoints", []))),
                     "longlist_rows": sorted(set(broader.get("longlist", []))),
                 },
+                # Derived from the column beside it rather than computed
+                # a second way. Two expressions for one relation is two
+                # answers waiting to disagree on a row.
                 "cited_only_through_its_parent": bool(
-                    not hits and (parent_hits.get("ec-datapoints") or parent_hits.get("longlist"))
+                    not hits
+                    and (broader.get("ec-datapoints") or broader.get("longlist"))
                 ),
             }
         )
@@ -373,6 +394,13 @@ def main(argv=None):
     citation_disagreements = []
     for key, hits in sorted(cited.items()):
         if "ec-datapoints" not in hits or "longlist" not in hits:
+            continue
+        # The citation as written goes into `cited` whatever it names, so
+        # a block citation leaves its own key there. `annex-xiii:1` names
+        # no provision and has no row in the coverage table; publishing
+        # it here as one would put a single passing citation back in the
+        # place this file just took it out of.
+        if key in annex_prefixes and key not in annex_keys:
             continue
         readings = {}
         for i in sorted(set(hits["ec-datapoints"] + hits["longlist"])):
@@ -456,14 +484,33 @@ def main(argv=None):
         "readings_that_differ_by_citation": citation_disagreements,
     }
 
-    with open(args.out, "w", encoding="utf-8") as fh:
-        json.dump(doc, fh, ensure_ascii=False, indent=1)
-        fh.write("\n")
+    rendered = {args.out: json.dumps(doc, ensure_ascii=False, indent=1) + "\n"}
     if args.md:
-        with open(args.md, "w", encoding="utf-8") as fh:
-            fh.write(render_markdown(doc))
-        print("wrote %s" % args.md)
-    print("wrote %s" % args.out)
+        rendered[args.md] = render_markdown(doc)
+
+    if args.check:
+        # The table is a published document derived from a published
+        # document, and nothing compared the two. Both were hand-editable
+        # with every gate green: a count in the markdown could say 27
+        # where the JSON said 25, and the nineteen demoted rows could be
+        # deleted from the table alone. Every other generated file here
+        # has this flag; this one was the reader-facing one without it.
+        stale = []
+        for path, text in rendered.items():
+            if not os.path.exists(path) or open(path, encoding="utf-8").read() != text:
+                stale.append(path)
+        if stale:
+            print("stale, run tools/join_requirements.py: %s" % ", ".join(sorted(stale)),
+                  file=sys.stderr)
+            return 1
+        print("the join and its table match their generator (%d annex points, %d elements)"
+              % (doc["counts"]["annex_points"], doc["counts"]["template_elements"]))
+        return 0
+
+    for path, text in rendered.items():
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        print("wrote %s" % path)
     for k, v in doc["counts"].items():
         print("  %-52s %s" % (k, v))
     return 0

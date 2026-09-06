@@ -31,6 +31,8 @@ exercised:
 
 battery-data:
 	$(PYTHON) tools/battery_data_check.py
+	cd data/battery-passport && $(PYTHON) tools/join_requirements.py --dir . \
+		--out requirements-join.json --md requirements-join.md --check
 	$(PYTHON) tools/extract_battery_rules.py --check
 
 lint:

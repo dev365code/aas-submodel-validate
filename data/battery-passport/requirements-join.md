@@ -38,7 +38,7 @@ lower bounds until a citation-bearing bridge exists.
 | annex points with a longlist row | 25 |
 | annex points with neither | 6 |
 | annex points named only through their parent | 6 |
-| annex points a broader citation reaches without naming | 19 |
+| annex points a broader citation reaches without naming | 25 |
 | citations unresolved in consolidated text | 1 |
 | citations checked against the annex | 115 |
 | citations no index here can resolve | 53 |
@@ -63,12 +63,18 @@ a reader expects, and reading 6 and 6 as twelve points would be wrong: they
 are the same six. Their being equal is the fact worth having, and it is that
 every point no restatement names has a parent that is named.
 
-The last column is not coverage. A citation of a whole block -- `Annex XIII
-(1)`, which has nineteen lettered points beneath it -- reaches every point in
-the block without naming any of them, so the record is shown against each and
-counted against none. Two longlist rows about expected lifetime cite that
-block in passing; reading them as a restatement of all nineteen would put
+The last column is not coverage. A citation reaches everything under the
+provision it names, and naming a provision is not naming its parts: `Annex
+XIII (1)` has nineteen lettered points beneath it and picks out none of them,
+and `Annex XIII 2 (c)` names 2(c) and reaches its six sub-items without
+naming any. Both are shown in that column and counted in neither of the two
+before it. Two longlist rows about expected lifetime cite the whole of point
+1 in passing; reading them as a restatement of all nineteen would put
 nineteen obligations above the floor on the strength of one citation.
+
+A citation that goes a level deeper than a point -- `2 (c) (iv)` -- would be
+read as naming 2(c). No citation in either document does; if one appears, it
+will be credited to the point above the one it names.
 
 | annex point | access | required | guidance data points | longlist rows | reached without being named | |
 |---|---|---|---|---|---|---|
@@ -94,12 +100,12 @@ nineteen obligations above the floor on the strength of one citation.
 | `annex-xiii:2.a` | legitimate-interest | yes | 45 | 41 | - |  |
 | `annex-xiii:2.b` | legitimate-interest | yes | 46, 47 | 45, 46 | - |  |
 | `annex-xiii:2.c` | legitimate-interest | yes | 48 | 44 | - |  |
-| `annex-xiii:2.c.1` | legitimate-interest | yes | - | - | - | through parent |
-| `annex-xiii:2.c.2` | legitimate-interest | yes | - | - | - | through parent |
-| `annex-xiii:2.c.3` | legitimate-interest | yes | - | - | - | through parent |
-| `annex-xiii:2.c.4` | legitimate-interest | yes | - | - | - | through parent |
-| `annex-xiii:2.c.5` | legitimate-interest | yes | - | - | - | through parent |
-| `annex-xiii:2.c.6` | legitimate-interest | yes | - | - | - | through parent |
+| `annex-xiii:2.c.1` | legitimate-interest | yes | - | - | 48, 44 | through parent |
+| `annex-xiii:2.c.2` | legitimate-interest | yes | - | - | 48, 44 | through parent |
+| `annex-xiii:2.c.3` | legitimate-interest | yes | - | - | 48, 44 | through parent |
+| `annex-xiii:2.c.4` | legitimate-interest | yes | - | - | 48, 44 | through parent |
+| `annex-xiii:2.c.5` | legitimate-interest | yes | - | - | 48, 44 | through parent |
+| `annex-xiii:2.c.6` | legitimate-interest | yes | - | - | 48, 44 | through parent |
 | `annex-xiii:2.d` | legitimate-interest | yes | 49 | 47 | - |  |
 | `annex-xiii:3.1` | authorities | yes | 50 | 27 | - |  |
 | `annex-xiii:4.a` | legitimate-interest | yes | 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 | 83, 84 | - |  |
