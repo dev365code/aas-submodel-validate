@@ -114,3 +114,28 @@ def test_the_report_cannot_call_a_part_absent_that_the_container_hands_back(tmp_
     assert resolved == entry, resolved
     report = _report(path)
     assert "HD-D7" not in report, report["HD-D7"].violation.message
+
+
+def test_a_wrong_identifier_takes_rules_out_of_the_run_by_the_measured_amount():
+    """`docs/divergences.md` #23 says a row whose identifier does not
+    match is never entered and its subtree's rules leave the run with it.
+    It gives a number, and nothing recomputed the number.
+
+    `tools/scope_silence.py` does. Pinned here so the entry and the tool
+    move together, and because the split between the two shapes is the
+    argument for the near-miss lint: a version bump -- the last character
+    -- leaves every affected row still speaking through the lint, and a
+    typo inside a path segment leaves 24 of them saying nothing at all.
+    """
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import scope_silence
+
+    tried, mute, lint_only, _detail, absent = scope_silence.measure("tail")
+    assert (tried, len(mute), len(lint_only)) == (69, 0, 18)
+    assert len(absent) == 17, "the fixtures now carry a different set of rows"
+
+    tried, mute, lint_only, _detail, absent = scope_silence.measure("middle")
+    assert (tried, len(mute), len(lint_only)) == (69, 24, 0)
