@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.1.2 — unreleased
+
+Still 125 rules, 86 generated from the vendored template files, and no
+rule checks anything it did not check in 0.1.1. This release is about
+the two places that could disagree with each other about one question.
+
+**One entry point where there were two.** Two places in this reader turn
+a string into a part: supplemental relationship resolution and the File
+rule. They asked in opposite orders — the container tried what the
+archive literally holds and interpreted after, while the File rule
+folded the value's surrounding whitespace and then asked — and
+`docs/divergences.md` #18 recorded four archives where they disagree.
+
+The sharpest of the four is why this is a fix and not a tidy-up: an
+archive holding an entry named `aasx/files/manual.pdf ` and a File value
+naming it exactly. `part()` returns that entry, and the report said the
+container holds no part at that value, because the rule folded the space
+away before asking and so the literal step never saw the spelling the
+archive holds. One reader contradicting itself in one page is worse to
+act on than either answer alone.
+
+The folding now happens inside `part()`, after the literal steps rather
+than before them, and both callers come through it. What is *not* folded
+is the archive's own entry names: an archive holding
+`aasx/files/manual.pdf ` and a File value of `/aasx/files/manual.pdf`
+stays refused, because matching that would mean the reader supplying a
+character the value does not have.
+
+**`verdict`** — Thirty-six inputs were put through 0.1.1 and this tree,
+and one comes back judged differently: the archive above. `HD-D7` is no
+longer drawn on it and its exit code falls from 1 to 0. That is the
+quiet direction — a pipeline red on such a file today goes green without
+saying so — and it is a false refusal being withdrawn: the file the
+value names is in the package.
+
+The corpus grew from 32 inputs to 36 to make that sentence possible. On
+the 32 it had, the change measured as nothing moved, because every
+File-value input packed the same plain entry name and none of them could
+tell the two orders apart. An input that cannot distinguish the versions
+is not coverage, and a denominator that counts it says otherwise.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
 ## 0.1.1 — 2026-09-05
 
 Still 125 rules, 86 generated from the vendored template files as

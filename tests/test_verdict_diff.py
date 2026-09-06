@@ -83,3 +83,38 @@ def test_the_file_value_shapes_reach_the_rule_they_were_written_for(corpus):
             continue
         drawn |= {f.id for f in runner.run(str(target)).findings}
     assert "HD-D7" in drawn, sorted(drawn)
+
+
+def test_the_held_spelling_inputs_hold_the_part_their_value_names(corpus):
+    """The corpus gained these because it could not see a change.
+
+    Every `a File value of ...` container packs the same plain entry
+    name, so which spelling `part` tries first cannot alter any of them.
+    The tool duly reported nothing moved for a change that closes four
+    recorded disagreements (docs/divergences.md #18). These put the odd
+    spelling in the archive instead of only in the value, which is the
+    only place the two orders can be told apart.
+
+    What makes them a measurement rather than four more rows: three of
+    them really do hold the file the value names, so `HD-D7` there is a
+    false refusal and not a defect caught. The fourth holds the odd
+    spelling in the *archive* and an ordinary value, and must stay
+    refused -- matching it would mean the reader supplying characters
+    the value does not have.
+    """
+    import zipfile
+
+    from aas_submodel_validate.container import AasxPackage
+
+    held = [(label, target) for label, target in corpus if label.startswith("the archive holds")]
+    assert len(held) == len(verdict_diff.HELD_SPELLINGS) == 4, held
+
+    for (entry, value, resolves), (label, target) in zip(verdict_diff.HELD_SPELLINGS, held):
+        with zipfile.ZipFile(str(target)) as archive:
+            assert entry in archive.namelist(), (label, archive.namelist())
+        with AasxPackage(str(target)) as package:
+            found = package.part(value)
+        assert found == (entry if resolves else None), (label, found)
+    assert [r for _e, _v, r in verdict_diff.HELD_SPELLINGS].count(False) == 1, (
+        "the row that must stay refused is what stops an over-eager fix"
+    )

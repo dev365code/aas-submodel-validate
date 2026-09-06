@@ -71,6 +71,26 @@ FILE_VALUES = [
     "aasx/files/absent.pdf",
 ]
 
+#: Archives whose *entry name* is the odd spelling, paired with the value
+#: that names it. Every File case above packs the same plain entry, so a
+#: change to which spelling `part` tries first moves nothing in them --
+#: the tool reported "0 of 32 moved" for a change that closes the four
+#: disagreements in docs/divergences.md #18, because no input in it could
+#: tell the two orders apart. An input that cannot distinguish the
+#: versions is not coverage, and a denominator counting it says otherwise.
+#: (entry the archive holds, value the File carries, must it resolve)
+#: The third field is the point of the second row. Folding the value's
+#: whitespace is reading a spelling; folding the *archive's* would be
+#: inventing characters the value does not have, and a fix that resolved
+#: that row would be over-accepting in a reader whose standing rule is
+#: that refusing wrongly costs less than accepting wrongly.
+HELD_SPELLINGS = [
+    ("aasx/files/manual.pdf ", "/aasx/files/manual.pdf ", True),
+    ("aasx/files/manual.pdf ", "/aasx/files/manual.pdf", False),
+    ("aasx/files/manual.pdf", " /aasx/files/manual.pdf", True),
+    ("aasx/files/manual.pdf", "/aasx/files/manual.pdf\t", True),
+]
+
 LANGUAGE_FOLDS = [("upper", str.upper), ("title", str.title), ("lower", str.lower)]
 DECLARED_ENCODINGS = ["utf-8", "iso-8859-1", "windows-1252", "utf-16", "us-ascii"]
 
@@ -146,6 +166,21 @@ def build_corpus(into: Path):
                       build_aasx(into / ("file-%02d.aasx" % index),
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[("aasx/files/manual.pdf", b"%PDF-1.4 ")])))
+
+    # The same question asked the other way round: the archive holds the
+    # odd spelling and the value is ordinary, or the reverse. This is
+    # where the two ways into the normaliser could disagree, so it is
+    # where a change to their order has to be measurable.
+    for index, (entry, value, _resolves) in enumerate(HELD_SPELLINGS):
+        environment = hd_env()
+        version = environment["submodels"][0]["submodelElements"][0]["value"][0]["value"][2]["value"][0]
+        files = version["value"][-1]
+        assert files["idShort"] == "DigitalFiles", files["idShort"]
+        files["value"][0]["value"] = value
+        cases.append(("the archive holds %r and the File says %r" % (entry, value),
+                      build_aasx(into / ("held-%02d.aasx" % index),
+                                 payload=json.dumps(environment).encode("utf-8"),
+                                 files=[(entry, b"%PDF-1.4 ")])))
 
     # And the shapes an aas-suppl relationship's target takes. The last
     # is the question the rule exists for and must not move; without it

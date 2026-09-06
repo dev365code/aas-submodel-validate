@@ -93,7 +93,12 @@ def file_part_violations(container, subject, value):
         yield Violation("this File's value is not a part name",
                         subject=subject,
                         detail="%s climbs out of the package" % value)
-    elif container.part(folded) is None:
+    # The value as written, not the folded spelling: `part` does the
+    # folding now, after it has tried what the archive actually holds.
+    # Asking about a string this rule invented, and then reporting the
+    # string the file carries, is how the report came to disagree with
+    # the container it read.
+    elif container.part(value) is None:
         yield Violation("the container holds no part at this File's value",
                         subject=subject, detail=value)
 

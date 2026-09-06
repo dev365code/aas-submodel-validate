@@ -525,10 +525,16 @@ class AasxPackage:
     def part(self, value: str):
         """Which entry `value` names, or None.
 
+        The one way in. Both callers that turn a string into a part --
+        the File rule and supplemental relationship resolution -- come
+        through here, so an archive cannot be told two different things
+        about one spelling.
+
         Exact first: an archive may hold an entry whose name really does
-        contain a percent escape, and decoding it before looking would
-        lose that file to a reader trying to be helpful. The normalised
-        index answers only for what the literal did not.
+        contain a percent escape, or surrounding whitespace, and
+        interpreting before looking would lose that file to a reader
+        trying to be helpful. The normalised index answers only for what
+        the literal did not.
         """
         if value in self._names:
             return value
@@ -541,7 +547,28 @@ class AasxPackage:
         literal = value.lstrip("/")
         if literal in self._names:
             return literal
-        canonical = canonical_part_name(value)
+        # Only now interpret, and interpret once. A value carrying
+        # surrounding whitespace is almost always a spelling of a name
+        # without it, and the File rule used to fold it away before
+        # asking -- which meant the two steps above never saw the
+        # spelling the archive holds. An archive with an entry named
+        # `aasx/files/manual.pdf ` and a File value naming it exactly
+        # got a report saying the container holds no part at a value
+        # `part` resolves. One reader contradicting itself in one page
+        # is worse than either answer alone (docs/divergences.md #18).
+        #
+        # After the literal steps, not before them: folding first is
+        # what took the archive's own spelling out of reach. Everything
+        # below this line works on the folded value, so the two ways in
+        # ask the same question in the same order.
+        folded = value.strip()
+        if folded != value:
+            if folded in self._names:
+                return folded
+            stripped = folded.lstrip("/")
+            if stripped in self._names:
+                return stripped
+        canonical = canonical_part_name(folded)
         if canonical is None:
             return None
         if canonical in self._names:
