@@ -2,9 +2,24 @@
 
 ## 0.1.2 — 2026-09-07
 
-Still 125 rules, 86 generated from the vendored template files. Two
-rules answer differently than they did in 0.1.1 and both are marked
-below.
+Still 125 rules, 86 generated from the vendored template files. No rule
+was added and none was removed; several answer differently, and every
+paragraph that moves a verdict is marked **`verdict`**.
+
+**If you gate a build on the exit code, read this paragraph.** Measured
+over 47 inputs against 0.1.1: eight are judged differently, and four of
+those change an exit code. Three go from 0 to 1 -- a File value naming
+the package's own content types stream, and two Technical Data lists
+declaring an item type the template does not. One goes from 1 to 0: an
+archive holding an entry whose name ends in a space, against a File
+value naming it exactly, which was a refusal of a file that has what it
+says it has. The other four move findings without moving the code: two
+withdraw an `X4` warning, and two battery passports draw more of
+`BAT-R8` because they state their own category.
+
+So this release can turn a green build red, and the three ways it does
+are all a document saying something it should not. It can also turn one
+red build green, and that one was ours.
 
 **One way into the normaliser where there were two orders.** Three call
 sites turn a string into a part: supplemental relationship resolution
