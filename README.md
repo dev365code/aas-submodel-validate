@@ -171,6 +171,16 @@ judging, so an unjudged one is a number and not a finding;
 `--require-all-judged` turns that number into an exit code when your
 pipeline needs it to.
 
+A verdict also says when a rule was never put. A generated rule lives
+inside a scope, and a scope opens only when an element matches the row
+that names it — so an element the reader cannot identify takes what is
+under it out of the run, quietly, with nothing wrong in what remained.
+Where that happens the summary says `1 rule not asked` and
+`summary.rulesNotAsked` names which. It is not a finding and it moves no
+exit code: it says the run did not look, which is a different sentence
+from *there was nothing to see*. `smtv --example` prints one, on the
+official IDTA example, for a list that wears its item's identifier.
+
 The number counts submodels a template table answered for, and nothing
 else. Rules that need no template — the container checks, the battery
 table — report on a submodel that the count still calls unjudged, which

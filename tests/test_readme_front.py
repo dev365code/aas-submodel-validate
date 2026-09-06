@@ -811,3 +811,27 @@ def test_every_flag_this_page_names_is_a_flag_the_tool_has():
         "this page names options the tool does not have: %s. It has: %s. "
         "If one of them belongs to another command the page tells a "
         "reader to run, say so in NOT_OURS." % (unknown, sorted(real)))
+
+
+def test_the_page_promises_the_unasked_clause_the_example_actually_prints():
+    """The front page names every other coverage device -- `judged 1 of
+    3 submodels`, `no submodels to judge`, the refused input that gets
+    no judged clause at all -- and for a while it did not name this one,
+    while `smtv --example`, the first command it tells a reader to run,
+    printed it on the last line.
+
+    So the page says it now, and this asserts the page and the run agree
+    on all three parts: the clause, the count, and the reason."""
+    from aas_submodel_validate import runner
+    from aas_submodel_validate.report import render
+
+    page = re.sub(r"\s+", " ", README)
+    assert "`summary.rulesNotAsked` names which" in page
+    assert "`smtv --example` prints one, on the official IDTA example" in page
+
+    example = ROOT / "src/aas_submodel_validate/data/example/idta-02004-2.0.aasx"
+    report = runner.run(str(example))
+    assert len(report.not_asked) == 1, report.not_asked
+    assert "1 rule not asked" in render(report)
+    # And the reason the page gives: a list wearing its item's identifier.
+    assert any(f.id == "HDL2" for f in report.findings)
