@@ -82,6 +82,23 @@ can see it. A comparison that has no case for the thing that changed
 reports a confident zero, and this file exists to stop a release note
 resting on one.
 
+**A report cannot be grown without bound by what a file says.** Every
+text field of a finding is capped at 1000 characters, and where one was
+cut it says so and by how much. Measured before: a 200 KB `File` value
+produced a 200,670-character report, and the only thing bounding it was
+the 64 MiB limit on the input.
+
+The cap is on `Violation`, which every finding is built through, and it
+applies to all five of its text fields rather than the one that was
+found carrying a value. Capping a single place is the mistake this
+project has met before: the class stays and the next rule to interpolate
+a value reopens it. It sits far above anything this tool writes -- the
+longest remedy it ships is 403 characters -- so it can only ever cut
+what a file supplied, and a test asserts that stays true.
+
+This moves no verdict: the findings and their severities are what they
+were, and only the length of what a report repeats back has changed.
+
 **A list that declares it holds something the template does not.** The
 generator has read `typeValueListElement` off the templates since the
 tables existed -- twenty-one rows carry the item type their list is

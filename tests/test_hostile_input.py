@@ -1384,3 +1384,87 @@ def test_a_legacy_encoding_the_parser_reads_is_read_here_too(tmp_path, encoding)
         "arrived" % encoding)
     assert main(["-q", "--allow-unmatched", str(path)]) == EXIT_OK, (
         "%s: a document every other reader reads was refused" % encoding)
+
+
+# -- what a report may repeat back ------------------------------------------
+
+
+def test_a_value_a_file_supplied_cannot_grow_the_report_without_bound():
+    """A report interpolates what a file said, and nothing bounded it.
+
+    Measured before the bound: a 200 KB File value produced a
+    200,670-character report with a 200,016-character detail. The bound
+    on the input is 64 MiB, so the report was bounded by that and
+    nothing smaller.
+    """
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS, Violation
+
+    violation = Violation("m", detail="X" * 200000)
+    assert len(violation.detail) == MAX_REPORTED_CHARACTERS
+    assert violation.detail.endswith("(199000 more characters, not shown)")
+
+
+def test_every_field_is_bounded_and_not_only_the_one_that_was_found():
+    """Capping the single place a value was found is the mistake this
+    project has met before: the class stays and the next rule to
+    interpolate a value reopens it. `Violation` is the funnel every
+    finding is built through, so the bound is there and applies to all
+    of its text."""
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS, Violation
+
+    huge = "Y" * (MAX_REPORTED_CHARACTERS * 3)
+    violation = Violation(huge, subject=huge, detail=huge, fix=huge, spec=huge)
+    for name in ("message", "subject", "detail", "fix", "spec"):
+        assert len(getattr(violation, name)) == MAX_REPORTED_CHARACTERS, name
+
+
+def test_a_value_under_the_bound_is_handed_back_untouched():
+    """The direction that costs more. A bound that rewrites short text
+    would put an ellipsis in every report."""
+    from aas_submodel_validate.model import Violation
+
+    violation = Violation("m", detail="content types present: application/step")
+    assert violation.detail == "content types present: application/step"
+    assert Violation("m").detail is None
+
+
+def test_nothing_this_project_writes_comes_near_the_bound():
+    """The measurement that chose the number, kept as a test.
+
+    The bound exists to cut what a file supplied. If a sentence this
+    project writes ever approaches it, the bound is cutting our own
+    words and the number needs raising rather than the sentence
+    shortening."""
+    from aas_submodel_validate import rules  # noqa: F401 - importing registers
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS
+    from aas_submodel_validate.registry import all_rules
+
+    authored = []
+    for rule in all_rules():
+        for name in ("title", "fix", "spec"):
+            text = getattr(rule, name, None)
+            if text:
+                authored.append((len(text), rule.id, name))
+    authored.sort(reverse=True)
+    longest = authored[0]
+    assert longest[0] < MAX_REPORTED_CHARACTERS * 0.6, (
+        "%s's %s is %d characters against a bound of %d -- raise the bound"
+        % (longest[1], longest[2], longest[0], MAX_REPORTED_CHARACTERS))
+
+
+def test_the_whole_report_is_bounded_by_the_findings_it_carries(tmp_path):
+    """End to end, in both forms a reader gets."""
+    import json
+
+    from aas_submodel_validate import runner
+    from aas_submodel_validate.report import render
+    from builders import build_aasx, hd_env
+
+    payload = json.dumps(hd_env()).replace(
+        "/aasx/files/manual.pdf", "/aasx/files/" + "A" * 200000 + ".pdf")
+    path = build_aasx(tmp_path / "huge.aasx", payload=payload.encode("utf-8"),
+                      files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+    report = runner.run(str(path))
+    assert report.findings, "the fixture stopped producing a finding"
+    assert len(render(report)) < 6000, len(render(report))
+    assert len(json.dumps(report.as_dict())) < 9000, len(json.dumps(report.as_dict()))

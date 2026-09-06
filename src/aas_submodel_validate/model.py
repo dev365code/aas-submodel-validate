@@ -70,6 +70,43 @@ META_KIND = "meta"
 assert META_KIND in KINDS
 
 
+#: The longest any one field of a finding travels, in characters.
+#:
+#: A report interpolates what a file said -- a File value, a property's
+#: contents -- and nothing bounded it. Measured: a 200 KB File value
+#: produced a 200,670-character report, and the bound on the input is
+#: 64 MiB, so the report is bounded by that and nothing smaller.
+#:
+#: Set here rather than at the one rule that was found doing it. Capping
+#: a single place is the mistake this project has met before: the class
+#: stays and the next rule to interpolate a value reopens it. Every
+#: finding is built through `Violation`, so this is the one funnel.
+#:
+#: Chosen above the longest sentence this project writes -- 403
+#: characters, `SMT-D1`'s remedy -- with room to spare, so the bound can
+#: only ever cut something a file supplied. A test asserts that nothing
+#: authored comes near it.
+MAX_REPORTED_CHARACTERS = 1000
+
+#: What the reader sees where the rest was. Not a bare ellipsis: a
+#: reader who cannot tell a short value from a shortened one cannot tell
+#: whether the value in their file is the value in the report.
+#:
+#: Three dots and not the character. `tests/test_output_encoding.py`
+#: refused the first version of this line: a report reaches a terminal
+#: whose default code page cannot encode U+2026, and that gate caught it
+#: before a Windows reader did.
+_ELIDED = "... (%d more characters, not shown)"
+
+
+def _bounded(text):
+    """`text`, cut to the bound, saying how much was cut."""
+    if text is None or len(text) <= MAX_REPORTED_CHARACTERS:
+        return text
+    marker = _ELIDED % (len(text) - MAX_REPORTED_CHARACTERS)
+    return text[:MAX_REPORTED_CHARACTERS - len(marker)] + marker
+
+
 @dataclass(frozen=True)
 class Violation:
     """One concrete thing that is wrong, produced by a rule."""
@@ -92,6 +129,17 @@ class Violation:
     #: question, and for a check that did not happen the answer is no
     #: however little the check was asking for.
     severity: Optional[Severity] = None
+
+    def __post_init__(self):
+        # Every field, not only the two that were found carrying a
+        # value. A policy with an exception list is a policy somebody
+        # has to remember, and the bound is far above anything this
+        # project writes, so it costs the authored text nothing.
+        for name in ("message", "subject", "detail", "fix", "spec"):
+            value = getattr(self, name)
+            bounded = _bounded(value)
+            if bounded is not value:
+                object.__setattr__(self, name, bounded)
 
 
 @dataclass(frozen=True)
