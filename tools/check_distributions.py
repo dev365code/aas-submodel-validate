@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import pathlib
 import pathlib as _pathlib
+import re
 import subprocess
 import sys
 import sys as _sys
@@ -342,6 +343,103 @@ def tracked():
     return listed
 
 
+#: How `pyproject.toml` spells a group that a built distribution writes
+#: under another name. Only the two that install an executable are here;
+#: anything else a project declares would be added the same way, and
+#: until it is, an entry in an undeclared group is reported.
+_GROUPS = (("project.scripts", "console_scripts"),
+           ("project.gui-scripts", "gui_scripts"))
+
+
+def _table(text: str, heading: str) -> dict:
+    block = re.search(r"(?ms)^\[%s\]\s*\n(.*?)(?=^\[|\Z)" % re.escape(heading), text)
+    out = {}
+    for line in (block.group(1) if block else "").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line or "=" not in line:
+            continue
+        name, _, target = line.partition("=")
+        out[name.strip()] = target.strip().strip('"').strip("'")
+    return out
+
+
+def declared_entry_points() -> dict:
+    """Every entry-point group this project declares, read from
+    `pyproject.toml`. Groups it declares nothing in are absent, not
+    empty: the difference is whether an entry there is unexpected."""
+    text = (ROOT / "pyproject.toml").read_text("utf-8")
+    found = {}
+    for heading, group in _GROUPS:
+        table = _table(text, heading)
+        if table:
+            found[group] = table
+    return found
+
+
+def declared_scripts() -> dict:
+    """The console scripts `pyproject.toml` declares, read from it.
+
+    Not a copy kept here. A gate holding its own list of what it checks
+    agrees with itself forever, and the thing it was meant to notice --
+    the two files drifting apart -- is exactly what it cannot see.
+    """
+    return declared_entry_points().get("console_scripts", {})
+
+
+def script_problems(artifact) -> list:
+    """What an installed copy of this distribution would put on a PATH.
+
+    `entry_points.txt` is exempt from the tracked-files rule by name,
+    and it is the one member of a distribution that becomes an
+    executable: `pip install` reads it and writes a command that imports
+    a module and calls a function in it. Exempt and executable is the
+    combination worth opening, and the exemption was granted on the
+    filename -- which is how an audit goes blind, by asking for a name
+    rather than for a shape.
+
+    An sdist declares its scripts in `setup.cfg`/`pyproject.toml` rather
+    than in a built `entry_points.txt`, so only archives that carry one
+    are asked; a distribution with no such member is not a distribution
+    that installs a command.
+    """
+    if not str(artifact).endswith((".whl", ".zip")):
+        return []
+    with zipfile.ZipFile(artifact) as archive:
+        members = [n for n in archive.namelist() if n.endswith("entry_points.txt")]
+        if not members:
+            return []
+        text = archive.read(members[0]).decode("utf-8", "replace")
+    found, section = {}, None
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line.startswith("["):
+            section = line.strip("[]").strip()
+            continue
+        if section and "=" in line:
+            name, _, target = line.partition("=")
+            found.setdefault(section, {})[name.strip()] = target.strip()
+        elif section and line:
+            # A group may register a module with no `=` at all. It still
+            # runs when whatever reads that group imports it.
+            found.setdefault(section, {})[line] = ""
+    expected = declared_entry_points()
+    problems = []
+    for group in sorted(set(found) | set(expected)):
+        theirs, ours = found.get(group, {}), expected.get(group, {})
+        for name, target in sorted(theirs.items()):
+            if name not in ours:
+                problems.append("%s declares %s in [%s] and the project does not: "
+                                "%s%s" % (artifact.name, name, group, name,
+                                          " = " + target if target else ""))
+            elif ours[name] != target:
+                problems.append("%s points %s at %s; pyproject says %s"
+                                % (artifact.name, name, target, ours[name]))
+        for name in sorted(set(ours) - set(theirs)):
+            problems.append("%s declares no %s in [%s], which the project does"
+                            % (artifact.name, name, group))
+    return problems
+
+
 def main() -> int:
     survive()
     if not DIST.is_dir():
@@ -376,12 +474,16 @@ def main() -> int:
             elif inner not in index:
                 problems.append("%s carries %s -- this repository does not track it"
                                 % (artifact.name, name))
+    for artifact in artifacts:
+        problems.extend(script_problems(artifact))
     for problem in problems:
         print("distribution: %s" % problem, file=sys.stderr)
     if problems:
         return 1
-    print("distributions: %d checked, none carries what it must not"
-          % len(artifacts))
+    print("distributions: %d checked, none carries what it must not, and each\n"
+          "               declares the %d command%s the project does"
+          % (len(artifacts), len(declared_scripts()),
+             "" if len(declared_scripts()) == 1 else "s"))
     return 0
 
 

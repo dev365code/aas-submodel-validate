@@ -467,3 +467,103 @@ def test_a_wheel_reports_a_member_that_unpacks_outside_it(tmp_path):
         assert escaping in seen, (
             "%s unpacks outside the wheel and the gate dropped it: %s"
             % (escaping, seen))
+
+
+# -- the one member of a distribution that becomes a command ----------------
+
+
+def _wheel_declaring(tmp_path, text, name="aas_submodel_validate-0.1.1-py3-none-any.whl"):
+    import zipfile
+
+    made = tmp_path / name
+    with zipfile.ZipFile(made, "w") as archive:
+        archive.writestr("aas_submodel_validate-0.1.1.dist-info/METADATA",
+                         "Metadata-Version: 2.4\nName: aas-submodel-validate\n")
+        archive.writestr("aas_submodel_validate-0.1.1.dist-info/entry_points.txt", text)
+        archive.writestr("aas_submodel_validate/__init__.py", "")
+    return made
+
+
+def test_the_scripts_a_distribution_declares_are_the_ones_the_project_declares(tmp_path):
+    """`entry_points.txt` is exempt from the tracked-files rule by name,
+    and nothing read it.
+
+    It is also the only member of a distribution that turns into an
+    executable on somebody's PATH: `pip install` reads it and writes a
+    command that imports a module and calls a function. A file that is
+    both exempt and executable is the one to look inside, and the
+    exemption was granted on the filename -- which is how an audit goes
+    blind, by asking for a name instead of a shape."""
+    gate = _gate()
+    good = "[console_scripts]\naas-submodel-validate = aas_submodel_validate.cli:main\nsmtv = aas_submodel_validate.cli:main\n"
+    assert gate.script_problems(_wheel_declaring(tmp_path, good)) == []
+
+
+def test_an_extra_console_script_is_reported(tmp_path):
+    gate = _gate()
+    extra = ("[console_scripts]\n"
+             "aas-submodel-validate = aas_submodel_validate.cli:main\n"
+             "smtv = aas_submodel_validate.cli:main\n"
+             "smtv-helper = aas_submodel_validate.cli:main\n")
+    problems = gate.script_problems(_wheel_declaring(tmp_path, extra, "extra.whl"))
+    assert problems and "smtv-helper" in problems[0], problems
+
+
+def test_a_script_pointing_somewhere_else_is_reported(tmp_path):
+    gate = _gate()
+    moved = ("[console_scripts]\n"
+             "aas-submodel-validate = aas_submodel_validate.cli:main\n"
+             "smtv = evil.payload:run\n")
+    problems = gate.script_problems(_wheel_declaring(tmp_path, moved, "moved.whl"))
+    assert problems and "evil.payload:run" in problems[0], problems
+
+
+def test_a_distribution_that_declares_no_scripts_is_reported(tmp_path):
+    gate = _gate()
+    problems = gate.script_problems(_wheel_declaring(tmp_path, "", "none.whl"))
+    assert problems, "a wheel declaring none of the two commands passed"
+
+
+def test_the_project_configuration_is_where_the_expectation_comes_from():
+    """Read from `pyproject.toml`, not written twice. A gate holding its
+    own copy of what it checks agrees with itself forever."""
+    gate = _gate()
+    assert gate.declared_scripts() == {
+        "aas-submodel-validate": "aas_submodel_validate.cli:main",
+        "smtv": "aas_submodel_validate.cli:main",
+    }
+
+
+def test_a_payload_in_another_entry_point_group_is_reported(tmp_path):
+    """`console_scripts` is not the only group that installs an
+    executable -- `gui_scripts` does too, and a plugin group runs on
+    import of whatever loads it. Reading one section by name is the same
+    mistake as exempting one file by name, one level in: found by
+    tampering with a real wheel after the first version of this gate
+    passed it."""
+    gate = _gate()
+    payload = ("[console_scripts]\n"
+               "aas-submodel-validate = aas_submodel_validate.cli:main\n"
+               "smtv = aas_submodel_validate.cli:main\n"
+               "\n[gui_scripts]\nsmtvx = telemetry.phone_home:run\n")
+    problems = gate.script_problems(_wheel_declaring(tmp_path, payload, "gui.whl"))
+    assert problems and "gui_scripts" in problems[0], problems
+
+    plugin = ("[console_scripts]\n"
+              "aas-submodel-validate = aas_submodel_validate.cli:main\n"
+              "smtv = aas_submodel_validate.cli:main\n"
+              "\n[pytest11]\nsneaky = evil.plugin\n")
+    problems = gate.script_problems(_wheel_declaring(tmp_path, plugin, "plug.whl"))
+    assert problems, "a plugin group nobody declared passed"
+
+
+def test_the_groups_the_project_declares_are_read_from_the_project():
+    """If this project ever declares a gui script, the gate has to take
+    it from `pyproject.toml` rather than refuse it."""
+    gate = _gate()
+    assert gate.declared_entry_points() == {
+        "console_scripts": {
+            "aas-submodel-validate": "aas_submodel_validate.cli:main",
+            "smtv": "aas_submodel_validate.cli:main",
+        }
+    }
