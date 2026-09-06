@@ -88,3 +88,85 @@ def test_the_builders_require_their_table_too():
         tables = signature.parameters["tables"]
         assert tables.default is inspect.Parameter.empty, \
             "builders.%s would guess a table when a caller forgets one" % name
+
+
+def test_no_hand_rule_navigates_to_a_child_that_is_not_there(tmp_path):
+    """`child_of` looks at direct children only, and answers `None` for
+    anything it cannot find.
+
+    That is the right answer for an absent element -- the generated
+    cardinality rule is what speaks about those -- and it is also what a
+    hand rule gets when it asks for a label that is not a child of the
+    element it was handed at all. The two are indistinguishable at the
+    call site, and the second is silent: a rule reads nothing, reports
+    nothing, and the file passes a check that never happened.
+
+    Two of the three preconditions `child_of` rests on are already held
+    elsewhere. Labels are unique within a pack because
+    `tools/extract_smt_rules.py` refuses to emit a table where they are
+    not, naming the duplicate. The table is never guessed because every
+    navigation function takes it without a default, which the test at
+    the top of this file asserts. This is the third: on a file that has
+    everything, every `child_of` a rule makes finds it.
+
+    The battery fixture is deliberately not here. It is short of six
+    mandatory elements -- `HD-E17`, `E20`, `E22`, `E23`, `E24`, `E25`
+    report on it -- so `child_of` answering `None` there is the correct
+    answer to a question about a file that really is missing them.
+    """
+    import collections
+    import json
+
+    from aas_submodel_validate import runner
+    from aas_submodel_validate.rules import engine, handover
+    from aas_submodel_validate.rules import td as td_rules
+    from builders import build_aasx, hd_env, td_env
+
+    original = engine.child_of
+    # Every module that holds the name, not just the one that defines
+    # it. `handover.py` does `from .engine import child_of`, so the
+    # binding it calls was made at import and rebinding `engine.child_of`
+    # never reaches it -- the first version of this test patched only
+    # `engine` and three mis-scoped navigations walked straight past it.
+    holders = [m for m in (engine, handover, td_rules) if hasattr(m, "child_of")]
+    assert len(holders) >= 2, "nothing but the engine holds the name; check the imports"
+    try:
+        for name, make in (("hd", hd_env), ("td", td_env)):
+            missed = collections.Counter()
+
+            wrong_kind = []
+
+            def spy(element, label, tables, _missed=missed, _wrong=wrong_kind):
+                found = original(element, label, tables)
+                if found is None:
+                    _missed[label] += 1
+                elif type(found).__name__ != tables.BY_LABEL[label]["kind"]:
+                    # Asking for the item and getting the list. In five
+                    # Handover places IDTA gives a list and its own item
+                    # the same semanticId -- `DigitalFiles` and
+                    # `DigitalFile` are both `0173-1#02-ABK126#002` --
+                    # and `child_of` matches on the identifier, so the
+                    # two labels are interchangeable at a call site and
+                    # only one of them is right. The label looks like it
+                    # is doing the work and is not.
+                    _wrong.append((label, tables.BY_LABEL[label]["kind"],
+                                   type(found).__name__))
+                return found
+
+            for module in holders:
+                module.child_of = spy
+            path = build_aasx(
+                tmp_path / (name + ".aasx"),
+                payload=json.dumps(make()).encode("utf-8"),
+                files=(("aasx/files/manual.pdf", b"%PDF-1.4"),
+                       ("aasx/files/logo.png", b"\x89PNG"),
+                       ("aasx/files/front.png", b"\x89PNG")))
+            report = runner.run(str(path))
+            # The control. A fixture that stopped being conformant would
+            # satisfy the assertion below by never reaching a hand rule.
+            assert [f.id for f in report.findings] == [], (name, report.findings)
+            assert not missed, (name, dict(missed))
+            assert not wrong_kind, (name, wrong_kind)
+    finally:
+        for module in holders:
+            module.child_of = original
