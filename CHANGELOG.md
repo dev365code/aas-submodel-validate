@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2 — unreleased
+## 0.1.2 — 2026-09-07
 
 Still 125 rules, 86 generated from the vendored template files. Two
 rules answer differently than they did in 0.1.1 and both are marked
