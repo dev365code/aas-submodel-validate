@@ -35,61 +35,70 @@ lower bounds until a citation-bearing bridge exists.
 |---|---:|
 | annex points | 34 |
 | annex points with a guidance data point | 27 |
-| annex points with a longlist row | 27 |
+| annex points with a longlist row | 25 |
 | annex points with neither | 6 |
 | annex points named only through their parent | 6 |
+| annex points a broader citation reaches without naming | 19 |
 | citations unresolved in consolidated text | 1 |
 | template elements | 221 |
 | template elements matched by name | 42 |
+| distinct attribute names those elements reach | 37 |
 | template elements matched by nothing | 179 |
 | guidance data points matched by name | 8 |
 | guidance data points unmatched | 63 |
 | longlist rows matched by name | 37 |
 | longlist rows unmatched | 63 |
 | name matches where the readings differ | 9 |
-| citations where the readings differ | 10 |
+| citations where the readings differ | 8 |
 
 ## Every point of the annex, and who restates it
 
 `through parent` means the point is a sub-item of a point that is cited,
 and is not named on its own by either restatement.
 
-| annex point | access | required | guidance data points | longlist rows | |
-|---|---|---|---|---|---|
-| `annex-xiii:1.a` | public | yes | - | 14, 15, 18, 19, 83, 84, 9 |  |
-| `annex-xiii:1.b` | public | yes | 16 | 39, 40, 42, 83, 84 |  |
-| `annex-xiii:1.c` | public | yes | 17, 18 | 23, 28, 29, 30, 31, 32, 33, 34, 83, 84 |  |
-| `annex-xiii:1.d` | public | yes | 19 | 83, 84 |  |
-| `annex-xiii:1.e` | public | yes | 20, 21, 22, 23 | 48, 49, 50, 51, 52, 53, 54, 83, 84 |  |
-| `annex-xiii:1.f` | public | yes | 24 | 55, 83, 84 |  |
-| `annex-xiii:1.g` | public | yes | 25 | 59, 83, 84 |  |
-| `annex-xiii:1.h` | public | conditional | 26, 27, 28 | 66, 67, 68, 83, 84 |  |
-| `annex-xiii:1.i` | public | conditional | 29, 30 | 69, 72, 83, 84 |  |
-| `annex-xiii:1.j` | public | yes | 31, 32 | 83, 84, 86 |  |
-| `annex-xiii:1.k` | public | conditional | 33 | 83, 84, 90 |  |
-| `annex-xiii:1.l` | public | yes | 34 | 83, 84, 92, 93 |  |
-| `annex-xiii:1.m` | public | yes | 35 | 17, 83, 84 |  |
-| `annex-xiii:1.n` | public | yes | 36, 37 | 74, 75, 83, 84 |  |
-| `annex-xiii:1.o` | public | yes | 38 | 81, 83, 84 |  |
-| `annex-xiii:1.p` | public | yes | 39 | 83, 84, 87 |  |
-| `annex-xiii:1.q` | public | yes | 40, 41 | 83, 84 |  |
-| `annex-xiii:1.r` | public | yes | 42 | 26, 83, 84 |  |
-| `annex-xiii:1.s` | public | yes | 43 | 21, 22, 25, 43, 83, 84 |  |
-| `annex-xiii:2.a` | legitimate-interest | yes | 45 | 41 |  |
-| `annex-xiii:2.b` | legitimate-interest | yes | 46, 47 | 45, 46 |  |
-| `annex-xiii:2.c` | legitimate-interest | yes | 48 | 44 |  |
-| `annex-xiii:2.c.1` | legitimate-interest | yes | - | - | through parent |
-| `annex-xiii:2.c.2` | legitimate-interest | yes | - | - | through parent |
-| `annex-xiii:2.c.3` | legitimate-interest | yes | - | - | through parent |
-| `annex-xiii:2.c.4` | legitimate-interest | yes | - | - | through parent |
-| `annex-xiii:2.c.5` | legitimate-interest | yes | - | - | through parent |
-| `annex-xiii:2.c.6` | legitimate-interest | yes | - | - | through parent |
-| `annex-xiii:2.d` | legitimate-interest | yes | 49 | 47 |  |
-| `annex-xiii:3.1` | authorities | yes | 50 | 27 |  |
-| `annex-xiii:4.a` | legitimate-interest | yes | 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 | 83, 84 |  |
-| `annex-xiii:4.b` | legitimate-interest | yes | 61, 62, 63, 64, 65, 66 | - |  |
-| `annex-xiii:4.c` | legitimate-interest | yes | 67 | 20 |  |
-| `annex-xiii:4.d` | legitimate-interest | yes | 68, 69, 70, 71 | 100, 65, 85, 91 |  |
+The last column is not coverage. A citation of a whole block -- `Annex XIII
+(1)`, which has nineteen lettered points beneath it -- reaches every point in
+the block without naming any of them, so the record is shown against each and
+counted against none. Two longlist rows about expected lifetime cite that
+block in passing; reading them as a restatement of all nineteen would put
+nineteen obligations above the floor on the strength of one citation.
+
+| annex point | access | required | guidance data points | longlist rows | reached without being named | |
+|---|---|---|---|---|---|---|
+| `annex-xiii:1.a` | public | yes | - | 14, 15, 18, 19, 9 | 83, 84 |  |
+| `annex-xiii:1.b` | public | yes | 16 | 39, 40, 42 | 83, 84 |  |
+| `annex-xiii:1.c` | public | yes | 17, 18 | 23, 28, 29, 30, 31, 32, 33, 34 | 83, 84 |  |
+| `annex-xiii:1.d` | public | yes | 19 | - | 83, 84 |  |
+| `annex-xiii:1.e` | public | yes | 20, 21, 22, 23 | 48, 49, 50, 51, 52, 53, 54 | 83, 84 |  |
+| `annex-xiii:1.f` | public | yes | 24 | 55 | 83, 84 |  |
+| `annex-xiii:1.g` | public | yes | 25 | 59 | 83, 84 |  |
+| `annex-xiii:1.h` | public | conditional | 26, 27, 28 | 66, 67, 68 | 83, 84 |  |
+| `annex-xiii:1.i` | public | conditional | 29, 30 | 69, 72 | 83, 84 |  |
+| `annex-xiii:1.j` | public | yes | 31, 32 | 86 | 83, 84 |  |
+| `annex-xiii:1.k` | public | conditional | 33 | 90 | 83, 84 |  |
+| `annex-xiii:1.l` | public | yes | 34 | 92, 93 | 83, 84 |  |
+| `annex-xiii:1.m` | public | yes | 35 | 17 | 83, 84 |  |
+| `annex-xiii:1.n` | public | yes | 36, 37 | 74, 75 | 83, 84 |  |
+| `annex-xiii:1.o` | public | yes | 38 | 81 | 83, 84 |  |
+| `annex-xiii:1.p` | public | yes | 39 | 87 | 83, 84 |  |
+| `annex-xiii:1.q` | public | yes | 40, 41 | - | 83, 84 |  |
+| `annex-xiii:1.r` | public | yes | 42 | 26 | 83, 84 |  |
+| `annex-xiii:1.s` | public | yes | 43 | 21, 22, 25, 43 | 83, 84 |  |
+| `annex-xiii:2.a` | legitimate-interest | yes | 45 | 41 | - |  |
+| `annex-xiii:2.b` | legitimate-interest | yes | 46, 47 | 45, 46 | - |  |
+| `annex-xiii:2.c` | legitimate-interest | yes | 48 | 44 | - |  |
+| `annex-xiii:2.c.1` | legitimate-interest | yes | - | - | - | through parent |
+| `annex-xiii:2.c.2` | legitimate-interest | yes | - | - | - | through parent |
+| `annex-xiii:2.c.3` | legitimate-interest | yes | - | - | - | through parent |
+| `annex-xiii:2.c.4` | legitimate-interest | yes | - | - | - | through parent |
+| `annex-xiii:2.c.5` | legitimate-interest | yes | - | - | - | through parent |
+| `annex-xiii:2.c.6` | legitimate-interest | yes | - | - | - | through parent |
+| `annex-xiii:2.d` | legitimate-interest | yes | 49 | 47 | - |  |
+| `annex-xiii:3.1` | authorities | yes | 50 | 27 | - |  |
+| `annex-xiii:4.a` | legitimate-interest | yes | 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 | 83, 84 | - |  |
+| `annex-xiii:4.b` | legitimate-interest | yes | 61, 62, 63, 64, 65, 66 | - | - |  |
+| `annex-xiii:4.c` | legitimate-interest | yes | 67 | 20 | - |  |
+| `annex-xiii:4.d` | legitimate-interest | yes | 68, 69, 70, 71 | 100, 65, 85, 91 | - |  |
 
 ## Where two restatements of the same provision disagree
 
@@ -98,19 +107,15 @@ and is not named on its own by either restatement.
 | `annex-vi-a:1` | no | ec-datapoints:5 |
 | `annex-vi-a:1` | yes | ec-datapoints:3, ec-datapoints:4, longlist:10, longlist:13 |
 | `annex-xiii:1.b` | no | ec-datapoints:16 |
-| `annex-xiii:1.b` | yes | longlist:39, longlist:40, longlist:42, longlist:83, longlist:84 |
+| `annex-xiii:1.b` | yes | longlist:39, longlist:40, longlist:42 |
 | `annex-xiii:1.c` | no | ec-datapoints:17, ec-datapoints:18 |
-| `annex-xiii:1.c` | yes | longlist:23, longlist:28, longlist:29, longlist:30, longlist:31, longlist:32, longlist:33, longlist:34, longlist:83, longlist:84 |
-| `annex-xiii:1.d` | no | ec-datapoints:19 |
-| `annex-xiii:1.d` | yes | longlist:83, longlist:84 |
+| `annex-xiii:1.c` | yes | longlist:23, longlist:28, longlist:29, longlist:30, longlist:31, longlist:32, longlist:33, longlist:34 |
 | `annex-xiii:1.e` | no | ec-datapoints:20, ec-datapoints:21, ec-datapoints:22, ec-datapoints:23 |
-| `annex-xiii:1.e` | yes | longlist:48, longlist:49, longlist:50, longlist:51, longlist:52, longlist:53, longlist:54, longlist:83, longlist:84 |
+| `annex-xiii:1.e` | yes | longlist:48, longlist:49, longlist:50, longlist:51, longlist:52, longlist:53, longlist:54 |
 | `annex-xiii:1.g` | no | ec-datapoints:25 |
-| `annex-xiii:1.g` | yes | longlist:59, longlist:83, longlist:84 |
+| `annex-xiii:1.g` | yes | longlist:59 |
 | `annex-xiii:1.m` | conditional | ec-datapoints:35 |
-| `annex-xiii:1.m` | yes | longlist:17, longlist:83, longlist:84 |
-| `annex-xiii:1.q` | conditional | ec-datapoints:41 |
-| `annex-xiii:1.q` | yes | ec-datapoints:40, longlist:83, longlist:84 |
+| `annex-xiii:1.m` | yes | longlist:17 |
 | `annex-xiii:4.a` | conditional | ec-datapoints:51, ec-datapoints:57, ec-datapoints:58 |
 | `annex-xiii:4.a` | yes | ec-datapoints:52, ec-datapoints:53, ec-datapoints:54, ec-datapoints:55, ec-datapoints:56, ec-datapoints:59, ec-datapoints:60, longlist:83, longlist:84 |
 | `annex-xiii:4.d` | conditional | ec-datapoints:68, ec-datapoints:69, ec-datapoints:70, ec-datapoints:71 |

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Join the derived indexes and list where they disagree.
 
 The same obligation is written down three times: once in the regulation, once in
@@ -57,7 +56,12 @@ CAMEL = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 NON_WORD = re.compile(r"[^a-z0-9]+")
 # Words that say nothing about which attribute this is.
 STOPWORDS = frozenset(
-    "the a an of for to in on and or by is with as at from its their this that "
+    # ruff's SIM905 wants a list literal here. Twenty-six one-word
+    # strings, one per line, is harder to read and harder to diff than
+    # the sentence it would replace, and this list is read far more often
+    # than it is changed -- `value` is in it, and `value` is why four
+    # matched elements collapse onto their own parent.
+    "the a an of for to in on and or by is with as at from its their this that "  # noqa: SIM905
     "information data value values battery batteries".split()
 )
 
@@ -123,13 +127,24 @@ def render_markdown(doc):
     add("`through parent` means the point is a sub-item of a point that is cited,")
     add("and is not named on its own by either restatement.")
     add("")
-    add("| annex point | access | required | guidance data points | longlist rows | |")
-    add("|---|---|---|---|---|---|")
+    add("The last column is not coverage. A citation of a whole block -- `Annex XIII")
+    add("(1)`, which has nineteen lettered points beneath it -- reaches every point in")
+    add("the block without naming any of them, so the record is shown against each and")
+    add("counted against none. Two longlist rows about expected lifetime cite that")
+    add("block in passing; reading them as a restatement of all nineteen would put")
+    add("nineteen obligations above the floor on the strength of one citation.")
+    add("")
+    add("| annex point | access | required | guidance data points | longlist rows |"
+        " reached without being named | |")
+    add("|---|---|---|---|---|---|---|")
     for a in doc["annex_coverage"]:
-        add("| `%s` | %s | %s | %s | %s | %s |" % (
+        broader = a["reached_by_a_broader_citation"]
+        add("| `%s` | %s | %s | %s | %s | %s | %s |" % (
             a["annex_point"], a["access"], a["mandatory"],
             ", ".join(x.split(":")[-1] for x in a["ec_datapoints"]) or "-",
             ", ".join(x.split(":")[-1] for x in a["longlist_rows"]) or "-",
+            ", ".join(x.split(":")[-1]
+                      for x in broader["ec_datapoints"] + broader["longlist_rows"]) or "-",
             "through parent" if a["cited_only_through_its_parent"] else "",
         ))
     add("")
@@ -160,7 +175,7 @@ def render_markdown(doc):
             add("| `%s` | %s (%s) | %s |" % (
                 x["element"].split(":", 1)[1],
                 x["readings"][template[0]] if template else "?",
-                template[0].strip("template()") if template else "?",
+                template[0][len("template("):-1] if template else "?",
                 "; ".join("%s: %s" % (o, x["readings"][o]) for o in others),
             ))
     add("")
@@ -213,14 +228,34 @@ def main(argv=None):
             annex_prefixes.add("annex-xiii:%s" % ".".join(parts[:i]))
 
     def points_named_by(citation):
+        """The points a citation reaches, and whether it *names* them.
+
+        A block with one point beneath it has no content of its own:
+        `Annex XIII 3` is that single sentence, and the index gives it a
+        sub-item id only because the source left it unlettered. Citing
+        the block names that point, with no choice made.
+
+        A block with nineteen points beneath it is a different animal.
+        Naming it picks out none of them, and crediting all nineteen
+        turns one citation into nineteen statements the source never
+        made -- two longlist rows about expected lifetime name the whole
+        of point 1 in passing and say nothing whatever about responsible
+        sourcing at 1(d) or marking at 1(q). Those reach the points
+        beneath, and are reported as reaching them, but they do not name
+        them and are not counted as coverage: every figure here is
+        published as a floor, and a credit nobody made is the one kind
+        of error a floor cannot absorb.
+        """
         if citation in annex_keys:
-            return [citation]
+            return [citation], True
         if citation in annex_prefixes:
-            return sorted(k for k in annex_keys if k.startswith(citation + "."))
-        return []
+            beneath = sorted(k for k in annex_keys if k.startswith(citation + "."))
+            return beneath, len(beneath) == 1
+        return [], False
 
     # -- join by citation ---------------------------------------------------
     cited = {}          # canonical citation -> {"ec": [...], "longlist": [...]}
+    contained = {}      # same, for points a broader citation reaches but does not name
     dangling = []       # citations that name a provision the annex does not have
     for source, records, field in (
         ("ec-datapoints", guidance, "legal_source"),
@@ -231,10 +266,11 @@ def main(argv=None):
                 cited.setdefault(key, {}).setdefault(source, []).append(r["id"])
                 if not key.startswith("annex-xiii:"):
                     continue
-                named = points_named_by(key)
+                named, names_them = points_named_by(key)
                 for point in named:
                     if point != key:
-                        cited.setdefault(point, {}).setdefault(source, []).append(r["id"])
+                        reached = cited if names_them else contained
+                        reached.setdefault(point, {}).setdefault(source, []).append(r["id"])
                 if not named:
                     dangling.append(
                         {
@@ -248,6 +284,7 @@ def main(argv=None):
     annex_coverage = []
     for key, record in sorted(annex_ids.items()):
         hits = cited.get("annex-xiii:%s" % key, {})
+        broader = contained.get("annex-xiii:%s" % key, {})
         parent = "annex-xiii:%s" % key.rsplit(".", 1)[0] if "." in key else ""
         parent_hits = cited.get(parent, {}) if parent else {}
         annex_coverage.append(
@@ -258,6 +295,10 @@ def main(argv=None):
                 "mandatory": record["mandatory"],
                 "ec_datapoints": sorted(set(hits.get("ec-datapoints", []))),
                 "longlist_rows": sorted(set(hits.get("longlist", []))),
+                "reached_by_a_broader_citation": {
+                    "ec_datapoints": sorted(set(broader.get("ec-datapoints", []))),
+                    "longlist_rows": sorted(set(broader.get("longlist", []))),
+                },
                 "cited_only_through_its_parent": bool(
                     not hits and (parent_hits.get("ec-datapoints") or parent_hits.get("longlist"))
                 ),
@@ -276,12 +317,13 @@ def main(argv=None):
     guidance_bags = bag_index(guidance)
     longlist_bags = bag_index(longlist)
 
-    name_matches, unmatched_elements = [], []
+    name_matches, unmatched_elements, matched_bags = [], [], set()
     for element in elements:
         bag = words_of(element.get("id_short", "") or element["text"])
         hit_guidance = guidance_bags.get(bag, [])
         hit_longlist = longlist_bags.get(bag, [])
         if hit_guidance or hit_longlist:
+            matched_bags.add(bag)
             name_matches.append(
                 {
                     "element": element["id"],
@@ -302,6 +344,13 @@ def main(argv=None):
     by_id = {r["id"]: r for r in guidance + longlist}
     disagreements = []
     for match in name_matches:
+        # The name of this key is parsed back out in `render_markdown`,
+        # which is a small trap: it was read with `.strip("template()")`,
+        # which strips *characters* from both ends and not the wrapper.
+        # Every template here is `IDTA 02035-N`, which begins and ends
+        # outside that set, so it gave the right answer for the wrong
+        # reason; a template whose name began with any of `t e m p l a`
+        # in lower case would have come out shortened.
         readings = {"template(%s)" % match["template"]: match["mandatory"]}
         for other in match["ec_datapoints"] + match["longlist_rows"]:
             readings[other] = by_id[other]["mandatory"]
@@ -345,9 +394,28 @@ def main(argv=None):
             "annex_points_named_only_through_their_parent": sum(
                 1 for a in annex_coverage if a["cited_only_through_its_parent"]
             ),
+            # Not coverage. Published beside the coverage figures because
+            # the difference between the two is the whole argument for
+            # calling them floors, and a reader who cannot see the gap
+            # cannot check the claim.
+            "annex_points_a_broader_citation_reaches_without_naming": sum(
+                1 for a in annex_coverage
+                if a["reached_by_a_broader_citation"]["ec_datapoints"]
+                or a["reached_by_a_broader_citation"]["longlist_rows"]
+            ),
             "citations_unresolved_in_consolidated_text": len(dangling),
             "template_elements": len(elements),
             "template_elements_matched_by_name": len(name_matches),
+            # Read as coverage, the line above says more than it means.
+            # The forty-two elements carry thirty-seven distinct names
+            # between them: four are the value child of another matched
+            # element -- `RemainingCapacity` and `RemainingCapacityValue`
+            # reduce to one bag, because `value` says nothing about which
+            # attribute an element is -- and a fifth pair is two elements
+            # in two templates on one attribute. Both numbers are
+            # published so the gap belongs to the reader rather than to
+            # whoever finds it first.
+            "distinct_attribute_names_those_elements_reach": len(matched_bags),
             "template_elements_matched_by_nothing": len(unmatched_elements),
             "guidance_data_points_matched_by_name": len(matched_guidance),
             "guidance_data_points_unmatched": len(guidance) - len(matched_guidance),

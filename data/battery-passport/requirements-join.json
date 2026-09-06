@@ -101,19 +101,21 @@
  "counts": {
   "annex_points": 34,
   "annex_points_with_a_guidance_data_point": 27,
-  "annex_points_with_a_longlist_row": 27,
+  "annex_points_with_a_longlist_row": 25,
   "annex_points_with_neither": 6,
   "annex_points_named_only_through_their_parent": 6,
+  "annex_points_a_broader_citation_reaches_without_naming": 19,
   "citations_unresolved_in_consolidated_text": 1,
   "template_elements": 221,
   "template_elements_matched_by_name": 42,
+  "distinct_attribute_names_those_elements_reach": 37,
   "template_elements_matched_by_nothing": 179,
   "guidance_data_points_matched_by_name": 8,
   "guidance_data_points_unmatched": 63,
   "longlist_rows_matched_by_name": 37,
   "longlist_rows_unmatched": 63,
   "name_matches_where_the_readings_differ": 9,
-  "citations_where_the_readings_differ": 10
+  "citations_where_the_readings_differ": 8
  },
  "coverage_is_a_floor": "The templates carry no citation of the law, so a template element can only be matched to an attribute by name. Name matching is weak: it misses every element whose label differs from the prose attribute name, and it cannot match a nested element to an attribute at all. Every coverage figure below is therefore a lower bound on what is actually covered, not a measurement of it, and must be reported as such until a citation-bearing bridge exists.",
  "annex_coverage": [
@@ -128,10 +130,15 @@
     "longlist:15",
     "longlist:18",
     "longlist:19",
-    "longlist:83",
-    "longlist:84",
     "longlist:9"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -145,10 +152,15 @@
    "longlist_rows": [
     "longlist:39",
     "longlist:40",
-    "longlist:42",
-    "longlist:83",
-    "longlist:84"
+    "longlist:42"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -168,10 +180,15 @@
     "longlist:31",
     "longlist:32",
     "longlist:33",
-    "longlist:34",
-    "longlist:83",
-    "longlist:84"
+    "longlist:34"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -182,10 +199,14 @@
    "ec_datapoints": [
     "ec-datapoints:19"
    ],
-   "longlist_rows": [
-    "longlist:83",
-    "longlist:84"
-   ],
+   "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -206,10 +227,15 @@
     "longlist:51",
     "longlist:52",
     "longlist:53",
-    "longlist:54",
-    "longlist:83",
-    "longlist:84"
+    "longlist:54"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -221,10 +247,15 @@
     "ec-datapoints:24"
    ],
    "longlist_rows": [
-    "longlist:55",
-    "longlist:83",
-    "longlist:84"
+    "longlist:55"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -236,10 +267,15 @@
     "ec-datapoints:25"
    ],
    "longlist_rows": [
-    "longlist:59",
-    "longlist:83",
-    "longlist:84"
+    "longlist:59"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -255,10 +291,15 @@
    "longlist_rows": [
     "longlist:66",
     "longlist:67",
-    "longlist:68",
-    "longlist:83",
-    "longlist:84"
+    "longlist:68"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -272,10 +313,15 @@
    ],
    "longlist_rows": [
     "longlist:69",
-    "longlist:72",
-    "longlist:83",
-    "longlist:84"
+    "longlist:72"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -288,10 +334,15 @@
     "ec-datapoints:32"
    ],
    "longlist_rows": [
-    "longlist:83",
-    "longlist:84",
     "longlist:86"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -303,10 +354,15 @@
     "ec-datapoints:33"
    ],
    "longlist_rows": [
-    "longlist:83",
-    "longlist:84",
     "longlist:90"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -318,11 +374,16 @@
     "ec-datapoints:34"
    ],
    "longlist_rows": [
-    "longlist:83",
-    "longlist:84",
     "longlist:92",
     "longlist:93"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -334,10 +395,15 @@
     "ec-datapoints:35"
    ],
    "longlist_rows": [
-    "longlist:17",
-    "longlist:83",
-    "longlist:84"
+    "longlist:17"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -351,10 +417,15 @@
    ],
    "longlist_rows": [
     "longlist:74",
-    "longlist:75",
-    "longlist:83",
-    "longlist:84"
+    "longlist:75"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -366,10 +437,15 @@
     "ec-datapoints:38"
    ],
    "longlist_rows": [
-    "longlist:81",
-    "longlist:83",
-    "longlist:84"
+    "longlist:81"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -381,10 +457,15 @@
     "ec-datapoints:39"
    ],
    "longlist_rows": [
-    "longlist:83",
-    "longlist:84",
     "longlist:87"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -396,10 +477,14 @@
     "ec-datapoints:40",
     "ec-datapoints:41"
    ],
-   "longlist_rows": [
-    "longlist:83",
-    "longlist:84"
-   ],
+   "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -411,10 +496,15 @@
     "ec-datapoints:42"
    ],
    "longlist_rows": [
-    "longlist:26",
-    "longlist:83",
-    "longlist:84"
+    "longlist:26"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -429,10 +519,15 @@
     "longlist:21",
     "longlist:22",
     "longlist:25",
-    "longlist:43",
-    "longlist:83",
-    "longlist:84"
+    "longlist:43"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": [
+     "longlist:83",
+     "longlist:84"
+    ]
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -446,6 +541,10 @@
    "longlist_rows": [
     "longlist:41"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -461,6 +560,10 @@
     "longlist:45",
     "longlist:46"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -474,6 +577,10 @@
    "longlist_rows": [
     "longlist:44"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -483,6 +590,10 @@
    "mandatory": "yes",
    "ec_datapoints": [],
    "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": true
   },
   {
@@ -492,6 +603,10 @@
    "mandatory": "yes",
    "ec_datapoints": [],
    "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": true
   },
   {
@@ -501,6 +616,10 @@
    "mandatory": "yes",
    "ec_datapoints": [],
    "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": true
   },
   {
@@ -510,6 +629,10 @@
    "mandatory": "yes",
    "ec_datapoints": [],
    "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": true
   },
   {
@@ -519,6 +642,10 @@
    "mandatory": "yes",
    "ec_datapoints": [],
    "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": true
   },
   {
@@ -528,6 +655,10 @@
    "mandatory": "yes",
    "ec_datapoints": [],
    "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": true
   },
   {
@@ -541,6 +672,10 @@
    "longlist_rows": [
     "longlist:47"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -554,6 +689,10 @@
    "longlist_rows": [
     "longlist:27"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -577,6 +716,10 @@
     "longlist:83",
     "longlist:84"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -593,6 +736,10 @@
     "ec-datapoints:66"
    ],
    "longlist_rows": [],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -606,6 +753,10 @@
    "longlist_rows": [
     "longlist:20"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   },
   {
@@ -625,6 +776,10 @@
     "longlist:85",
     "longlist:91"
    ],
+   "reached_by_a_broader_citation": {
+    "ec_datapoints": [],
+    "longlist_rows": []
+   },
    "cited_only_through_its_parent": false
   }
  ],
@@ -1346,9 +1501,7 @@
     "yes": [
      "longlist:39",
      "longlist:40",
-     "longlist:42",
-     "longlist:83",
-     "longlist:84"
+     "longlist:42"
     ]
    }
   },
@@ -1367,21 +1520,7 @@
      "longlist:31",
      "longlist:32",
      "longlist:33",
-     "longlist:34",
-     "longlist:83",
-     "longlist:84"
-    ]
-   }
-  },
-  {
-   "citation": "annex-xiii:1.d",
-   "readings": {
-    "no": [
-     "ec-datapoints:19"
-    ],
-    "yes": [
-     "longlist:83",
-     "longlist:84"
+     "longlist:34"
     ]
    }
   },
@@ -1401,9 +1540,7 @@
      "longlist:51",
      "longlist:52",
      "longlist:53",
-     "longlist:54",
-     "longlist:83",
-     "longlist:84"
+     "longlist:54"
     ]
    }
   },
@@ -1414,9 +1551,7 @@
      "ec-datapoints:25"
     ],
     "yes": [
-     "longlist:59",
-     "longlist:83",
-     "longlist:84"
+     "longlist:59"
     ]
    }
   },
@@ -1427,22 +1562,7 @@
      "ec-datapoints:35"
     ],
     "yes": [
-     "longlist:17",
-     "longlist:83",
-     "longlist:84"
-    ]
-   }
-  },
-  {
-   "citation": "annex-xiii:1.q",
-   "readings": {
-    "yes": [
-     "ec-datapoints:40",
-     "longlist:83",
-     "longlist:84"
-    ],
-    "conditional": [
-     "ec-datapoints:41"
+     "longlist:17"
     ]
    }
   },

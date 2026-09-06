@@ -77,10 +77,27 @@ aas_submodel_validate = ["data/smt/**/*.json", "data/smt/**/*.txt",
                          "data/example/*.txt"]
 
 [tool.ruff]
-# data/battery-passport is a bundle copied verbatim from its own build
-# tree; it is generated, not authored, and hand edits here are
-# forbidden, so this repo's lint has no standing over it. Its scripts still parse
-# and import -- tools/battery_data_check.py holds that.
+# data/battery-passport holds four generated indexes and the five
+# extractors that write them. This said the directory was copied verbatim
+# and that hand edits were forbidden; both stopped being true when the
+# track that built it closed and handed maintenance here, and three
+# commits had already edited it by hand while the sentence stood.
+#
+# The exclusion stays, for the reason that is actually load-bearing: four
+# of the five extractors cannot be re-run in a checkout, because the
+# sources they read are pinned by hash and deliberately not
+# redistributed. A reformat there is a change to code nobody here can
+# prove is behaviour-preserving, against output nobody here can
+# regenerate to compare. Under this project's rule set it is ten
+# findings, seven of them the file's own encoding line -- not a debt
+# worth taking that risk for.
+#
+# The fifth, join_requirements.py, reads only the other four indexes, so
+# it *can* be regenerated and diffed here, so its findings are fixed by
+# hand -- or refused in place with the reason, which is the one form of
+# disagreement with a linter that survives being read later -- and the
+# output compared byte for byte afterwards. tools/battery_data_check.py
+# holds that all five still parse and import.
 extend-exclude = ["data"]
 line-length = 100
 target-version = "py39"

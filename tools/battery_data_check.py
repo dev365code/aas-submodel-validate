@@ -57,6 +57,18 @@ from aas_submodel_validate._terminal import survive  # noqa: E402
 DATA = Path(__file__).resolve().parents[1] / "data" / "battery-passport"
 INDEXES = ("requirements-annex-xiii.json", "requirements-ec-datapoints.json",
            "requirements-longlist.json", "requirements-idta.json")
+#: The join is derived from the four above and is published beside them,
+#: in JSON and as a table people read. Nothing checked it: this gate
+#: counted four files in a directory that generates six, and the two it
+#: skipped are the two a reader opens first. A join can go stale on its
+#: own -- an index regenerated without it, a record id that no longer
+#: exists -- and neither shows up in any check of the four.
+JOIN = "requirements-join.json"
+#: Which index each list of record ids in the join is drawn from.
+_JOIN_REFERS_TO = {
+    "ec_datapoints": "requirements-ec-datapoints.json",
+    "longlist_rows": "requirements-longlist.json",
+}
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 #: Third-party readers the extractors need and this project does not
 #: depend on. Anything else failing to import is a defect, not a skip.
@@ -82,6 +94,61 @@ def _ledger(problems) -> dict:
     return pins
 
 
+def _check_join(known, problems) -> None:
+    """The join, against the four indexes it was built from.
+
+    A different question from the one `tests/test_battery_public_claims.py`
+    asks. That file checks what the README and the divergence list *say*;
+    this checks whether the derived file still matches its inputs. The
+    case that separates them: regenerate an index and not the join, and
+    the join stays perfectly self-consistent -- every count matching
+    every list, every claim about itself true -- while describing a file
+    that no longer exists. Nothing but a comparison against the inputs
+    can see that.
+    """
+    path = DATA / JOIN
+    if not path.is_file():
+        problems.append("%s is missing" % JOIN)
+        return
+    join = json.loads(path.read_text("utf-8"))
+
+    for name, index in join.get("indexes", {}).items():
+        filename = "requirements-%s.json" % name.replace("idta-smt", "idta")
+        if filename not in known:
+            problems.append("%s: names an index this checker does not know: %s" % (JOIN, name))
+        elif index.get("records") != len(known[filename]):
+            problems.append("%s: says %s holds %s records, it holds %d"
+                            % (JOIN, filename, index.get("records"), len(known[filename])))
+
+    # Every record id the join hands a reader has to exist. A stale id in
+    # a published table is a reader following a reference to nothing.
+    for point in join.get("annex_coverage", []):
+        buckets = [(k, point.get(k, [])) for k in _JOIN_REFERS_TO]
+        reached = point.get("reached_by_a_broader_citation", {})
+        buckets += [(k, reached.get(k, [])) for k in _JOIN_REFERS_TO]
+        for field, ids in buckets:
+            for record_id in ids:
+                if record_id not in known[_JOIN_REFERS_TO[field]]:
+                    problems.append("%s: %s cites %s, which no index carries"
+                                    % (JOIN, point.get("annex_point"), record_id))
+
+    # A count is a promise about a list in the same file.
+    for count, field in (
+        ("annex_points", "annex_coverage"),
+        ("template_elements_matched_by_name", "name_matches"),
+        ("template_elements_matched_by_nothing", "template_elements_matched_by_nothing"),
+        ("name_matches_where_the_readings_differ", "readings_that_differ_by_name"),
+        ("citations_where_the_readings_differ", "readings_that_differ_by_citation"),
+        ("citations_unresolved_in_consolidated_text", "citations_without_a_matching_annex_point"),
+    ):
+        stated, listed = join["counts"].get(count), join.get(field)
+        if listed is None:
+            problems.append("%s: counts %s and carries no %s" % (JOIN, count, field))
+        elif stated != len(listed):
+            problems.append("%s: counts.%s says %s, %s holds %d"
+                            % (JOIN, count, stated, field, len(listed)))
+
+
 def main() -> int:
     survive()
     if not DATA.is_dir():
@@ -90,6 +157,7 @@ def main() -> int:
         return 0
     problems = []
     ledger = _ledger(problems)
+    known = {}
 
     for name in INDEXES:
         index = json.loads((DATA / name).read_text("utf-8"))
@@ -103,6 +171,7 @@ def main() -> int:
         # KeyError here, which turns a defect in the data into a defect
         # in the gate.
         ids = [record.get("id") for record in records]
+        known[name] = {i for i in ids if i}
         for position, record_id in enumerate(ids):
             if not record_id:
                 problems.append("%s: records[%d] carries no id" % (name, position))
@@ -119,6 +188,8 @@ def main() -> int:
                 problems.append("%s: provenance pins %s at %s..., the ledger says %s"
                                 % (name, source, digest[:12],
                                    (ledger.get(source) or "nothing")[:12]))
+
+    _check_join(known, problems)
 
     skipped = []
     sys.path.insert(0, str(DATA / "tools"))
@@ -146,7 +217,8 @@ def main() -> int:
         print("battery-data: import skipped for %s -- CI runs them"
               % ", ".join(skipped))
     if not problems:
-        print("battery-data: %d indexes agree with themselves and the ledger"
+        print("battery-data: %d indexes agree with themselves and the ledger, "
+              "and the join agrees with all four"
               % len(INDEXES))
     return 1 if problems else 0
 

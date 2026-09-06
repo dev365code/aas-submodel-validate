@@ -133,21 +133,35 @@ so. A checker built from this consolidated text alone has no rule for data point
 44; one built from a later text might. It is the only citation in either
 restatement that does not resolve, and it carries a substantive obligation.
 
-## 7. The guidance and the longlist read ten provisions differently
+## 7. The guidance and the longlist read eight provisions differently
 
-**Read:** For ten provisions, the two restatements differ. The longlist marks
-every row citing them as required; the guidance reads them in two ways. For five
-— Annex XIII 1(b), 1(c), 1(d), 1(e) and 1(g) — it marks the data point as not to
-be filled or displayed: because the same data is already required under another
+**Read:** For eight provisions, the two restatements differ. The longlist marks
+every row citing them as required; the guidance reads them in two ways. For four
+— Annex XIII 1(b), 1(c), 1(e) and 1(g) — it marks the data point as not to be
+filled or displayed: because the same data is already required under another
 data point (1(b), 1(g)), because the format is still to be specified in the
-implementing act (1(c)), because Article 48(1) makes it required from August
-2027 (1(d)), or because it is to be applied in line with Article 8 and the
-relevant delegated act (1(e)). For the other five — Annex VI A (1) and Annex
-XIII 1(m), 1(q), 4(a), 4(d) — it reads at least one data point as conditional or
+implementing act (1(c)), or because it is to be applied in line with Article 8
+and the relevant delegated act (1(e)). For the other four — Annex VI A (1) and
+Annex XIII 1(m), 4(a), 4(d) — it reads at least one data point as conditional or
 optional ("if applicable", "optional, to be filled if such data is available")
-where the longlist reads required; for three of them, Annex VI A (1), 1(q) and
-4(a), the guidance also carries mandatory data points under the same provision,
-so the two documents differ on part of the provision, not all of it.
+where the longlist reads required; for two of them, Annex VI A (1) and 4(a), the
+guidance also carries mandatory data points under the same provision, so the two
+documents differ on part of the provision, not all of it.
+
+**How this was counted, and what it used to say:** a provision is listed here
+only where a record of each document *identifies that provision*. A citation of
+a whole block — `Annex XIII (1)`, which has nineteen lettered points beneath it
+— reaches every point in the block and names none of them. Two longlist rows
+about expected lifetime cite that block in passing, and reading them as a
+restatement of all nineteen points put them on the "required" side of provisions
+they say nothing about. This entry said **ten** on that reading. Annex XIII 1(d),
+responsible sourcing, and 1(q), the marking requirements of Article 13(4) and
+(5), were listed as disagreements on the strength of two rows about how long a
+battery lasts; on the corrected count the longlist does not restate either one,
+so there is nothing for the guidance to disagree with. The block citations are
+still shown, in `requirements-join.md`, in a column that says they reach a point
+without naming it — a citation the documents made is not a fact to hide, only
+one that cannot be counted as coverage.
 
 **Where:** `requirements-join.json`, `readings_that_differ_by_citation`; each
 document's own wording is preserved per record in
@@ -185,6 +199,13 @@ each pair should be read before being relied on.
 **Read:** Of 221 indexed template elements, 42 match an attribute name in the
 guidance or the longlist and 179 match nothing. In the other direction, 63 of 71
 guidance data points and 63 of 100 longlist rows match no element.
+
+**Those 42 carry 37 distinct names between them.** Four are the value child of
+another of the 42 — `RemainingCapacity` and `RemainingCapacityValue` reduce to
+one name, because `value` says nothing about which attribute an element is — and
+a fifth pair is two elements in two templates landing on one attribute. Forty-two
+elements matched, and they reach thirty-seven names; read as coverage the first
+number is the one that flatters, so the join publishes both.
 
 **Where:** `requirements-join.json`, counts.
 
