@@ -7,8 +7,12 @@ shape and abridged. **None of them is the original, and none should be
 read in place of it.** Where a reading matters, follow the address in
 `sources.sha256` to the source and read it there.
 
-Three of the four sources are published under Creative Commons
-Attribution 4.0 International, whose §3(a) asks a reuser to retain the
+All four sources carry Creative Commons Attribution 4.0 International
+terms. Two publishers applied the licence to the document itself — the
+BatteryPass-Ready Consortium and IDTA. For the other two the licence
+arrives through an institutional reuse policy: EUR-Lex for the
+consolidated text, and Commission Decision 2011/833/EU for the guidance.
+This paragraph said three, and named no fourth. §3(a) asks a reuser to retain the
 creator, the copyright notice, the licence notice and its URI, and any
 disclaimer notice, and to indicate that the material was modified. The
 directory named the licences and stopped there. What follows is what
@@ -39,9 +43,12 @@ tool says, not what the law authentically says. Its `mandatory` values
 are readings of that text and are not legal advice.
 
 **Modified:** the annex was split into 34 numbered points, each carrying
-a short verbatim quotation, a section reference, and fields for
-cardinality, applicability and consolidation marker that the source does
-not have.
+a short verbatim quotation, a section reference, and fields the source
+does not have: a `mandatory` reading, the `condition` that narrows it,
+an `access` class taken from the block heading, a `consolidation_marker`,
+and an `applies_to` list that is empty on all 34 records because the
+annex does not sort its obligations by battery category. This paragraph
+named a `cardinality` field, which the index has never had.
 
 ---
 
@@ -98,8 +105,9 @@ completeness of the information.
 Note the edition. Earlier Battery Pass material — the 2023 Content
 Guidance and longlist v1.2 — is under a different, **non-commercial**
 licence. This index is built from **v1.3 only**, which is CC BY. The
-short name "Battery Pass longlist" belongs to the earlier series and is
-avoided here for that reason.
+short name "Battery Pass longlist" belongs to the earlier series, so
+the full name is used for the file, the ledger line and the extractor
+that reads it — the three places a reader arrives from.
 
 **Modified:** the data sheet was transcribed into one record per
 attribute. One column is deliberately not carried: the wording of
@@ -156,9 +164,14 @@ it points into is not a citation, and it also made the pointers
 invisible to a search for the document's name.
 
 **What is not carried:** the wording of the requirements and
-recommendations attributed to that specification. That column of the
-longlist is withheld from the public index deliberately, and the
-extractor in `tools/` does not read it.
+recommendations attributed to that specification. `extract_longlist.py`
+reads that cell and writes one boolean from it,
+`separate_spec_has_requirement_text`, true on 99 of the 100 records; the
+text itself is never copied into any file here. This paragraph said the
+extractor does not read the column, which is not the same statement and
+is not true. The exclusion is in the parse and not in the redistribution
+profile: `PUBLIC_PROFILE_OMITS` is empty, so `--public` omits nothing,
+and the index published here is the one the extractor writes.
 
 No DIN document was opened to build any index here; `sources.sha256`
 lists every file that was, and none is DIN's. The clause numbers reach

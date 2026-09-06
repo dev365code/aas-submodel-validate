@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Derive a requirement index from the Battery Pass data attribute longlist (XLSX).
+"""Derive a requirement index from the BatteryPass-Ready data attribute longlist (XLSX).
 
 The longlist is a spreadsheet: one row per data attribute, with a column per
 battery category saying whether that attribute is required for it, a column

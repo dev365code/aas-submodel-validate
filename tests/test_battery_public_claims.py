@@ -335,3 +335,104 @@ def test_the_join_says_how_many_names_its_matched_elements_actually_reach(join):
         if i.endswith("Value") and i.rsplit("/", 1)[0] in ids
     }
     assert len(children) == 4, sorted(children)
+
+
+# -- claims that went stale once, and the gates that stop them ---------------
+
+
+def test_every_hash_the_divergences_cite_is_in_the_ledger():
+    """`divergences-public.md` opens by saying every file was read at the
+    hash recorded in `sources.sha256`. It cited `a90c0055` for the
+    consolidated text for a day after the source was re-pinned to
+    `cbca54f9` -- the indexes and the ledger all moved and the prose did
+    not. Any short digest in that file has to be a real one."""
+    text = (DATA / "divergences-public.md").read_text("utf-8")
+    ledger = (DATA / "sources.sha256").read_text("utf-8")
+    cited = set(re.findall(r"`([0-9a-f]{8,40})`", text))
+    assert cited, "no digests found -- this gate is measuring nothing"
+    unknown = sorted(d for d in cited if d not in ledger)
+    assert not unknown, "cited but not in sources.sha256: %s" % unknown
+
+
+def test_the_readme_and_the_notice_count_the_cc_by_sources_the_same_way():
+    """Each said a different number for a while, and `NOTICE.md`
+    contradicted itself: its opening said three of four and all four of
+    its source sections state CC BY 4.0 terms."""
+    notice = (DATA / "NOTICE.md").read_text("utf-8")
+    sources = [
+        section
+        for section in notice.split("\n## ")[1:]
+        if "`requirements-" in section.split("\n")[0]
+    ]
+    assert len(sources) == 4, [s.split("\n")[0] for s in sources]
+    for section in sources:
+        squeezed = re.sub(r"\s+", " ", section)
+        assert "Creative Commons Attribution 4.0" in squeezed or "CC BY Licence" in squeezed
+        assert "creativecommons.org/licenses/by/4.0" in squeezed
+    assert "All four sources carry Creative Commons Attribution 4.0" in re.sub(
+        r"\s+", " ", notice
+    )
+    assert "all four sources carry Creative Commons Attribution 4.0 terms" in _squeezed(
+        "README.md"
+    )
+
+
+def test_the_column_the_prose_says_is_not_copied_is_described_as_it_is_read():
+    """The extractor reads the column attributed to a separate
+    specification and writes one boolean from it. Two documents said it
+    does not read the column at all, which is a different and false
+    statement -- and a licence-adjacent one, since the column is the
+    reason the field exists."""
+    records = _index("requirements-longlist.json")["records"]
+    flags = [r["separate_spec_has_requirement_text"] for r in records]
+    assert len(flags) == 100 and sum(1 for f in flags if f is True) == 99
+    source = (DATA / "tools" / "extract_longlist.py").read_text("utf-8")
+    assert 'bool(cell(row, "requirement_spec"))' in source
+    assert "PUBLIC_PROFILE_OMITS = ()" in source, "the profile now omits something; say so"
+    # Both documents have to name the field and keep the sentence that
+    # says what the old wording got wrong. Trying to detect the false
+    # claim by searching for its words was the first version of this and
+    # it was too clever by half: any rewording walked straight past it.
+    for document, correction in (
+        ("README.md", "An earlier version of this sentence said the extractor does not read"),
+        ("NOTICE.md", "This paragraph said the extractor does not read the column"),
+    ):
+        squeezed = _squeezed(document)
+        assert "separate_spec_has_requirement_text" in squeezed, document
+        assert correction in squeezed, document
+
+
+def test_the_readme_points_at_readings_that_are_really_there():
+    """The paragraph names four places where wording becomes a
+    `mandatory` value, after a version of it claimed a convention the
+    code does not follow. Every name in it has to resolve."""
+    readme = _squeezed("README.md")
+    for filename, symbols in (
+        ("extract_annex_xiii.py", ("read_obligation", "NARROWING", "SOFT_QUALIFIER")),
+        ("extract_ec_datapoints.py", ("classify", "combine", "APPLICABILITY", "STRONGEST")),
+        ("extract_longlist.py", ("MARK_MEANING",)),
+        ("extract_idta_smt.py", ("MANDATORY_BY_CARDINALITY",)),
+    ):
+        source = (DATA / "tools" / filename).read_text("utf-8")
+        assert filename in readme, filename
+        for symbol in symbols:
+            assert symbol in readme, "%s is not named in the README" % symbol
+            assert re.search(r"(?m)^(def %s\(|%s = )" % (symbol, symbol), source), (
+                "%s is named in the README and not defined in %s" % (symbol, filename)
+            )
+
+
+def test_the_only_non_uri_claim_states_which_templates_it_is_about():
+    """`counts.templates` holds twelve templates and the entry spoke
+    about seven, so three further non-URI values sat in the field a
+    reader was pointed at."""
+    templates = _index("requirements-idta.json")["counts"]["templates"]
+    uri = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:\S*$")
+    not_uri = sorted(k for k, v in templates.items() if not uri.match(v["template_id"]))
+    assert len(templates) == 12
+    assert len(not_uri) == 4, not_uri
+    parts = [k for k in not_uri if re.search(r"02035-\d", k)]
+    assert parts == ["IDTA 02035-4 V1.0.1"], parts
+    entry = _squeezed("divergences-public.md")
+    assert "Among the seven parts, Part 4's value is also the only one that is not a URI" in entry
+    assert "holds twelve templates, not seven" in entry

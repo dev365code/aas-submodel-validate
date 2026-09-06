@@ -13,9 +13,12 @@ claims that any publisher made a mistake.
 Every file was read at the hash recorded in `sources.sha256`. The submodel
 templates were read at one commit of the public template repository,
 `a9664731a903b29ac5f45e23ab3a25c581f3d92f`, so "the template says" means those
-bytes. Counts come from the index files beside this one, with one exception
-stated where it occurs: the package member listing in entry 5 was read directly
-from the packages pinned in `sources.sha256`.
+bytes. Counts come from the index files beside this one, except where an entry
+says otherwise, and two do. The package member listing in entry 5 was read
+directly from the packages pinned in `sources.sha256`; the package identity in
+entry 4 was read from the template repository's tree at the pinned commit.
+Neither is in an index, and neither can be re-checked from this directory alone
+— the sources are pinned here and redistributed nowhere.
 
 ---
 
@@ -43,8 +46,12 @@ checker rather than on the author.
 
 **Read:** Part 3's `administration.templateId` is
 `https://admin-shell.io/idta-02023-1-0`; Part 4's is `IDTA-02003-2-0`. Parts 1,
-2, 5, 6 and 7 each name their own number. Part 4's value is also the only one
-that is not a URI.
+2, 5, 6 and 7 each name their own number. Among the seven parts, Part 4's value
+is also the only one that is not a URI. The field the count is drawn from holds
+twelve templates, not seven, and three more of those are not URIs either: both
+editions of 02099-1 carry an empty string, and IDTA 02023 V1.0 carries
+`https://admin-shell.io/IDTA 02023-1-0`, which has a space in it and so is not a
+URI under RFC 3986 §2.
 
 **Where:** `requirements-idta.json`, `counts.templates`, field `template_id`.
 
@@ -58,10 +65,15 @@ observed; the file does not distinguish them.
 ## 3. Within one file, the submodel and its elements carry different namespace versions
 
 **Read:** Part 6 V1.0.1 — submodel `semanticId` ends
-`material_composition:1.0.0#MaterialComposition`, every element ends `:1.0.1#…`.
-Part 5 V1.0.1 — submodel `:1.0.0#`, elements `:1.0.1#`. Part 5 V1.0.2 — submodel
-`:1.0.2#`, elements `:1.0.2#`. In all three, `administration.version` and
-`revision` read `1.0`.
+`material_composition:1.0.0#MaterialComposition`, and all 23 of its elements end
+`:1.0.1#…`. Part 5 V1.0.1 — submodel `:1.0.0#`, elements `:1.0.1#`. Part 5
+V1.0.2 — submodel `:1.0.2#`, elements `:1.0.2#`. Both Part 5 editions list a
+third version as well, and one element is the reason:
+`ProductCondition/InformationOnAccidents/DocumentIdentifier`, at
+`urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier`
+— the Handover Documentation namespace, not Part 5's, at a major version of its
+own. In all three files `administration.version` reads `1` and
+`administration.revision` reads `0`; the index joins the two and records `1.0`.
 
 **Where:** `requirements-idta.json`, `counts.templates`, fields
 `semantic_id_version` and `element_semantic_id_versions`.
@@ -121,7 +133,7 @@ the consolidated text read here, Annex XIII point 1 runs from (a) to (s).
 **Where:** `requirements-join.json`, `citations_unresolved_in_consolidated_text`
 and `citations_without_a_matching_annex_point`; the annex index
 `requirements-annex-xiii.json` ends block 1 at `annex-xiii:1.s`. Consolidated
-text `a90c0055`, guidance `e045a766`.
+text `cbca54f9`, guidance `e045a766`.
 
 **Scope of the statement:** This is a statement about one text at one version,
 CELEX 02023R1542-20250731. A later amendment adding a point (t) would not make it
@@ -130,8 +142,12 @@ the two do not resolve against each other as read.
 
 **What a checker has to decide:** Which text it is checking against, and to say
 so. A checker built from this consolidated text alone has no rule for data point
-44; one built from a later text might. It is the only citation in either
-restatement that does not resolve, and it carries a substantive obligation.
+44; one built from a later text might. Of the thirty distinct Annex XIII
+citations the two restatements make, it is the only one that does not resolve,
+and it carries a substantive obligation. The two documents cite twenty-seven
+further provisions outside Annex XIII — Annex VI and articles of the regulation
+— and the join does not resolve those against anything, so nothing here is a
+statement about them.
 
 ## 7. The guidance and the longlist read eight provisions differently
 
