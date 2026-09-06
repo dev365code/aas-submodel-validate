@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=46d1463d" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=bf2a4204" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -150,7 +150,7 @@ on the roadmap rather than in this release. Here is that second one whole, as th
 tool writes it — one line, unfolded:
 
 ```text
-note    BAT-R8 reported 1 of the 9 elements this table holds; 8 of them need a battery category no rule here reads yet, so whether the law requires those is a question this run did not ask. Read from IDTA 02035-1 V1.0, IDTA 02035-4 V1.0.1, IDTA 02035-5 V1.0.2. Both figures are a floor, not a measurement: the templates cite no provision of the law, so the join behind the table matched attributes by name, and name matching misses every element whose label differs from the prose, and reaches a nested one only when its label happens to match.
+note    BAT-R8 reported 1 of the 9 elements this table holds; 8 of them turn on a battery category this file does not settle, so whether a published reading of the law requires those is a question this run did not ask. Read from IDTA 02035-1 V1.0, IDTA 02035-4 V1.0.1, IDTA 02035-5 V1.0.2. Both figures are a floor, not a measurement: the templates cite no provision of the law, so the join behind the table matched attributes by name, and name matching misses every element whose label differs from the prose, and reaches a nested one only when its label happens to match.
 ```
 
 > [!IMPORTANT]

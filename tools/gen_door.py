@@ -153,7 +153,7 @@ VERDICT_LINES = [
     (17, [(140, D, ELISION, 0)]),
     (19, [(140, N, "note", 1),
           (180, N, "BAT-R8 reported 1 of the 9 elements this table holds;", 0)]),
-    (24, [(180, N, "8 of them need a battery category no rule here reads yet" + ELISION, 0)]),
+    (24, [(180, N, "8 of them turn on a battery category this file does not settle" + ELISION, 0)]),
     (19, [(28, T, "0 error(s), 1 warning(s), 3 info", 1),
           (280, N, "-- battery-passport.json; judged 0 of 1 submodel", 0)]),
 ]

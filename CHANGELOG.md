@@ -29,13 +29,44 @@ stays refused, because reading a value's whitespace is reading a
 spelling and reading the archive's would be supplying a character the
 value does not carry.
 
-**`verdict`** — two of the 38 corpus inputs are judged differently.
+**`BAT-R8` asks the eight questions a passport's own category settles.**
+Nine template elements are `ZeroToOne` while a published reading of the
+regulation marks the same attribute mandatory. Eight of the nine were
+withheld: their obligation depends on the battery's category, and no
+rule read one. Firing them regardless would tell a light-means-of-
+transport manufacturer to add `CapacityThresholdExhaustion`, which the
+guidance marks *not to be filled* for exactly that category — over-
+refusal wearing the shape of diligence.
+
+IDTA 02035-4 makes `BatteryCategory` cardinality `One` and names its own
+vocabulary in the element's description: `lmt`, `ev`, `industrial`,
+`stationary`. A passport that states one has answered the question the
+rows were waiting on, so this reads it and applies the guidance column
+that value settles. Nothing is inferred: `not-to-be-filled`,
+`voluntary`, `not-stated` and `certain-cases` draw nothing, and
+`CapacityThresholdExhaustion` stays silent for `lmt` while firing for
+`ev`.
+
+`industrial` and `stationary` are deliberately left unanswered. They
+reach only guidance columns named *above 2 kWh*, and a category is not a
+capacity; the provision that would close the gap is Article 77(1), which
+this repository does not index. Judging on a provision we have not read
+is the thing this project refuses, so those files are judged exactly as
+before and the coverage note counts what was withheld from *them* rather
+than from the table.
+
+**`verdict`** — four of the 41 corpus inputs are judged differently.
 
 `HD-D7` is no longer drawn on that archive and its exit code falls from
 1 to 0: a false refusal withdrawn, because the file the value names is
 in the package.
 
-`X4` moved with it, at a call site the corpus could not see. A
+A passport declaring `ev` draws two more warnings and one declaring
+`lmt` draws seven more; one declaring `industrial` is unchanged. The
+corpus carried no battery passport at all, so three were added — the
+rule could not be seen to move by an instrument with no input for it.
+
+`X4` moved too, at a call site the corpus could not see. A
 supplemental relationship whose target carries surrounding whitespace
 (`/aasx/files/manual.pdf` followed by a tab) drew `an aas-suppl
 relationship names a part the archive does not hold` and now draws

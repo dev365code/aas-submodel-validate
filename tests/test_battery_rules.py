@@ -330,13 +330,13 @@ def test_the_note_counts_what_it_reads_and_what_it_withholds(monkeypatch, tmp_pa
     report = _run(tmp_path, _env(_technical_data(fade=False)))
     (note,) = [n for n in report.notes if "BAT-R8" in n]
     assert "reported 1 of the 9" in note
-    assert "8 of them need a battery category" in note
+    assert "8 of them turn on a battery category" in note
 
     monkeypatch.setattr(battery_tables, "CONDITIONAL_ON_CATEGORY",
                         battery_tables.CONDITIONAL_ON_CATEGORY[:3])
     report = _run(tmp_path, _env(_technical_data(fade=False)))
     (note,) = [n for n in report.notes if "BAT-R8" in n]
-    assert "3 of them need a battery category" in note, \
+    assert "3 of them turn on a battery category" in note, \
         "the withheld count is quoted"
     assert "of the 4" in note, "the denominator does not follow the table"
 
@@ -626,3 +626,145 @@ def test_the_coverage_note_does_not_divide_a_number_by_itself(tmp_path):
         "the note counts against something other than the whole table: %r"
         % note)
     assert "1 of the 1" not in note
+
+
+# -- BAT-R8 and the category the file itself declares -------------------------
+
+CATEGORY_SID = ("urn:samm:io.admin-shell.idta.batterypass.technical_data:"
+                "1.0.0#batteryCategory")
+
+
+def _category_property(value: str) -> dict:
+    return {"idShort": "BatteryCategory", "modelType": "Property",
+            "valueType": "xs:string", "semanticId": _external(CATEGORY_SID),
+            "value": value}
+
+
+def _passport(category=None, carrying=()):
+    """Every submodel the conditional rows belong to, each empty except
+    for what `carrying` names, and the category the file declares.
+
+    Built from the table rather than from a list written here: the rows
+    move when the indexes move, and a fixture with the identifiers typed
+    into it stops testing the table the day it does."""
+    rows = battery_tables.CONDITIONAL_ON_CATEGORY
+    wanted = {row["element_semantic_id"] for row in rows
+              if row["element_id_short"] in carrying}
+    by_submodel = {}
+    for row in rows:
+        by_submodel.setdefault(row["submodel_semantic_id"], []).append(row)
+    submodels = []
+    for index, (sid, held) in enumerate(sorted(by_submodel.items())):
+        value = [_collection(row["element_id_short"], row["element_semantic_id"])
+                 for row in held if row["element_semantic_id"] in wanted]
+        if sid.endswith("TechnicalData/1/0") and category is not None:
+            value.append(_collection(
+                "GeneralInformation",
+                "urn:samm:io.admin-shell.idta.batterypass.technical_data:"
+                "1.0.0#generalInformation",
+                [_category_property(category)]))
+        submodels.append(_submodel("Part%d" % index, sid, value))
+    return _env(*submodels)
+
+
+def _r8_subjects(report):
+    return {f.violation.subject for f in report.findings if f.id == "BAT-R8"}
+
+
+def _required_for(key):
+    return {row["element_id_short"]
+            for row in battery_tables.CONDITIONAL_ON_CATEGORY
+            if dict(row["categories"]).get(key)
+            in ("required", "required-by-batteries-regulation")}
+
+
+def test_a_file_that_declares_no_category_is_asked_none_of_the_eight(tmp_path):
+    """The behaviour before this: eight rows the table holds and no rule
+    reads, because the reading depends on a category and nothing read
+    one. A file that still declares none must be judged exactly as it
+    was."""
+    conditional = {row["element_id_short"]
+                   for row in battery_tables.CONDITIONAL_ON_CATEGORY}
+    assert not (_r8_subjects(_run(tmp_path, _passport())) & conditional)
+
+
+def test_an_electric_vehicle_passport_is_asked_the_two_its_guidance_requires(tmp_path):
+    """`ev` maps to the guidance's `EV` column with nothing to infer:
+    the key carries no capacity threshold, so the value the file states
+    settles it."""
+    subjects = _r8_subjects(_run(tmp_path, _passport("ev")))
+    expected = _required_for("EV")
+    assert expected == {"CapacityFade", "CapacityThresholdExhaustion"}, expected
+    assert expected <= subjects, sorted(expected - subjects)
+
+
+def test_a_light_transport_passport_is_not_asked_for_what_its_guidance_forbids(tmp_path):
+    """The reason the eight were withheld, and the one case that must
+    survive reading the category.
+
+    `CapacityThresholdExhaustion` is *required* for an electric vehicle
+    and *not to be filled* for light means of transport. A rule that
+    fired on the category-independent reading would tell an LMT
+    manufacturer to add a field their own guidance forbids -- over
+    refusal wearing the shape of diligence, which is the sentence
+    `battery.py` has carried since the rule landed."""
+    readings = dict(next(row["categories"] for row in
+                         battery_tables.CONDITIONAL_ON_CATEGORY
+                         if row["element_id_short"] == "CapacityThresholdExhaustion"))
+    assert readings["EV"] == "required"
+    assert readings["LMT"] == "not-to-be-filled"
+
+    subjects = _r8_subjects(_run(tmp_path, _passport("lmt")))
+    assert "CapacityThresholdExhaustion" not in subjects
+    assert _required_for("LMT") <= subjects, sorted(_required_for("LMT") - subjects)
+    assert len(_required_for("LMT")) == 7
+
+
+def test_an_element_the_file_carries_is_not_reported_for_its_category(tmp_path):
+    """The same absence test as the unconditional row, on a conditional
+    one: present is present."""
+    subjects = _r8_subjects(_run(tmp_path, _passport("lmt", carrying=("RemainingCapacity",))))
+    assert "RemainingCapacity" not in subjects
+    assert "CapacityFade" in subjects
+
+
+def test_an_industrial_passport_is_still_not_asked_and_the_note_says_so(tmp_path):
+    """`industrial` and `stationary` map only onto guidance columns that
+    name a capacity above 2 kWh, and the category value does not state a
+    capacity. Which batteries need a passport at all is Article 77(1),
+    which this repository does not index -- so the inference that an
+    industrial battery carrying a passport is above the threshold is not
+    one there is a source here for. Silent, and counted."""
+    conditional = {row["element_id_short"]
+                   for row in battery_tables.CONDITIONAL_ON_CATEGORY}
+    for declared in ("industrial", "stationary"):
+        report = _run(tmp_path, _passport(declared))
+        assert not (_r8_subjects(report) & conditional), declared
+
+
+def test_the_note_counts_what_this_file_withheld_not_what_the_table_holds(tmp_path):
+    """The withheld figure was `len(CONDITIONAL_ON_CATEGORY)` -- eight,
+    always, whatever the file said. Once a passport's own category
+    settles seven of them, a sentence still saying eight is a number
+    typed into prose, which is the mistake the paragraph beneath it
+    warns about in its own words."""
+    silent = _run(tmp_path, _passport()).notes
+    spoken = _run(tmp_path, _passport("lmt")).notes
+    assert silent and spoken, (silent, spoken)
+    assert "8 of them turn on a battery category" in " ".join(silent)
+    assert "1 of them turn on a battery category" in " ".join(spoken), spoken
+
+
+def test_a_category_the_template_does_not_name_settles_nothing(tmp_path):
+    """The vocabulary is the template's own -- lmt, ev, industrial,
+    stationary. Anything else is a value this reader has no column for,
+    and guessing which one was meant is the shape of mistake that put a
+    field on a conformant file."""
+    conditional = {row["element_id_short"]
+                   for row in battery_tables.CONDITIONAL_ON_CATEGORY}
+    for declared in ("EV ", "electric-vehicle", "", "lmt/ev", "LMT"):
+        subjects = _r8_subjects(_run(tmp_path, _passport(declared)))
+        if declared.strip().lower() in ("lmt", "ev"):
+            assert subjects & conditional, declared
+        else:
+            assert not (subjects & conditional), declared

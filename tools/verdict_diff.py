@@ -182,6 +182,48 @@ def build_corpus(into: Path):
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[(entry, b"%PDF-1.4 ")])))
 
+    # A battery passport that states its own category. `BAT-R8` withheld
+    # eight rows because their obligation turns on a category and nothing
+    # read one; the template makes the category mandatory and names its
+    # vocabulary, so a file that states `ev` or `lmt` answers them. No
+    # input here carried a battery passport at all, so the corpus could
+    # not see that rule move.
+    from aas_submodel_validate.rules import battery_tables  # noqa: E402
+
+    def _ref(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    for category in ("ev", "lmt", "industrial"):
+        by_submodel = {}
+        for row in battery_tables.CONDITIONAL_ON_CATEGORY:
+            by_submodel.setdefault(row["submodel_semantic_id"], [])
+        submodels = []
+        for index, sid in enumerate(sorted(by_submodel)):
+            value = []
+            if sid.endswith("TechnicalData/1/0"):
+                value.append({
+                    "idShort": "GeneralInformation",
+                    "modelType": "SubmodelElementCollection",
+                    "semanticId": _ref("urn:samm:io.admin-shell.idta.batterypass."
+                                       "technical_data:1.0.0#generalInformation"),
+                    "value": [{"idShort": "BatteryCategory", "modelType": "Property",
+                               "valueType": "xs:string", "value": category,
+                               "semanticId": _ref("urn:samm:io.admin-shell.idta."
+                                                  "batterypass.technical_data:1.0.0"
+                                                  "#batteryCategory")}]})
+            submodels.append({"idShort": "Part%d" % index, "modelType": "Submodel",
+                              "id": "urn:corpus:battery:%s:%d" % (category, index),
+                              "kind": "Instance", "semanticId": _ref(sid),
+                              "submodelElements": value})
+        environment = {"assetAdministrationShells": [], "conceptDescriptions": [],
+                       "submodels": submodels}
+        # A bare environment, not a package: `BAT-R8` needs no container
+        # and the question here is the category, not the packaging.
+        written = into / ("battery-%s.json" % category)
+        written.write_text(json.dumps(environment), encoding="utf-8")
+        cases.append(("a battery passport declaring category %r" % category, written))
+
     # And the shapes an aas-suppl relationship's target takes. The last
     # is the question the rule exists for and must not move; without it
     # the three above are equally satisfied by a rule switched off.

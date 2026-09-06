@@ -50,13 +50,73 @@ from .detect import instances
 R2_ID = "BAT-R2"
 R8_ID = "BAT-R8"
 
+#: The element a battery passport states its own category in. IDTA
+#: 02035-4 makes it cardinality `One` and names its vocabulary in the
+#: element's own description: "lmt", "ev", "industrial", "stationary".
+CATEGORY_ELEMENT = ("urn:samm:io.admin-shell.idta.batterypass."
+                    "technical_data:1.0.0#batteryCategory")
+
+#: The template's vocabulary, and the guidance column each one settles.
+#:
+#: Two of the four are deliberately absent. `industrial` and
+#: `stationary` reach only columns the guidance names *above 2 kWh*, and
+#: the category value states a category, not a capacity. The provision
+#: that would close the gap -- which batteries need a passport at all --
+#: is Article 77(1), which this repository does not index (the annex
+#: index says so in its own note), so the inference that an industrial
+#: battery carrying a passport is above the threshold has no source
+#: here. Those two stay unanswered and the coverage note counts them.
+CATEGORY_COLUMNS = {"ev": "EV", "lmt": "LMT"}
+
+#: The readings that make an element required. The guidance writes two
+#: spellings and the longlist a third; anything else -- `voluntary`,
+#: `not-to-be-filled`, `not-stated`, `certain-cases` -- is not a
+#: requirement and must not draw a finding. `not-to-be-filled` is the
+#: one that matters: the capacity threshold for exhaustion is required
+#: for an electric vehicle and forbidden for light means of transport,
+#: so a rule that ignored the category would tell an LMT manufacturer to
+#: add a field their own guidance refuses.
+REQUIRED_READINGS = ("required", "required-by-batteries-regulation")
+
+
+def declared_category(submodels) -> str:
+    """The category the file states, lower-cased, or "" if it states none.
+
+    Over every submodel rather than the one being judged: the element
+    lives in Technical Data and four of the eight rows it settles belong
+    to other parts of the passport.
+    """
+    for submodel in submodels:
+        pending = list(getattr(submodel, "submodel_elements", None) or [])
+        while pending:
+            element = pending.pop()
+            if CATEGORY_ELEMENT in element_candidate_values(element):
+                value = getattr(element, "value", None)
+                if isinstance(value, str) and value.strip():
+                    return value.strip().lower()
+            for attribute in ("value", "statements", "annotations"):
+                children = getattr(element, attribute, None)
+                if isinstance(children, list):
+                    pending.extend(c for c in children if hasattr(c, "semantic_id"))
+    return ""
+
+
+def _rows_the_category_settles(submodels):
+    """The conditional rows this file's own category makes required."""
+    column = CATEGORY_COLUMNS.get(declared_category(submodels))
+    if column is None:
+        return []
+    return [row for row in battery_tables.CONDITIONAL_ON_CATEGORY
+            if dict(row["categories"]).get(column) in REQUIRED_READINGS]
+
 #: The note `BAT-R8` leaves when it looked at something. Not a finding:
 #: it says what this run could examine, and a run examines nothing when
 #: the input holds no submodel the table names.
 COVERAGE_NOTE = (
-    "%s reported %d of the %d elements this table holds; %d of them need "
-    "a battery category no rule here reads yet, so whether the law "
-    "requires those is a question this run did not ask. Read from %s. Both figures are a "
+    "%s reported %d of the %d elements this table holds; %d of them turn "
+    "on a battery category this file does not settle, so whether a "
+    "published reading of the law requires those is a question this run "
+    "did not ask. Read from %s. Both figures are a "
     "floor, not a measurement: the templates cite no provision of the "
     "law, so the join behind the table matched attributes by name, and "
     "name matching misses every element whose label differs from the "
@@ -79,7 +139,14 @@ def coverage_note(submodels) -> str:
     cannot reach at all. What comes out is a lower bound on the
     disagreement, never a measurement of it.
     """
-    withheld = len(battery_tables.CONDITIONAL_ON_CATEGORY)
+    submodels = list(submodels)
+    # What was withheld *from this file*, not from the table. A passport
+    # that states `ev` or `lmt` has answered the question the conditional
+    # rows were waiting on, and a sentence that keeps saying eight after
+    # seven of them were asked is a number typed into prose -- which the
+    # paragraph below already warns about.
+    settled = {row["element"] for row in _rows_the_category_settles(submodels)}
+    withheld = len(battery_tables.CONDITIONAL_ON_CATEGORY) - len(settled)
     # Every row the table holds, the withheld ones included. Counting
     # against the reportable rows alone made the sentence "1 of the 1",
     # which is a number divided by itself wearing the look of complete
@@ -90,7 +157,7 @@ def coverage_note(submodels) -> str:
     # submodels in one file -- two battery modules, an ordinary shape --
     # made this say "10 of the 9".
     read = len({row["element"] for submodel in submodels
-                for row in _rows_for(submodel)})
+                for row in _rows_for(submodel, submodels)})
     if not read:
         return None
     return COVERAGE_NOTE % (R8_ID, read, total, withheld,
@@ -101,11 +168,21 @@ def _declared(submodel) -> frozenset:
     return candidate_values(getattr(submodel, "semantic_id", None))
 
 
-def _rows_for(submodel):
-    """The table rows whose submodel this one declares itself to be."""
+def _rows_for(submodel, submodels=None):
+    """The table rows whose submodel this one declares itself to be.
+
+    Plus the conditional rows the file's own declared category settles,
+    when it declares one. Those were withheld because their obligation
+    depends on a category and nothing read one; the template makes the
+    category mandatory and names its vocabulary, so a passport that
+    states `ev` or `lmt` has answered the question the rows were waiting
+    on. A passport that states neither is judged exactly as before.
+    """
     declared = _declared(submodel)
-    return [row for row in battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
-            if row["submodel_semantic_id"] in declared]
+    rows = list(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
+    if submodels is not None:
+        rows += _rows_the_category_settles(submodels)
+    return [row for row in rows if row["submodel_semantic_id"] in declared]
 
 
 def _carries(submodel, row) -> bool:
@@ -192,7 +269,7 @@ def bat_r8_template_optional_but_law_requires(ctx):
     reads every element rather than the first: an absence past the first
     element is the same absence."""
     for submodel in instances(ctx.loaded):
-        for row in _rows_for(submodel):
+        for row in _rows_for(submodel, list(instances(ctx.loaded))):
             if _carries(submodel, row):
                 continue
             clauses = ", ".join(row["citations"])
