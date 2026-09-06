@@ -198,7 +198,15 @@ def _escapes(name: str) -> bool:
     tar and the zip branch four lines down was not asked at all, which
     is the shape this file has now met three times.
     """
-    return name.startswith("/") or ".." in name.replace("\\", "/").split("/")
+    # One normalisation, both questions. The `..` question folded `\`
+    # into `/` and the rooted question was asked of the raw name, so
+    # `/abs` escaped and `\abs` did not. On this machine `\abs` is a
+    # file with a backslash in its name and escapes nothing; on Windows
+    # `os.path.join(dest, "\abs")` is the root of the current drive,
+    # and what a member does when somebody else unpacks it is the whole
+    # question.
+    settled = name.replace("\\", "/")
+    return settled.startswith("/") or ".." in settled.split("/")
 
 
 def members(artifact: pathlib.Path):

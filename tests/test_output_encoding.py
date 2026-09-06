@@ -336,3 +336,40 @@ def test_a_gate_does_not_die_of_its_own_output(script, encoding):
     assert spoken.strip(), (
         "%s said nothing at all under %s; a tool that cannot speak "
         "cannot be checked for what it says" % (name, encoding))
+
+
+@pytest.mark.parametrize("name", [
+    "배터리여교.aasx",                 # Korean, composed
+    "Handbuch_Größe.aasx",                       # a German umlaut and eszett
+    "文件.aasx",                                   # Chinese
+    "a b(1).aasx",                                         # a space and parentheses
+])
+def test_a_path_this_reader_did_not_choose_is_read_and_echoed(tmp_path, name):
+    """The input path comes from whoever runs the tool, and a report
+    prints it back in both forms.
+
+    This checkout is itself under a non-ASCII path -- and a decomposed
+    one, which is what macOS hands back -- so the suite has been
+    exercising the directory side of this all along. What it had not
+    exercised is a *file* whose own name carries characters outside
+    ASCII: a crash there is exit 2 and a traceback, not a finding, and
+    it is the caller's filename that caused it.
+    """
+    import json
+    import unicodedata
+
+    from aas_submodel_validate import runner
+    from aas_submodel_validate.report import render
+    from builders import build_aasx, hd_env
+
+    for spelling in (name, unicodedata.normalize("NFD", name)):
+        directory = tmp_path / "디렉토리"
+        directory.mkdir(exist_ok=True)
+        path = build_aasx(directory / spelling,
+                          payload=json.dumps(hd_env()).encode("utf-8"),
+                          files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+        report = runner.run(str(path))
+        assert report.ok, (spelling, [f.id for f in report.findings])
+        # Both forms a reader gets, and the path in each of them.
+        assert str(path) in render(report)
+        assert json.loads(json.dumps(report.as_dict()))["path"] == str(path)

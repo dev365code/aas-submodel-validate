@@ -567,3 +567,33 @@ def test_the_groups_the_project_declares_are_read_from_the_project():
             "smtv": "aas_submodel_validate.cli:main",
         }
     }
+
+
+@pytest.mark.parametrize("name", ["\\abs", "\\\\server\\share\\x", "\\tmp\\pwned"])
+def test_a_member_rooted_with_the_other_separator_escapes_too(name):
+    """`_escapes` folded `\\` into `/` for the `..` question and asked
+    the rooted question of the raw name, so `/abs` escaped and `\\abs`
+    did not.
+
+    On this machine `\\abs` is a file with a backslash in its name and
+    escapes nothing. On Windows `os.path.join(dest, "\\abs")` is `\\abs`
+    -- the root of the current drive -- and the whole point of the check
+    is what a member does when somebody else unpacks it. One
+    normalisation, both questions.
+    """
+    assert _gate()._escapes(name), name
+
+
+@pytest.mark.parametrize("name", [
+    "ok/x", "a/b/c.txt", "weird\\name.txt", "aasx/f.pdf",
+    # `..` inside a segment is not a step up. `version..old.txt` is a
+    # filename; asking `".." in name` instead of asking it of the
+    # segments calls it an escape, and that mutation survived the first
+    # version of these tests.
+    "docs/version..old.txt", "a..b/c.txt", "..leading.txt", "trailing..",
+])
+def test_a_member_that_stays_inside_is_not_called_an_escape(name):
+    """The direction that costs more. A backslash inside a name is a
+    legal filename here and normalising it must not turn it into a
+    finding."""
+    assert not _gate()._escapes(name), name
