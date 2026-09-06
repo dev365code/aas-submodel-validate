@@ -426,3 +426,118 @@ def test_what_the_scheme_test_answers(value, expected):
     the fourth is what joining a URI to a directory produces -- asked
     after that join, every scheme is gone."""
     assert has_scheme(value) is expected
+
+
+# -- which reason, and to whom it is said -------------------------------------
+
+
+def test_every_reason_a_value_is_not_a_part_name_is_named_as_itself():
+    """The rules had one sentence for four defects.
+
+    `canonical_part_name` returning None already meant any of four
+    things, and its own docstring listed three of them -- while the File
+    rule told every one of them that the value "climbs out of the
+    package". `/aasx/files/` climbs nowhere; it names a directory, and
+    the remedy that followed was for a defect the author did not have.
+    """
+    from aas_submodel_validate.container import part_name_problem
+
+    assert part_name_problem("aasx/files/manual.pdf") is None
+    assert "climbs out" in part_name_problem("../evil.step")
+    assert "directory" in part_name_problem("/aasx/files/")
+    assert "empty" in part_name_problem("   ")
+    assert "cannot carry" in part_name_problem("x?y.pdf")
+
+
+@pytest.mark.parametrize("value, carried", [
+    ("x?y.pdf", "'?'"),
+    ("a<b>.pdf", "'<'"),
+    ("a b.pdf", "a space"),
+    ("[Content_Types].xml", "'['"),
+    ("a|b.pdf", "'|'"),
+    ('"q".pdf', '\'"\''),
+])
+def test_a_character_no_part_name_may_carry_is_named(value, carried):
+    """RFC 3986 §3.3 builds a segment out of pchar, and ECMA-376 Part 2
+    builds a part name out of those segments -- which is what this
+    module's first paragraph has always said and nothing checked. The
+    finding names the character, because "not a part name" without
+    saying which character is a remedy the reader has to guess at."""
+    from aas_submodel_validate.container import part_name_problem
+
+    problem = part_name_problem(value)
+    assert problem and carried in problem, (value, problem)
+
+
+@pytest.mark.parametrize("value", [
+    "aasx/files/manual.pdf",
+    "a%20b/c.pdf",              # the legal way to spell a space
+    "o'brien(1),v2;x=1.pdf",    # sub-delims, all of them legal
+    "a:b@c.pdf",                # ":" and "@" are pchar
+    "Handbuch_Größe.pdf",       # not ASCII, deliberately not refused
+    "discount50%.pdf",          # a lone % is not legal and not refused
+])
+def test_a_part_name_this_reader_must_not_refuse(value):
+    """The direction that costs more. Every one of these is either legal
+    or something this reader has decided not to be sure about, and a
+    finding on any of them is a conformant package called broken."""
+    from aas_submodel_validate.container import part_name_problem
+
+    assert part_name_problem(value) is None, (value, part_name_problem(value))
+
+
+def test_the_archives_own_entry_names_are_not_judged_as_part_names(tmp_path):
+    """A ZIP entry name is not a part name. This reader's whole
+    literal-first arrangement exists so that an entry spelled oddly is
+    still reachable, and putting the character rule inside the spelling
+    walk took those entries out of the canonical index -- `X4` then
+    reported a part missing that was sitting in the archive."""
+    path = tmp_path / "odd.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/files/man ual.pdf", b"%PDF-1.4")
+    with AasxPackage(path) as package:
+        assert package.part("aasx/files/man ual.pdf") == "aasx/files/man ual.pdf"
+        assert package.part("/aasx/files/man ual.pdf") == "aasx/files/man ual.pdf"
+        # And the package's own content-types stream, which is not a part
+        # and is still an entry the archive holds.
+        assert package.part("[Content_Types].xml") == "[Content_Types].xml"
+
+
+def test_the_remedy_for_a_value_no_part_can_carry_is_not_add_the_file(tmp_path):
+    """`HD-D7`'s own remedy says to add the file under the name the value
+    gives. That is right when a part is missing and wrong here: no entry
+    added under this spelling is a part, and for a value that climbs out
+    of the package adding one is the last thing to do."""
+    environment = copy.deepcopy(hd_env())
+    blob = json.dumps(environment).replace("/aasx/files/manual.pdf", "x?y.pdf")
+    path = build_aasx(tmp_path / "bad.aasx", payload=blob.encode("utf-8"),
+                      files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+    (finding,) = [f for f in runner.run(str(path)).findings if f.id == "HD-D7"]
+    assert "not a part name" in finding.violation.message
+    assert "Add the file" not in (finding.violation.fix or "")
+    assert "no part can carry this name" in finding.violation.fix
+    # And the reason reaches the report, not only the function that
+    # computes it. Restoring the stock sentence left every test above
+    # green: they asked `part_name_problem` and nothing asked the
+    # finding.
+    assert "climbs out" not in finding.violation.detail
+    assert "cannot carry '?'" in finding.violation.detail
+
+
+def test_the_report_carries_the_reason_the_walk_gave(tmp_path):
+    """Each of the four, end to end. The clause the reader sees has to
+    be the one the walk decided on."""
+    from aas_submodel_validate.container import part_name_problem
+
+    for value in ("../evil.step", "/aasx/files/", "x?y.pdf", "[Content_Types].xml"):
+        blob = json.dumps(copy.deepcopy(hd_env())).replace(
+            "/aasx/files/manual.pdf", value)
+        path = build_aasx(tmp_path / "r.aasx", payload=blob.encode("utf-8"),
+                          files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+        (finding,) = [f for f in runner.run(str(path)).findings if f.id == "HD-D7"]
+        assert finding.violation.detail == "%s: %s" % (value, part_name_problem(value))

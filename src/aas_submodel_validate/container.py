@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import posixpath
 import re
+import string
 import urllib.parse
 import zipfile
 import zlib
@@ -361,6 +362,69 @@ def has_scheme(value: str) -> bool:
     return all(character in _SCHEME_REST for character in head)
 
 
+#: What a part-name segment may hold. RFC 3986 §3.3 spells the segment
+#: out and ECMA-376 Part 2 builds a part name from those segments, which
+#: is what this module's own first paragraph has always said and nothing
+#: checked:
+#:
+#:     segment    = *pchar
+#:     pchar      = unreserved / pct-encoded / sub-delims / ":" / "@"
+#:     unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+#:     sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / ","
+#:                / ";" / "="
+_UNRESERVED = string.ascii_letters + string.digits + "-._~"
+_SUB_DELIMS = "!$&'()*+,;="
+#: `%` is here as the escape introducer and its two hex digits are not
+#: checked. A lone `%` is not a legal part name, and refusing one would
+#: turn `discount 50%.pdf` -- which tools do write -- into a finding
+#: this reader cannot be sure of. Under-refusing is the direction this
+#: project takes when it is not sure.
+_PCHAR = frozenset(_UNRESERVED + _SUB_DELIMS + ":@%")
+
+
+def _illegal_in_a_segment(text: str) -> list:
+    """The characters here that no part-name segment may carry.
+
+    ASCII only. A part name is built from URI segments, so a character
+    outside ASCII belongs percent-encoded -- but archives in the wild
+    carry `Handbuch_Größe.pdf` unencoded, the literal lookup finds those
+    entries anyway, and refusing them would fail files over a spelling
+    nothing else in this reader minds. Recorded, not enforced.
+    """
+    return sorted({c for c in text
+                   if ord(c) < 128 and c not in _PCHAR and c != "/"})
+
+
+def _resolve_part_name(value: str):
+    """`(the archive entry this names, why it names none)`.
+
+    Exactly one of the two is None. One walk answers both questions,
+    because two functions answering one question is how a reader comes
+    to be told a value is not a part name by one sentence and where its
+    part is missing by the next.
+    """
+    if not value or not value.strip():
+        return None, "it is empty"
+    text = value.replace("\\", "/")
+    if text.endswith("/"):
+        return None, "it ends in a separator, so it names a directory and not a part"
+    text = urllib.parse.unquote(text)
+    segments = []
+    for segment in text.split("/"):
+        if segment in ("", "."):
+            continue
+        if segment == "..":
+            if not segments:
+                return None, "it climbs out of the package"
+            segments.pop()
+            continue
+        segments.append(segment)
+    resolved = "/".join(segments)
+    if not resolved:
+        return None, "nothing is left of it once its dot segments are resolved"
+    return resolved, None
+
+
 def canonical_part_name(value: str):
     """The archive entry a part name refers to, or None if it names none.
 
@@ -372,28 +436,40 @@ def canonical_part_name(value: str):
     of the same name, and a reader that compares strings calls a
     conformant package broken.
 
-    None means the value is not a part name -- it climbs out of the
-    package, ends in a separator (which names a directory, not a part),
-    or has nothing left of it. That is a different defect from a part
-    being absent, and the rules say so separately.
+    `part_name_problem` says which of the reasons applies. They share one
+    walk, so they cannot disagree.
     """
-    if not value or not value.strip():
-        return None
-    text = value.replace("\\", "/")
-    if text.endswith("/"):
-        return None          # a directory is not named by any part
-    text = urllib.parse.unquote(text)
-    segments = []
-    for segment in text.split("/"):
-        if segment in ("", "."):
-            continue
-        if segment == "..":
-            if not segments:
-                return None          # a name that climbs out of the package
-            segments.pop()
-            continue
-        segments.append(segment)
-    return "/".join(segments) or None
+    return _resolve_part_name(value)[0]
+
+
+def part_name_problem(value: str):
+    """Why `value` is not a part name, in a clause, or None if it is one.
+
+    Asked of a *value* a document wrote, and of nothing else. An archive
+    entry name is not a part name -- it is whatever a ZIP holds, and this
+    reader's whole literal-first arrangement exists so that an entry
+    spelled oddly is still reachable. Putting the character rule inside
+    the spelling walk took those entries out of the canonical index and
+    made `X4` report a part missing that was in the archive: the check
+    belongs where the question is asked and nowhere else.
+
+    Reasons, and the rules used to attribute all of them to the first:
+    a value ending in a separator was told it climbed out of the
+    package, which it does not do, and the remedy that followed was for
+    a defect the author did not have.
+    """
+    _canonical, problem = _resolve_part_name(value)
+    if problem is not None:
+        return problem
+    # The characters, on the value as written. `%20` is a legal way to
+    # spell a space in a part name and the space it decodes to is not,
+    # so the decoded form would refuse the correct spelling.
+    illegal = _illegal_in_a_segment(value.replace("\\", "/"))
+    if illegal:
+        return ("a part name cannot carry %s unescaped (RFC 3986 §3.3); "
+                "percent-encode it or correct the value"
+                % ", ".join("a space" if c == " " else repr(c) for c in illegal))
+    return None
 
 
 class ContainerError(Exception):
@@ -739,7 +815,26 @@ class AasxPackage:
             # payload whose name really contains an escape is readable:
             # `part` tries the literal before the normalised reading, and
             # the loader looks parts up by exact name.
-            name = self.part(candidate) or canonical_part_name(candidate) or target
+            name = self.part(candidate)
+            if name is None and target.strip() != target:
+                # `startswith("/")` is false for " /aasx/…", so a target
+                # whose only defect was a leading space took the relative
+                # branch and was joined into `aasx/ /aasx/…`, a string
+                # naming nothing -- and `X4` reported the archive as not
+                # holding a part sitting in it. The same target with the
+                # space on the other end took the absolute branch and
+                # resolved. Two answers separated by which side the
+                # whitespace fell on.
+                #
+                # Asked second and not first. Settling the target before
+                # the literal attempt is the mistake #18 was about, one
+                # layer out: an archive that really holds an entry whose
+                # name ends in a space becomes unreachable by the target
+                # that spells it exactly.
+                settled = target.strip()
+                name = self.part(settled[1:] if settled.startswith("/")
+                                 else posixpath.join(base_dir, settled))
+            name = name or canonical_part_name(candidate) or target
             resolved.append((el.get("Type", ""), name, False))
         return resolved
 

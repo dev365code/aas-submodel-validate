@@ -82,7 +82,7 @@ def file_part_violations(container, subject, value):
     left a part that is in the archive drawing a MUST because its value
     carried a leading space.
     """
-    from ..container import canonical_part_name, has_scheme
+    from ..container import has_scheme, part_name_problem
     from ..model import Violation
 
     if not isinstance(value, str):
@@ -90,10 +90,27 @@ def file_part_violations(container, subject, value):
     folded = value.strip()
     if not folded or has_scheme(folded):
         return              # empty names nothing; a scheme is somewhere else's
-    if canonical_part_name(folded) is None:
-        yield Violation("this File's value is not a part name",
-                        subject=subject,
-                        detail="%s climbs out of the package" % value)
+    problem = part_name_problem(folded)
+    if problem is not None:
+        yield Violation(
+            "this File's value is not a part name",
+            subject=subject,
+            # Which reason, not the stock one. Every value that failed
+            # here was told it climbed out of the package -- including
+            # `/aasx/files/`, which climbs nowhere and names a directory,
+            # and which then got a remedy for a defect it did not have.
+            detail="%s: %s" % (value, problem),
+            # And its own remedy. The rule's says to add the file under
+            # the name this value gives, which is right when a part is
+            # missing and wrong here: no entry added under this spelling
+            # is a part, and for a value that climbs out of the package
+            # adding one is the last thing to do.
+            fix="Correct the value so it names a part of this package. A "
+                "part name is absolute, uses `/` as its only separator, "
+                "and percent-encodes anything outside the unreserved and "
+                "sub-delimiter characters. Adding a file under this "
+                "spelling will not answer the finding -- no part can "
+                "carry this name.")
     # The value as written, not the folded spelling: `part` does the
     # folding now, after it has tried what the archive actually holds.
     # Asking about a string this rule invented, and then reporting the

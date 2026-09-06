@@ -69,6 +69,13 @@ FILE_VALUES = [
     "",
     "   ",
     "aasx/files/absent.pdf",
+    # Characters no part-name segment may carry (RFC 3986 §3.3). The
+    # first is the package's own content types stream, which is not a
+    # part at all and drew nothing.
+    "[Content_Types].xml",
+    "aasx/files/man?ual.pdf",
+    "aasx/files/man ual.pdf",
+    "aasx/files/man%20ual.pdf",      # the legal spelling of the one above
 ]
 
 #: Archives whose *entry name* is the odd spelling, paired with the value

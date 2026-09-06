@@ -55,7 +55,7 @@ is the thing this project refuses, so those files are judged exactly as
 before and the coverage note counts what was withheld from *them* rather
 than from the table.
 
-**`verdict`** — four of the 41 corpus inputs are judged differently.
+**`verdict`** — six of the 45 corpus inputs are judged differently.
 
 `HD-D7` is no longer drawn on that archive and its exit code falls from
 1 to 0: a false refusal withdrawn, because the file the value names is
@@ -63,8 +63,9 @@ in the package.
 
 A passport declaring `ev` draws two more warnings and one declaring
 `lmt` draws seven more; one declaring `industrial` is unchanged. The
-corpus carried no battery passport at all, so three were added — the
-rule could not be seen to move by an instrument with no input for it.
+corpus carried no battery passport at all, so three were added, and no
+File value with an illegal character, so four more — twice over, a rule
+could not be seen to move by an instrument with no input for it.
 
 `X4` moved too, at a call site the corpus could not see. A
 supplemental relationship whose target carries surrounding whitespace
@@ -80,6 +81,54 @@ verdict where there were two. Two inputs were added so the instrument
 can see it. A comparison that has no case for the thing that changed
 reports a confident zero, and this file exists to stop a release note
 resting on one.
+
+**A value that no part name can carry is told so, and which character
+it was.** `canonical_part_name`'s first paragraph has said since 0.1.0
+that part names "escape reserved characters", and nothing checked. RFC
+3986 §3.3 builds a segment out of pchar and ECMA-376 Part 2 builds a
+part name out of those segments, so `x?y.pdf`, `a<b>.pdf` and
+`[Content_Types].xml` are not part names — and the first two were
+reported as *a part the container does not hold*, which sent the author
+to add a file, and the third drew nothing at all.
+
+The check names the character. Deliberately conservative in two places:
+a lone `%` is not legal and is not refused, because tools do write
+`discount50%.pdf`; and a character outside ASCII is not refused either,
+because archives carry `Handbuch_Größe.pdf` unencoded, the literal
+lookup finds those entries, and refusing them would fail a file over a
+spelling nothing else here minds. Both are recorded rather than
+enforced.
+
+**The four reasons are now four sentences.** `canonical_part_name`
+returning `None` already meant any of four things and the rule
+attributed all of them to the first, so `/aasx/files/` — which names a
+directory and climbs nowhere — was told it climbed out of the package.
+The not-a-part-name finding also carries its own remedy now: the rule's
+says to add the file under the name the value gives, which is right for
+a missing part and wrong for a value no entry can be named after.
+
+Asked only of a value a document wrote. An archive entry name is not a
+part name; it is whatever a ZIP holds, and this reader's literal-first
+arrangement exists so an oddly spelled entry stays reachable. Putting
+the character rule inside the spelling walk took those entries out of
+the canonical index and made `X4` report a part missing that was in the
+archive — caught by the corpus, and the reason the check lives in
+`part_name_problem` and not in `canonical_part_name`.
+
+**`verdict`** — a File value of `[Content_Types].xml` now draws `HD-D7`
+where it drew nothing. Values with an illegal character keep the same
+finding and severity; what changes is which sentence and which remedy,
+so the corpus records no movement for them and this paragraph does.
+
+**`verdict`** — `X4` no longer reports a missing part for a supplemental
+target whose only defect is surrounding whitespace. A target with a
+leading space failed `startswith("/")`, took the relative branch and was
+joined into `aasx/ /aasx/…`, a string naming nothing; the same target
+with the space on the other end resolved. Two answers separated by which
+side the whitespace fell on. The settled spelling is now tried *after*
+the literal one, never before — settling first is the mistake #18 was
+about, one layer out, and it makes an archive holding an entry whose
+name ends in a space unreachable by the target that spells it exactly.
 
 **A report says what it could not ask.** A generated rule sits inside a
 scope, and a scope opens only when an element matches the row that names
