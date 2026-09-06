@@ -1529,7 +1529,7 @@ def test_members_this_reader_never_opens_cost_it_nothing(tmp_path, referenced):
     # The ledger the bound is kept on. Everything the reader actually
     # took out of the archive, against everything the archive declares.
     with container.AasxPackage(str(path)) as package:
-        #  walks the chain from the origin, so this is the
+        # `spec_parts` walks the chain from the origin, so this is the
         # whole of what the reader is handed.
         for part in package.spec_parts:
             package.read(part)
