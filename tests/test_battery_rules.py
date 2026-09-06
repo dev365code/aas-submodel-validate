@@ -175,7 +175,7 @@ def test_the_remedy_names_a_value_the_parser_accepts(tmp_path):
     tells the reader to run `--profile` with a document number, and the
     parser has its own list of what it accepts -- two places for one
     answer to be right, so this is where they are held together."""
-    from aas_submodel_validate.rules.battery import _settles_only
+    from aas_submodel_validate.rules.battery import settles_only
     report = _run(tmp_path, _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT)))
     remedy = _one(report, "BAT-R2").fix
     assert "--profile" in remedy
@@ -183,7 +183,7 @@ def test_the_remedy_names_a_value_the_parser_accepts(tmp_path):
     path.write_bytes(json.dumps(
         _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT))).encode("utf-8"))
     from aas_submodel_validate.cli import main
-    for key in _settles_only():
+    for key in settles_only():
         assert main([str(path), "--profile", key]) in (0, 1), key
 
 

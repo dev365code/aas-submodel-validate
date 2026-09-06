@@ -102,12 +102,12 @@ def test_the_profiles_on_offer_say_which_kind_each_one_is(capsys):
     So both kinds are on offer and the help text says which is which:
     some choose the table that judges, the rest only settle which
     template the file claims to be."""
-    from aas_submodel_validate.rules.battery import _settles_only
+    from aas_submodel_validate.rules.battery import settles_only
     from aas_submodel_validate.rules.profiles import KEYS
     with pytest.raises(SystemExit):
         main(["--help"])
     helped = " ".join(capsys.readouterr().out.split())
-    assert not set(KEYS) & set(_settles_only()), "a key cannot be both kinds"
+    assert not set(KEYS) & set(settles_only()), "a key cannot be both kinds"
     chooses, _, settles = helped.partition("choose the table that judges")
     assert "only settle which template the file claims to be" in settles
     # Each key on its own side of the sentence. Listing them all and
@@ -116,7 +116,7 @@ def test_the_profiles_on_offer_say_which_kind_each_one_is(capsys):
     for key in KEYS:
         assert key in chooses.rsplit(":", 1)[-1], key
         assert key not in settles.split(";")[0], key
-    for key in _settles_only():
+    for key in settles_only():
         assert key in settles, key
         assert key not in chooses.rsplit(":", 1)[-1], key
 
@@ -728,3 +728,35 @@ def test_the_rule_listing_and_the_advertised_count_reconcile(capsys):
     assert extra[0].split()[0] == "META"
     assert extra[0].split()[1] == "meta", "the one non-rule line must say so in its kind"
     assert len(lines) == len(registered) + 1
+
+
+def test_rules_does_not_answer_before_the_contradiction_is_caught(capsys):
+    """`main` decides in an order, and the order is load-bearing.
+
+    Three of its early exits are ordered against `--rules`: the
+    `--strict-meta`/`--meta` contradiction, the seven judging flags
+    `--rules` ignores, and `--example`. The second and third are pinned
+    above and this is the first, which was not.
+
+    Moving the listing up by three lines makes `--rules --strict-meta
+    --meta info` print a listing at `info` while the caller asked for
+    two contradictory things -- the silent-drop failure this file's
+    comments are about, arriving through the flag that was added to end
+    it. Nothing said so, and the decision this pins is worth pinning
+    before anyone shortens a 151-line function by moving its parts.
+    """
+    for argv in (["--rules", "--strict-meta", "--meta", "info"],
+                 ["--rules", "--strict-meta", "--meta", "warning"]):
+        with pytest.raises(SystemExit) as raised:
+            main(argv)
+        assert raised.value.code == 2, argv
+        captured = capsys.readouterr()
+        assert "--strict-meta" in captured.err, argv
+        # And it did not answer the other request on the way past.
+        assert not [line for line in captured.out.splitlines()
+                    if line.startswith("META")], argv
+
+    # The agreeing spelling is not a contradiction and still lists.
+    assert main(["--rules", "--strict-meta", "--meta", "error"]) == 0
+    assert [line for line in capsys.readouterr().out.splitlines()
+            if line.startswith("META")]

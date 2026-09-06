@@ -343,7 +343,19 @@ _KEYS_OF = {
 #: Both lists reach the parser, because `BAT-R2`'s remedy tells the
 #: reader to use one of these and a remedy naming a value the parser
 #: refuses is worse than silence. Measured: it did, for one commit.
-def _settles_only() -> tuple:
+def settles_only() -> tuple:
+    """The `--profile` keys that choose no table, only settle a claim.
+
+    Public because it crosses a module boundary: `cli.py` builds the
+    flag's `choices` and its help out of it, and two test modules read
+    it. A leading underscore said the opposite and had said it since the
+    flag existed.
+
+    A key is in here when every template claiming its submodel
+    identifier is one this project has no table for. `--profile` then
+    records which template the author meant and silences `BAT-R2`; it
+    cannot select a rule set, because there is none to select.
+    """
     return tuple(sorted(
         key for identifier, keys in _KEYS_OF.items() for key in keys
         if not any(claimant in _known_to_the_walk()

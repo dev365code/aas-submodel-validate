@@ -67,16 +67,16 @@ def main(argv: Optional[list] = None) -> int:
                         help="exit 1 unless every submodel in the input was "
                              "judged, not only the ones this tool has a "
                              "table for -- and unless there was one to judge")
-    from .rules.battery import _settles_only
+    from .rules.battery import settles_only
     from .rules.profiles import KEYS as _PROFILE_KEYS
-    parser.add_argument("--profile", choices=_PROFILE_KEYS + _settles_only(),
+    parser.add_argument("--profile", choices=_PROFILE_KEYS + settles_only(),
                         metavar="IDTA",
                         help="which template answers where two publish one "
                              "submodel identifier: %s choose the table that "
                              "judges; %s only settle which template the file "
                              "claims to be, because this tool has a table for "
                              "neither side of that collision"
-                             % (", ".join(_PROFILE_KEYS), ", ".join(_settles_only())))
+                             % (", ".join(_PROFILE_KEYS), ", ".join(settles_only())))
     parser.add_argument("--example", action="store_true",
                         help="judge the official IDTA 02004 example that "
                              "travels in this package; needs no file of your "
