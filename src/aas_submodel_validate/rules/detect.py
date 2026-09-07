@@ -16,7 +16,7 @@ from __future__ import annotations
 from ..model import Violation
 from ..registry import rule
 from ..semantics import key_values, submodel_declares
-from . import hd_tables, td_tables
+from . import battery_tables, hd_tables, td_tables
 
 #: The rule id. Referenced by the runner, which can demote this one
 #: finding to a note, so the string lives here rather than in two places.
@@ -101,6 +101,43 @@ def matched(ctx):
             if submodel_declares(submodel, pack.semantic_id)]
 
 
+#: Every submodel identifier this tool judges without having a template
+#: table for it. `PACKS` answers "there is a table generated from the
+#: published template"; this answers "there are rules about it", and the
+#: two are not the same question. The battery pack has rows for three
+#: submodels and a table for none of them.
+#:
+#: Read from the tables rather than listed, so a row added for a fourth
+#: submodel is known here the day it lands.
+PACK_ONLY_SEMANTIC_IDS = frozenset(
+    row["submodel_semantic_id"]
+    for row in (battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
+                + battery_tables.CONDITIONAL_ON_CATEGORY))
+
+
+def judged(ctx):
+    """Every instance submodel something in this tool judged.
+
+    `matched` is the template half and was standing in for the whole,
+    which held until a pack arrived that judges submodels it has no
+    table for. On a battery passport of IDTA 02035-1, -4 and -5 the
+    report said `no submodel declares a semanticId this tool has a
+    template table for` at error severity, and then eight `BAT-R8`
+    findings about those same three submodels, and `judged 0 of 3`, and
+    left by 1.
+
+    The sentence had already been repaired once -- "recognises" became
+    "has a template table for" -- which made it true and left the
+    verdict contradicting the findings beneath it. A reader was being
+    told to relabel a document that was correct.
+    """
+    seen = {id(submodel) for _pack, submodel in matched(ctx)}
+    seen.update(id(submodel) for submodel in instances(ctx.loaded)
+                if any(submodel_declares(submodel, identifier)
+                       for identifier in PACK_ONLY_SEMANTIC_IDS))
+    return seen
+
+
 def _nearest_miss(submodels) -> str:
     """Why nothing matched, in the most useful words available."""
     seen = []
@@ -151,7 +188,10 @@ def smt_d1_a_known_submodel_is_present(ctx):
     X rules' finding — piling this on top of those would be noise."""
     if ctx.loaded.nothing_was_judged:
         return
-    if matched(ctx):
+    # Judged, not matched. This rule asks whether anything here was
+    # judged at all; measuring it as "matched a template table" made it
+    # fire on the file class the battery pack exists for.
+    if judged(ctx):
         return
     # A file of nothing but specifications is not a file that failed to
     # declare a known identifier -- it declares one and is not an

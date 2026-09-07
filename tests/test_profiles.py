@@ -293,10 +293,17 @@ def test_a_template_of_its_own_that_also_carries_the_mark_is_still_not_ours(tmp_
     ids = {finding.id for finding in runner.run(path).findings}
     # Named rather than compared to the whole set. The identifier this
     # fixture wears as its own is IDTA 02035-4's, which the battery pack
-    # now knows and reports on -- truthfully, and about a different
+    # knows and reports on -- truthfully, and about a different
     # question. What the shield is about is that no table of ours judged
-    # it and no profile named it, which is what these three say.
-    assert "SMT-D1" in ids, sorted(ids)
+    # it and no profile named it, which is what these say.
+    #
+    # `SMT-D1` was a third way of saying so and it was never that: it
+    # asks whether anything here was judged, and something was. While it
+    # measured "matched a template table" it happened to agree, and the
+    # price was the report telling a reader nothing here was known,
+    # above a finding about it.
+    assert "SMT-D1" not in ids, sorted(ids)
+    assert "BAT-R8" in ids, "the pack that does know this identifier said nothing"
     assert "SMT-D2" not in ids, "a template we just refused was named a profile"
     assert not [i for i in ids if i.startswith(("HD", "TD", "DBP2"))], sorted(ids)
 

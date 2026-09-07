@@ -163,7 +163,7 @@ VERDICT_LINES = [
     (19, [(140, N, "key", 1),
           (180, N, "note=something this run did, not a defect -- nothing to change", 0)]),
     (19, [(28, T, "ok -- 0 error(s), 1 warning(s), 3 info", 1),
-          (327, N, "-- battery-passport.json; judged 0 of 1 submodel", 0)]),
+          (327, N, "-- battery-passport.json; judged 1 of 1 submodel", 0)]),
 ]
 
 SHOT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 %(h)d" role="img" aria-label="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, with the element named, the clause cited and a remedy">

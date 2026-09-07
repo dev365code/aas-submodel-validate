@@ -319,8 +319,13 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # turns a specification into an instance.
     report.submodels_seen = len(loaded.submodels)
     report.submodels_specified = len(templates)
-    report.submodels_judged = len({id(submodel) for _pack, submodel
-                                   in detect.matched(Context(loaded, rules.profiles.Selection(profile)))})
+    # Everything judged, not everything matched to a template table. The
+    # count came from the template packs alone, so a battery passport
+    # summarised `judged 0 of 3 submodels` under eight findings about
+    # those three -- and `--require-all-judged` could never pass on the
+    # one input the pack was built for.
+    report.submodels_judged = len(detect.judged(
+        Context(loaded, rules.profiles.Selection(profile))))
     report.findings.sort(key=_reading_order)
     report.checked = len(rules_to_run)
     # Every load error means content that was not read: an archive that

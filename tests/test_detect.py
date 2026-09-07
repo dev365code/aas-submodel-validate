@@ -103,13 +103,24 @@ def test_a_submodel_wearing_our_anchor_in_a_supplemental_is_not_recognised(tmp_p
     Nothing stopped that generalisation before this test: swapping
     `candidate_values(submodel.semantic_id)` for
     `element_candidate_values(submodel)` left the whole suite green.
+
+    This asked for `SMT-D1` as well, as a second way of saying the file
+    was not taken for ours. It was a proxy and it stopped being true:
+    the primary identifier this fixture declares is IDTA 02035-4's own,
+    which the battery pack has rows for -- so the report saying "no
+    submodel declares a semanticId this tool has a template table for"
+    was itself the wrong answer, printed over a `BAT-R8` finding about
+    the file. What this test is actually for is the line below, and that
+    is the line it makes now: judged as what it is, and not as ours.
     """
     from aas_submodel_validate.rules import td_tables
     ids = _findings(tmp_path, wearing_our_anchor_as_a_supplemental(
         td_tables.TEMPLATE_SEMANTIC_ID, "TechnicalData"))
-    assert "SMT-D1" in ids, "the honest answer is that we do not know this file"
     assert not [rule_id for rule_id in ids if rule_id.startswith("TD")], \
         "a template of its own was judged as ours"
+    assert "SMT-D1" not in ids, \
+        "a file this tool has rules for was told nothing here is known"
+    assert "BAT-R8" in ids, "the pack that does know this file said nothing"
 
 
 def test_an_unreadable_input_is_not_also_piled_on(tmp_path):
@@ -360,3 +371,89 @@ def test_require_all_judged_asks_only_for_what_can_be_given(tmp_path, instances,
     got = main(["-q", "--allow-unmatched", "--require-all-judged", str(path)])
     assert got == (EXIT_FINDINGS if fails else EXIT_OK), (
         "%d instance(s) + %d template(s) left by %d" % (instances, templates, got))
+
+
+# -- a file this tool judges without having a template table for it -----------
+
+def _battery(tmp_path, category="lmt"):
+    """A passport of IDTA 02035-1/-4/-5 submodels, which this tool has a
+    rule pack for and no template table for."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from test_battery_rules import _passport
+    path = tmp_path / "battery.json"
+    path.write_text(json.dumps(_passport(category)), "utf-8")
+    return path
+
+
+def test_a_battery_passport_is_not_told_nothing_here_is_known(tmp_path):
+    """The rule fired on the file class this pack exists for.
+
+    `SMT-D1` asks "was anything here judged", and measured whether
+    anything matched a *template table*. The battery pack judges
+    submodels it has no table for -- so a passport of 02035-1, -4 and -5
+    drew `no submodel declares a semanticId this tool has a template
+    table for` at error severity, and then eight `BAT-R8` findings about
+    those same submodels, on one screen, exit 1.
+
+    The wording had already been repaired once: "recognises" became "has
+    a template table for", which made the sentence true and left the
+    verdict saying the opposite of the findings under it. A reader was
+    being told to relabel a correct document."""
+    report = runner.run(_battery(tmp_path))
+    printed = render(report)
+    assert "SMT-D1" not in {f.id for f in report.findings}, printed
+    assert [f.id for f in report.findings if f.id == "BAT-R8"], \
+        "the fixture stopped exercising the pack"
+    assert report.ok, printed
+
+
+def test_a_battery_passport_counts_as_judged(tmp_path):
+    """`judged 0 of 3 submodels`, under eight findings about those three.
+
+    The count came from the template packs alone, so the summary line
+    denied having judged what the report above it had just judged -- and
+    `--require-all-judged` could never pass on a battery passport, which
+    is the one input this pack was built for."""
+    report = runner.run(_battery(tmp_path))
+    assert (report.submodels_seen, report.submodels_judged) == (3, 3), \
+        (report.submodels_seen, report.submodels_judged)
+    assert "judged 3 of 3 submodels" in render(report)
+
+
+def test_a_battery_passport_passes_at_the_flags_a_stranger_types(tmp_path):
+    """No flags. The front page reaches for `--allow-unmatched` to get a
+    passport past this, which is a workaround printed as documentation:
+    the flag's job is to downgrade a genuine no-match to a note, and
+    there was no no-match to downgrade."""
+    from aas_submodel_validate.cli import main
+    assert main([str(_battery(tmp_path))]) == 0
+
+
+def test_a_file_this_tool_judges_nothing_in_still_says_so(tmp_path):
+    """The guard on the repair. `SMT-D1` exists because "no findings" is
+    also what a perfect package looks like, and a fix that silenced it
+    wherever any pack spoke would have taken that away."""
+    findings = _findings(tmp_path, env_json("urn:acme:private"))
+    assert "SMT-D1" in findings
+    from aas_submodel_validate.cli import main
+    path = tmp_path / "env.json"
+    path.write_bytes(env_json("urn:acme:private"))
+    assert main([str(path)]) == 1
+
+
+def test_one_known_submodel_beside_an_unknown_one_is_enough(tmp_path):
+    """`SMT-D1` asks whether the input contains a submodel this tool
+    knows, not whether every submodel is one. Counted, so the summary
+    cannot claim the unknown one was judged."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from test_battery_rules import _passport
+    payload = _passport("lmt")
+    payload["submodels"].append(json.loads(env_json("urn:acme:private"))["submodels"][0])
+    path = tmp_path / "mixed.json"
+    path.write_text(json.dumps(payload), "utf-8")
+    report = runner.run(path)
+    assert "SMT-D1" not in {f.id for f in report.findings}
+    assert (report.submodels_seen, report.submodels_judged) == (4, 3), \
+        (report.submodels_seen, report.submodels_judged)

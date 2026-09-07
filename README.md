@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=89dbe1c1" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=9bf8b7c8" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -25,21 +25,21 @@ $ smtv --example
 **Every finding says what is wrong, where, and how to fix it — and shows the evidence where there is evidence to show.** A rule without a remedy sentence does not ship. On the bundled official example all 87 findings carry a place and a remedy, and 10 carry a `saw` line; the other 77 are relayed metamodel findings, which name a path and no value. Here is the one this project exists for — a battery passport that is *conformant to its template and not to the law*, which are two different questions and get two different answers:
 
 ```console
-$ smtv --allow-unmatched --meta info your-battery-passport.json
+$ smtv --meta info your-battery-passport.json
 warning BAT-R8   conformant to the template and not to the regulation: 'EnergyRoundTripEfficiencyFade' is absent
         at   EnergyRoundTripEfficiencyFade
         saw  IDTA 02035-4 V1.0.1 makes it ZeroToOne; Annex IV Part A (4) is read as requiring it, for every battery category the source names. Asked anywhere under the submodel: this rule is about the data being present, not about where the template puts it
         per  Regulation (EU) 2023/1542 Annex IV Part A (4); docs/divergences.md #37 for whose reading of it this answers
         fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
 …
-ok -- 0 error(s), 1 warning(s), 3 info -- your-battery-passport.json; judged 0 of 1 submodel
+ok -- 0 error(s), 1 warning(s), 3 info -- your-battery-passport.json; judged 1 of 1 submodel
 ```
 
-The `…` is five lines: the one that accounts for the `3 info` — the
+The `…` is four lines: the one that accounts for the `3 info` — the
 relayed metamodel findings, folded into a count unless you ask for them
-— two notes, one of which is the coverage figure further down, and the
-two-line key naming the labels this run printed. Notes are printed and
-not counted; the folded line is counted and not printed in full. The
+— the coverage note quoted further down, and the two-line key naming
+the labels this run printed. Notes are printed and not counted; the
+folded line is counted and not printed in full. The
 summary opens `ok` because the exit code is **0**: a disagreement with the
 regulation is a warning, so it does not fail your build unless you ask
 it to (`-W` makes a warning exit 1). That is deliberate. This tool answers for
