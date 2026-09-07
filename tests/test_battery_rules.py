@@ -1116,3 +1116,45 @@ def test_every_qualifier_the_indexed_provisions_use_is_one_the_reading_knows():
                 "%s reads %r and is indexed as %s"
                 % (record["id"], phrase, record["mandatory"]))
             assert record["condition"], record["id"]
+
+
+def test_the_category_is_read_a_bounded_number_of_times(tmp_path, monkeypatch):
+    """The walk was quadratic in the number of submodels.
+
+    `_rows_for` takes the whole file so it can add the rows the battery's
+    own category settles, and it was called once per submodel -- each
+    call re-reading `declared_category`, which walks every element of
+    every submodel looking for the one that states the category. N
+    submodels x N submodels x their elements, on a file whose size the
+    byte ledger happily passes: an environment well inside the 64 MiB
+    bound took minutes of CPU. "Bounded by what it opens" was true of
+    bytes and false of time.
+
+    Counted rather than timed. A stopwatch on a shared machine measures
+    the machine; the number of times the file is re-read is the thing
+    that was wrong, and it is exact.
+    """
+    from aas_submodel_validate.rules import battery
+
+    calls = []
+    real = battery.declared_category
+    monkeypatch.setattr(battery, "declared_category",
+                        lambda submodels: (calls.append(1), real(submodels))[1])
+
+    def measure(count):
+        calls.clear()
+        payload = _env(*[_submodel("PC%d" % i, PRODUCT_CONDITION,
+                                   [_collection("E%d" % k, "urn:x:%d" % k)
+                                    for k in range(4)])
+                         for i in range(count)])
+        _run(tmp_path, payload)
+        return len(calls)
+
+    small, large = measure(8), measure(64)
+    assert small == large, (
+        "the file is re-read %d times with 8 submodels and %d with 64; the "
+        "category is one fact about the file and reading it is not per-submodel"
+        % (small, large))
+    # And bounded, not merely equal: two runs that both read it a
+    # thousand times would satisfy the line above.
+    assert large <= 4, large

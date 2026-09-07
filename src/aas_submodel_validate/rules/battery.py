@@ -211,8 +211,9 @@ def coverage_note(submodels) -> str:
     # Distinct rows, not a sum over submodels: two ProductCondition
     # submodels in one file -- two battery modules, an ordinary shape --
     # made this say "10 of the 9".
+    settled_rows = _rows_the_category_settles(submodels)
     read = len({row["element"] for submodel in submodels
-                for row in _rows_for(submodel, submodels)})
+                for row in _rows_for(submodel, settled=settled_rows)})
     elsewhere = _elsewhere(submodels)
     # Whether the table knows any submodel here, not whether it read a
     # row of one. Those were the same question while one row was
@@ -252,7 +253,7 @@ def _declared(submodel) -> frozenset:
     return candidate_values(getattr(submodel, "semantic_id", None))
 
 
-def _rows_for(submodel, submodels=None):
+def _rows_for(submodel, submodels=None, settled=None):
     """The table rows whose submodel this one declares itself to be.
 
     Plus the conditional rows the file's own declared category settles,
@@ -261,10 +262,21 @@ def _rows_for(submodel, submodels=None):
     category mandatory and names its vocabulary, so a passport that
     states `ev` or `lmt` has answered the question the rows were waiting
     on. A passport that states neither is judged exactly as before.
+
+    `settled` is those rows, already worked out. Which category the file
+    states is one fact about the file, and this was deriving it again
+    for every submodel -- each derivation walking every element of every
+    submodel to find the one element that states it. N submodels made
+    that N x N x their elements, on an input the byte ledger passes
+    without complaint: "bounded by what it opens" held for bytes and not
+    for time. Callers that walk more than one submodel work it out once
+    and pass it; `submodels` stays for the callers that hold one.
     """
     declared = _declared(submodel)
     rows = list(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
-    if submodels is not None:
+    if settled is not None:
+        rows += settled
+    elif submodels is not None:
         rows += _rows_the_category_settles(submodels)
     return [row for row in rows if row["submodel_semantic_id"] in declared]
 
@@ -439,8 +451,9 @@ def bat_r8_template_optional_but_law_requires(ctx):
     # and the row it used to report of every category was the one whose
     # provision reads "Where applicable".
     column = CATEGORY_COLUMNS.get(declared_category(here))
+    settled_rows = _rows_the_category_settles(here)
     for submodel in here:
-        for row in _rows_for(submodel, here):
+        for row in _rows_for(submodel, settled=settled_rows):
             if _carries(submodel, row):
                 continue
             clauses = _clauses(row["citations"])
