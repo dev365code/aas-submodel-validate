@@ -44,16 +44,23 @@ battery-data:
 		--out requirements-join.json --md requirements-join.md --check
 	$(PYTHON) tools/extract_battery_rules.py --check
 
+# `--no-cache` on both sides. A linter that answers from a cache can
+# answer about a file that has moved, and then the local gate is green
+# over a tree CI reads differently -- reported by a sibling project,
+# which met it after a rename. It could not be reproduced on the ruff
+# pinned here, so this is adopted for the reason that survives either
+# way: the two invocations have to be the same check, and a cache is a
+# difference between them that nobody can see.
 lint:
 	@$(PYTHON) -m ruff --version | grep -q "$(RUFF_VERSION)" \
 		|| { echo "ruff $(RUFF_VERSION) required (make dev)"; exit 1; }
-	$(PYTHON) -m ruff check .
+	$(PYTHON) -m ruff check --no-cache .
 
 test:
 	$(PYTHON) -m pytest -q
 
 fix:
-	$(PYTHON) -m ruff check --fix .
+	$(PYTHON) -m ruff check --no-cache --fix .
 
 dev:
 	$(PYTHON) -m pip install --user "ruff==$(RUFF_VERSION)" "pytest>=7" "aas-core3.0>=1.1.4,<2"

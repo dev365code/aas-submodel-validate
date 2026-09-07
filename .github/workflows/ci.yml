@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff==0.16.3
-      - run: ruff check .
+      - run: ruff check --no-cache .
       - run: pip install -e .
       - name: the generated rule table matches its generator
         run: python tools/extract_smt_rules.py --check

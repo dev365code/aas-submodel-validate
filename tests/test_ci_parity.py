@@ -329,3 +329,35 @@ def test_the_release_gate_is_not_a_step_that_only_looks_like_one(tmp_path):
     (weakened,) = gates_of(appended)
     assert any(c.rstrip().endswith("|| true") for c in weakened["commands"]), \
         "the reader cannot see `|| true` on the gate command"
+
+
+def test_the_linter_runs_the_same_way_on_both_sides():
+    """A gate that is not the same check on both sides is two gates.
+
+    The flags are the part that drifts silently: a cache makes a linter
+    answer about a file that has moved, so the local run can be green
+    over a tree CI reads differently -- reported by a sibling project
+    after a rename, and not reproducible on the ruff pinned here, which
+    is why what is asserted is the sameness rather than the symptom.
+    """
+    recipe = [c for c in _commands_of("lint") if "ruff check" in c]
+    assert recipe, "the lint target no longer runs ruff"
+    workflow = [c for c in ci_commands_of_workflow("ci.yml")
+                if c.startswith("ruff check")]
+    assert workflow, "the CI lint job no longer runs ruff"
+
+    def flags(command):
+        return {word for word in command.split() if word.startswith("--")}
+
+    for here in recipe:
+        for there in workflow:
+            assert flags(here) == flags(there), (
+                "make runs `%s` and CI runs `%s`; the flags differ, so the "
+                "two are not the same check" % (here.strip(), there.strip()))
+    assert any("--no-cache" in flags(c) for c in recipe), \
+        "the local lint may answer from a cache"
+
+
+def ci_commands_of_workflow(name):
+    return [c for step in _steps(ROOT / ".github" / "workflows" / name)
+            for c in step["commands"]]
