@@ -237,11 +237,17 @@ def test_the_ledger_has_the_line_count_the_regenerate_steps_expect():
     assert "expect: %d lines, all OK" % len(lines) in steps
 
 
-def test_regenerate_holds_the_five_commands_the_readme_promises():
+def test_regenerate_holds_the_commands_the_readme_promises():
+    """The page names a number of commands and the file holds them.
+
+    Counted rather than fixed at five: an extractor landed -- the
+    parameter annexes, so the rule table can say when a clause it cites
+    states itself "where possible" -- and the number in the sentence is
+    what goes stale, not the list."""
     steps = (DATA / "tools" / "REGENERATE.txt").read_text("utf-8")
     commands = re.findall(r"(?m)^ {4}python3 tools/\w+\.py", steps)
-    assert len(commands) == 5, commands
-    assert "the five commands in `tools/REGENERATE.txt`" in _squeezed("README.md")
+    assert len(commands) == 6, commands
+    assert "the six commands in `tools/REGENERATE.txt`" in _squeezed("README.md")
 
 
 # -- the divergence numbers -------------------------------------------------

@@ -915,15 +915,14 @@ def test_a_category_the_template_does_not_name_settles_nothing(tmp_path):
 
 # -- the hero row's three sources, asserted rather than remembered ----------
 
-#: The provision the hero row cites, quoted from the consolidated text
-#: this project pins (`data/battery-passport/sources.sha256`, CELEX
-#: 02023R1542-20250731, consolidation string
-#: `02023R1542 — EN — 31.07.2025 — 002.004`). Quoted here because the
-#: source file is not redistributed, so a test cannot read it: what can
-#: be checked in this tree is that the row still cites this clause and
-#: that no source joined to it has gone conditional.
+#: The provision the hero row cites. The clause is named here; its text
+#: and whether it qualifies itself are read from
+#: `requirements-annex-parameters.json`, which is derived from the pinned
+#: consolidated text. This used to quote the provision as a string typed
+#: into this file -- a fact about a document, asserted by having been
+#: retyped, which is the shape of claim this project exists to refuse.
 HERO_CLAUSE = "Annex VII Part A (1)"
-HERO_PROVISION = "the remaining capacity;"
+HERO_PROVISION_ID = "annex-vii-a:1"
 #: And the part it sits in, whose own heading is the reason the category
 #: is LMT: "For stationary battery energy storage systems and LMT
 #: batteries". The three items around it read "where possible"; this one
@@ -1010,9 +1009,18 @@ def test_the_front_pages_row_still_has_all_three_sources_agreeing():
     (row,) = [r for r in battery_tables.CONDITIONAL_ON_CATEGORY
               if r["element_id_short"] == "RemainingCapacity"]
 
-    # (a) the law: the clause the row cites, and no qualifier in it
+    # (a) the law: the clause the row cites, read from the index derived
+    # from the pinned text, and stating no qualifier of its own.
+    provisions = _index("requirements-annex-parameters.json")
+    clause = provisions[HERO_PROVISION_ID]
     assert row["citations"] == (HERO_CLAUSE,), row["citations"]
-    assert not SOFT_QUALIFIER.search(HERO_PROVISION), HERO_PROVISION
+    assert clause["section"] == HERO_CLAUSE, clause["section"]
+    assert clause["mandatory"] == "yes", clause
+    assert not SOFT_QUALIFIER.search(clause["text"]), clause["text"]
+    assert row["provision_conditions"] == (), row["provision_conditions"]
+    # And the part's own chapeau is why the category is LMT: this is the
+    # sentence the finding's "for LMT batteries" rests on.
+    assert "LMT batteries" in clause["chapeau"], clause["chapeau"]
 
     # (b) and (c): both sources joined, and both read it required for LMT
     assert set(row["says_mandatory"]) == {"ec-datapoints:62", "longlist:60"}, \
@@ -1041,3 +1049,70 @@ def test_the_front_pages_row_still_has_all_three_sources_agreeing():
     assert not battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL, (
         "a row is required of every category again -- check it against the "
         "provision text before any page is built on it")
+
+
+def test_a_finding_says_when_the_clause_it_cites_qualifies_itself(tmp_path):
+    """Three of the seven findings an LMT passport draws cite a clause
+    that states itself "where possible" or "where appropriate", and said
+    nothing about it.
+
+    That is the fault the front page was corrected for, one layer down:
+    the per-category readings come from the Commission's guidance and the
+    long list, and the provision's own wording is a different fact. The
+    guidance really does mark the remaining power capability `Mandatory`
+    for LMT while Annex VII Part A (2) states it "where possible" -- so
+    the finding stays and says both, because dropping it would be this
+    tool settling a question two published documents answer differently.
+    """
+    report = _run(tmp_path, _passport("lmt"))
+    findings = {f.violation.subject: f for f in report.findings if f.id == "BAT-R8"}
+    qualified = {row["element_id_short"] for row in battery_tables.CONDITIONAL_ON_CATEGORY
+                 if row["provision_conditions"]}
+    drawn = qualified & set(findings)
+    assert drawn, "no fixture reaches a row whose provision qualifies itself"
+    for name in sorted(drawn):
+        said = findings[name].violation.detail or ""
+        (section, phrase), = battery_tables_row(name)["provision_conditions"][:1] or ((None, None),)
+        assert "states it" in said, (name, said)
+        assert section in said, (name, said)
+        assert phrase.lower() in said.lower(), (name, said)
+    # And a row whose clause is unqualified says nothing of the sort --
+    # the positive half, without which the assertion above passes on a
+    # finding that says it of everything.
+    plain = set(findings) - qualified
+    assert plain, "every row drawn here is qualified; the control is gone"
+    for name in sorted(plain):
+        assert "states it" not in (findings[name].violation.detail or ""), name
+
+
+def battery_tables_row(id_short):
+    (row,) = [r for r in battery_tables.CONDITIONAL_ON_CATEGORY
+              if r["element_id_short"] == id_short]
+    return row
+
+
+def test_every_qualifier_the_indexed_provisions_use_is_one_the_reading_knows():
+    """The list of qualifying phrases was written against Annex XIII and
+    read as a general rule.
+
+    Pointed at Annex VII it missed "where possible" three times and
+    "where appropriate" once, so four conditional provisions were indexed
+    as unconditional and three of them were reported as requirements.
+    Derived from the indexed text rather than listed, because a list is
+    how the next annex's vocabulary goes unread: anything that looks like
+    a qualifier has to be one the reading caught, or named here as
+    checked and deliberately not one."""
+    provisions = _index("requirements-annex-parameters.json")
+    #: Phrases that look conditional and are not, checked one at a time.
+    #: Empty today; an entry here is a decision somebody made on purpose.
+    NOT_A_QUALIFIER = frozenset()
+    looks = re.compile(r"\b(?:where|when|if)\s+\w+|as far as|to the extent", re.I)
+    for record in provisions.values():
+        for hit in looks.findall(record["text"]):
+            phrase = " ".join(hit.split()).lower()
+            if phrase in NOT_A_QUALIFIER:
+                continue
+            assert record["mandatory"] == "conditional", (
+                "%s reads %r and is indexed as %s"
+                % (record["id"], phrase, record["mandatory"]))
+            assert record["condition"], record["id"]

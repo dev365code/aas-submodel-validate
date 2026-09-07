@@ -57,6 +57,12 @@ from aas_submodel_validate._terminal import survive  # noqa: E402
 DATA = Path(__file__).resolve().parents[1] / "data" / "battery-passport"
 INDEXES = ("requirements-annex-xiii.json", "requirements-ec-datapoints.json",
            "requirements-longlist.json", "requirements-idta.json")
+#: Read by the rule-table generator rather than by the join, so it is not
+#: one of the four above -- the join declares what it was built from, and
+#: this was not. Listed here so the walk over every index still reaches
+#: it: it goes through the same shape checks and has one of its own,
+#: below.
+PARAMETERS = "requirements-annex-parameters.json"
 #: The join is derived from the four above and is published beside them,
 #: in JSON and as a table people read. Nothing checked it: this gate
 #: counted four files in a directory that generates six, and the two it
@@ -241,6 +247,44 @@ def _check_join(known, provenance, problems) -> None:
                             % (JOIN, count, counts.get(count), measured))
 
 
+def _check_parameters(problems) -> None:
+    """The committed rule table against the provisions it cites.
+
+    A row records which of its cited clauses state themselves
+    conditionally -- "where possible", "where appropriate" -- and that is
+    read from this index at generation time. Nothing tied the two
+    together afterwards, so an index regenerated without the table (or a
+    clause whose id moved) would leave the table asserting a qualifier
+    the regulation index no longer carries, which is the shape of claim
+    this whole directory exists to make checkable.
+    """
+    path = DATA / PARAMETERS
+    if not path.is_file():
+        problems.append("%s is missing" % PARAMETERS)
+        return
+    provisions = {r["id"]: r
+                  for r in json.loads(path.read_text("utf-8"))["records"]}
+    by_section = {r["section"]: r for r in provisions.values()}
+    from aas_submodel_validate.rules import battery_tables
+    rows = (battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
+            + battery_tables.CONDITIONAL_ON_CATEGORY)
+    for row in rows:
+        for section, phrase in row.get("provision_conditions", ()):
+            record = by_section.get(section)
+            if record is None:
+                problems.append("%s: the table cites %s and this index has no "
+                                "such provision" % (PARAMETERS, section))
+                continue
+            if record["mandatory"] != "conditional":
+                problems.append("%s: the table calls %s conditional and this "
+                                "index reads it %s"
+                                % (PARAMETERS, section, record["mandatory"]))
+            elif record["condition"] != phrase:
+                problems.append("%s: the table quotes %r for %s and this index "
+                                "says %r"
+                                % (PARAMETERS, phrase, section, record["condition"]))
+
+
 def main() -> int:
     survive()
     if not DATA.is_dir():
@@ -284,6 +328,7 @@ def main() -> int:
                                    (ledger.get(source) or "nothing")[:12]))
 
     _check_join(known, provenance, problems)
+    _check_parameters(problems)
 
     skipped = []
     sys.path.insert(0, str(DATA / "tools"))
@@ -311,9 +356,13 @@ def main() -> int:
         print("battery-data: import skipped for %s -- CI runs them"
               % ", ".join(skipped))
     if not problems:
+        # Counted, and the parameter index named separately, because it
+        # is not one of the four the join is built from -- a summary
+        # saying "all four" over five checked files is the kind of small
+        # untruth this directory is supposed to make impossible.
         print("battery-data: %d indexes agree with themselves and the ledger, "
-              "and the join agrees with all four"
-              % len(INDEXES))
+              "the join agrees with all %d, and the rule table agrees with %s"
+              % (len(INDEXES), len(INDEXES), PARAMETERS))
     return 1 if problems else 0
 
 

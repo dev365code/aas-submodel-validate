@@ -66,8 +66,20 @@ ACCESS_BY_HEADING = (
 # and they sat in the published summary table as the annex declining to
 # say whether voltage must be given.
 NARROWING = re.compile(r"\(?only for [^;.)]+\)?", re.I)
+#: A qualifier that says *when* the thing is required rather than what it
+#: is. The first five were the vocabulary of Annex XIII, which is the only
+#: annex this file used to read -- and the list was complete for that text
+#: and silently incomplete for any other. Pointed at Annex VII by
+#: `extract_annex_parameters.py` it missed `where possible` three times and
+#: `where appropriate` once, so four conditional provisions were indexed as
+#: unconditional and three of them were being reported as requirements.
+#: Adding them moves nothing in Annex XIII: measured, zero of its
+#: thirty-four records change, because those phrases do not occur there.
+#: That is the whole trap -- a list written against one document reads as
+#: a general rule.
 SOFT_QUALIFIER = re.compile(
     r"(when relevant|where relevant|where applicable|if available|when applicable"
+    r"|where possible|where appropriate|if applicable"
     r"|as far as|to the extent)", re.I
 )
 

@@ -37,6 +37,7 @@ import argparse
 import collections
 import json
 import pathlib as _pathlib
+import re
 import sys
 import sys as _sys
 from pathlib import Path
@@ -131,7 +132,38 @@ def _settle(seen) -> str:
     return sorted(stated)[0]
 
 
-def _law_rows(idta, join, indexes) -> list:
+#: A citation written the way the indexes write it, resolved to the
+#: parameter index's id. Only a citation naming its Part is resolved:
+#: `Annex IV (2)` names no part, and Annex IV has two of them, so
+#: guessing which would be this project deciding a question it is
+#: supposed to be reading.
+CITATION = re.compile(r"Annex\s+(IV|VII)\s+Part\s+([AB])\s*\(\s*(\d+)\s*\)", re.I)
+
+
+def _provision_conditions(citations, provisions) -> tuple:
+    """Every cited provision that states itself conditionally.
+
+    The row's per-category readings come from the guidance and the long
+    list; this is the provision's own wording, and the two can differ --
+    the Commission marks the remaining power capability `Mandatory` for
+    LMT and Annex VII Part A (2) states it "where possible". Reporting
+    the first without the second is the mistake that put a "Where
+    applicable" provision on this project's front page, one layer down.
+    """
+    found = []
+    for citation in citations:
+        for annex, part, number in CITATION.findall(citation):
+            record = provisions.get("annex-%s-%s:%s"
+                                    % (annex.lower(), part.lower(), number))
+            if record is None or record["mandatory"] != "conditional":
+                continue
+            entry = (record["section"], record["condition"])
+            if entry not in found:
+                found.append(entry)
+    return tuple(found)
+
+
+def _law_rows(idta, join, indexes, provisions) -> list:
     elements = {record["id"]: record for record in idta["records"]}
     # Keyed by (document number, edition). Keyed by number alone the last
     # edition in the index wins, and two templates are pinned twice --
@@ -188,6 +220,9 @@ def _law_rows(idta, join, indexes) -> list:
                 source for source, reading in entry["readings"].items()
                 if reading == "yes" and not source.startswith("template("))),
             "citations": tuple(citations),
+            # What the provision says about itself, beside what the
+            # readings say about categories.
+            "provision_conditions": _provision_conditions(citations, provisions),
         })
     return rows
 
@@ -200,7 +235,9 @@ def render() -> str:
         for record in _load(name)["records"]:
             indexes[record["id"]] = record
 
-    rows = _law_rows(idta, join, indexes)
+    provisions = {record["id"]: record
+                  for record in _load("requirements-annex-parameters.json")["records"]}
+    rows = _law_rows(idta, join, indexes, provisions)
     shared = _shared_ids(idta)
     # The editions the rows were actually read from, not every edition of
     # every template that contributed one: IDTA 02035-5 is pinned twice
@@ -219,7 +256,8 @@ def render() -> str:
     lines += ["}", ""]
     fields = ("element", "template", "template_version", "submodel_semantic_id",
               "submodel_sha256", "element_id_short", "element_semantic_id",
-              "cardinality", "text", "says_mandatory", "citations", "categories")
+              "cardinality", "text", "says_mandatory", "citations",
+              "provision_conditions", "categories")
 
     def emit(name, comment, chosen):
         out = lines

@@ -46,6 +46,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'date of putting into service',
         'says_mandatory': ('longlist:16',),
         'citations': ('Annex VII Part B (1)',),
+        'provision_conditions': (('Annex VII Part B (1)', 'where appropriate'),),
         'categories': (('EV', 'voluntary'), ('LMT', 'required-by-batteries-regulation'), ('industrial-other-above-2kWh', 'voluntary'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
@@ -60,6 +61,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'capacity fade DIN DKE Spec 99100 chapter reference: 6.7.2.4',
         'says_mandatory': ('ec-datapoints:52', 'longlist:61'),
         'citations': ('Annex IV Part A (1)', 'Annex IV (2)'),
+        'provision_conditions': (),
         'categories': (('EV', 'required'), ('LMT', 'required'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'required-by-batteries-regulation'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
@@ -74,6 +76,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'round trip energy efficiency fade DIN DKE Spec 99100 chapter reference: 6.7.4.5',
         'says_mandatory': ('longlist:77',),
         'citations': ('Annex IV Part A (4)',),
+        'provision_conditions': (('Annex IV Part A (4)', 'Where applicable'),),
         'categories': (('EV', 'certain-cases'), ('LMT', 'certain-cases'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'required-by-batteries-regulation'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
@@ -88,6 +91,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'capacity threshold for exhaustion',
         'says_mandatory': ('ec-datapoints:33', 'longlist:90'),
         'citations': ('Annex XIII (1k)',),
+        'provision_conditions': (),
         'categories': (('EV', 'required'), ('LMT', 'not-to-be-filled'), ('industrial-above-2kWh', 'not-to-be-filled'), ('industrial-other-above-2kWh', 'not-stated'), ('industrial-stationary-above-2kWh', 'not-stated')),
     },
     {
@@ -102,6 +106,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'energy throughput',
         'says_mandatory': ('longlist:88',),
         'citations': ('Annex VII Part B (2)',),
+        'provision_conditions': (),
         'categories': (('EV', 'not-stated'), ('LMT', 'required-by-batteries-regulation'), ('industrial-other-above-2kWh', 'not-stated'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
@@ -116,6 +121,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'capacity throughput',
         'says_mandatory': ('longlist:89',),
         'citations': ('Annex VII Part B (3)',),
+        'provision_conditions': (),
         'categories': (('EV', 'not-stated'), ('LMT', 'required-by-batteries-regulation'), ('industrial-other-above-2kWh', 'not-stated'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
@@ -130,6 +136,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'remaining capacity',
         'says_mandatory': ('ec-datapoints:62', 'longlist:60'),
         'citations': ('Annex VII Part A (1)',),
+        'provision_conditions': (),
         'categories': (('EV', 'not-to-be-filled'), ('LMT', 'required'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'voluntary'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
@@ -144,6 +151,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'remaining power capability',
         'says_mandatory': ('ec-datapoints:63', 'longlist:70'),
         'citations': ('Art. 10: Annex IV (3) (only definition of power)', 'Annex VII Part A (2) "where possible, remaining power capability"', 'Annex IV Part B (4) --> measurement at 80 % SoC and 20% SoC required'),
+        'provision_conditions': (('Annex VII Part A (2)', 'where possible'),),
         'categories': (('EV', 'not-to-be-filled'), ('LMT', 'required'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'voluntary'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
@@ -158,6 +166,7 @@ CONDITIONAL_ON_CATEGORY = (
         'text': 'remaining round trip energy efficiency',
         'says_mandatory': ('longlist:76',),
         'citations': ('Art. 10: Annex IV Part A (4)', 'Article 14: Annex VII Part A (3)', 'Annex IV (6)'),
+        'provision_conditions': (('Annex IV Part A (4)', 'Where applicable'), ('Annex VII Part A (3)', 'where possible')),
         'categories': (('EV', 'not-stated'), ('LMT', 'required-by-batteries-regulation'), ('industrial-other-above-2kWh', 'not-stated'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
 )

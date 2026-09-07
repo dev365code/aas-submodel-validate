@@ -360,6 +360,37 @@ SOURCE_NAMES = {
 }
 
 
+#: What a provision says about its own reach, when it says anything. The
+#: per-category readings come from the guidance and the long list; this
+#: is the clause's own wording, and the two differ: the Commission marks
+#: the remaining power capability `Mandatory` for LMT while Annex VII
+#: Part A (2) states it "where possible". Reporting the first without
+#: the second is the mistake that put a "Where applicable" provision on
+#: this project's front page, one layer down -- three findings an LMT
+#: passport draws cite a qualified clause and said nothing about it.
+#:
+#: Said, not silenced. The guidance's "Mandatory for LMT" is a published
+#: reading and dropping it would be this tool deciding the question
+#: instead of reporting that two documents answer it differently.
+QUALIFIED = (" %s, so whether it reaches this battery is not a question "
+             "this tool answers.")
+
+
+def _qualified(row) -> str:
+    """One sentence however many clauses qualify the row.
+
+    Two rows cite two qualified provisions each, and a sentence per
+    clause said the same thing twice in a `saw` line already long enough
+    to be skipped."""
+    stated = ["%s states it '%s'" % (section, phrase.lower())
+              for section, phrase in row.get("provision_conditions", ())]
+    if not stated:
+        return ""
+    if len(stated) > 1:
+        stated = [", ".join(stated[:-1]) + " and " + stated[-1]]
+    return QUALIFIED % stated[0]
+
+
 def _clauses(citations) -> str:
     """The clause identifiers a row cites, in the row's own order."""
     found = []
@@ -449,14 +480,15 @@ def bat_r8_template_optional_but_law_requires(ctx):
                 # which category. "for every battery category the source
                 # names" stood here, over a row whose sources name three
                 # categories and mark it required in one of them.
-                detail="%s %s makes it %s. Read as expected%s by: %s. Asked "
+                detail="%s %s makes it %s. Read as expected%s by: %s.%s Asked "
                        "anywhere under the submodel: this rule is about "
                        "the data being present, not about where the "
                        "template puts it"
                        % (row["template"], row["template_version"],
                           row["cardinality"],
                           " for %s" % column if column else "",
-                          _sources(row["says_mandatory"])))
+                          _sources(row["says_mandatory"]),
+                          _qualified(row)))
 
 
 def _known_to_the_walk() -> frozenset:

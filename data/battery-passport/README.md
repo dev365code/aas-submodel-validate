@@ -67,6 +67,6 @@ agree, as observations rather than verdicts.
 **Regenerating:** fetch the files listed in `sources.sha256` into a local
 `sources/` directory, verify them with
 `cd sources && grep -v '^#' ../sources.sha256 | shasum -a 256 -c`, then run the
-five commands in `tools/REGENERATE.txt`. The output is byte-for-byte
+six commands in `tools/REGENERATE.txt`. The output is byte-for-byte
 reproducible: same source bytes, same index bytes, with no timestamp, path or
 machine name in any of them.
