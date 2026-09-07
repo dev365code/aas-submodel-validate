@@ -1635,3 +1635,72 @@ def test_the_reader_names_every_decompressor_error_it_can_meet():
     import zlib as _zlib
     for family in (_zlib.error, lzma.LZMAError, OSError, zipfile.BadZipFile):
         assert issubclass(family, container.UNREADABLE), family
+
+
+# -- the interpreter's limits are not the document's syntax ------------------
+
+def _limit_finding(tmp_path, payload: str):
+    path = tmp_path / "probe.json"
+    path.write_text(payload, "utf-8")
+    report = runner.run(path)
+    return {f.id: f for f in report.findings}, report
+
+
+def test_a_document_this_interpreter_cannot_build_is_not_bad_syntax(tmp_path):
+    """Two hundred thousand open brackets is well-formed JSON.
+
+    `json.loads` raises `RecursionError` on it -- the interpreter running
+    out of stack, not the document being wrong -- and every failure in
+    that call was reported as "the file is not JSON" with a remedy
+    telling the reader to open the document and fix the syntax its parser
+    rejects. There is no syntax to fix. The reader is sent to look for a
+    defect that is not there, which is the one direction this project
+    treats as worse than silence.
+
+    `LoadError.fix` was built for exactly this and its own comment says
+    so -- "the payload stage carries both a document that would not parse
+    and one this reader refused to read, and 'fix the syntax' is false of
+    the second" -- and the JSON path never used it.
+    """
+    findings, report = _limit_finding(tmp_path, "[" * 200000 + "]" * 200000)
+    assert "X3" in findings, sorted(findings)
+    said = findings["X3"]
+    whole = " ".join(filter(None, (said.violation.message,
+                                   said.violation.detail, said.fix)))
+    assert "RecursionError" in whole, whole
+    assert "is not JSON" not in said.violation.message, said.violation.message
+    assert "fix the syntax" not in (said.fix or "").lower(), said.fix
+    # The shape X5 uses for the same situation one layer over: nothing is
+    # wrong with what you sent.
+    assert "not judged" in (said.fix or ""), said.fix
+    assert not report.judged
+
+
+def test_a_genuine_syntax_error_still_says_so(tmp_path):
+    """The control. A repair that called every failure a limit would
+    tell somebody with a real typo that their file is fine."""
+    findings, _ = _limit_finding(tmp_path, "{ not json")
+    said = findings["X3"]
+    assert "is not JSON" in said.violation.message, said.violation.message
+    assert "fix the syntax" in (said.fix or "").lower(), said.fix
+
+
+def test_the_limits_are_told_apart_by_type_and_not_by_message():
+    """Every way this interpreter refuses a well-formed document,
+    including the one that cannot be reached on the Python running this.
+
+    Python 3.11 refuses to build an integer from more than
+    `sys.get_int_max_str_digits()` digits and raises a bare `ValueError`;
+    3.9 has no such limit, so an end-to-end fixture for it passes here by
+    not existing. Asked of the classifier, which has no version in it."""
+    from aas_submodel_validate.loader import _is_an_interpreter_limit
+
+    assert _is_an_interpreter_limit(RecursionError("too deep"))
+    assert _is_an_interpreter_limit(MemoryError())
+    assert _is_an_interpreter_limit(
+        ValueError("Exceeds the limit (4300 digits) for integer string conversion"))
+    # A decode error is a ValueError and is the one thing here that is
+    # about the document. Told apart by type: the message is upstream
+    # prose and not ours to pattern-match.
+    assert not _is_an_interpreter_limit(
+        json.JSONDecodeError("Expecting value", "{ not json", 2))

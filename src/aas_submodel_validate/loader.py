@@ -94,6 +94,37 @@ class LoadError:
     fix: Optional[str] = None
 
 
+#: Refusals that belong to this interpreter rather than to the document.
+#: Two hundred thousand open brackets is well-formed JSON and
+#: `json.loads` raises `RecursionError` on it; Python 3.11 refuses to
+#: build an integer from more than `sys.get_int_max_str_digits()` digits
+#: and raises a bare `ValueError`. Neither is a defect anybody can go and
+#: fix, and both arrived as "the file is not JSON" with a remedy telling
+#: the reader to open the document and correct the syntax its parser
+#: rejects. There is no syntax to correct: the reader is sent looking for
+#: something that is not there.
+#:
+#: Told apart by type. `json.JSONDecodeError` is itself a `ValueError`
+#: and is the one failure here that really is about the document, so the
+#: test is "a ValueError that is not a decode error" -- the message is
+#: upstream prose and not ours to pattern-match. The digit limit does not
+#: exist before 3.11, which is why this is a classifier with no version
+#: in it rather than a fixture that can only run on some of them.
+LIMIT_OF_THIS_READER = (
+    "This document is JSON; building it is what this reader could not do, "
+    "and the limit is the interpreter's rather than the file's. Nothing is "
+    "wrong with what you sent -- it was refused, not judged. Where the "
+    "document nests very deeply or carries a very long number, the part "
+    "that needs checking will go through on its own.")
+
+
+def _is_an_interpreter_limit(exc) -> bool:
+    """Whether this failure is ours rather than the document's."""
+    if isinstance(exc, (RecursionError, MemoryError)):
+        return True
+    return isinstance(exc, ValueError) and not isinstance(exc, json.JSONDecodeError)
+
+
 @dataclass
 class Loaded:
     path: str
@@ -263,9 +294,14 @@ def _load_json(path: Path) -> Loaded:
     try:
         document = json.loads(_decode(raw))
     except Exception as exc:
-        loaded.errors.append(LoadError("payload", "the file is not JSON",
-                                       subject=str(path),
-                                       detail="%s: %s" % (type(exc).__name__, exc)))
+        limit = _is_an_interpreter_limit(exc)
+        loaded.errors.append(LoadError(
+            "payload",
+            "this reader could not build the document"
+            if limit else "the file is not JSON",
+            subject=str(path),
+            detail="%s: %s" % (type(exc).__name__, exc),
+            fix=LIMIT_OF_THIS_READER if limit else None))
         return loaded
 
     if isinstance(document, dict) and document.get("modelType") == "Submodel":
