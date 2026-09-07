@@ -885,3 +885,49 @@ def test_the_page_does_not_promise_a_bound_the_reader_does_not_keep(tmp_path):
             package.read(part)
         charged = package._read_total
     assert charged * 1000 < 200 * 2_000_000, (charged, "the page says three orders of magnitude")
+
+
+def test_the_drift_figures_are_the_ones_the_tool_measures():
+    """`tools/scope_silence.py` exists because a number in a published
+    document that nothing recomputes is a number that was true once.
+
+    Its own numbers were that number. The page said a wrong identifier
+    turns twelve rules from failing to passing and thirty-three report
+    nothing; the tool says 69 of 86 rows are carried by the fixtures and
+    18 go quiet either way -- into a lint on a tail drift, into silence
+    on a middle one. Nothing pinned 12 and 33, on a page whose own
+    stewardship section lists the figures it pins.
+
+    Run rather than quoted: the tool is the measurement, and a test that
+    restated its arithmetic would be a third number to keep."""
+    import os
+    import subprocess
+    import sys
+    done = subprocess.run([sys.executable, "tools/scope_silence.py"],
+                          cwd=str(ROOT), capture_output=True, text=True,
+                          env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+    assert done.returncode == 0, done.stderr[-800:]
+    figures = {}
+    for line in done.stdout.splitlines():
+        found = re.match(r"(\w+): (\d+) of (\d+) generated rows are carried by "
+                         r"the fixtures; of those, (\d+) produced nothing at all "
+                         r"and (\d+) spoke only through a lint", line)
+        if found:
+            figures[found.group(1)] = tuple(int(g) for g in found.groups()[1:])
+    assert set(figures) == {"tail", "middle"}, done.stdout
+
+    carried, generated, _, lint_only = figures["tail"]
+    _, _, mute, _ = figures["middle"]
+    # The sentences, not the digits. Asking whether "18" appears anywhere
+    # on the page passed with either eighteen replaced by something else,
+    # because the other one satisfied it -- the same fault as three gates
+    # repaired today, which is why this states each number where it is
+    # claimed.
+    for phrase in (
+            "over the %d generated rules, of which the corpus fixtures "
+            "carry %d" % (generated, carried),
+            "leaves %d of them speaking only through the near-miss lint"
+            % lint_only,
+            "leaves the same %d saying nothing at all" % mute):
+        assert phrase in FLOWED, (
+            "the page does not say %r; the tool measured %s" % (phrase, figures))

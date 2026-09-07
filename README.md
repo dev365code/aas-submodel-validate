@@ -190,12 +190,14 @@ for. Neither number is decoration.
 **One limit is worth knowing before you rely on a pass.** Matching goes
 by semanticId, so an element whose identifier is wrong matches no row —
 and the rules for everything *inside* it are rules about a row that was
-never reached. Measured across the 86 generated rules: a single wrong
-identifier turns twelve of them from a failing verdict into a passing
-one, and thirty-three report nothing at all. The realistic cause is not
-an attack but a version bump (`#002` to `#003`) or a typo in a
-hand-edited file. The near-miss lint catches a version drift, which is
-what it was built for, and catches nothing else. This is written up
+never reached. Measured by `tools/scope_silence.py` over the 86
+generated rules, of which the corpus fixtures carry 69: a wrong last
+character — what a version bump writes, `#002` to `#003` — leaves 18 of
+them speaking only through the near-miss lint, and a character wrong
+*inside* a path segment — what a hand-edited file gets — leaves the same
+18 saying nothing at all. That difference is the whole argument for the
+lint, and for what is still missing after it: it catches a version
+drift, which is what it was built for, and catches nothing else. This is written up
 with the measurement in
 [docs/divergences.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/divergences.md)
 #23; closing it needs a rule this project does not have yet, and it is
@@ -407,7 +409,7 @@ a separate `meta` channel (the JSON field is `kind`) — warnings by
 default, folded into one line unless `--show-meta`, `--meta error` to
 promote — and never re-implemented here.
 
-The rule counts (125, 86) and the sample above are pinned by the test
+The rule counts (125, 86), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
 ## Using this validator in your product
