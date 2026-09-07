@@ -354,3 +354,74 @@ def test_a_run_that_reads_the_regulation_says_it_is_reading_it():
              spec="IDTA 02004-2-0 §2.1", fn=lambda ctx: (), fix="mend it"),
         Violation("wrong", subject="A"))]
     assert "determination" not in render(quiet), render(quiet)
+
+
+#: Ways of saying the law itself has spoken. This tool has published
+#: *readings* of provisions and never the provision speaking, and the
+#: difference is the whole of `docs/divergences.md` #37 -- so a sentence
+#: putting the requirement on the law rather than on somebody's reading
+#: of it is a claim the project cannot support.
+SPEAKS_FOR_THE_LAW = re.compile(
+    r"\bthe law requires\b|\bnot to the law\b|\bis non-compliant\b"
+    r"|\bviolates (the )?(law|regulation)\b|\brequired by law\b"
+    r"|\bis illegal\b|\bmust comply\b"
+    # "the regulation requires" is the same claim unless something in
+    # front of it says whose reading is speaking.
+    r"|(?<!reading of )(?<!readings of )\bthe regulation requires\b", re.I)
+
+
+def test_nothing_a_reader_sees_speaks_for_the_law_itself():
+    """Checked over every surface rather than the one that was edited.
+
+    E8 was repaired by reading the rules and the report; this asks the
+    same question of the rule table, a real battery run and the public
+    pages at once, so the next sentence written anywhere has to pass it
+    too. The hedged construction is exempt by shape, not by listing --
+    "a published reading of the regulation requires" is the sentence
+    this project is allowed to write, and a rule matching on the bare
+    verb would have flagged `BAT-R8`'s own title.
+    """
+    import json as _json
+    import tempfile
+    from pathlib import Path as _Path
+
+    from aas_submodel_validate.registry import all_rules
+
+    offenders = []
+    for rule in all_rules():
+        for field in ("title", "spec", "fix"):
+            value = getattr(rule, field, None)
+            if value and SPEAKS_FOR_THE_LAW.search(str(value)):
+                offenders.append("%s.%s: %s" % (rule.id, field, value))
+
+    root = _Path(__file__).resolve().parents[1]
+    # Whichever of these the tree holds. An sdist carries the front page
+    # and not `data/battery-passport/`, so a reader that assumed all
+    # three went red from an unpacked one -- which the local axes gate
+    # caught before this reached CI, having been added for exactly that.
+    pages = [name for name in ("README.md", "docs/scope.md",
+                               "data/battery-passport/README.md")
+             if (root / name).is_file()]
+    assert "README.md" in pages, "the front page is not in this tree"
+    for name in pages:
+        text = (root / name).read_text("utf-8")
+        for found in SPEAKS_FOR_THE_LAW.finditer(text):
+            line = text[:found.start()].count("\n") + 1
+            offenders.append("%s:%d: %s" % (name, line, found.group(0)))
+
+    import sys
+    sys.path.insert(0, str(root / "tests"))
+    from test_battery_rules import _passport
+    with tempfile.TemporaryDirectory() as where:
+        path = _Path(where) / "battery.json"
+        path.write_text(_json.dumps(_passport("lmt")), "utf-8")
+        printed = render(runner.run(path, strict_meta="info"))
+    for line in printed.splitlines():
+        if SPEAKS_FOR_THE_LAW.search(line):
+            offenders.append("a printed line: %s" % line.strip()[:110])
+
+    assert not offenders, offenders
+    # The control: the hedged form is common in exactly these places, so
+    # a pattern that matched nothing anywhere would pass this test while
+    # measuring nothing.
+    assert "published reading" in printed, printed
