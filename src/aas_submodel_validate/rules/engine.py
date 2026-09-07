@@ -202,11 +202,33 @@ def _analyze(ctx, tables) -> Dict:
         root = submodel.id_short or "submodel"
         reference = submodel.semantic_id
         expected = tables.TEMPLATE_SUBMODEL_SID_TYPE
+        # One record per submodel, merged after. The walk used to write
+        # into a single one, and the subtraction that takes a proposed
+        # loss back off -- "some other scope asked this row" -- then
+        # reached across submodels: a rule asked of one document erased
+        # the claim that another document never asked it. Measured on
+        # the Handover fixture, a drifted submodel reports thirty-six
+        # rules unasked on its own and five with an intact copy of
+        # itself beside it, about the drifted one either way.
+        #
+        # Within a submodel the subtraction is right and stays: a list
+        # walks the same rows once per item, and a row missed in the
+        # second item was entered in the first.
+        per = {"violations": {}, "instances": {}, "near_misses": [],
+               "idshort_drift": [], "reftype_drift": [], "lost_candidates": []}
         if reference is not None and expected and reference.type.value != expected:
-            result["reftype_drift"].append(
-                (root, reference.type.value, expected))
-        _scope(tables.TREE, submodel.submodel_elements or [], root, result,
+            per["reftype_drift"].append((root, reference.type.value, expected))
+        _scope(tables.TREE, submodel.submodel_elements or [], root, per,
                in_list=False)
+        asked_here = set(per["instances"])
+        per["lost_candidates"] = [rule_id for rule_id in per["lost_candidates"]
+                                  if rule_id not in asked_here]
+        for key in ("violations", "instances"):
+            for row_id, entries in per[key].items():
+                result[key].setdefault(row_id, []).extend(entries)
+        for key in ("near_misses", "idshort_drift", "reftype_drift",
+                    "lost_candidates"):
+            result[key].extend(per[key])
     return result
 
 
@@ -242,17 +264,14 @@ def rows_not_reached(ctx) -> List[str]:
     conformant file with one extra property report a rule unasked.
     """
     analysed = ctx.__dict__.get("_smt_analysis") or {}
-    missed, considered = [], set()
+    missed = []
     for result in analysed.values():
+        # Already subtracted, and subtracted per submodel: `_analyze`
+        # takes each document's proposals against the rows that document
+        # asked. Doing it here instead made the unit the whole run, so a
+        # rule asked of one submodel erased the claim that another never
+        # asked it.
         missed.extend(result["lost_candidates"])
-        # Every row any scope looked at. `_scope` writes an `instances`
-        # key for each row it considers, so this is the walk's own record
-        # -- and subtracting it is what the first version left out. A
-        # list of two items walks the same rows twice; a row missed in
-        # the second item and asked in the first was written down as
-        # unasked, and nothing took it back off.
-        considered |= set(result["instances"])
-    missed = [rid for rid in missed if rid not in considered]
     # Ordered by the tables, deduplicated: one unrecognised element in a
     # list of three strands the same rows three times, and a reader
     # counting the list would read that as three times the loss.
@@ -333,9 +352,6 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
     #: Per scope, not per run: the same row id appears in every item of a
     #: list, and a row that matched in one item has been entered.
     claimed_by = {}
-    #: How many near misses stood before this scope was walked, so the
-    #: block at the end can tell whether one was found *here*.
-    near_misses_here = len(result["near_misses"])
 
     for row in rows:
         # One element belongs to at most one row: the first row it matches
@@ -501,6 +517,18 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
     # the reader has already reported a defect that explains it: the
     # near-miss lint fired here, or a row matched an element of the
     # wrong kind and the walk therefore did not recurse.
+    #: How many near misses stood before *this* scope looked for one.
+    #:
+    #: Taken here rather than at the top of the function, which is where
+    #: it was: the recursion into children happens inside the row loop
+    #: above, between the two lines, so the count grew from every
+    #: descendant and each ancestor read that as "a near miss was found
+    #: here". Measured on the Handover fixture -- dropping
+    #: `DocumentVersions` reported no unasked rule, and dropping it *and*
+    #: drifting `ClassId` in another branch reported twenty-three, all of
+    #: them about `DocumentVersions`. `docs/divergences.md` #23 says the
+    #: claim is about the scope the near miss was found in.
+    near_misses_here = len(result["near_misses"])
     for index, element, candidates, _main_empty in indexed:
         if index in claimed or not candidates:
             continue
