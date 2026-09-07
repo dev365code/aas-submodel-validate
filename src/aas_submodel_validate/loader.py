@@ -125,6 +125,20 @@ def _is_an_interpreter_limit(exc) -> bool:
     return isinstance(exc, ValueError) and not isinstance(exc, json.JSONDecodeError)
 
 
+def _cannot_reach(path, exc) -> UnreadablePath:
+    """The refusal for an operating system saying no about a path.
+
+    Two callers: bounding a read, and asking whether there is a file to
+    read at all. Both meet the same family of answers -- a directory the
+    process cannot traverse, a stale handle, a name too long for the
+    filesystem, a symlink loop -- and both owe the reader the same
+    sentence, because from where they stand it is the same fact. Built
+    in one place so they cannot drift into two sentences about it.
+    """
+    return UnreadablePath("cannot read %s: %s: %s"
+                          % (path, type(exc).__name__, exc))
+
+
 @dataclass
 class Loaded:
     path: str
@@ -198,8 +212,7 @@ def _read_bounded(loaded: Loaded, path: Path):
     except (OSError, MemoryError) as exc:
         # Not a defect in the file, so it leaves by the could-not-run code
         # rather than as a verdict about a document nobody managed to read.
-        raise UnreadablePath("cannot read %s: %s: %s"
-                             % (path, type(exc).__name__, exc)) from exc from exc
+        raise _cannot_reach(path, exc) from exc
     if len(raw) > cap:
         loaded.errors.append(LoadError(
             "bounds", "%s: more than %d bytes" % (path, cap), subject=str(path)))
@@ -280,8 +293,7 @@ def load(path) -> Loaded:
     try:
         there, a_file = path.exists(), path.is_file()
     except OSError as exc:
-        raise UnreadablePath("cannot read %s: %s: %s"
-                             % (path, type(exc).__name__, exc))
+        raise _cannot_reach(path, exc) from exc
     if not there:
         raise UnreadablePath("no such file: %s" % path)
     if not a_file:
