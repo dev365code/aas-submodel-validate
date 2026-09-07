@@ -120,7 +120,10 @@ def test_nothing_local_is_tracked():
     # tree has a `.gitignore`: unpack an sdist inside somebody else's
     # working copy and it succeeds, and the read below raised. The
     # sibling check learned this one commit earlier and this half did
-    # not -- the same file, the same shape.
+    # not -- the same file, the same shape -- and then a third place in
+    # `test_registry.py` met it again. `builders.tracked_files` is the
+    # one body now; this check keeps its own `.gitignore` question,
+    # which is about this repository rather than about git.
     exclusions = root / ".gitignore"
     if not exclusions.is_file():
         pytest.skip("not a checkout of this repository")

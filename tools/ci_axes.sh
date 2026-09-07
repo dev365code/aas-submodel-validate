@@ -9,6 +9,11 @@
 # a fact about which tree the suite runs from, the second about which
 # interpreter runs it.
 #
+# What this does NOT cover is the platform. A rule whose only trigger
+# was a POSIX permission bit went red on the Windows row alone, and
+# nothing here can build that tree. This gate is not "everything CI
+# sees"; it is "what CI sees that can be built here".
+#
 # So this builds the tree CI builds and runs the suite on every
 # versioned interpreter present. Measure the axis rather than trust the
 # one point you are standing on.
@@ -32,6 +37,24 @@ cd aas_submodel_validate-*/
 PYTHONPATH=src "${PYTHON:-python3}" -m pytest tests/ -q >"$WORK/sdist.log" 2>&1 \
   || { echo "   FAILED from an unpacked sdist:"; grep -E "^FAILED|^E " "$WORK/sdist.log" | head -8; exit 1; }
 echo "   $(tail -1 "$WORK/sdist.log")"
+
+echo "== axis 1b: the same sdist unpacked *inside* a working copy"
+# `git ls-files` succeeds there and lists nothing, because none of these
+# files is tracked in the repository they landed in -- so a check reading
+# that list sees an empty checkout rather than an sdist. Whoever unpacks
+# a release next to the clone they were comparing it against meets this,
+# and CI does not: its runner unpacks into a bare directory.
+cd "$WORK"
+mkdir -p inside && cd inside
+git init -q . 2>/dev/null || { echo "   git not available, axis skipped"; cd "$WORK"; }
+if [ -d .git ]; then
+    tar xzf ../dist/*.tar.gz
+    cd aas_submodel_validate-*/
+    PYTHONPATH=src "${PYTHON:-python3}" -m pytest tests/ -q >"$WORK/inside.log" 2>&1 \
+      || { echo "   FAILED from an sdist unpacked inside a working copy:";
+           grep -E "^FAILED|^E " "$WORK/inside.log" | head -6; exit 1; }
+    echo "   $(tail -1 "$WORK/inside.log")"
+fi
 
 echo "== axis 2: every interpreter on this machine, not the newest one"
 # The newest is not a superset, measured here: `pathlib.os` exists on
@@ -63,4 +86,4 @@ if [ "$FOUND" -eq 0 ]; then
     echo "   axis is unmeasured here -- install one to close it"
 fi
 
-echo "== both axes green"
+echo "== every axis this machine can build is green"

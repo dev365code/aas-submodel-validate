@@ -1,7 +1,6 @@
 """A rule id is a contract: registered once, forever findable."""
 import pathlib
 import re
-import subprocess
 
 import pytest
 
@@ -845,14 +844,8 @@ def test_every_divergence_this_project_cites_exists():
     # opens by naming this exact failure -- "a test that shelled out to
     # git" -- from the last two times, and the gate written to catch
     # dangling citations went and did it a third.
-    try:
-        tracked = subprocess.run(["git", "ls-files"], cwd=str(ROOT),
-                                 capture_output=True, text=True)
-    except OSError:                    # git is not installed
-        pytest.skip("git is not available")
-    if tracked.returncode != 0:
-        pytest.skip("not a git checkout (an unpacked sdist is not one)")
-    paths = [ROOT / name for name in tracked.stdout.split("\n") if name]
+    from builders import tracked_files
+    paths = [ROOT / name for name in tracked_files(ROOT)]
     assert len(paths) > 50, "git ls-files found nothing; is this a checkout?"
     # One direction, and then every number in the list that follows.
     # The reverse alternative was written for citations that name the

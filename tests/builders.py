@@ -570,3 +570,40 @@ def inject(env: dict, parent_row, stubs, tables) -> dict:
         if _element_matches(element, parent_row["match"]):
             element.setdefault("value", []).extend(stubs)
     return env
+
+
+def tracked_files(root):
+    """What `git ls-files` lists for this checkout, or a skip.
+
+    Three ways it is not a question about this repository, and each was
+    learned separately in a different test:
+
+    - git is not installed;
+    - the tree is not a working copy at all, and git says so;
+    - the tree is *inside somebody else's* working copy, which is what
+      an sdist unpacked in a checkout is. Then git succeeds and lists
+      nothing, because none of these files is tracked there. A caller
+      asserting "more than fifty paths" reads that as a broken checkout
+      and fails; a caller reading `.gitignore` raised.
+
+    The third is the one that keeps being met one test at a time -- the
+    comment in `test_package.py` says its sibling learned it a commit
+    earlier and that half did not, and the same shape then turned up a
+    third time in `test_registry.py`. One body, so there is no fourth.
+    """
+    import subprocess
+
+    import pytest
+    try:
+        listed = subprocess.run(["git", "ls-files"], cwd=str(root),
+                                capture_output=True, text=True)
+    except OSError:
+        pytest.skip("git is not available")
+    if listed.returncode != 0:
+        pytest.skip("not a git checkout (an unpacked sdist is not one)")
+    names = [name for name in listed.stdout.split("\n") if name]
+    if not names:
+        pytest.skip("git lists nothing here: this tree is inside another "
+                    "working copy rather than being one, which is what an "
+                    "sdist unpacked in a checkout looks like")
+    return names
