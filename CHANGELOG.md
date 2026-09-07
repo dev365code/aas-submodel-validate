@@ -1,5 +1,111 @@
 # Changelog
 
+## 0.1.3 — 2026-09-08
+
+126 rules, 86 generated from the vendored template files. One rule is
+new (`X6`, below). Paragraphs that move a verdict are marked
+**`verdict`**.
+
+**If you gate a build on the exit code, read this paragraph.** Measured
+over 52 inputs against 0.1.2: seven are judged differently. Three
+battery passports go from 1 to 0 -- they were failing for a reason that
+was not about them, see the first item below. One goes from **0 to 1**:
+a file whose required property is present and carries no value, which
+this release started reporting. Two paths this reader cannot open now
+produce a report where they produced none, at the same exit code. And an
+`.aasx` whose LZMA member is damaged goes from **1 to 2**, which is a
+correction of what the code meant rather than of the file.
+
+**The example on the front page was wrong, and this release replaces
+it.** `verdict` Until now this tool led with
+`EnergyRoundTripEfficiencyFade` as an element "the law requires of every
+battery category and the template permits absent". Regulation (EU)
+2023/1542 Annex IV Part A (4) reads *"Where applicable, energy round
+trip efficiency and its fade (in %)"*, and the Commission's own
+data-point guidance marks the same attribute *if applicable* for all
+three categories it names. That reading never reached the table: the
+join behind it matches attribute names as token sets, and the two words
+in front of the guidance text kept it from matching, so the only source
+still speaking about that element was one spreadsheet mark.
+
+**On the evidence this project indexes, there is no element the template
+permits absent that the regulation requires of every battery category.**
+The one that appeared to be was the mistake. `BAT-R8` now reports a row
+only where the file states its own battery category, which it already
+did for the other eight. The front page leads with `RemainingCapacity`
+for an LMT battery, the one row where the clause carries no qualifier,
+the Commission's guidance reads it required for LMT, and the long list
+agrees -- and that agreement is asserted in the test suite, so a
+re-pinned source that breaks it goes red rather than quietly restoring
+the shape of the old mistake. See `docs/divergences.md` #37.
+
+**Where the clause a finding cites qualifies itself, the finding says
+so.** Three of the seven findings an LMT passport draws cite provisions
+that read "where possible" or "where appropriate", and said nothing
+about it. The guidance can mark an attribute mandatory for a category
+while the provision behind it is qualified; both are printed, because
+settling that between two published documents is not this tool's to do.
+
+**A battery passport no longer fails by default.** `verdict` A passport
+of IDTA 02035-1, -4 and -5 printed `no submodel declares a semanticId
+this tool has a template table for` at error severity, then eight
+`BAT-R8` findings about those same submodels, then `judged 0 of 3`, and
+left by 1. `SMT-D1` asks whether anything here was judged and was
+measuring whether anything matched a template *table*.
+
+**A required element that carries no value is reported.** `verdict` A
+Technical Data file with the `value` key deleted from all nine of its
+properties drew no finding at all and left by 0. Cardinality is one
+question and content is another, and this fell between them. `value: ""`
+is deliberately not this rule's business -- the empty string is a value
+of that type -- and `docs/divergences.md` #40 says why.
+
+**A file this reader could not read no longer looks like a verdict.**
+`verdict` An `.aasx` whose LZMA member had one byte changed raised
+through every handler: the process left by 1, which is the code for *a
+verdict with findings*, with nothing on stdout. Deeply nested JSON was
+reported as "the file is not JSON" with a remedy telling you to fix the
+syntax -- it is JSON, and this reader's stack ran out. A path under a
+directory this reader cannot enter left by 1 with a traceback.
+
+**`exit 2` always carries a report now.** `verdict` The same permission
+denial gave an `.aasx` a finding and a parseable JSON document, and gave
+`.json` and `.xml` an empty stdout. One contract, whatever the
+extension, through the new `X6`. The remedy comes from the error and not
+from the extension: a file that is merely unreadable is no longer told
+to re-create itself with an AAS packaging tool.
+
+**Large inputs are fast.** An environment with many submodels was
+quadratic in their number: 4000 submodels in 5.4 MB took five and a half
+minutes of CPU, well inside the 64 MiB bound this reader advertises. It
+takes two seconds. Doubling the input doubles the work.
+
+**What a run did not ask is accurate.** `rulesNotAsked` charged a near
+miss in one branch to another -- dropping a collection reported nothing,
+and dropping it while an unrelated element drifted reported twenty-three
+-- and an intact submodel erased the claim that a different submodel
+never asked a rule.
+
+**On the screen.** Every finding's labels are explained on the screen
+rather than only on the front page; the summary opens with the verdict,
+which is what `$?` will be, so `--example` and `--example -W` no longer
+print byte-identical screens at different exit codes; repeated findings
+of one rule are grouped, which takes the bundled example from 88
+terminal rows to 51 with nothing hidden; and a run that cites a
+regulation says once that what it has is a published reading and not a
+determination of compliance.
+
+**Attribution.** The generated `battery_tables.py` ships in every
+distribution and carries element descriptions, legal-reference cells and
+the qualifying phrase of conditional provisions verbatim from three CC
+BY sources. `NOTICE` names the file and states how the material was
+modified. The long list is named by the edition that is CC BY.
+
+**Corrections to the front page.** The drift figures said twelve and
+thirty-three where the tool that measures them says eighteen and
+eighteen of sixty-nine, and nothing pinned the old pair. The rule count,
+the coverage sentence and `docs/scope.md` follow the change above.
+
 ## 0.1.2 — 2026-09-07
 
 Still 125 rules, 86 generated from the vendored template files. No rule
