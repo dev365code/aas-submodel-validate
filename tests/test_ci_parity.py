@@ -176,3 +176,156 @@ def test_the_recorded_hashes_are_checked_on_every_platform():
     assert "vendor_template.py --check" in matrix_job, (
         "the vendored-bytes check is not in the job that runs on every "
         "platform, so nothing measures what a checkout did to the bytes")
+
+
+# -- the gate before the publish, read by what it does ------------------------
+
+def _workflows():
+    """Every workflow file, both spellings.
+
+    `*.yml` alone misses `*.yaml`, which GitHub runs just the same, so a
+    second publishing workflow named the other way would be invisible to
+    everything below. Ported from the sibling project that met that.
+    """
+    where = ROOT / ".github" / "workflows"
+    return sorted(p for p in where.iterdir() if p.suffix in (".yml", ".yaml"))
+
+
+def _steps(path):
+    """Each step of each job as attributes and commands.
+
+    Read by effect rather than by name. A gate is not "a step called
+    `everything must be green first`" -- that name survives every way of
+    removing the gate underneath it -- so what is collected is what the
+    step would actually run, and the attributes that decide whether
+    running it matters.
+    """
+    steps, current, block_indent = [], None, None
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        stripped = raw.strip()
+        indent = len(raw) - len(raw.lstrip())
+        if block_indent is not None:
+            if stripped and indent > block_indent:
+                if not stripped.startswith("#"):
+                    current["commands"].append(stripped.split("#")[0].strip())
+                continue
+            block_indent = None
+        if re.match(r"^\s*-\s+(name|uses|run|id):", raw):
+            current = {"attrs": {}, "commands": [], "indent": indent}
+            steps.append(current)
+        if current is None or stripped.startswith("#"):
+            continue
+        found = re.match(r"^\s*-?\s*(\w[\w-]*):\s*(.*)$", raw)
+        if not found:
+            continue
+        key, value = found.group(1), found.group(2).strip()
+        if key == "run":
+            if value in ("|", ">", "|-", ">-"):
+                block_indent = indent
+            elif value and not value.startswith("#"):
+                current["commands"].append(value.split("#")[0].strip())
+        else:
+            current["attrs"][key] = value
+    return steps
+
+
+#: How a workflow says something leaves here that a person could install.
+#: Not "uploads an artifact", which is too wide -- a workflow uploading a
+#: diagnostic for a human to read publishes nothing.
+PUBLISHES = ("pypi-publish", "gh release create")
+
+
+def _publishes(path):
+    text = path.read_text(encoding="utf-8")
+    if any(marker in text for marker in PUBLISHES):
+        return True
+    return any("dist" in line.split("path:", 1)[1]
+               for line in text.splitlines() if line.strip().startswith("path:"))
+
+
+def _runs_the_gate(command):
+    """Whether this command is the gate, however it has been weakened.
+
+    Matching `make check` exactly missed `make check || true`, and the
+    miss reads as "this workflow never runs the gate" -- true in effect
+    and useless as a diagnosis, because it points at the wrong repair.
+    The step is the gate; what was done to it is the finding.
+    """
+    return command.strip().split("||")[0].split("&&")[0].strip() == "make check"
+
+
+def test_a_workflow_that_publishes_runs_the_gate_and_is_stopped_by_it():
+    """Five ways to keep the release workflow looking protected while
+    removing the protection, and the whole suite stayed green through
+    every one: `continue-on-error: true` on the *step* rather than the
+    job; `|| true` appended to the command; the command replaced with an
+    echo; the command deleted; the step removed and its name left on
+    something else.
+
+    Nothing here read the release workflow at all. The gates in this file
+    read `ci.yml`, so `make check` running before a publish was a claim
+    the project made about itself and checked nowhere.
+
+    Read by effect. A step is a gate when it *runs* the gate and its
+    failure would stop the job -- the name on it is the part that
+    survives every removal.
+    """
+    publishing = [w for w in _workflows() if _publishes(w)]
+    assert publishing, ("no workflow publishes anything; this test is "
+                        "looking in the wrong place")
+    for workflow in publishing:
+        steps = _steps(workflow)
+        gates = [step for step in steps
+                 if any(_runs_the_gate(command) for command in step["commands"])]
+        assert gates, (
+            "%s publishes and never runs `make check`. Its steps run: %s"
+            % (workflow.name, [c for s in steps for c in s["commands"]]))
+        for gate in gates:
+            assert gate["attrs"].get("continue-on-error", "false") != "true", (
+                "%s runs `make check` in a step marked continue-on-error, so "
+                "the gate cannot stop the publish" % workflow.name)
+            for command in gate["commands"]:
+                assert not command.rstrip().endswith("|| true"), (
+                    "%s appends `|| true` to a gate command: %s"
+                    % (workflow.name, command))
+
+
+def test_the_release_gate_is_not_a_step_that_only_looks_like_one(tmp_path):
+    """The instrument, checked against workflows it should refuse.
+
+    A reader that finds what it expects in the file as committed proves
+    nothing about a file that has been edited, so this hands it the gate
+    neutralised each way and asserts it says so. Without this the reader
+    could match on the step's name and pass -- and the name is exactly
+    what survives every removal.
+    """
+    body = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+    assert "make check" in body, "the fixture below has nothing to neutralise"
+
+    def gates_of(text):
+        path = tmp_path / "probe.yml"
+        path.write_text(text, "utf-8")
+        return [s for s in _steps(path)
+                if any(_runs_the_gate(c) for c in s["commands"])]
+
+    (intact,) = gates_of(body)
+    assert intact["attrs"].get("continue-on-error", "false") != "true"
+
+    marked = body.replace("      - name: everything must be green first",
+                          "      - name: everything must be green first\n"
+                          "        continue-on-error: true", 1)
+    assert marked != body
+    (neutralised,) = gates_of(marked)
+    assert neutralised["attrs"].get("continue-on-error") == "true", (
+        "the reader cannot see continue-on-error on the step")
+
+    for gone in (body.replace("          make check", "          echo skipping", 1),
+                 body.replace("          make check", "          true", 1)):
+        assert gone != body
+        assert not gates_of(gone), "the reader still finds a gate that is not there"
+
+    appended = body.replace("          make check", "          make check || true", 1)
+    assert appended != body
+    (weakened,) = gates_of(appended)
+    assert any(c.rstrip().endswith("|| true") for c in weakened["commands"]), \
+        "the reader cannot see `|| true` on the gate command"
