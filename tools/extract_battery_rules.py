@@ -88,23 +88,47 @@ def _shared_ids(idta) -> dict:
             for sid, names in sorted(claimed.items()) if len(names) > 1}
 
 
-def _every_category_required(record) -> bool:
-    """Whether a source requires the attribute for every category it names.
+#: The readings that make an element required. Same two spellings the
+#: rules read, kept here because this is where a row's per-category
+#: verdict is decided.
+REQUIRED = ("required", "required-by-batteries-regulation")
 
-    Two shapes: the long list writes a verdict per category, the
-    guidance writes `{as_written, reading}`. A row qualifies only when
-    every category in every citing source reads as required -- the
-    direction this project errs in when it cannot tell.
+#: How to write down a category two sources disagree about, least
+#: reporting first. A disagreement must not become a requirement, so the
+#: first reading present is taken -- deterministic, and a word one of the
+#: sources actually wrote rather than whatever sorts first.
+PERMISSIVE_FIRST = ("not-to-be-filled", "not-applicable", "not-stated",
+                    "voluntary", "certain-cases",
+                    "required-by-other-instrument", *REQUIRED)
+
+
+def _reading(verdict):
+    """One source's verdict for one category. The long list writes it
+    plainly and the guidance writes `{as_written, reading}`."""
+    return verdict.get("reading") if isinstance(verdict, dict) else verdict
+
+
+def _settle(seen) -> str:
+    """Every reading of one category, reduced to one.
+
+    Required only when every source that spoke said so. A source reading
+    the same provision as conditional is *evidence about this element*,
+    and it was being dropped: the loop below listened to sources that
+    said "yes" and skipped the rest, so the Commission's own
+    "if applicable" against a spreadsheet's "x" left the row reading as
+    unconditionally required. That is the direction this project must
+    never err in, and it erred in it on the element its front page was
+    built around.
     """
-    applicability = record.get("applicability")
-    if not isinstance(applicability, dict) or not applicability:
-        return False
-    for verdict in applicability.values():
-        if isinstance(verdict, dict):
-            verdict = verdict.get("reading")
-        if verdict not in ("required", "required-by-batteries-regulation"):
-            return False
-    return True
+    stated = [v for v in seen if v]
+    if not stated:
+        return None
+    if all(v in REQUIRED for v in stated):
+        return sorted(stated)[0]
+    for reading in PERMISSIVE_FIRST:
+        if reading in stated:
+            return reading
+    return sorted(stated)[0]
 
 
 def _law_rows(idta, join, indexes) -> list:
@@ -123,21 +147,29 @@ def _law_rows(idta, join, indexes) -> list:
             continue
         if element["cardinality"] != "ZeroToOne":
             continue        # the disagreement this rule is about is that one
-        citations, unconditional, categories = [], True, {}
+        # Everything that speaks about this element, not only what says
+        # yes. `conditional` is a reading, and reading it as silence is
+        # what let one spreadsheet mark carry a row the Commission's own
+        # guidance calls "if applicable" for every category it names.
+        citations, seen = [], {}
+        spoke = False
         for source, reading in sorted(entry["readings"].items()):
-            if reading != "yes" or source.startswith("template("):
+            if source.startswith("template(") or reading not in ("yes", "conditional"):
                 continue
             record = indexes.get(source)
             if record is None:
                 continue
+            spoke = True
             for reference in record.get("legal_references") or []:
                 if reference not in citations:
                     citations.append(reference)
-            unconditional = unconditional and _every_category_required(record)
             for name, verdict in (record.get("applicability") or {}).items():
-                if isinstance(verdict, dict):
-                    verdict = verdict.get("reading")
-                categories.setdefault(name, verdict)
+                seen.setdefault(name, []).append(_reading(verdict))
+        categories = {name: _settle(readings) for name, readings in seen.items()}
+        categories = {name: verdict for name, verdict in categories.items()
+                      if verdict is not None}
+        unconditional = bool(spoke and categories) and all(
+            verdict in REQUIRED for verdict in categories.values())
         rows.append({
             "unconditional": unconditional,
             "categories": tuple(sorted(categories.items())),

@@ -52,6 +52,32 @@ ANNEX_XIII = re.compile(r"annex\s+xiii\s*,?\s*\(?\s*(\d)\s*\)?\s*\(?\s*([a-z])?\
 ANNEX_VI_A = re.compile(r"annex\s+vi\s*(?:part\s*)?[,\s]*a\s*\(?\s*(\d+)\s*\)?", re.I)
 ARTICLE = re.compile(r"art(?:icle)?\.?\s*(\d+)\s*\(\s*(\d+)\s*\)", re.I)
 
+#: Two prefixes that say something *about* an obligation and are not part
+#: of the attribute's name. Both were measured before either was written:
+#: three of the seventy-one guidance data points open with a qualifier and
+#: six with a pointer clause, and no longlist row does either, so stripping
+#: them changes what the guidance joins to and leaves the spreadsheet
+#: untouched.
+#:
+#: The qualifier is about *when* the thing is required. Two words in front
+#: of data point 58 -- "Where applicable, energy round trip efficiency fade
+#: (in %)" -- were enough to keep the Commission's own reading from
+#: reaching `EnergyRoundTripEfficiencyFade`, so the only source left
+#: speaking about that element was a spreadsheet mark, and this project's
+#: front page was built on the result.
+#:
+#: The pointer clause is about *where the obligation comes from* --
+#: "Information on the state of health of the battery pursuant to Article
+#: 14: the remaining capacity". The attribute is what follows the colon.
+#:
+#: Stripped for matching only. What either prefix *says* is carried by the
+#: record's own `mandatory` and `applicability`, which is where a
+#: condition belongs; nothing is discarded.
+POINTER_CLAUSE = re.compile(r"^[^:]{10,120}\bpursuant to\b[^:]{0,60}:\s*", re.I)
+LEADING_SOFT_QUALIFIER = re.compile(
+    r"^\s*\[?\s*(?:where|when|if)\s+"
+    r"(?:applicable|possible|relevant|appropriate|available)\s*,?\s*\]?\s*", re.I)
+
 CAMEL = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 NON_WORD = re.compile(r"[^a-z0-9]+")
 # Words that say nothing about which attribute this is.
@@ -79,7 +105,8 @@ def citations(text):
 
 
 def words_of(text):
-    spaced = CAMEL.sub(" ", text or "")
+    spaced = CAMEL.sub(" ", LEADING_SOFT_QUALIFIER.sub(
+        "", POINTER_CLAUSE.sub("", text or "")))
     tokens = [t for t in NON_WORD.sub(" ", spaced.lower()).split() if t]
     return frozenset(t for t in tokens if t not in STOPWORDS)
 

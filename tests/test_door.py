@@ -17,7 +17,12 @@ import pytest
 
 from aas_submodel_validate import runner
 from aas_submodel_validate.report import render
-from test_battery_rules import _env, _technical_data
+from test_battery_rules import _passport, _required_for
+
+
+def _battery_payload():
+    """The passport the picture is drawn from."""
+    return _passport("lmt", _required_for("LMT") - {"RemainingCapacity"})
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
@@ -46,8 +51,13 @@ def _the_verdict(tmp_path) -> str:
     re-deciding it -- and both disagreed with the drawing. The flags are
     read out of the command in the picture so the two cannot part.
     """
+    # The row the front page leads with, and the only one whose three
+    # sources are asserted to agree -- see the tripwire in
+    # `test_battery_rules`. The picture used to draw a finding about
+    # `EnergyRoundTripEfficiencyFade`, whose provision reads "Where
+    # applicable".
     (tmp_path / "battery-passport.json").write_text(
-        json.dumps(_env(_technical_data(fade=False))), encoding="utf-8")
+        json.dumps(_battery_payload()), encoding="utf-8")
     flags = [word for _dy, runs in _generator().VERDICT_LINES
              for _x, _colour, text, _bold in runs if text.startswith("smtv ")
              for word in text.split()[1:] if word.startswith("--")]
@@ -229,7 +239,7 @@ def test_the_commands_in_the_picture_are_ones_this_project_offers(tmp_path,
                 argv.append(word)          # the flag's value, kept with it
         assert argv, command
         path = tmp_path / "e.json"
-        path.write_text(json.dumps(_env(_technical_data(fade=False))), "utf-8")
+        path.write_text(json.dumps(_battery_payload()), "utf-8")
         assert main(["-q", *argv, str(path)]) in (0, 1), \
             "the picture types %r and the tool refuses it" % command
         capsys.readouterr()

@@ -23,20 +23,6 @@ SHARED_SUBMODEL_IDS = {
 #: requires **of every battery category the source names**. Every
 #: field here is one a finding has to say.
 LAW_REQUIRES_TEMPLATE_OPTIONAL = (
-    {
-        'element': 'idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade',
-        'template': 'IDTA 02035-4',
-        'template_version': 'V1.0.1',
-        'submodel_semantic_id': 'https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0',
-        'submodel_sha256': 'a90774b959c766efe596243c39934df266ee34ce1132ba85f4b382efff842cb0',
-        'element_id_short': 'EnergyRoundTripEfficiencyFade',
-        'element_semantic_id': '0173-1#02-ABL827#002',
-        'cardinality': 'ZeroToOne',
-        'text': 'round trip energy efficiency fade DIN DKE Spec 99100 chapter reference: 6.7.4.5',
-        'says_mandatory': ('longlist:77',),
-        'citations': ('Annex IV Part A (4)',),
-        'categories': (('EV', 'required-by-batteries-regulation'), ('LMT', 'required-by-batteries-regulation'), ('industrial-other-above-2kWh', 'required-by-batteries-regulation'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
-    },
 )
 
 #: The same disagreement where it depends on the battery's
@@ -75,6 +61,20 @@ CONDITIONAL_ON_CATEGORY = (
         'says_mandatory': ('ec-datapoints:52', 'longlist:61'),
         'citations': ('Annex IV Part A (1)', 'Annex IV (2)'),
         'categories': (('EV', 'required'), ('LMT', 'required'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'required-by-batteries-regulation'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
+    },
+    {
+        'element': 'idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade',
+        'template': 'IDTA 02035-4',
+        'template_version': 'V1.0.1',
+        'submodel_semantic_id': 'https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0',
+        'submodel_sha256': 'a90774b959c766efe596243c39934df266ee34ce1132ba85f4b382efff842cb0',
+        'element_id_short': 'EnergyRoundTripEfficiencyFade',
+        'element_semantic_id': '0173-1#02-ABL827#002',
+        'cardinality': 'ZeroToOne',
+        'text': 'round trip energy efficiency fade DIN DKE Spec 99100 chapter reference: 6.7.4.5',
+        'says_mandatory': ('longlist:77',),
+        'citations': ('Annex IV Part A (4)',),
+        'categories': (('EV', 'certain-cases'), ('LMT', 'certain-cases'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'required-by-batteries-regulation'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
         'element': 'idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/CapacityThresholdExhaustion',
@@ -128,9 +128,9 @@ CONDITIONAL_ON_CATEGORY = (
         'element_semantic_id': 'urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingCapacity',
         'cardinality': 'ZeroToOne',
         'text': 'remaining capacity',
-        'says_mandatory': ('longlist:60',),
+        'says_mandatory': ('ec-datapoints:62', 'longlist:60'),
         'citations': ('Annex VII Part A (1)',),
-        'categories': (('EV', 'voluntary'), ('LMT', 'required-by-batteries-regulation'), ('industrial-other-above-2kWh', 'voluntary'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
+        'categories': (('EV', 'not-to-be-filled'), ('LMT', 'required'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'voluntary'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
         'element': 'idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability',
@@ -142,9 +142,9 @@ CONDITIONAL_ON_CATEGORY = (
         'element_semantic_id': 'urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingPowerCapability',
         'cardinality': 'ZeroToOne',
         'text': 'remaining power capability',
-        'says_mandatory': ('longlist:70',),
+        'says_mandatory': ('ec-datapoints:63', 'longlist:70'),
         'citations': ('Art. 10: Annex IV (3) (only definition of power)', 'Annex VII Part A (2) "where possible, remaining power capability"', 'Annex IV Part B (4) --> measurement at 80 % SoC and 20% SoC required'),
-        'categories': (('EV', 'voluntary'), ('LMT', 'required-by-batteries-regulation'), ('industrial-other-above-2kWh', 'voluntary'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
+        'categories': (('EV', 'not-to-be-filled'), ('LMT', 'required'), ('industrial-above-2kWh', 'certain-cases'), ('industrial-other-above-2kWh', 'voluntary'), ('industrial-stationary-above-2kWh', 'required-by-batteries-regulation')),
     },
     {
         'element': 'idta-smt:idta-02035-5:ProductCondition/RemainingRoundTripEnergyEfficiency',

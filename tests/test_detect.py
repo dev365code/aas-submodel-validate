@@ -120,7 +120,15 @@ def test_a_submodel_wearing_our_anchor_in_a_supplemental_is_not_recognised(tmp_p
         "a template of its own was judged as ours"
     assert "SMT-D1" not in ids, \
         "a file this tool has rules for was told nothing here is known"
-    assert "BAT-R8" in ids, "the pack that does know this file said nothing"
+    # Judged, which is the claim `SMT-D1` is about. Not "BAT-R8 fired":
+    # that rule reports an element only once the file settles a battery
+    # category, and this fixture settles none -- so asking for a finding
+    # here would pass for a reason that has nothing to do with the
+    # shield this test guards.
+    path = tmp_path / "env.json"
+    path.write_bytes(wearing_our_anchor_as_a_supplemental(
+        td_tables.TEMPLATE_SEMANTIC_ID, "TechnicalData"))
+    assert runner.run(path).submodels_judged == 1
 
 
 def test_an_unreadable_input_is_not_also_piled_on(tmp_path):

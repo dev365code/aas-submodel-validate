@@ -138,22 +138,23 @@ ELISION = "\u2026"
 
 VERDICT_LINES = [
     (21, [(28, G, "$ ", 1), (46, T, "pip3 install aas-submodel-validate", 0)]),
-    (30, [(28, G, "$ ", 1), (46, T, "smtv --allow-unmatched --meta info battery-passport.json", 0)]),
+    (30, [(28, G, "$ ", 1), (46, T, "smtv --meta info battery-passport.json", 0)]),
     (19, [(28, A_, "warning ", 1), (100, A_, "BAT-R8", 1),
-          (168, T, "conformant to the template and not to the regulation:", 0)]),
-    (19, [(168, T, "'EnergyRoundTripEfficiencyFade' is absent", 0)]),
-    (17, [(140, N, "at", 1), (168, D, "EnergyRoundTripEfficiencyFade", 0)]),
-    (17, [(140, N, "saw", 1), (168, D, "IDTA 02035-4 V1.0.1 makes it ZeroToOne;", 0)]),
-    (17, [(168, D, "Annex IV Part A (4) is read as requiring it" + ELISION, 0)]),
+          (168, T, "conformant to the template; a published reading of the", 0)]),
+    (19, [(168, T, "regulation expects it for LMT batteries:", 0)]),
+    (19, [(168, T, "'RemainingCapacity' is absent", 0)]),
+    (17, [(140, N, "at", 1), (168, D, "RemainingCapacity", 0)]),
+    (17, [(140, N, "saw", 1), (168, D, "IDTA 02035-5 V1.0.2 makes it ZeroToOne.", 0)]),
+    (17, [(168, D, "Read as expected for LMT by: European Commission guidance," + ELISION, 0)]),
     (17, [(140, N, "per", 1),
-          (168, D, "Regulation (EU) 2023/1542 Annex IV Part A (4);", 0)]),
+          (168, D, "Regulation (EU) 2023/1542 Annex VII Part A (1);", 0)]),
     (17, [(168, D, "docs/divergences.md #37 for whose reading of it this answers", 0)]),
     (17, [(140, N, "fix:", 1), (168, F, "Provide the element, or record that this battery is", 0)]),
     (26, [(168, F, "outside the provision read as requiring it." + ELISION, 0)]),
     (17, [(140, D, ELISION, 0)]),
     (19, [(140, N, "note", 1),
-          (180, N, "BAT-R8 reported 1 of the 9 elements this table holds;", 0)]),
-    (24, [(180, N, "8 of them turn on a battery category this file does not settle" + ELISION, 0)]),
+          (180, N, "BAT-R8 reported 7 of the 9 elements this table holds;", 0)]),
+    (24, [(180, N, "this file declares battery category 'lmt'" + ELISION, 0)]),
     # The key, drawn because it is the answer to the question this
     # picture's own labels raise. A reader meets `at`, `saw`, `per` and
     # `fix` four lines up and the page that explains them is a scroll
@@ -162,11 +163,11 @@ VERDICT_LINES = [
           (180, N, "at=where saw=what is there now per=the clause fix=what to change", 0)]),
     (19, [(140, N, "key", 1),
           (180, N, "note=something this run did, not a defect -- nothing to change", 0)]),
-    (19, [(28, T, "ok -- 0 error(s), 1 warning(s), 3 info", 1),
-          (327, N, "-- battery-passport.json; judged 1 of 1 submodel", 0)]),
+    (19, [(28, T, "ok -- 0 error(s), 1 warning(s), 8 info", 1),
+          (327, N, "-- battery-passport.json; judged 3 of 3 submodels", 0)]),
 ]
 
-SHOT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 %(h)d" role="img" aria-label="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, with the element named, the clause cited and a remedy">
+SHOT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 %(h)d" role="img" aria-label="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, with the element named, the clause cited and a remedy">
 <rect x="1" y="1" width="938" height="%(inner)d" rx="10" fill="#12161a" stroke="#252b30" stroke-width="1.5"/>
 <circle cx="24" cy="19" r="5" fill="#e0604d"/><circle cx="42" cy="19" r="5" fill="#e8c268"/><circle cx="60" cy="19" r="5" fill="#5cb87f"/>
 <text x="80" y="23" font-family="%(mono)s" font-size="11" fill="#7d8a99">smtv — real output, colour added</text>

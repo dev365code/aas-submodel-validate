@@ -212,16 +212,16 @@ each pair should be read before being relied on.
 
 ## 9. Most of the template surface cannot be reached from the other three sources
 
-**Read:** Of 221 indexed template elements, 42 match an attribute name in the
-guidance or the longlist and 179 match nothing. In the other direction, 63 of 71
+**Read:** Of 221 indexed template elements, 43 match an attribute name in the
+guidance or the longlist and 178 match nothing. In the other direction, 59 of 71
 guidance data points and 63 of 100 longlist rows match no element.
 
-**Those 42 carry 37 distinct names between them.** Four are the value child of
-another of the 42 — `RemainingCapacity` and `RemainingCapacityValue` reduce to
+**Those 43 carry 38 distinct names between them.** Four are the value child of
+another of the 43 — `RemainingCapacity` and `RemainingCapacityValue` reduce to
 one name, because `value` says nothing about which attribute an element is — and
-a fifth pair is two elements in two templates landing on one attribute. Forty-two
-elements matched, and they reach thirty-seven names; read as coverage the first
-number is the one that flatters, so the join publishes both.
+a fifth pair is two elements in two templates landing on one attribute.
+Forty-three elements matched, and they reach thirty-eight names; read as
+coverage the first number is the one that flatters, so the join publishes both.
 
 **Where:** `requirements-join.json`, counts.
 

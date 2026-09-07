@@ -250,14 +250,20 @@ def test_regenerate_holds_the_five_commands_the_readme_promises():
 def test_entry_nine_adds_up(join):
     counts = join["counts"]
     assert counts["template_elements"] == 221
-    assert counts["template_elements_matched_by_name"] == 42
-    assert counts["template_elements_matched_by_nothing"] == 179
+    assert counts["template_elements_matched_by_name"] == 43
+    assert counts["template_elements_matched_by_nothing"] == 178
     assert counts["template_elements_matched_by_name"] + counts[
         "template_elements_matched_by_nothing"
     ] == counts["template_elements"]
-    assert counts["guidance_data_points_unmatched"] == 63
+    assert counts["guidance_data_points_unmatched"] == 59
     assert counts["longlist_rows_unmatched"] == 63
-    assert counts["guidance_data_points_matched_by_name"] + 63 == 71
+    # Summed, not compared to a number written here twice. The 63 in
+    # this line used to be the guidance's unmatched count and stopped
+    # being it, while the line above went on asserting the real one --
+    # two facts about the same total, one of them stale, and the test
+    # green until the other moved.
+    assert (counts["guidance_data_points_matched_by_name"]
+            + counts["guidance_data_points_unmatched"]) == 71
 
 
 def test_entry_six_names_the_only_citation_that_does_not_resolve(join):
@@ -330,7 +336,7 @@ def test_the_join_table_still_shows_the_citations_it_stopped_counting(join):
 
 
 def test_the_join_says_how_many_names_its_matched_elements_actually_reach(join):
-    """`42 of 221 elements match` is true and reads as more than it is.
+    """`43 of 221 elements match` is true and reads as more than it is.
 
     Four of the forty-two are the value child of another of the
     forty-two -- `RemainingCapacity` and `RemainingCapacityValue` both
@@ -340,9 +346,9 @@ def test_the_join_says_how_many_names_its_matched_elements_actually_reach(join):
     reading it invites is, and the reader who spots it has spotted it in
     the table on the same page. So the join states both numbers."""
     counts = join["counts"]
-    assert counts["template_elements_matched_by_name"] == len(join["name_matches"]) == 42
+    assert counts["template_elements_matched_by_name"] == len(join["name_matches"]) == 43
     named = counts["distinct_attribute_names_those_elements_reach"]
-    assert named == 37, named
+    assert named == 38, named
     assert len(join["name_matches"]) - named == 5
 
     # The pairs that make the difference, so the number cannot drift into

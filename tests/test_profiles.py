@@ -303,7 +303,10 @@ def test_a_template_of_its_own_that_also_carries_the_mark_is_still_not_ours(tmp_
     # price was the report telling a reader nothing here was known,
     # above a finding about it.
     assert "SMT-D1" not in ids, sorted(ids)
-    assert "BAT-R8" in ids, "the pack that does know this identifier said nothing"
+    # Judged -- which is what `SMT-D1` asks -- rather than "BAT-R8
+    # fired". That rule speaks only once a file settles a battery
+    # category and this one settles none.
+    assert runner.run(path).submodels_judged == 1
     assert "SMT-D2" not in ids, "a template we just refused was named a profile"
     assert not [i for i in ids if i.startswith(("HD", "TD", "DBP2"))], sorted(ids)
 

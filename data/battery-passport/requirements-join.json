@@ -109,14 +109,14 @@
   "citations_checked_against_the_annex": 115,
   "citations_no_index_here_can_resolve": 53,
   "template_elements": 221,
-  "template_elements_matched_by_name": 42,
-  "distinct_attribute_names_those_elements_reach": 37,
-  "template_elements_matched_by_nothing": 179,
-  "guidance_data_points_matched_by_name": 8,
-  "guidance_data_points_unmatched": 63,
+  "template_elements_matched_by_name": 43,
+  "distinct_attribute_names_those_elements_reach": 38,
+  "template_elements_matched_by_nothing": 178,
+  "guidance_data_points_matched_by_name": 12,
+  "guidance_data_points_unmatched": 59,
   "longlist_rows_matched_by_name": 37,
   "longlist_rows_unmatched": 63,
-  "name_matches_where_the_readings_differ": 9,
+  "name_matches_where_the_readings_differ": 10,
   "citations_where_the_readings_differ": 8
  },
  "coverage_is_a_floor": "The templates carry no citation of the law, so a template element can only be matched to an attribute by name. Name matching is weak: it misses every element whose label differs from the prose attribute name, and it cannot match a nested element to an attribute at all. Every coverage figure below is therefore a lower bound on what is actually covered, not a measurement of it, and must be reported as such until a citation-bearing bridge exists.",
@@ -953,6 +953,16 @@
    ]
   },
   {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency",
+   "template": "IDTA 02035-4",
+   "cardinality": "One",
+   "mandatory": "yes",
+   "ec_datapoints": [
+    "ec-datapoints:57"
+   ],
+   "longlist_rows": []
+  },
+  {
    "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/InitialRoundTripEnergyEfficiency",
    "template": "IDTA 02035-4",
    "cardinality": "One",
@@ -969,7 +979,9 @@
    "template": "IDTA 02035-4",
    "cardinality": "ZeroToOne",
    "mandatory": "no",
-   "ec_datapoints": [],
+   "ec_datapoints": [
+    "ec-datapoints:58"
+   ],
    "longlist_rows": [
     "longlist:77"
    ]
@@ -1115,7 +1127,9 @@
    "template": "IDTA 02035-5",
    "cardinality": "ZeroToOne",
    "mandatory": "no",
-   "ec_datapoints": [],
+   "ec_datapoints": [
+    "ec-datapoints:62"
+   ],
    "longlist_rows": [
     "longlist:60"
    ]
@@ -1125,7 +1139,9 @@
    "template": "IDTA 02035-5",
    "cardinality": "One",
    "mandatory": "yes",
-   "ec_datapoints": [],
+   "ec_datapoints": [
+    "ec-datapoints:62"
+   ],
    "longlist_rows": [
     "longlist:60"
    ]
@@ -1155,7 +1171,9 @@
    "template": "IDTA 02035-5",
    "cardinality": "ZeroToOne",
    "mandatory": "no",
-   "ec_datapoints": [],
+   "ec_datapoints": [
+    "ec-datapoints:63"
+   ],
    "longlist_rows": [
     "longlist:70"
    ]
@@ -1317,7 +1335,6 @@
   "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage",
   "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/MinVoltage",
   "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/MaxVoltage",
-  "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency",
   "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/RoundTripEnergyEfficiencyAt50PercentOfCycleLife",
   "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/InitialSelfDischargingRate",
   "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Resistance",
@@ -1453,9 +1470,17 @@
    }
   },
   {
+   "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency",
+   "readings": {
+    "template(IDTA 02035-4)": "yes",
+    "ec-datapoints:57": "conditional"
+   }
+  },
+  {
    "element": "idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade",
    "readings": {
     "template(IDTA 02035-4)": "no",
+    "ec-datapoints:58": "conditional",
     "longlist:77": "yes"
    }
   },
@@ -1485,6 +1510,7 @@
    "element": "idta-smt:idta-02035-5:ProductCondition/RemainingCapacity",
    "readings": {
     "template(IDTA 02035-5)": "no",
+    "ec-datapoints:62": "yes",
     "longlist:60": "yes"
    }
   },
@@ -1492,6 +1518,7 @@
    "element": "idta-smt:idta-02035-5:ProductCondition/RemainingPowerCapability",
    "readings": {
     "template(IDTA 02035-5)": "no",
+    "ec-datapoints:63": "yes",
     "longlist:70": "yes"
    }
   },

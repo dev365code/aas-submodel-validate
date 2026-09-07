@@ -15,33 +15,49 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=9bf8b7c8" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=cf20af5d" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
 $ smtv --example
 ```
 
-**Every finding says what is wrong, where, and how to fix it — and shows the evidence where there is evidence to show.** A rule without a remedy sentence does not ship. On the bundled official example all 87 findings carry a place and a remedy, and 10 carry a `saw` line; the other 77 are relayed metamodel findings, which name a path and no value. Here is the one this project exists for — a battery passport that is *conformant to its template and not to the law*, which are two different questions and get two different answers:
+**Every finding says what is wrong, where, and how to fix it — and shows the evidence where there is evidence to show.** A rule without a remedy sentence does not ship. On the bundled official example all 87 findings carry a place and a remedy, and 10 carry a `saw` line; the other 77 are relayed metamodel findings, which name a path and no value. Here is the one this project exists for — a battery passport whose template permits an element to be absent while a published reading of the regulation expects it. Those are two different questions and they get two different answers:
 
 ```console
 $ smtv --meta info your-battery-passport.json
-warning BAT-R8   conformant to the template and not to the regulation: 'EnergyRoundTripEfficiencyFade' is absent
-        at   EnergyRoundTripEfficiencyFade
-        saw  IDTA 02035-4 V1.0.1 makes it ZeroToOne; Annex IV Part A (4) is read as requiring it, for every battery category the source names. Asked anywhere under the submodel: this rule is about the data being present, not about where the template puts it
-        per  Regulation (EU) 2023/1542 Annex IV Part A (4); docs/divergences.md #37 for whose reading of it this answers
+warning BAT-R8   conformant to the template; a published reading of the regulation expects it for LMT batteries: 'RemainingCapacity' is absent
+        at   RemainingCapacity
+        saw  IDTA 02035-5 V1.0.2 makes it ZeroToOne. Read as expected for LMT by: European Commission guidance, Digital Batteries Passport -- data point by category v2.0, data point 62; BatteryPass-Ready Data Attribute Longlist v1.3 (draft) row 60. Asked anywhere under the submodel: this rule is about the data being present, not about where the template puts it
+        per  Regulation (EU) 2023/1542 Annex VII Part A (1); docs/divergences.md #37 for whose reading of it this answers
         fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
 …
-ok -- 0 error(s), 1 warning(s), 3 info -- your-battery-passport.json; judged 1 of 1 submodel
+ok -- 0 error(s), 1 warning(s), 8 info -- your-battery-passport.json; judged 3 of 3 submodels
 ```
 
-The `…` is four lines: the one that accounts for the `3 info` — the
+**Note what it does not say.** Not "not to the regulation": the tool has a
+published *reading* of a provision, never the provision speaking. And not
+"for every battery"—the file states `lmt`, Annex VII Part A applies to
+"stationary battery energy storage systems and LMT batteries", and the
+Commission's own guidance marks this element *not to be filled* for an
+electric vehicle. A finding that ignored the category would tell one
+manufacturer to add what another's guidance forbids.
+
+Three sources have to agree before an element is reported this way — the
+clause itself carrying no *where applicable*, the Commission's data point,
+and the long list — and that agreement is asserted in the test suite, not
+remembered. It has to be: the element this page led with until 0.1.3 was
+`EnergyRoundTripEfficiencyFade`, and Annex IV Part A (4) reads "**Where
+applicable**, energy round trip efficiency and its fade". See
+`docs/divergences.md` #37.
+
+The `…` is four lines: the one that accounts for the `8 info` — the
 relayed metamodel findings, folded into a count unless you ask for them
 — the coverage note quoted further down, and the two-line key naming
 the labels this run printed. Notes are printed and not counted; the
 folded line is counted and not printed in full. The
-summary opens `ok` because the exit code is **0**: a disagreement with the
-regulation is a warning, so it does not fail your build unless you ask
+summary opens `ok` because the exit code is **0**: a disagreement with a
+reading of the regulation is a warning, so it does not fail your build unless you ask
 it to (`-W` makes a warning exit 1). That is deliberate. This tool answers for
 the template; the law is somebody's reading of the law, and reading is
 not a thing to fail a pipeline on without being told to.
@@ -112,7 +128,7 @@ Five of the 125, in the words the tool actually prints:
 | `ClassificationSystem` written `VDI2770:2020` | **HDL5** · ClassificationSystem spells the VDI system non-canonically |
 | A `Document` with no VDI 2770 classification at all | **HD-D2** · no DocumentClassification declares the mandatory VDI 2770 classification system |
 | A `ClassName` given only in German | **HD-D4** · ClassName has no English entry — `saw languages present: de` |
-| A battery passport missing an element a published reading of the law requires | **BAT-R8** · conformant to the template and not to the regulation |
+| An LMT battery passport with no `RemainingCapacity` | **BAT-R8** · conformant to the template; a published reading of the regulation expects it for LMT batteries |
 
 Each of those five carries an `at`, a `saw` where there is evidence to show, the clause it reads from, and a sentence saying what to change.
 
@@ -187,11 +203,11 @@ on the roadmap rather than in this release. Here is that second one whole, as th
 tool writes it — one line, unfolded:
 
 ```text
-note    BAT-R8 reported 1 of the 9 elements this table holds; 8 of them turn on a battery category this file does not settle, so whether a published reading of the law requires those is a question this run did not ask. Read from IDTA 02035-1 V1.0, IDTA 02035-4 V1.0.1, IDTA 02035-5 V1.0.2. Both figures are a floor, not a measurement: the templates cite no provision of the law, so the join behind the table matched attributes by name, and name matching misses every element whose label differs from the prose, and reaches a nested one only when its label happens to match.
+note    BAT-R8 reported 1 of the 9 elements this table holds; this file declares battery category 'lmt', and the reading recorded here does not require 2 of the table's conditional elements for it, so those were not asked. A further 6 belong to submodels this file does not carry, so nothing here could look for them. Read from IDTA 02035-1 V1.0, IDTA 02035-4 V1.0.1, IDTA 02035-5 V1.0.2. Both figures are a floor, not a measurement: the templates cite no provision of the law, so the join behind the table matched attributes by name, and name matching misses every element whose label differs from the prose, and reaches a nested one only when its label happens to match.
 ```
 
 > [!IMPORTANT]
-> **This is not a certificate of compliance with Regulation (EU) 2023/1542.** Those nine rows are where an attribute name matched *and* the two readings disagree; the join behind them left 179 of 221 template elements matching nothing at all, and 63 of the Commission's 71 guidance data points finding no element. Reading a battery's category, deciding which applicability date applies, or concluding that a passport is lawful are all outside this tool. The indexes and the join are published in
+> **This is not a certificate of compliance with Regulation (EU) 2023/1542.** Those nine rows are where an attribute name matched *and* the two readings disagree; the join behind them left 178 of 221 template elements matching nothing at all, and 59 of the Commission's 71 guidance data points finding no element. Reading a battery's category, deciding which applicability date applies, or concluding that a passport is lawful are all outside this tool. The indexes and the join are published in
 > [`data/battery-passport/`](https://github.com/dev365code/aas-submodel-validate/tree/main/data/battery-passport)
 > so the number can be argued with rather than taken.
 

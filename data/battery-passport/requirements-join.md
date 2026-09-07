@@ -43,14 +43,14 @@ lower bounds until a citation-bearing bridge exists.
 | citations checked against the annex | 115 |
 | citations no index here can resolve | 53 |
 | template elements | 221 |
-| template elements matched by name | 42 |
-| distinct attribute names those elements reach | 37 |
-| template elements matched by nothing | 179 |
-| guidance data points matched by name | 8 |
-| guidance data points unmatched | 63 |
+| template elements matched by name | 43 |
+| distinct attribute names those elements reach | 38 |
+| template elements matched by nothing | 178 |
+| guidance data points matched by name | 12 |
+| guidance data points unmatched | 59 |
 | longlist rows matched by name | 37 |
 | longlist rows unmatched | 63 |
-| name matches where the readings differ | 9 |
+| name matches where the readings differ | 10 |
 | citations where the readings differ | 8 |
 
 ## Every point of the annex, and who restates it
@@ -143,12 +143,13 @@ a candidate to be read, not a finding on its own.
 |---|---|---|
 | `idta-02035-1:BatteryNameplate/DateOfPuttingIntoService` | no (IDTA 02035-1) | longlist:16: yes |
 | `idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/CapacityFade` | no (IDTA 02035-4) | ec-datapoints:52: yes; longlist:61: yes |
-| `idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade` | no (IDTA 02035-4) | longlist:77: yes |
+| `idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency` | yes (IDTA 02035-4) | ec-datapoints:57: conditional |
+| `idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade` | no (IDTA 02035-4) | ec-datapoints:58: conditional; longlist:77: yes |
 | `idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/CapacityThresholdExhaustion` | no (IDTA 02035-4) | ec-datapoints:33: yes; longlist:90: yes |
 | `idta-02035-5:ProductCondition/EnergyThroughput` | no (IDTA 02035-5) | longlist:88: yes |
 | `idta-02035-5:ProductCondition/CapacityThroughput` | no (IDTA 02035-5) | longlist:89: yes |
-| `idta-02035-5:ProductCondition/RemainingCapacity` | no (IDTA 02035-5) | longlist:60: yes |
-| `idta-02035-5:ProductCondition/RemainingPowerCapability` | no (IDTA 02035-5) | longlist:70: yes |
+| `idta-02035-5:ProductCondition/RemainingCapacity` | no (IDTA 02035-5) | ec-datapoints:62: yes; longlist:60: yes |
+| `idta-02035-5:ProductCondition/RemainingPowerCapability` | no (IDTA 02035-5) | ec-datapoints:63: yes; longlist:70: yes |
 | `idta-02035-5:ProductCondition/RemainingRoundTripEnergyEfficiency` | no (IDTA 02035-5) | longlist:76: yes |
 
 ## Citations not resolved in the consolidated text that was read

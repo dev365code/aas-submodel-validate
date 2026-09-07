@@ -41,10 +41,12 @@ is generated from the indexes under `data/battery-passport/`.
 """
 from __future__ import annotations
 
+import re
+
 from ..model import Violation
 from ..registry import rule
 from ..semantics import candidate_values, element_candidate_values
-from . import battery_tables
+from . import battery_tables, detect
 from .detect import instances
 
 R2_ID = "BAT-R2"
@@ -124,7 +126,7 @@ COVERAGE_NOTE = (
     "%s reported %d of the %d elements this table holds; %d of them turn "
     "on a battery category this file does not settle, so whether a "
     "published reading of the law requires those is a question this run "
-    "did not ask." + COVERAGE_TAIL)
+    "did not ask.%s" + COVERAGE_TAIL)
 #: The other reason an element goes unasked, which this note said with
 #: the first one's words. A file that states `ev` has settled the
 #: question; the six elements EV's guidance does not require were not
@@ -135,7 +137,35 @@ COVERAGE_NOTE_SETTLED = (
     "%s reported %d of the %d elements this table holds; this file "
     "declares battery category '%s', and the reading recorded here does "
     "not require %d of the table's conditional elements for it, so those "
-    "were not asked." + COVERAGE_TAIL)
+    "were not asked.%s" + COVERAGE_TAIL)
+
+
+#: The third reason an element goes unasked, and the one that kept the
+#: sentence from adding up: its submodel is not in this file at all. A
+#: Technical Data file on its own read "reported 1 of the 9 ... does not
+#: require 2 of the table's conditional elements", leaving six
+#: unaccounted for -- a reader who did the arithmetic the note invites
+#: got 3.
+ELSEWHERE = (" A further %d belong%s to submodels this file does not carry, "
+             "so nothing here could look for %s.")
+
+
+def _elsewhere(submodels) -> int:
+    """The rows whose submodel never arrived, said rather than left over."""
+    here = set()
+    for submodel in submodels:
+        here |= _declared(submodel)
+    rows = (battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
+            + battery_tables.CONDITIONAL_ON_CATEGORY)
+    return len({row["element"] for row in rows
+                if row["submodel_semantic_id"] not in here})
+
+
+def _elsewhere_said(missing) -> str:
+    if not missing:
+        return ""
+    return ELSEWHERE % (missing, "s" if missing == 1 else "",
+                        "it" if missing == 1 else "them")
 
 
 def coverage_note(submodels) -> str:
@@ -158,8 +188,11 @@ def coverage_note(submodels) -> str:
     # that states `ev` or `lmt` has answered the question the conditional
     # rows were waiting on, and a sentence that keeps saying eight after
     # seven of them were asked is a number typed into prose -- which the
-    # paragraph below already warns about.
-    settled = {row["element"] for row in _rows_the_category_settles(submodels)}
+    # paragraph below already warns about. Counted as what is left once
+    # the read rows and the absent submodels are taken out, rather than
+    # from the settled set directly: the two overlap, and adding three
+    # independently counted numbers made the note account for fifteen of
+    # nine.
     # The table, and nothing about this file. It was
     # `unconditional + withheld`, and `withheld` falls as the file
     # settles rows -- so the numerator rose while the denominator fell
@@ -180,7 +213,18 @@ def coverage_note(submodels) -> str:
     # made this say "10 of the 9".
     read = len({row["element"] for submodel in submodels
                 for row in _rows_for(submodel, submodels)})
-    if not read:
+    elsewhere = _elsewhere(submodels)
+    # Whether the table knows any submodel here, not whether it read a
+    # row of one. Those were the same question while one row was
+    # required of every category -- every battery file read at least
+    # that one -- and they came apart the day that row turned out to
+    # cite a provision saying "where applicable". A passport that
+    # declares no category now reads none of the nine, and `not read`
+    # returned None for it: the file this note has the most to say about
+    # got silence, and a reader was told nothing about the nine
+    # questions the run did not ask.
+    if not any(_declared(submodel) & detect.PACK_ONLY_SEMANTIC_IDS
+               for submodel in submodels):
         return None
     # Whether the file settled the question, not whether it said
     # something. A category this tool has no column for settles nothing,
@@ -188,12 +232,19 @@ def coverage_note(submodels) -> str:
     # what the run actually did with it.
     stated = declared_category(submodels)
     if CATEGORY_COLUMNS.get(stated) is None:
+        # A partition, not three counts that happen to be near each
+        # other. Every row is read, or belongs to a submodel that never
+        # arrived, or is left waiting on the category -- and the third
+        # is what remains once the first two are taken out. Counted as
+        # three independent numbers, the first version said the note
+        # accounted for fifteen of nine.
         return COVERAGE_NOTE % (R8_ID, read, total,
-                                len(battery_tables.CONDITIONAL_ON_CATEGORY),
+                                total - read - elsewhere,
+                                _elsewhere_said(elsewhere),
                                 battery_tables.SOURCE_EDITION)
     return COVERAGE_NOTE_SETTLED % (
-        R8_ID, read, total, stated,
-        len(battery_tables.CONDITIONAL_ON_CATEGORY) - len(settled),
+        R8_ID, read, total, stated, total - read - elsewhere,
+        _elsewhere_said(elsewhere),
         battery_tables.SOURCE_EDITION)
 
 
@@ -288,6 +339,50 @@ def bat_r2_shared_identifier_without_a_table(ctx):
                        "judged against a template" % identifier)
 
 
+#: A clause reference, and nothing else on the line. A row's citations
+#: come out of an index whose cells sometimes carry the analyst's working
+#: note beside the reference -- `--> measurement at 80 % SoC and 20% SoC
+#: required` travelled into `per`, which is the one line a reader copies
+#: into a report of their own.
+CLAUSE = re.compile(
+    r"Art(?:icle)?\.?\s*\d+(?:\s*\(\d+\))?"
+    r"|Annex\s+[IVX]+(?:\s+Part\s+[AB])?(?:\s*\(\s*\d+[a-z]?\s*\))?"
+    r"(?:\s*\(\s*[a-z]\s*\))?", re.I)
+
+#: How an index id is written for someone who has neither index. E6: the
+#: long list is the "BatteryPass-Ready Data Attribute Longlist", which is
+#: what its own file is called; the older series name this project's
+#: NOTICE says it avoids is not this document.
+SOURCE_NAMES = {
+    "longlist": "BatteryPass-Ready Data Attribute Longlist v1.3 (draft) row %s",
+    "ec-datapoints": ("European Commission guidance, Digital Batteries "
+                      "Passport -- data point by category v2.0, data point %s"),
+}
+
+
+def _clauses(citations) -> str:
+    """The clause identifiers a row cites, in the row's own order."""
+    found = []
+    for citation in citations:
+        for hit in CLAUSE.findall(citation):
+            hit = " ".join(hit.split()).rstrip(".:,")
+            if hit not in found:
+                found.append(hit)
+    return ", ".join(found or list(citations))
+
+
+def _sources(ids) -> str:
+    """Which published document said so, named so a reader can go and
+    look. The index ids resolve to files that ship in neither the wheel
+    nor the source distribution, so they must not reach a reader."""
+    named = []
+    for identifier in ids:
+        prefix, _, number = identifier.partition(":")
+        pattern = SOURCE_NAMES.get(prefix)
+        named.append(pattern % number if pattern else identifier)
+    return "; ".join(named)
+
+
 @rule(R8_ID, kind="template", prio="SHOULD",
       title="elements the template permits absent that a published "
             "reading of the regulation requires",
@@ -306,14 +401,28 @@ def bat_r8_template_optional_but_law_requires(ctx):
     """Every row whose submodel is here, in table order, and the walk
     reads every element rather than the first: an absence past the first
     element is the same absence."""
-    for submodel in instances(ctx.loaded):
-        for row in _rows_for(submodel, list(instances(ctx.loaded))):
+    here = list(instances(ctx.loaded))
+    # Which column settled the row, named in the finding. Every row this
+    # rule reports is conditional on a category now, so a finding that
+    # does not say which one is a claim about batteries in general --
+    # and the row it used to report of every category was the one whose
+    # provision reads "Where applicable".
+    column = CATEGORY_COLUMNS.get(declared_category(here))
+    for submodel in here:
+        for row in _rows_for(submodel, here):
             if _carries(submodel, row):
                 continue
-            clauses = ", ".join(row["citations"])
+            clauses = _clauses(row["citations"])
             yield Violation(
-                "conformant to the template and not to the regulation: "
-                "'%s' is absent" % row["element_id_short"],
+                # Not "and not to the regulation". That asserts the law
+                # has been broken, which this tool cannot know: what it
+                # has is a published reading of a provision, and #37 has
+                # said so since the rule landed while the sentence a
+                # reader sees said the other thing.
+                "conformant to the template; a published reading of the "
+                "regulation expects it%s: '%s' is absent"
+                % (" for %s batteries" % column if column else "",
+                   row["element_id_short"]),
                 # The element's name, not a path. This used to synthesise
                 # `<submodel>/<element>`, which is a place the walk never
                 # went -- the element sits two collections down where it
@@ -336,13 +445,18 @@ def bat_r8_template_optional_but_law_requires(ctx):
                 spec="Regulation (EU) 2023/1542 %s; docs/divergences.md "
                      "#37 for whose reading of it this answers"
                      % clauses,
-                detail="%s %s makes it %s; %s is read as requiring it, for "
-                       "every battery category the source names. Asked "
+                # Which document, which edition, which row, and for
+                # which category. "for every battery category the source
+                # names" stood here, over a row whose sources name three
+                # categories and mark it required in one of them.
+                detail="%s %s makes it %s. Read as expected%s by: %s. Asked "
                        "anywhere under the submodel: this rule is about "
                        "the data being present, not about where the "
                        "template puts it"
                        % (row["template"], row["template_version"],
-                          row["cardinality"], clauses))
+                          row["cardinality"],
+                          " for %s" % column if column else "",
+                          _sources(row["says_mandatory"])))
 
 
 def _known_to_the_walk() -> frozenset:

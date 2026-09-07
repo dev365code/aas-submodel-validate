@@ -27,6 +27,7 @@ produced the table matched by name.
 from __future__ import annotations
 
 import json
+import pathlib
 import re
 
 import pytest
@@ -35,12 +36,22 @@ from aas_submodel_validate import runner
 from aas_submodel_validate.rules import battery_tables
 
 CARBON_FOOTPRINT = "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0"
-#: The one element BAT-R8 reads, and where it sits. Two collections down
-#: inside IDTA 02035-4's TechnicalData -- written out rather than read
-#: from the table under test, because a fixture built from the table
-#: passes whatever the table says.
+#: An element BAT-R8 reads once a category is settled, and where it sits.
+#: Two collections down inside IDTA 02035-4's TechnicalData -- written
+#: out rather than read from the table under test, because a fixture
+#: built from the table passes whatever the table says.
+#:
+#: This was `EnergyRoundTripEfficiencyFade`, which the table used to
+#: carry as required of every category. It is not: Annex IV Part A (4)
+#: reads "Where applicable, energy round trip efficiency and its fade",
+#: and the Commission's own data point 58 marks it `if applicable` for
+#: all three categories it names. `CapacityFade` sits at the same depth
+#: and its provision, Annex IV Part A (1), carries no qualifier.
 TECHNICAL_DATA = "https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0"
 PROPERTY_AREAS = "0173-1#02-ABK163#002"
+CAPACITY_ENERGY_VOLTAGE = ("urn:samm:io.admin-shell.idta.batterypass."
+                           "technical_data:1.0.0#capacityEnergyVoltage")
+CAPACITY_FADE = "0173-1#02-ABL828#002"
 ROUND_TRIP = ("urn:samm:io.admin-shell.idta.batterypass."
               "technical_data:1.0.0#roundTripEnergyEfficiency")
 EFFICIENCY_FADE = "0173-1#02-ABL827#002"
@@ -84,32 +95,40 @@ def _env(*submodels) -> dict:
 
 def _technical_data(*, fade: bool = True, pad: bool = False,
                     vendor_identified: bool = False,
-                    fade_id_short: str = "EnergyRoundTripEfficiencyFade",
-                    fade_semantic_id: str = EFFICIENCY_FADE) -> dict:
-    """An 02035-4 TechnicalData whose round-trip efficiency collection
-    does or does not carry the efficiency-fade element.
+                    fade_id_short: str = "CapacityFade",
+                    fade_semantic_id: str = CAPACITY_FADE,
+                    category: str = "lmt") -> dict:
+    """An 02035-4 TechnicalData whose capacity collection does or does
+    not carry the capacity-fade element, over a stated battery category.
 
     Two collections deep, which is where the element lives. A rule that
-    walked the top level alone would call it absent from the version that
-    carries it -- the finding this project treats as worst.
+    walked the top level alone would call it absent from the version
+    that carries it -- the finding this project treats as worst.
 
     `pad` puts a sibling collection in front, so a walk that stopped at
-    the first element would miss what follows."""
-    inner = [_collection("EnergyRoundTripEfficiency", "urn:samm:io.admin-shell."
-                         "idta.batterypass.technical_data:1.0.0#"
-                         "energyRoundTripEfficiency")]
+    the first element would miss what follows.
+
+    The category is stated because every row this pack reports is now
+    conditional on one: the single row it used to report of every
+    category turned out to cite a provision reading "Where applicable".
+    `category=None` builds a file that settles nothing, which is its own
+    case and has its own tests."""
+    inner = []
     if fade:
         inner.append(_collection(
             fade_id_short, fade_semantic_id,
             supplemental="urn:vendor:fade" if vendor_identified else None))
     areas = []
     if pad:
-        areas.append(_collection("CapacityEnergyVoltage", "urn:samm:io."
-                                 "admin-shell.idta.batterypass.technical_data:"
-                                 "1.0.0#capacityEnergyVoltage"))
-    areas.append(_collection("RoundTripEnergyEfficiency", ROUND_TRIP, inner))
-    return _submodel("TechnicalData", TECHNICAL_DATA,
-                     [_collection("TechnicalPropertyAreas", PROPERTY_AREAS, areas)])
+        areas.append(_collection("RoundTripEnergyEfficiency", ROUND_TRIP))
+    areas.append(_collection("CapacityEnergyVoltage", CAPACITY_ENERGY_VOLTAGE, inner))
+    elements = [_collection("TechnicalPropertyAreas", PROPERTY_AREAS, areas)]
+    if category is not None:
+        elements.append(_collection(
+            "GeneralInformation",
+            "urn:samm:io.admin-shell.idta.batterypass.technical_data:"
+            "1.0.0#generalInformation", [_category_property(category)]))
+    return _submodel("TechnicalData", TECHNICAL_DATA, elements)
 
 
 def _product_condition() -> dict:
@@ -205,10 +224,20 @@ def test_an_element_the_template_allows_absent_and_the_law_requires(tmp_path):
     and cites the provision the reading comes from."""
     report = _run(tmp_path, _env(_technical_data(fade=False)))
     finding = _one(report, "BAT-R8")
-    said = finding.violation.message + " " + (finding.violation.detail or "")
-    assert "EnergyRoundTripEfficiencyFade" in said
+    said = " ".join(filter(None, (finding.violation.message,
+                                  finding.violation.detail, finding.spec)))
+    assert "CapacityFade" in said
     assert "conformant to the template" in said.lower()
-    assert "Annex IV Part A (4)" in said
+    assert "Annex IV Part A (1)" in said
+    # Hedged. The tool has a published *reading* of a provision, never
+    # the provision speaking -- and a sentence asserting the regulation
+    # was broken is a claim it cannot support. #37 said so from the
+    # start while the finding said the other thing.
+    assert "a published reading of the regulation expects it" in said
+    assert "not to the regulation" not in said
+    # And which category, because every row this rule reports is
+    # conditional on one.
+    assert "for LMT batteries" in said
     assert str(finding.severity) == "warning", "two published readings exist (#37)"
     # No index id in what a reader receives: `longlist:77` resolves to a
     # file that ships in neither the wheel nor the sdist.
@@ -254,7 +283,7 @@ def test_an_absence_past_the_first_element_is_still_reported(tmp_path):
     property area in front of the one that would have carried it, the
     rule must still say so."""
     report = _run(tmp_path, _env(_technical_data(fade=False, pad=True)))
-    assert "EnergyRoundTripEfficiencyFade" in _one(report, "BAT-R8").violation.subject
+    assert "CapacityFade" in _one(report, "BAT-R8").violation.subject
 
 
 def test_an_element_whose_obligation_depends_on_the_category_is_not_reported(tmp_path):
@@ -271,8 +300,20 @@ def test_an_element_whose_obligation_depends_on_the_category_is_not_reported(tmp
     is the difference between a silence and a secret."""
     report = _run(tmp_path, _env(_product_condition()))
     assert "BAT-R8" not in _ids(report)
-    assert not [n for n in report.notes if "BAT-R8" in n], \
-        "a submodel this rule reports nothing about is not coverage"
+    # And the note speaks. It used to fall silent here, because it
+    # returned None whenever the run had read no row -- which was the
+    # same as "no battery submodel" only while one row was required of
+    # every category. That row turned out to cite "Where applicable", so
+    # a passport declaring no category now reads none of the nine, and
+    # the file this note has the most to say about was the one getting
+    # silence.
+    (note,) = [n for n in report.notes if "BAT-R8" in n]
+    assert "reported 0 of the 9 elements" in note, note
+    # Five, not nine: this file carries only ProductCondition, and the
+    # other four rows belong to submodels that never arrived -- a
+    # different reason, said in its own clause so the nine add up.
+    assert "5 of them turn on a battery category this file does not settle" in note
+    assert "A further 4 belong to submodels this file does not carry" in note
 
 
 def test_two_submodels_of_one_kind_do_not_inflate_what_was_read(tmp_path):
@@ -328,18 +369,18 @@ def test_the_note_counts_what_it_reads_and_what_it_withholds(monkeypatch, tmp_pa
     holding back. The tables are moved to see the last two follow -- a
     test cannot tell a copy of a length from a reference to it while the
     table sits still."""
-    report = _run(tmp_path, _env(_technical_data(fade=False)))
+    report = _run(tmp_path, _passport())
     (note,) = [n for n in report.notes if "BAT-R8" in n]
-    assert "reported 1 of the 9" in note
-    assert "8 of them turn on a battery category" in note
+    assert "reported 0 of the 9" in note, note
+    assert "9 of them turn on a battery category" in note, note
 
     monkeypatch.setattr(battery_tables, "CONDITIONAL_ON_CATEGORY",
                         battery_tables.CONDITIONAL_ON_CATEGORY[:3])
-    report = _run(tmp_path, _env(_technical_data(fade=False)))
+    report = _run(tmp_path, _passport())
     (note,) = [n for n in report.notes if "BAT-R8" in n]
     assert "3 of them turn on a battery category" in note, \
         "the withheld count is quoted"
-    assert "of the 4" in note, "the denominator does not follow the table"
+    assert "of the 3" in note, "the denominator does not follow the table"
 
 
 def test_the_note_adds_up_for_every_category_the_tool_reads(tmp_path):
@@ -398,7 +439,7 @@ def test_the_note_names_the_two_reasons_apart(tmp_path):
     requires seven, so the same file shape is asked three of nine and
     eight of nine. Both were wrong, and one of them claimed to have read
     more elements than the table holds."""
-    for category, expected in (("ev", (3, 9)), ("lmt", (8, 9))):
+    for category, expected in (("ev", (2, 9)), ("lmt", (7, 9))):
         report = _run(tmp_path, _passport(category))
         (note,) = [n for n in report.notes if "BAT-R8" in n]
         assert "reported %d of the %d elements" % expected in note, note
@@ -570,8 +611,8 @@ def test_the_clause_a_finding_cites_is_the_row_s_own(tmp_path):
     """
     report = _run(tmp_path, _env(_technical_data(fade=False)))
     finding = _one(report, "BAT-R8")
-    row = next(r for r in battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
-               if r["element_id_short"] == "EnergyRoundTripEfficiencyFade")
+    row = next(r for r in battery_tables.CONDITIONAL_ON_CATEGORY
+               if r["element_id_short"] == "CapacityFade")
     for clause in row["citations"]:
         # What the reader sees, not the rule's standing default: the
         # first version of this asked `rule.spec` and would have passed
@@ -581,12 +622,41 @@ def test_the_clause_a_finding_cites_is_the_row_s_own(tmp_path):
             % (clause, finding.spec))
 
 
+def test_the_clause_line_carries_no_working_note_from_the_index(tmp_path):
+    """`per` is what a reader copies into a report of their own, and one
+    row's citation cell carries the analyst's note beside the reference:
+    `Annex IV Part B (4) --> measurement at 80 % SoC and 20% SoC
+    required`. That reached the screen. Clause identifiers only.
+
+    Asked of every row the rule can report, not of the one that was
+    looked at -- the leak was on a row no fixture reached.
+
+    And asked of the `per` line a reader is shown, not of the helper
+    that builds it. The first version called `_clauses` directly and
+    stayed green with the rule reverted to printing the raw citation:
+    the gate measured the tool and not the screen, which is the fault it
+    exists to catch, one layer out."""
+    report = _run(tmp_path, _passport("lmt"))
+    findings = [f for f in report.findings if f.id == "BAT-R8"]
+    assert len(findings) == 7, [f.violation.subject for f in findings]
+    # The row whose citation cell carries the note. Named, so a fixture
+    # that stops reaching it fails here instead of passing quietly.
+    assert "RemainingPowerCapability" in {f.violation.subject for f in findings}
+    for finding in findings:
+        printed = finding.spec or ""
+        assert printed, finding.violation.subject
+        for leak in ("-->", "%", '"', "measurement at"):
+            assert leak not in printed, (finding.violation.subject, printed)
+
+
 #: What BAT-R8 says, in the five places a reader can read it.
 #: Frozen rather than pattern-matched: see the test below for why.
 BAT_R8_SENTENCES = {
     "saw":
-        "IDTA 02035-4 V1.0.1 makes it ZeroToOne; Annex IV Part A (4) is "
-        "read as requiring it, for every battery category the source names. "
+        "IDTA 02035-4 V1.0.1 makes it ZeroToOne. Read as expected for LMT "
+        "by: European Commission guidance, Digital Batteries Passport -- "
+        "data point by category v2.0, data point 52; BatteryPass-Ready Data "
+        "Attribute Longlist v1.3 (draft) row 61. "
         "Asked anywhere under the submodel: this rule is about the data "
         "being present, not about where the template puts it",
     "fix":
@@ -594,11 +664,11 @@ BAT_R8_SENTENCES = {
         "provision read as requiring it. The template will not ask for it "
         "-- that is the point of the finding.",
     "per":
-        "Regulation (EU) 2023/1542 Annex IV Part A (4); docs/divergences.md "
-        "#37 for whose reading of it this answers",
+        "Regulation (EU) 2023/1542 Annex IV Part A (1), Annex IV (2); "
+        "docs/divergences.md #37 for whose reading of it this answers",
     "message":
-        "conformant to the template and not to the regulation: "
-        "'EnergyRoundTripEfficiencyFade' is absent",
+        "conformant to the template; a published reading of the regulation "
+        "expects it for LMT batteries: 'CapacityFade' is absent",
     "title":
         "elements the template permits absent that a published reading of "
         "the regulation requires",
@@ -822,10 +892,10 @@ def test_the_note_counts_what_this_file_withheld_not_what_the_table_holds(tmp_pa
     silent = " ".join(_run(tmp_path, _passport()).notes)
     spoken = " ".join(_run(tmp_path, _passport("lmt")).notes)
     assert silent and spoken, (silent, spoken)
-    assert "8 of them turn on a battery category this file does not settle" in silent
+    assert "9 of them turn on a battery category this file does not settle" in silent
     assert "does not settle" not in spoken, spoken
     assert "declares battery category 'lmt'" in spoken, spoken
-    assert "does not require 1 of the table's conditional elements" in spoken, spoken
+    assert "does not require 2 of the table's conditional elements" in spoken, spoken
 
 
 def test_a_category_the_template_does_not_name_settles_nothing(tmp_path):
@@ -841,3 +911,133 @@ def test_a_category_the_template_does_not_name_settles_nothing(tmp_path):
             assert subjects & conditional, declared
         else:
             assert not (subjects & conditional), declared
+
+
+# -- the hero row's three sources, asserted rather than remembered ----------
+
+#: The provision the hero row cites, quoted from the consolidated text
+#: this project pins (`data/battery-passport/sources.sha256`, CELEX
+#: 02023R1542-20250731, consolidation string
+#: `02023R1542 — EN — 31.07.2025 — 002.004`). Quoted here because the
+#: source file is not redistributed, so a test cannot read it: what can
+#: be checked in this tree is that the row still cites this clause and
+#: that no source joined to it has gone conditional.
+HERO_CLAUSE = "Annex VII Part A (1)"
+HERO_PROVISION = "the remaining capacity;"
+#: And the part it sits in, whose own heading is the reason the category
+#: is LMT: "For stationary battery energy storage systems and LMT
+#: batteries". The three items around it read "where possible"; this one
+#: does not, which is the whole reason it can be the row a front page
+#: is built on.
+SOFT_QUALIFIER = re.compile(
+    r"(where|when|if)\s+(applicable|possible|relevant|appropriate|available)"
+    r"|as far as|to the extent", re.I)
+
+
+def _join_tool():
+    """The join, loaded from the path it lives at. Its normalisers are
+    the thing under test here, so the test uses them rather than keeping
+    a second copy that can drift out from under it."""
+    import importlib.util
+    root = pathlib.Path(__file__).resolve().parents[1]
+    path = root / "data" / "battery-passport" / "tools" / "join_requirements.py"
+    spec = importlib.util.spec_from_file_location("join_requirements", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _index(name):
+    root = pathlib.Path(__file__).resolve().parents[1]
+    return {r["id"]: r
+            for r in json.loads((root / "data" / "battery-passport" / name)
+                                .read_text("utf-8"))["records"]}
+
+
+def test_every_element_the_note_does_not_report_is_accounted_for(tmp_path):
+    """The arithmetic the note invites a reader to do.
+
+    A Technical Data file on its own said "reported 1 of the 9 ... does
+    not require 2 of the table's conditional elements", and six were
+    left out of the sentence entirely -- their submodels are not in the
+    file, which is a third reason and was not one of the two the note
+    knew how to say. Anyone adding the numbers got 3 of 9.
+
+    Every shape, because the reason that was missing only appears when a
+    file carries some of the passport and not all of it."""
+    held = (len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
+            + len(battery_tables.CONDITIONAL_ON_CATEGORY))
+    shapes = {
+        "one submodel, category stated": _env(_technical_data(fade=False)),
+        "one submodel, no category": _env(_technical_data(fade=False,
+                                                          category=None)),
+        "whole passport, lmt": _passport("lmt"),
+        "whole passport, ev": _passport("ev"),
+        "whole passport, no category": _passport(),
+    }
+    for label, payload in shapes.items():
+        report = _run(tmp_path, payload)
+        (note,) = [n for n in report.notes if "BAT-R8" in n]
+        found = re.search(r"reported (\d+) of the (\d+) elements", note)
+        read, total = int(found.group(1)), int(found.group(2))
+        assert total == held, (label, note)
+        unsaid = [int(n) for n in re.findall(
+            r"(\d+) of them turn on a battery category"
+            r"|does not require (\d+) of the table's"
+            r"|A further (\d+) belong", note) for n in n if n]
+        assert read + sum(unsaid) == total, (
+            "%s: the note accounts for %d of %d" % (label, read + sum(unsaid), total))
+
+
+def test_the_front_pages_row_still_has_all_three_sources_agreeing():
+    """The tripwire under the example this project leads with.
+
+    The row it replaced claimed the regulation required an element of
+    every battery category. Annex IV Part A (4) reads "Where applicable,
+    energy round trip efficiency and its fade", and the Commission's own
+    data point 58 marks it `if applicable` for all three categories it
+    names -- which never reached the table, because two words in front
+    of the guidance text stopped the join from matching it.
+
+    So the replacement is not chosen and remembered, it is checked: the
+    law's clause carries no qualifier, the Commission's guidance reads
+    it required for LMT, and the long list agrees. A re-pin of any of
+    the three that breaks that agreement turns this red rather than
+    quietly restoring the shape of the mistake.
+    """
+    guidance, longlist = _index("requirements-ec-datapoints.json"), \
+        _index("requirements-longlist.json")
+    (row,) = [r for r in battery_tables.CONDITIONAL_ON_CATEGORY
+              if r["element_id_short"] == "RemainingCapacity"]
+
+    # (a) the law: the clause the row cites, and no qualifier in it
+    assert row["citations"] == (HERO_CLAUSE,), row["citations"]
+    assert not SOFT_QUALIFIER.search(HERO_PROVISION), HERO_PROVISION
+
+    # (b) and (c): both sources joined, and both read it required for LMT
+    assert set(row["says_mandatory"]) == {"ec-datapoints:62", "longlist:60"}, \
+        row["says_mandatory"]
+    for identifier in row["says_mandatory"]:
+        record = (guidance if identifier.startswith("ec") else longlist)[identifier]
+        verdict = (record.get("applicability") or {}).get("LMT")
+        if isinstance(verdict, dict):
+            verdict = verdict.get("reading")
+        assert verdict in ("required", "required-by-batteries-regulation"), \
+            (identifier, verdict)
+        # And the source's own text carries no qualifier of its own once
+        # the pointer clause naming the article is taken off. Three
+        # guidance points beside this one do -- 63, 64 and 66 all read
+        # "where possible" -- so this is the check that tells the row
+        # apart from its neighbours rather than trusting its number.
+        assert not SOFT_QUALIFIER.match(
+            _join_tool().POINTER_CLAUSE.sub("", record["text"]).strip()), \
+            record["text"]
+
+    # (d) and the row is not unconditional: LMT expects it and EV is told
+    # not to fill it, which is exactly why the finding names a category.
+    verdicts = dict(row["categories"])
+    assert verdicts["LMT"] == "required", verdicts
+    assert verdicts["EV"] == "not-to-be-filled", verdicts
+    assert not battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL, (
+        "a row is required of every category again -- check it against the "
+        "provision text before any page is built on it")

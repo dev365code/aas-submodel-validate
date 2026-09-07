@@ -174,8 +174,8 @@ def test_the_battery_join_figures_are_the_joins():
     """Four numbers on the front page that came from a file rather than
     from a run, and were the only numbers on it that nothing checked.
 
-    They are what makes the battery section's honesty legible -- 179 of
-    221 template elements matched nothing, 63 of the Commission's 71
+    They are what makes the battery section's honesty legible -- 178 of
+    221 template elements matched nothing, 59 of the Commission's 71
     data points found no element -- and they are exactly the numbers
     that go quietly false the day the indexes are rebuilt."""
     # The indexes are a repository publication and not a Python
@@ -203,7 +203,20 @@ def test_the_battery_join_figures_are_the_joins():
     # the page calls them "those nine rows".
     rows = (len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
             + len(battery_tables.CONDITIONAL_ON_CATEGORY))
-    assert rows == counts["name_matches_where_the_readings_differ"], (
+    # Not every disagreement the join finds becomes a row. The table is
+    # about elements the template permits to be *absent*, so a match on
+    # a `One` element is dropped -- and one is: `RoundTripEnergyEfficiency`
+    # joined to the Commission's data point 57 once the join stopped
+    # being blocked by the "Where applicable," in front of it. Compared
+    # against the join filtered the way the table filters, because
+    # comparing against the raw count made the two disagree for a reason
+    # that is the table working correctly.
+    catalogue = {record["id"]: record for record in json.loads(
+        (ROOT / "data" / "battery-passport" / "requirements-idta.json")
+        .read_text("utf-8"))["records"]}
+    optional = [entry for entry in join["readings_that_differ_by_name"]
+                if catalogue[entry["element"]]["cardinality"] == "ZeroToOne"]
+    assert rows == len(optional), (
         "the rule table and the join disagree about how many rows there are")
     assert "Those nine rows" in FLOWED and rows == 9
 
@@ -687,7 +700,7 @@ def test_the_anatomy_block_is_what_the_tool_prints(tmp_path, monkeypatch):
     summary -- and the elision is marked, because a reader who cannot
     see where output was cut cannot tell a short verdict from a
     shortened one."""
-    from test_battery_rules import _env, _technical_data
+    from test_battery_rules import _passport, _required_for
 
     block = [body for body in re.findall("```console\n(.*?)```", README, re.S)
              if "BAT-R8" in body]
@@ -698,8 +711,11 @@ def test_the_anatomy_block_is_what_the_tool_prints(tmp_path, monkeypatch):
     flags = [word for command in typed for word in command.split()
              if word.startswith("--")]
 
+    # The row the page leads with, and the only one whose three sources
+    # are checked to agree -- see the tripwire in `test_battery_rules`.
     (tmp_path / "your-battery-passport.json").write_text(
-        json.dumps(_env(_technical_data(fade=False))), "utf-8")
+        json.dumps(_passport("lmt", _required_for("LMT") - {"RemainingCapacity"})),
+        "utf-8")
     monkeypatch.chdir(tmp_path)
     printed_in_order = [" ".join(row.split()) for row in render(runner.run(
         "your-battery-passport.json",
