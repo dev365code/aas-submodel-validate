@@ -15,20 +15,30 @@ one question, and the second would be the one with no table behind it.
 
 **Is a template-conformant file conformant to the law?** Nine elements
 are `ZeroToOne` in their template -- absence is allowed -- while the
-Battery Pass long list or the Commission's data-point guidance marks the
-same attribute mandatory under Regulation (EU) 2023/1542. `BAT-R8` says
-both halves in the finding's own words.
+BatteryPass-Ready Data Attribute Longlist v1.3 or the Commission's
+data-point guidance marks the same attribute mandatory under Regulation
+(EU) 2023/1542. `BAT-R8` says both halves in the finding's own words.
+The full name of the longlist is used deliberately: the short one
+belongs to an earlier, non-commercially licensed series, and this index
+is built from v1.3 only.
 
-It reads one of the nine. The other eight depend on the battery's
-category and nothing here can read one: remaining capacity is required
-for light means of transport and voluntary for electric vehicles, and
-the capacity threshold for exhaustion inverts -- required for EVs, and
-the guidance marks it *not to be filled* for anything else. A finding
-that ignored the category would tell an LMT manufacturer to add a field
-their own guidance forbids, which is over-refusal wearing the shape of
-diligence. They are in `CONDITIONAL_ON_CATEGORY`, read by nothing, and
-the coverage note counts them so the silence is stated rather than
-merely kept (docs/divergences.md #37).
+It reads none of the nine unless the file settles its own battery
+category. One appeared to be required of every category and was not:
+Annex IV Part A (4) reads "Where applicable, energy round trip
+efficiency and its fade", and it was on this project's front page (#37).
+The rest turn on the category and the file has to answer: remaining
+capacity is required for light means of transport and *not to be
+filled* for electric vehicles, and the capacity threshold for exhaustion
+inverts. A finding that ignored the category would tell an LMT
+manufacturer to add a field their own guidance forbids, which is
+over-refusal wearing the shape of diligence. The coverage note counts
+what was not asked, so the silence is stated rather than merely kept.
+
+Where the clause a row cites states itself conditionally -- "where
+possible", "where appropriate" -- the finding says so. The guidance can
+mark an attribute mandatory for a category while the provision behind it
+is qualified; both are printed, because settling that between two
+published documents is not this tool's to do.
 
 A warning and not an error, for a second reason: two published readings
 of applicability exist and this pack cannot yet be told which to answer

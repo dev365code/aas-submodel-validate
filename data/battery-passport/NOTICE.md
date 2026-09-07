@@ -106,8 +106,12 @@ Note the edition. Earlier Battery Pass material — the 2023 Content
 Guidance and longlist v1.2 — is under a different, **non-commercial**
 licence. This index is built from **v1.3 only**, which is CC BY. The
 short name "Battery Pass longlist" belongs to the earlier series, so
-the full name is used for the file, the ledger line and the extractor
-that reads it — the three places a reader arrives from.
+the full name is used everywhere a reader arrives from: the file, the
+ledger line, the extractor that reads it, the distribution's own
+`NOTICE`, the front page, and the sentence a finding prints. This
+paragraph named three of those and the short name was still in two of
+the others, which is the shape of claim this directory exists to make
+checkable — a test now asks it of the whole tree.
 
 **Modified:** the data sheet was transcribed into one record per
 attribute. One column is deliberately not carried: the wording of

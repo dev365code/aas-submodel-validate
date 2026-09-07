@@ -649,3 +649,54 @@ def test_the_citation_parser_reads_these_strings_the_way_a_person_does():
         for code in range(ord("a"), ord("t") + 1)
     }
     assert all(v == ["annex-xiii:1.%s" % k] for k, v in letters.items()), letters
+
+
+def test_the_longlist_is_named_by_the_edition_that_is_cc_by():
+    """The short name belongs to a different, non-commercially licensed
+    series.
+
+    `data/battery-passport/NOTICE.md` says so, and said the full name was
+    used in "the file, the ledger line and the extractor that reads it --
+    the three places a reader arrives from". A reader also arrives from
+    the front page and from the docstring of the pack that ships, and
+    both said "Battery Pass long list". A licensing note asserting where
+    a name is used is worth exactly as much as the assertion.
+
+    Asked of the whole tree rather than of the three places, because the
+    fourth place is how this was missed."""
+    import pathlib
+    import re as _re
+    root = pathlib.Path(__file__).resolve().parents[1]
+    short = _re.compile(r"Battery\s+Pass\s+long\s?list", _re.I)
+    #: The one place the short name belongs: the sentence explaining that
+    #: it belongs somewhere else. Recognised by what the line says, not
+    #: by which file it is in.
+    disclaims = _re.compile(r"belongs to (the )?earlier|earlier series|"
+                            r"non-commercial", _re.I)
+    offenders = []
+    for path in sorted(root.rglob("*")):
+        if path.is_dir() or path.suffix not in (".py", ".md", ".toml", ".txt", ""):
+            continue
+        if any(part in (".git", "build", "dist", "__pycache__", ".venv")
+               for part in path.parts):
+            continue
+        # A build artefact is a stale copy of the front page, and this
+        # file is where the pattern is written down. Neither is somebody
+        # using the name.
+        if path.suffix == "" and path.name != "NOTICE":
+            continue
+        if ".egg-info" in str(path) or path.resolve() == pathlib.Path(__file__).resolve():
+            continue
+        try:
+            text = path.read_text("utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for number, line in enumerate(text.splitlines(), 1):
+            if short.search(line) and not disclaims.search(line):
+                window = "\n".join(text.splitlines()[max(0, number - 3):number + 2])
+                if disclaims.search(window):
+                    continue
+                offenders.append("%s:%d" % (path.relative_to(root), number))
+    assert not offenders, (
+        "the short name names an earlier, non-commercially licensed "
+        "series and is used here: %s" % ", ".join(offenders))

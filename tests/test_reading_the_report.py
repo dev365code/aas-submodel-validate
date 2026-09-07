@@ -291,3 +291,37 @@ def test_the_front_page_teaches_the_labels_before_it_teaches_a_build():
     assert anatomy < build, \
         "the section that teaches a finding is filed under wiring a build"
     assert anatomy < catches, anatomy
+
+
+def test_a_document_a_finding_tells_you_to_cite_is_one_you_can_reach():
+    """Seventeen rules print `docs/divergences.md`, and a wheel has no
+    such file.
+
+    `per` is defined on the front page as the clause to cite when you
+    have to cite one, so the reader most likely to follow it is the one
+    writing a conformance note for somebody else -- and what they were
+    given resolves only inside a clone. Measured: the built wheel
+    carries no `docs/` at all, and it is not package data.
+
+    Shipping the file was the other answer and it is worse: forty-nine
+    kilobytes on a two-hundred-and-eighty-four kilobyte wheel, for a
+    path under `site-packages` that nobody can cite either. The address
+    is what makes it citable, and it is said once."""
+    report = Report(path="x.json")
+    rule = Rule(id="T1", kind="template", prio="SHOULD", title="t",
+                spec="matching policy, docs/divergences.md #37",
+                fn=lambda ctx: (), fix="mend it")
+    report.findings = [Finding(rule, Violation("wrong", subject="A"))]
+    printed = render(report)
+    assert "docs/divergences.md" in printed
+    assert ("https://github.com/dev365code/aas-submodel-validate/blob/main/"
+            "docs/divergences.md") in printed, printed
+
+    # And only where it was cited. A run that never names the document
+    # gets no line about it.
+    quiet = Report(path="x.json")
+    quiet.findings = [Finding(
+        Rule(id="T2", kind="template", prio="SHOULD", title="t", spec="IDTA 02004 §2.1",
+             fn=lambda ctx: (), fix="mend it"),
+        Violation("wrong", subject="A"))]
+    assert "divergences" not in render(quiet), render(quiet)

@@ -77,7 +77,7 @@ aas_submodel_validate = ["data/smt/**/*.json", "data/smt/**/*.txt",
                          "data/example/*.txt"]
 
 [tool.ruff]
-# data/battery-passport holds four generated indexes and the five
+# data/battery-passport holds five generated indexes and the six
 # extractors that write them. This said the directory was copied verbatim
 # and that hand edits were forbidden; both stopped being true when the
 # track that built it closed and handed maintenance here, and three

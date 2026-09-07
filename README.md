@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=cf20af5d" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=d6679e91" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -395,7 +395,7 @@ did.
 Beside the validator, `data/battery-passport/` publishes machine-readable
 indexes of what a battery passport is required to carry -- Annex XIII of
 Regulation (EU) 2023/1542, the Commission's data-point guidance, the
-Battery Pass long list, and the IDTA 02035/02099 templates -- with a
+BatteryPass-Ready Data Attribute Longlist v1.3, and the IDTA 02035/02099 templates -- with a
 join across all four whose coverage is stated as a floor. The sources
 are pinned by hash, not mirrored; `data/battery-passport/README.md` says
 how to rebuild every index from them.

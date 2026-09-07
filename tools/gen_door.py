@@ -163,6 +163,13 @@ VERDICT_LINES = [
           (180, N, "at=where saw=what is there now per=the clause fix=what to change", 0)]),
     (19, [(140, N, "key", 1),
           (180, N, "note=something this run did, not a defect -- nothing to change", 0)]),
+    # The third key line: seventeen rules send a reader to
+    # `docs/divergences.md` and a wheel carries no `docs/`, so the
+    # address is printed where the citation is. Drawn to the elision
+    # because the URL is wider than the terminal in the picture.
+    (19, [(140, N, "key", 1),
+          (180, N, "docs/divergences.md is at https://github.com/dev365code/"
+                   + ELISION, 0)]),
     (19, [(28, T, "ok -- 0 error(s), 1 warning(s), 8 info", 1),
           (327, N, "-- battery-passport.json; judged 3 of 3 submodels", 0)]),
 ]

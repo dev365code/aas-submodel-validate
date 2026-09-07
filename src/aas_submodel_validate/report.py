@@ -67,6 +67,23 @@ def _same_but_for_place(one, other) -> bool:
 #: read past.
 LABELS = (("at", "where"), ("saw", "what is there now"),
           ("per", "the clause"), ("fix", "what to change"))
+#: The one document findings send a reader to, and where it is. Seventeen
+#: rules print `docs/divergences.md` and a wheel carries no `docs/` --
+#: measured on a built wheel, which has none of it and does not list it
+#: as package data. `per` is defined on the front page as the clause to
+#: cite when you have to cite one, so the reader most likely to follow
+#: it is writing a note for somebody else, and a repository-relative
+#: path resolves for neither of them.
+#:
+#: Shipping the file was the other answer: forty-nine kilobytes on a
+#: two-hundred-and-eighty-four kilobyte wheel, landing under
+#: `site-packages` where it is no more citable than it was. An address
+#: is the citable form, and one line carries it however many findings
+#: point there.
+DIVERGENCES = "docs/divergences.md"
+DIVERGENCES_AT = ("https://github.com/dev365code/aas-submodel-validate/blob/"
+                  "main/docs/divergences.md")
+
 #: `note` is not one of the four. It is printed in the column `error`
 #: and `warning` are printed in, at the same indent and the same weight,
 #: and it is the one word in that column that is not a severity -- so
@@ -179,6 +196,11 @@ def render(report: Report, *, show_meta: bool = False,
     keyed = [" ".join("%s=%s" % pair for pair in LABELS if pair[0] in shown)]
     if report.notes:
         keyed.append(NOTE_KEY)
+    # Only where a printed line actually sent the reader there. Derived
+    # from what reached the screen, like the labels above: a run that
+    # never cites the document gets no line about it.
+    if any(DIVERGENCES in line for line in lines):
+        keyed.append("%s is at %s" % (DIVERGENCES, DIVERGENCES_AT))
     for entry in keyed:
         if entry:
             lines.append("key     %s" % entry)
