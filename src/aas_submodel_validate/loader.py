@@ -199,7 +199,7 @@ def _read_bounded(loaded: Loaded, path: Path):
         # Not a defect in the file, so it leaves by the could-not-run code
         # rather than as a verdict about a document nobody managed to read.
         raise UnreadablePath("cannot read %s: %s: %s"
-                             % (path, type(exc).__name__, exc)) from exc
+                             % (path, type(exc).__name__, exc)) from exc from exc
     if len(raw) > cap:
         loaded.errors.append(LoadError(
             "bounds", "%s: more than %d bytes" % (path, cap), subject=str(path)))
@@ -258,13 +258,33 @@ def load(path) -> Loaded:
             "this reader does not take standard input: it seeks inside "
             "containers and bounds what it reads before reading it. "
             "Give it a path")
-    if not path.exists():
-        raise UnreadablePath("no such file: %s" % path)
     # Whether there is a file to read at all is one question, asked once,
     # before the extension decides anything. Asking it inside each branch
     # is how a directory came to exit 2 when it was called .xml and 1 --
     # a defect in a file nobody had opened -- when it was called .json.
-    if not path.is_file():
+    #
+    # And asking it can fail. `Path.exists()` raises when the parent
+    # cannot be traversed, and neither question was guarded: a file
+    # dropped into a directory whose mode the exporter set, or on a share
+    # the build user cannot enter, left the process by 1 with nothing on
+    # stdout and a raw `PermissionError` traceback -- 1 being the code
+    # for a verdict with findings, over a file nobody had opened. The
+    # same confusion `_read_bounded` has guarded against since it was
+    # written, one layer earlier and with the same remedy: this reader
+    # could not reach it, so it was refused rather than judged.
+    #
+    # `OSError` and not `PermissionError`. A locked directory is what a
+    # reader meets, and a stale handle, a name too long for the
+    # filesystem and a symlink loop reach these same two calls as other
+    # members of the same family.
+    try:
+        there, a_file = path.exists(), path.is_file()
+    except OSError as exc:
+        raise UnreadablePath("cannot read %s: %s: %s"
+                             % (path, type(exc).__name__, exc))
+    if not there:
+        raise UnreadablePath("no such file: %s" % path)
+    if not a_file:
         raise UnreadablePath("not a file: %s" % path)
 
     suffix = path.suffix.lower()

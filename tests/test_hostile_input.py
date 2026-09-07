@@ -1704,3 +1704,67 @@ def test_the_limits_are_told_apart_by_type_and_not_by_message():
     # prose and not ours to pattern-match.
     assert not _is_an_interpreter_limit(
         json.JSONDecodeError("Expecting value", "{ not json", 2))
+
+
+def test_a_path_under_a_directory_we_cannot_enter_is_refused_not_crashed(tmp_path):
+    """`Path.exists()` raises when the parent cannot be traversed.
+
+    Neither existence question was guarded, so the process left by 1 with
+    nothing on stdout and a raw `PermissionError` traceback on stderr --
+    1 being the code for *a verdict with findings*. Nothing was judged.
+    The same confusion as an LZMA member two hundred lines up, arriving
+    one layer earlier: before this reader has opened anything, while it
+    is still asking whether there is a file at all.
+
+    `_read_bounded` has had the answer since it was written -- catch
+    `OSError`, raise `UnreadablePath` -- and the two questions above it
+    did not.
+
+    An ordinary shape: a delivery dropped into a directory whose mode
+    the exporter set, or a mounted share the build user cannot enter.
+    """
+    locked = tmp_path / "locked"
+    locked.mkdir()
+    target = locked / "env.json"
+    target.write_text(json.dumps(hd_env()), "utf-8")
+    pathlib.os.chmod(locked, 0o000)
+    try:
+        try:
+            target.exists()
+        except PermissionError:
+            pass
+        else:
+            pytest.skip("this process can traverse a 0o000 directory "
+                        "(running as root?), so there is nothing to measure")
+        code = main([str(target), "-q"])
+    finally:
+        pathlib.os.chmod(locked, 0o755)
+    assert code == EXIT_ERROR, (
+        "a path this reader cannot reach came back as %d; 1 is the code "
+        "for a verdict with findings and nothing was judged" % code)
+
+
+def test_the_existence_questions_answer_with_a_refusal_not_an_oserror(tmp_path,
+                                                                     monkeypatch):
+    """Every `OSError` the two questions can raise, not the one that was
+    found.
+
+    A locked directory is what a reader meets; a stale NFS handle, a name
+    too long for the filesystem and a symlink loop reach the same two
+    calls and raise different members of the same family. Injected,
+    because a fixture for each is a fixture for the platform that has
+    it."""
+    from aas_submodel_validate import loader
+
+    target = tmp_path / "env.json"
+    target.write_text(json.dumps(hd_env()), "utf-8")
+    for error in (PermissionError(13, "Permission denied"),
+                  OSError(40, "Too many levels of symbolic links"),
+                  OSError(63, "File name too long")):
+        def raising(self, _exc=error):
+            raise _exc
+        monkeypatch.setattr(pathlib.Path, "exists", raising)
+        with pytest.raises(loader.UnreadablePath) as caught:
+            loader.load(target)
+        assert "cannot read" in str(caught.value), str(caught.value)
+        assert type(error).__name__ in str(caught.value), str(caught.value)
