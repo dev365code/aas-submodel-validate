@@ -273,3 +273,102 @@ def test_a_shipped_module_carrying_a_sources_own_words_is_attributed():
     third_party = (root / "THIRD_PARTY.md").read_text("utf-8")
     assert "battery_tables.py" in third_party, \
         "THIRD_PARTY still says the material is in no distribution and stops"
+
+
+# -- the gate that says the vendored bytes are the recorded bytes -------------
+
+def _vendor_checker(tmp_path, monkeypatch):
+    """`tools/vendor_template.py`'s checker, over a copy of the trees.
+
+    Pointed at a copy so each fault can be handed to it. Every branch of
+    this gate could be disabled and the whole suite stayed green --
+    measured: `if False` on the hash comparison, on the missing-file
+    check and on the stray-file check, three mutants and nothing caught
+    one. It is the gate that says the vendored IDTA material is the bytes
+    this project recorded, which is the whole of the provenance story
+    the front page tells.
+    """
+    import importlib.util
+    import pathlib
+    import shutil
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "vendor_template", root / "tools" / "vendor_template.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    for rel in module.FILES:
+        source = root / rel
+        target = tmp_path / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        sums = source.parent / "sha256sums.txt"
+        if sums.is_file():
+            shutil.copy2(sums, target.parent / "sha256sums.txt")
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    return module, tmp_path
+
+
+def test_the_vendored_gate_passes_material_it_should_pass(tmp_path, monkeypatch,
+                                                          capsys):
+    """The control. Without it every assertion below is satisfied by a
+    checker that refuses everything."""
+    module, _ = _vendor_checker(tmp_path, monkeypatch)
+    assert module.check() == 0, capsys.readouterr().err
+
+
+def test_a_vendored_file_whose_bytes_moved_is_refused(tmp_path, monkeypatch,
+                                                      capsys):
+    """One byte, in each vendored file in turn.
+
+    Each on its own, because a loop that corrupts them all is satisfied
+    by a gate that notices any one of them -- and what is claimed is that
+    the recorded hash is checked for every file it names."""
+    module, root = _vendor_checker(tmp_path, monkeypatch)
+    for rel in sorted(module.FILES):
+        target = root / rel
+        kept = target.read_bytes()
+        target.write_bytes(kept + b"\n")
+        try:
+            assert module.check() == 1, "%s: a changed byte was accepted" % rel
+            assert "hash mismatch" in capsys.readouterr().err, rel
+        finally:
+            target.write_bytes(kept)
+    assert module.check() == 0, capsys.readouterr().err
+
+
+def test_a_vendored_file_that_is_gone_is_refused(tmp_path, monkeypatch, capsys):
+    """Absent is not the same as changed, and the gate answers for both.
+    A file deleted between a refresh and a release ships nothing where
+    the package promises something."""
+    module, root = _vendor_checker(tmp_path, monkeypatch)
+    for rel in sorted(module.FILES):
+        target = root / rel
+        kept = target.read_bytes()
+        target.unlink()
+        try:
+            assert module.check() == 1, "%s: a missing file was accepted" % rel
+            assert "missing" in capsys.readouterr().err, rel
+        finally:
+            target.write_bytes(kept)
+
+
+def test_material_that_ships_with_no_recorded_hash_is_refused(tmp_path,
+                                                              monkeypatch,
+                                                              capsys):
+    """The third branch, and the one a reader would never think to ask
+    about: bytes that travel in the package with nothing recording what
+    they are. A hash check over a list is only as complete as the list."""
+    module, root = _vendor_checker(tmp_path, monkeypatch)
+    beside = root / sorted(module.FILES)[0]
+    stray = beside.parent / "extra.json"
+    stray.write_text('{"not": "declared"}', "utf-8")
+    try:
+        assert module.check() == 1, "an undeclared vendored file was accepted"
+        said = capsys.readouterr().err
+        assert "not declared" in said, said
+        assert "extra.json" in said, said
+    finally:
+        stray.unlink()
+    assert module.check() == 0, capsys.readouterr().err
