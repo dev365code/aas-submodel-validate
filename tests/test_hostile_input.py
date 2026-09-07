@@ -1536,3 +1536,102 @@ def test_members_this_reader_never_opens_cost_it_nothing(tmp_path, referenced):
         charged = package._read_total
     assert charged < 100_000, charged
     assert charged * 100 < declared, (charged, declared)
+
+
+# -- every codec zipfile can open, not the ones somebody remembered ----------
+
+#: The compression methods this Python can both write and read. Derived,
+#: because the point of the gate below is that the list of things that
+#: can go wrong while opening an archive is not a list anybody keeps
+#: correctly by hand -- it had already been extended twice, once for
+#: `NotImplementedError` and once for `UnicodeDecodeError`, each time
+#: after a real file walked past every handler.
+def _writable_methods():
+    methods = []
+    for name, method in (("stored", zipfile.ZIP_STORED),
+                         ("deflate", zipfile.ZIP_DEFLATED),
+                         ("bzip2", zipfile.ZIP_BZIP2),
+                         ("lzma", zipfile.ZIP_LZMA)):
+        try:
+            zipfile._get_compressor(method)
+        except Exception:      # this build lacks the module
+            continue
+        methods.append((name, method))
+    return methods
+
+
+def _recompressed(tmp_path, method, name):
+    """The same conformant .aasx, written with one compression method."""
+    plain = tmp_path / ("plain-%s.aasx" % name)
+    build_aasx(plain, payload=json.dumps(hd_env()).encode())
+    out = tmp_path / ("%s.aasx" % name)
+    with zipfile.ZipFile(plain) as zin, zipfile.ZipFile(out, "w", method) as zout:
+        for info in zin.infolist():
+            zout.writestr(info.filename, zin.read(info.filename))
+    return out
+
+
+def _payload_stream_bytes(path):
+    """Where the biggest member's compressed stream sits in the file."""
+    with zipfile.ZipFile(path) as archive:
+        entry = max(archive.infolist(), key=lambda info: info.compress_size)
+    start = entry.header_offset + 30 + len(entry.filename)
+    return start, start + entry.compress_size
+
+
+@pytest.mark.parametrize("name,method", _writable_methods())
+def test_a_corrupt_stream_is_a_verdict_and_never_a_traceback(tmp_path, name, method,
+                                                             capsys):
+    """One byte of a compressed member, every codec, both ends of the
+    stream.
+
+    An LZMA member with a byte flipped in its stream raised
+    `_lzma.LZMAError` -- a direct child of `Exception`, so outside
+    `container.UNREADABLE` -- through the container, the loader and the
+    CLI. The process left by 1 with nothing on stdout, and 1 is the code
+    for *a verdict with findings*: a crash in this reader arriving
+    dressed as a defect in the supplier's file, which is the one
+    confusion this project works hardest to prevent.
+
+    Where in the stream decided which: a byte in the header raised a CRC
+    error and came back as `X1` at exit 2, and a byte further in
+    crashed. Seventeen of thirty-eight positions tried, on the published
+    0.1.2.
+
+    Written for every method this Python can produce rather than for the
+    one that was found. Two codecs had already been added to that tuple
+    one incident at a time.
+    """
+    archive = _recompressed(tmp_path, method, name)
+    start, end = _payload_stream_bytes(archive)
+    raw = bytearray(archive.read_bytes())
+    probe = tmp_path / "probe.aasx"
+    codes = set()
+    for offset in list(range(start, min(start + 12, end))) + \
+            list(range(max(start, end - 12), end)):
+        broken = bytearray(raw)
+        broken[offset] ^= 0xFF
+        probe.write_bytes(bytes(broken))
+        # No `pytest.raises`: an escaping exception is the defect, so it
+        # has to reach the assertion rather than the report.
+        code = main([str(probe), "-q"])
+        codes.add(code)
+        capsys.readouterr()
+    assert codes <= {EXIT_ERROR, 0, 1}, (name, codes)
+    assert EXIT_ERROR in codes, \
+        "%s: no corruption of the payload stream was refused at all" % name
+
+
+def test_the_reader_names_every_decompressor_error_it_can_meet():
+    """`UNREADABLE` is a tuple of exception families and the question it
+    answers is "can this reader open the archive". Each codec zipfile
+    supports has its own error type, and the tuple carried two of the
+    four.
+
+    Named here as well so the tuple cannot quietly shed one: a codec
+    dropped from `UNREADABLE` leaves the parametrised test above red on
+    one input, and this red on the reason."""
+    import lzma
+    import zlib as _zlib
+    for family in (_zlib.error, lzma.LZMAError, OSError, zipfile.BadZipFile):
+        assert issubclass(family, container.UNREADABLE), family

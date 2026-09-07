@@ -13,6 +13,7 @@ where every wheel crosses an air gap by hand.
 """
 from __future__ import annotations
 
+import lzma
 import posixpath
 import re
 import string
@@ -83,7 +84,21 @@ MAX_DIRECTORY_BYTES = MAX_PART_BYTES // 4
 #: Deliberately not `Exception`. A defect in this reader must not arrive
 #: dressed as a defect in the supplier's file.
 UNREADABLE = (zipfile.BadZipFile, NotImplementedError, RuntimeError,
-              EOFError, OSError, zlib.error, ValueError)
+              EOFError, OSError, zlib.error, ValueError, lzma.LZMAError)
+# `lzma.LZMAError` is the fourth codec's, and it is a direct child of
+# `Exception` -- so a member compressed with LZMA and corrupted one byte
+# into its stream raised through the container, the loader and the CLI,
+# and the process left by 1 with nothing on stdout. 1 is the code for a
+# verdict with findings, so a crash in this reader arrived dressed as a
+# defect in the supplier's file. Where the byte moved decided which:
+# nearer the header it was a CRC error and came back as `X1` at exit 2.
+# A packager using 7-Zip or a .NET packaging library writes these.
+#
+# zipfile reads four methods and each has its own error family: stored
+# and deflate raise `zlib.error` or `BadZipFile`, bzip2 raises `OSError`,
+# and lzma raises this. All four are named now, and a test asks the
+# question of every method this Python can write rather than of the one
+# that was found -- two of these were added one incident at a time.
 # `ValueError` is here for `UnicodeDecodeError`, which is one of its
 # children. An entry name written in a legacy code page with the header
 # bit that claims UTF-8 set anyway -- what a packager on a Korean or
