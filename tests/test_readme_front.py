@@ -62,10 +62,10 @@ FLOWED = " ".join(README.split())
 
 def test_the_rule_counts_are_the_registrys():
     generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
-    assert len(all_rules()) == 125
+    assert len(all_rules()) == 126
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS)) == (38, 26, 22)
     # Every place the page says it, not "somewhere on the page". The
-    # count appears five times -- the badge, the gallery, the roadmap,
+    # count appears six times -- the badge, the gallery, the roadmap,
     # the table's heading and the sentence that says which numbers are
     # pinned -- and a substring check is satisfied by any one of them,
     # so four could go stale in silence. The badge is the one a reader
@@ -109,7 +109,7 @@ def test_the_rule_counts_are_the_registrys():
     assert template_rules == 116, families
     assert "%d of them across three IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
-    assert families["X"] == 5 and families["SMT"] == 2 and families["BAT"] == 2
+    assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2
     # Counts, not a description. The sentence beneath this one said
     # "five are about the container a submodel arrives in and two decide
     # which template answers", and the paragraph sixteen lines further
@@ -271,13 +271,34 @@ def _packaged_documents(tmp_path):
 
 def _x_rules_a_bare_document_can_draw(tmp_path, monkeypatch):
     """Measured, not read off the code."""
+    import os as _os
+
     from aas_submodel_validate import container
 
     drawn = _x_rules_drawn_by(_bare_documents(tmp_path))
     monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
     over = tmp_path / "big.json"
     over.write_bytes(b" " * 600)
-    return drawn | _x_rules_drawn_by([over])
+    drawn |= _x_rules_drawn_by([over])
+    # A bare document the process cannot open. Without it the corpus has
+    # no way to reach the rule that answers for the path itself, and a
+    # rule this instrument cannot draw bare is counted as a packaging
+    # rule by the derivation below -- which X6 is not: it fires before
+    # any extension has chosen a reader, and on a `.json` as readily as
+    # on an `.aasx`.
+    shut = tmp_path / "shut.json"
+    shut.write_bytes(env_json("urn:x"))
+    _os.chmod(shut, 0o000)
+    try:
+        shut.read_bytes()
+    except PermissionError:
+        try:
+            drawn |= _x_rules_drawn_by([shut])
+        finally:
+            _os.chmod(shut, 0o644)
+    else:
+        _os.chmod(shut, 0o644)
+    return drawn
 
 
 def test_the_readme_names_the_rules_that_are_about_packaging(tmp_path, monkeypatch):

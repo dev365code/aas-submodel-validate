@@ -124,6 +124,40 @@ def x5_within_the_readers_bounds(ctx):
                             fix=error.fix or _bounds_remedy(ctx.loaded.form))
 
 
+@rule("X6", kind="container", prio="MUST",
+      title="the path names something this reader can open",
+      spec="this project's own way in -- see loader.py",
+      fix="Check the path and what the account running this may read. "
+          "Nothing was opened, so nothing here is a statement about a "
+          "document.")
+def x6_the_path_can_be_opened(ctx):
+    """The refusal that happened before any format was chosen.
+
+    This used to leave by exit 2 with nothing on stdout, and only for
+    some extensions: the same permission denial reached `.aasx` through
+    the container reader, which made an `X1` finding and a JSON document
+    a consumer could parse, and reached `.json` and `.xml` through the
+    loader, which raised. So a pipeline that parses stdout broke on two
+    of three extensions for a condition none of them caused.
+
+    That was not a decision anybody took. `runner.run` says an unreadable
+    path propagates as the caller's mistake rather than a finding about
+    the file -- defensible, and one code path quietly disagreed with it
+    because that is where the operating system happened to say no. One
+    contract now: exit 2 carries a report, whatever the extension.
+
+    The remedy travels with the error and is not this rule's standing
+    one wherever the loader wrote a better sentence. A file that is
+    merely unreadable must not be told to re-create itself, which is the
+    fault X5 exists to name and `X3` was carrying until recently: this
+    reader's difficulty is not the author's defect.
+    """
+    for error in ctx.loaded.errors:
+        if error.stage == "access":
+            yield Violation(error.message, subject=error.subject,
+                            detail=error.detail, fix=error.fix)
+
+
 @rule("X4", kind="container", prio="SHOULD",
       title="declared supplementary parts exist",
       spec="IDTA 01005 (AASX, aas-suppl relationships)",
