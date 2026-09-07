@@ -236,8 +236,17 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         # Nothing reached the rules, so there is no verdict to report --
         # and 1 is the code for a verdict. Said on stderr as well, since
         # -q suppressed the report that would otherwise explain it.
-        print("smtv: nothing in %s could be read, so nothing was judged"
-              % path, file=sys.stderr)
+        #
+        # The refusal's own sentence where there is one. A path that was
+        # never opened now carries a finding, which is the machine
+        # contract; the person who typed a wrong filename is owed "no
+        # such file" and not a general statement that nothing was read,
+        # and the two audiences are why one line goes to each stream.
+        refusal = next((finding.violation.message for finding in report.findings
+                        if finding.id == "X6"), None)
+        print("smtv: %s"
+              % (refusal or "nothing in %s could be read, so nothing was judged"
+                 % path), file=sys.stderr)
         return EXIT_ERROR
     if short:
         # The report has carried this number since day one; a caller
