@@ -30,9 +30,17 @@ finding.
   that a published legal reading requires, and says both halves in those
   words. It reports the disagreement, not a verdict on the battery:
   reading a category, deciding which applicability date applies, or
-  concluding that a passport is compliant are all outside this. Of nine
-  such disagreements it knows, it reports the one that does not depend on
-  the battery's category, and its coverage note says so.
+  concluding that a passport is compliant are all outside this. Of the
+  nine such disagreements it knows, **none is required of every battery
+  category the sources name** -- one appeared to be until its provision
+  turned out to read "Where applicable" (`docs/divergences.md` #37) -- so
+  it reports a row only where the file states its own battery category,
+  and its coverage note says what was not asked and why.
+- **Where a clause qualifies itself, the finding says so.** The
+  Commission's guidance can mark an attribute mandatory for a category
+  while the provision behind it reads "where possible"; both are
+  printed, because settling that between two published documents is not
+  this project's to do.
 - **Not a certifier, and not a fixer.** It reports findings and names
   the remedy for each; deciding what a file was meant to say is the
   author's job. No `--fix`, no conformance certificates.

@@ -350,11 +350,13 @@ passport against Regulation (EU) 2023/1542 rather than against a
 template, over IDTA 02035-1, 02035-4 and 02035-5: one names a submodel
 identifier that two published templates claim, and one reports an
 element a template permits to be absent that a published legal reading
-requires — a file can be conformant to the template and not to the law,
-and those are different answers. It reports the one such disagreement
-that does not depend on the battery's category; eight more are known,
-counted in the report, and left unsaid because saying them without the
-category would tell one manufacturer to add what another's guidance
+expects — a file can be conformant to its template while a published
+reading of the regulation expects more of it, and those are different
+answers. None of the nine is expected of every battery category the
+sources name, so it reports a row only where the file states its own
+category; the rest are counted in the report and left unsaid, because
+saying them without the category would tell one manufacturer to add
+what another's guidance
 forbids. Most of a battery passport is submodels this tool has no table
 for; the exception is part 2, which declares 02004's identifier and so
 is judged. A package holding part 2 comes back with a verdict. One
