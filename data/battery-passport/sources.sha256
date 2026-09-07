@@ -12,9 +12,11 @@
 #   curl -sL -H 'User-Agent: curl/8' -o <path> <url>
 # is (measured: three fetches, identical bytes). What identifies the text
 # rather than the page is the consolidation string the document carries,
-# '02023R1542 - EN - 31.07.2025 - 002.004'; the digest below was re-pinned
-# on 2026-09-06 with that string unchanged, so the law did not move -- the
-# page furniture did, and the first command in REGENERATE.txt was failing.
+# '02023R1542 — EN — 31.07.2025 — 002.004' -- the separators are
+# em dashes (U+2014), which is what the document holds and what a grep for
+# it has to use; the digest below was re-pinned on 2026-09-06 with that
+# string unchanged, so the law did not move -- the page furniture did, and
+# the first command in REGENERATE.txt was failing.
 #
 # BatteryPass-Ready data attribute longlist (CC BY 4.0) | edition: v1.3, 25 March 2026 | fetched: 2026-08-27 | https://thebatterypass.eu/wp-content/uploads/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx
 2be2585bb29be1378807d6c5b829fc67414797542d32e5e014c5fe05bd13d8ba  batterypass/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx
