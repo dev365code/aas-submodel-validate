@@ -433,6 +433,43 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                         "The element itself is the right one; only the "
                         "type it declares for its value is not."
                         % (declared.value, row["value_type"])))
+            # A required element that carries nothing. Cardinality is
+            # the generated rules' question and content is the hand
+            # rules', and this fell between them: every hand rule guards
+            # on `value is not None` -- correctly, since an absent value
+            # is not theirs to report -- and the count was satisfied by
+            # the element being there. A Technical Data file with the
+            # value deleted from all nine of its required properties drew
+            # nothing at all and left by 0.
+            #
+            # The count is satisfied in form and the requirement is not.
+            # It is the tool's own promise that goes false here: "the
+            # template requires this element" answered yes about an
+            # element holding nothing, which is the shape of pass this
+            # project treats as worst.
+            #
+            # Absent, not empty. `value: ""` is the empty string, which
+            # *is* a value of that type, and calling it nothing is a
+            # reading about content rather than about presence -- the
+            # metamodel draws the same line. Measured and left alone
+            # deliberately; `docs/divergences.md` #40.
+            #
+            # MUST, and measured against what the standards body
+            # publishes before raising it there: across IDTA's own 02004
+            # example and the three 02003 samples, all 102 properties
+            # carry a value and none is absent, so this costs nothing on
+            # published material.
+            if (low >= 1 and row["kind"] == "Property"
+                    and getattr(element, "value", None) is None):
+                result["violations"].setdefault(row["id"], []).append(Violation(
+                    "'%s' is required here and carries no value" % row["label"],
+                    subject=subject,
+                    detail="the element is present and its value is absent",
+                    fix="Give this '%s' a value. The element is the right "
+                        "one and it is in the right place -- do not add "
+                        "another, which is what the count's own advice "
+                        "would tell you and would leave two of them "
+                        "empty." % row["label"]))
             if row["allowed_idshort"] and element.id_short \
                     and not re.match(row["allowed_idshort"], element.id_short):
                 result["idshort_drift"].append(

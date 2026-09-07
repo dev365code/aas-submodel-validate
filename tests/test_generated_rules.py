@@ -154,3 +154,137 @@ def test_a_value_type_mismatch_is_reported(tmp_path):
     path.write_bytes(json.dumps(env).encode("utf-8"))
     findings = {f.id: f for f in runner.run(path).findings}
     assert "xs:date" in findings[row["id"]].violation.message
+
+
+# -- a required element that carries nothing ---------------------------------
+
+def _without_value(env, label):
+    """The same environment with one property's `value` key removed."""
+    import copy
+    env = copy.deepcopy(env)
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("idShort") == label and node.get("modelType") == "Property":
+                node.pop("value", None)
+                return True
+            return any(walk(v) for v in node.values())
+        if isinstance(node, list):
+            return any(walk(v) for v in node)
+        return False
+
+    assert walk(env), "no property named %r in this fixture" % label
+    return env
+
+
+def test_a_required_property_that_carries_no_value_is_reported(tmp_path):
+    """The template says exactly one `DocumentDomainId` and the file has
+    one, holding nothing.
+
+    Every content rule guards on `value is not None` -- correctly, since
+    cardinality is the generated rules' question and not theirs -- and
+    the generated rule counted the element and stopped. So the count was
+    satisfied in form: a Technical Data file with the value deleted from
+    all nine of its required properties drew no finding at all and left
+    by 0. An empty shell passing is the false pass this project treats
+    as worst, and it was on the tool's own promise -- "the template
+    requires this element" answered yes about an element carrying
+    nothing.
+    """
+    path = tmp_path / "env.json"
+    path.write_text(json.dumps(_without_value(hd_env(), "DocumentDomainId")),
+                    "utf-8")
+    report = runner.run(path)
+    said = [f for f in report.findings if "DocumentDomainId" in (f.violation.message or "")]
+    assert said, sorted({f.id for f in report.findings})
+    assert not report.ok, "an element required by the template carries nothing"
+    assert "carries no value" in said[0].violation.message, said[0].violation.message
+    # Its own remedy. The row's standing advice is "provide one", which
+    # here tells the reader to add a second empty one.
+    assert "add another" in (said[0].fix or "").lower(), said[0].fix
+
+
+def test_an_optional_property_with_no_value_is_left_alone(tmp_path):
+    """The rule is about what the template requires. An element it
+    permits to be absent is permitted to be there and empty; saying
+    otherwise would be this tool inventing a requirement."""
+    from aas_submodel_validate.rules import hd_tables
+    optional = [r for r in hd_tables.ROWS
+                if r["kind"] == "Property" and (r["card"] or [0])[0] == 0]
+    assert optional, "the fixture pack has no optional property to test with"
+    path = tmp_path / "env.json"
+    base = hd_env()
+    for row in optional:
+        try:
+            base = _without_value(base, row["label"])
+        except AssertionError:
+            continue          # not in this fixture
+    path.write_text(json.dumps(base), "utf-8")
+    report = runner.run(path)
+    assert report.ok, [f.violation.message for f in report.findings]
+
+
+def test_the_published_examples_carry_a_value_everywhere_it_is_required():
+    """The over-refusal check, run rather than assumed.
+
+    A rule that moves the exit code has to be measured against what the
+    standards body actually publishes, and this one is: across IDTA's own
+    02004 example and the three 02003 samples, every property carries a
+    value -- 102 of them, none absent. So the rule costs nothing on
+    published material, which is what makes MUST defensible."""
+    from pathlib import Path as _Path
+    root = _Path(__file__).resolve().parents[1]
+    seen = 0
+    for name in sorted((root / "tests" / "corpus" / "idta").rglob("*.json")) + \
+            sorted((root / "tests" / "corpus" / "idta").rglob("*.aasx")):
+        report = runner.run(name)
+        for finding in report.findings:
+            assert "carries no value" not in (finding.violation.message or ""), \
+                "%s: %s" % (name.name, finding.violation.message)
+        seen += 1
+    assert seen >= 4, seen
+
+
+def test_an_empty_string_is_a_value_and_this_rule_does_not_judge_it(tmp_path):
+    """The line the presence rule draws, pinned because it is a decision.
+
+    `value: ""` is the empty string, which *is* a value of type
+    `xs:string`, and calling it nothing is a reading about content where
+    this rule is about presence -- the metamodel draws the same line and
+    so does the file, one shape carrying the key and one not. Recorded
+    in `docs/divergences.md` #40 and, until this test, recorded and
+    nothing more: a mutation that swept the empty string in passed the
+    whole suite.
+
+    Where an empty value really is wrong the tool already says so
+    elsewhere -- the relayed channel for a typed property, `TD-D1` for a
+    dated one -- and what is left unjudged is an empty `xs:string`,
+    deliberately.
+    """
+    import copy
+    base = copy.deepcopy(hd_env())
+
+    def blank(node):
+        if isinstance(node, dict):
+            if node.get("idShort") == "DocumentDomainId" \
+                    and node.get("modelType") == "Property":
+                node["value"] = ""
+                return True
+            return any(blank(v) for v in node.values())
+        if isinstance(node, list):
+            return any(blank(v) for v in node)
+        return False
+
+    assert blank(base)
+    path = tmp_path / "env.json"
+    path.write_text(json.dumps(base), "utf-8")
+    report = runner.run(path)
+    assert not [f for f in report.findings
+                if "carries no value" in (f.violation.message or "")], \
+        "the presence rule judged an empty string; #40 says it does not"
+    # And the control: the same property with the key gone is reported,
+    # so this test cannot pass by the rule being broken altogether.
+    gone = tmp_path / "gone.json"
+    gone.write_text(json.dumps(_without_value(hd_env(), "DocumentDomainId")), "utf-8")
+    assert [f for f in runner.run(gone).findings
+            if "carries no value" in (f.violation.message or "")]
