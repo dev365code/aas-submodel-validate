@@ -112,16 +112,30 @@ def _rows_the_category_settles(submodels):
 #: The note `BAT-R8` leaves when it looked at something. Not a finding:
 #: it says what this run could examine, and a run examines nothing when
 #: the input holds no submodel the table names.
-COVERAGE_NOTE = (
-    "%s reported %d of the %d elements this table holds; %d of them turn "
-    "on a battery category this file does not settle, so whether a "
-    "published reading of the law requires those is a question this run "
-    "did not ask. Read from %s. Both figures are a "
+#: Shared tail. "Floor" is not decoration -- see `coverage_note`.
+COVERAGE_TAIL = (
+    " Read from %s. Both figures are a "
     "floor, not a measurement: the templates cite no provision of the "
     "law, so the join behind the table matched attributes by name, and "
     "name matching misses every element whose label differs from the "
     "prose, and reaches a nested one only when its label happens to "
     "match.")
+COVERAGE_NOTE = (
+    "%s reported %d of the %d elements this table holds; %d of them turn "
+    "on a battery category this file does not settle, so whether a "
+    "published reading of the law requires those is a question this run "
+    "did not ask." + COVERAGE_TAIL)
+#: The other reason an element goes unasked, which this note said with
+#: the first one's words. A file that states `ev` has settled the
+#: question; the six elements EV's guidance does not require were not
+#: skipped for want of a category -- they were asked and the reading
+#: says no. Telling that reader their file "does not settle" a category
+#: it had just declared is the note contradicting the finding beside it.
+COVERAGE_NOTE_SETTLED = (
+    "%s reported %d of the %d elements this table holds; this file "
+    "declares battery category '%s', and the reading recorded here does "
+    "not require %d of the table's conditional elements for it, so those "
+    "were not asked." + COVERAGE_TAIL)
 
 
 def coverage_note(submodels) -> str:
@@ -146,13 +160,21 @@ def coverage_note(submodels) -> str:
     # seven of them were asked is a number typed into prose -- which the
     # paragraph below already warns about.
     settled = {row["element"] for row in _rows_the_category_settles(submodels)}
-    withheld = len(battery_tables.CONDITIONAL_ON_CATEGORY) - len(settled)
-    # Every row the table holds, the withheld ones included. Counting
-    # against the reportable rows alone made the sentence "1 of the 1",
-    # which is a number divided by itself wearing the look of complete
-    # coverage -- and the eight it does not ask about are named in the
-    # same breath, so they belong in the denominator that frames them.
-    total = len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL) + withheld
+    # The table, and nothing about this file. It was
+    # `unconditional + withheld`, and `withheld` falls as the file
+    # settles rows -- so the numerator rose while the denominator fell
+    # from the same fact, and an LMT passport read "reported 8 of the 2
+    # elements this table holds". Every fixture this note had been
+    # measured on declared no category, which is the one case where the
+    # two formulas agree.
+    #
+    # The denominator still carries the elements this run did not ask
+    # about. Counting against the reportable rows alone made the sentence
+    # "1 of the 1", a number divided by itself wearing the look of
+    # complete coverage -- and the ones it does not ask about are named
+    # in the same breath, so they belong in the frame.
+    total = (len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
+             + len(battery_tables.CONDITIONAL_ON_CATEGORY))
     # Distinct rows, not a sum over submodels: two ProductCondition
     # submodels in one file -- two battery modules, an ordinary shape --
     # made this say "10 of the 9".
@@ -160,8 +182,19 @@ def coverage_note(submodels) -> str:
                 for row in _rows_for(submodel, submodels)})
     if not read:
         return None
-    return COVERAGE_NOTE % (R8_ID, read, total, withheld,
-                            battery_tables.SOURCE_EDITION)
+    # Whether the file settled the question, not whether it said
+    # something. A category this tool has no column for settles nothing,
+    # so it takes the sentence for a file that named none -- which is
+    # what the run actually did with it.
+    stated = declared_category(submodels)
+    if CATEGORY_COLUMNS.get(stated) is None:
+        return COVERAGE_NOTE % (R8_ID, read, total,
+                                len(battery_tables.CONDITIONAL_ON_CATEGORY),
+                                battery_tables.SOURCE_EDITION)
+    return COVERAGE_NOTE_SETTLED % (
+        R8_ID, read, total, stated,
+        len(battery_tables.CONDITIONAL_ON_CATEGORY) - len(settled),
+        battery_tables.SOURCE_EDITION)
 
 
 def _declared(submodel) -> frozenset:

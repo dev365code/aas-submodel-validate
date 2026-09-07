@@ -27,6 +27,7 @@ produced the table matched by name.
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -339,6 +340,68 @@ def test_the_note_counts_what_it_reads_and_what_it_withholds(monkeypatch, tmp_pa
     assert "3 of them turn on a battery category" in note, \
         "the withheld count is quoted"
     assert "of the 4" in note, "the denominator does not follow the table"
+
+
+def test_the_note_adds_up_for_every_category_the_tool_reads(tmp_path):
+    """The denominator is the table, and the table does not shrink
+    because a file said what it is.
+
+    `total` was `unconditional + withheld`, and `withheld` falls as the
+    file settles rows -- so the two numbers moved in opposite directions
+    from the same fact and an LMT passport read `reported 8 of the 2
+    elements this table holds`. Every fixture the note had ever been
+    measured on declared no category, which is the one case where the
+    two formulas agree.
+
+    Asserted over every category the tool maps, and as arithmetic rather
+    than as a quoted fragment: `read <= total` is the property that was
+    false, and no assertion on a substring of the sentence could see
+    it."""
+    from aas_submodel_validate.rules.battery import CATEGORY_COLUMNS
+    held = (len(battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL)
+            + len(battery_tables.CONDITIONAL_ON_CATEGORY))
+    for category in [None, *sorted(CATEGORY_COLUMNS)]:
+        report = _run(tmp_path, _passport(category))
+        (note,) = [n for n in report.notes if "BAT-R8" in n]
+        found = re.search(r"reported (\d+) of the (\d+) elements", note)
+        assert found, note
+        read, total = int(found.group(1)), int(found.group(2))
+        assert total == held, (category, note)
+        assert read <= total, (category, note)
+
+
+def test_a_file_that_says_what_it_is_is_not_told_it_did_not_say(tmp_path):
+    """The clause fired on files that had settled their category.
+
+    "N of them turn on a battery category this file does not settle" was
+    unconditional prose beside a conditional number, so an EV passport
+    was told the six elements EV's guidance does not require were
+    unasked for want of a category it had just declared. Two different
+    reasons an element goes unasked, and only one of them was ever
+    said."""
+    from aas_submodel_validate.rules.battery import CATEGORY_COLUMNS
+    silent = _run(tmp_path, _passport())
+    (note,) = [n for n in silent.notes if "BAT-R8" in n]
+    assert "does not settle" in note, note
+
+    for category in sorted(CATEGORY_COLUMNS):
+        report = _run(tmp_path, _passport(category))
+        (note,) = [n for n in report.notes if "BAT-R8" in n]
+        assert "does not settle" not in note, (category, note)
+        assert category in note, (category, note)
+
+
+def test_the_note_names_the_two_reasons_apart(tmp_path):
+    """The numbers themselves, for the two categories the tables map.
+
+    `ev` requires two of the eight conditional elements and `lmt`
+    requires seven, so the same file shape is asked three of nine and
+    eight of nine. Both were wrong, and one of them claimed to have read
+    more elements than the table holds."""
+    for category, expected in (("ev", (3, 9)), ("lmt", (8, 9))):
+        report = _run(tmp_path, _passport(category))
+        (note,) = [n for n in report.notes if "BAT-R8" in n]
+        assert "reported %d of the %d elements" % expected in note, note
 
 
 def test_a_run_the_pack_never_looked_at_says_nothing(tmp_path):
@@ -747,12 +810,22 @@ def test_the_note_counts_what_this_file_withheld_not_what_the_table_holds(tmp_pa
     always, whatever the file said. Once a passport's own category
     settles seven of them, a sentence still saying eight is a number
     typed into prose, which is the mistake the paragraph beneath it
-    warns about in its own words."""
-    silent = _run(tmp_path, _passport()).notes
-    spoken = _run(tmp_path, _passport("lmt")).notes
+    warns about in its own words.
+
+    The number was made to follow the file and the sentence around it
+    was not, so the fix left a passport that had declared `lmt` being
+    told that one element "turns on a battery category this file does
+    not settle" -- the note denying, in the same breath, the category
+    the finding beside it had just used. Two reasons an element goes
+    unasked; the file that settled its category gets the other
+    sentence."""
+    silent = " ".join(_run(tmp_path, _passport()).notes)
+    spoken = " ".join(_run(tmp_path, _passport("lmt")).notes)
     assert silent and spoken, (silent, spoken)
-    assert "8 of them turn on a battery category" in " ".join(silent)
-    assert "1 of them turn on a battery category" in " ".join(spoken), spoken
+    assert "8 of them turn on a battery category this file does not settle" in silent
+    assert "does not settle" not in spoken, spoken
+    assert "declares battery category 'lmt'" in spoken, spoken
+    assert "does not require 1 of the table's conditional elements" in spoken, spoken
 
 
 def test_a_category_the_template_does_not_name_settles_nothing(tmp_path):
