@@ -947,10 +947,20 @@ def _join_tool():
 
 
 def _index(name):
+    """One of the published indexes, or a skip.
+
+    An sdist ships the generated table and none of the indexes it came
+    from -- `tools/check_distributions.py` fails a release that carries
+    them -- so a test that reads one has to say so. The two tests added
+    with the parameter index did not, and CI's "the suite runs from an
+    unpacked sdist" job was the only thing that could see it: all four
+    local gates are green in a checkout, where the file is there."""
     root = pathlib.Path(__file__).resolve().parents[1]
-    return {r["id"]: r
-            for r in json.loads((root / "data" / "battery-passport" / name)
-                                .read_text("utf-8"))["records"]}
+    path = root / "data" / "battery-passport" / name
+    if not path.is_file():
+        pytest.skip("the indexes are not in this tree (an sdist ships "
+                    "the table, not the indexes it came from)")
+    return {r["id"]: r for r in json.loads(path.read_text("utf-8"))["records"]}
 
 
 def test_every_element_the_note_does_not_report_is_accounted_for(tmp_path):
