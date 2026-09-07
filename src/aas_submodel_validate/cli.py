@@ -185,19 +185,26 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     if shown_as:
         report.path = shown_as
 
-    if not args.quiet:
-        if args.format == "json":
-            print(json.dumps(report.as_dict(), indent=2))
-        else:
-            print(render(report, show_meta=args.show_meta))
-    if not report.judged:
-        # Nothing reached the rules, so there is no verdict to report --
-        # and 1 is the code for a verdict. Said on stderr as well, since
-        # -q suppressed the report that would otherwise explain it.
-        print("smtv: nothing in %s could be read, so nothing was judged"
-              % path, file=sys.stderr)
-        return EXIT_ERROR
     from .model import Severity
+    # Reached before anything is printed, because the summary line now
+    # states it. While the screen said nothing about the verdict the two
+    # could not disagree; the measurement that ended that was `--example`
+    # and `--example -W` printing byte-identical screens and leaving by
+    # 0 and 1.
+    #
+    # `judged` is in here. Exit 2 is "could not run" and not "passed", so
+    # a screen reading `ok` above a process leaving by 2 would be the
+    # same lie one layer over. Which of the two it was stays legible: a
+    # refused input still says `(not a full verdict: some of it was not
+    # read)`, which is how this report has always told them apart.
+    expected = report.submodels_seen - report.submodels_specified
+    # `judged < seen` alone read `0 < 0` as satisfied, so the flag failed
+    # a file with one unjudged submodel and passed one with none at all:
+    # the risk ordering backwards, on the input an exporter is most
+    # likely to produce by accident.
+    short = bool(args.require_all_judged
+                 and (report.submodels_judged < expected
+                      or not report.submodels_seen))
     # Every warning, including the relayed ones. A version of this
     # exempted that channel, on the reasoning that no edit to a submodel
     # can clear a finding about the metamodel -- which is false, and the
@@ -207,32 +214,32 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     # relayed finding and nothing else, and passed `-W` while the summary
     # line above it counted the warning. `--meta info` is the way to say
     # this channel should not decide a build, and it says so out loud.
-    failed = not report.ok or (args.warnings_as_errors
-                               and report.count(Severity.WARNING) > 0)
-    # What the caller can be given: the submodels that are instances.
-    # Failing when there are none of those punishes a file of pure
-    # specifications for being one, which is the case the front page
-    # says this flag does not ask about -- but an input holding no
-    # submodels at all is still the emptiest pass of the lot and still
-    # fails, which is what `--help` says.
-    expected = report.submodels_seen - report.submodels_specified
-    if args.require_all_judged and (report.submodels_judged < expected
-                                    or not report.submodels_seen):
+    failed = (not report.judged or not report.ok or short
+              or (args.warnings_as_errors
+                  and report.count(Severity.WARNING) > 0))
+
+    if not args.quiet:
+        if args.format == "json":
+            print(json.dumps(report.as_dict(), indent=2))
+        else:
+            print(render(report, show_meta=args.show_meta, failed=failed))
+    if not report.judged:
+        # Nothing reached the rules, so there is no verdict to report --
+        # and 1 is the code for a verdict. Said on stderr as well, since
+        # -q suppressed the report that would otherwise explain it.
+        print("smtv: nothing in %s could be read, so nothing was judged"
+              % path, file=sys.stderr)
+        return EXIT_ERROR
+    if short:
         # The report has carried this number since day one; a caller
         # reading only the exit code could not see it. An unjudged
         # submodel is not a defect in the file -- an environment holds
         # submodels this tool has no business judging -- so it stays out
         # of the default verdict and becomes one only when asked for.
-        #
-        # `judged < seen` alone read `0 < 0` as satisfied, so the flag
-        # failed a file with one unjudged submodel and passed one with
-        # none at all: the risk ordering backwards, on the input an
-        # exporter is most likely to produce by accident.
         # The number compared, not the number seen: with a template in
         # the file those differ, and a caller reading only this line was
         # told two were missing when one was.
         print("smtv: judged %d of %d submodel%s; --require-all-judged was given"
               % (report.submodels_judged, expected,
                  "" if expected == 1 else "s"), file=sys.stderr)
-        failed = True
     return EXIT_FINDINGS if failed else EXIT_OK

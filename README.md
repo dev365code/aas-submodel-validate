@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=bf2a4204" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=89dbe1c1" alt="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -32,14 +32,15 @@ warning BAT-R8   conformant to the template and not to the regulation: 'EnergyRo
         per  Regulation (EU) 2023/1542 Annex IV Part A (4); docs/divergences.md #37 for whose reading of it this answers
         fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
 …
-0 error(s), 1 warning(s), 3 info -- your-battery-passport.json; judged 0 of 1 submodel
+ok -- 0 error(s), 1 warning(s), 3 info -- your-battery-passport.json; judged 0 of 1 submodel
 ```
 
-The `…` is three lines: the one that accounts for the `3 info` — the
+The `…` is five lines: the one that accounts for the `3 info` — the
 relayed metamodel findings, folded into a count unless you ask for them
-— and two notes, one of which is the coverage figure further down.
-Notes are printed and not counted; the folded line is counted and not
-printed in full. And the exit code is **0**: a disagreement with the
+— two notes, one of which is the coverage figure further down, and the
+two-line key naming the labels this run printed. Notes are printed and
+not counted; the folded line is counted and not printed in full. The
+summary opens `ok` because the exit code is **0**: a disagreement with the
 regulation is a warning, so it does not fail your build unless you ask
 it to (`-W` makes a warning exit 1). That is deliberate. This tool answers for
 the template; the law is somebody's reading of the law, and reading is
@@ -60,10 +61,46 @@ error   SMT-D1   no submodel declares a semanticId this tool has a template tabl
         saw  semanticId value(s): urn:somecompany:docs
         per  IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2
         fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
-1 error(s), 0 warning(s), 0 info -- machine-docs.json; judged 0 of 1 submodel
+key     saw=what is there now per=the clause fix=what to change
+FAILED -- 1 error(s), 0 warning(s), 0 info -- machine-docs.json; judged 0 of 1 submodel
 ```
 
 </details>
+
+## Reading a finding
+
+Four labelled lines under each one, and a finding uses the ones it has.
+The tool prints the key itself, above the summary, so the screen carries
+it and not only this page:
+
+```text
+key     at=where saw=what is there now per=the clause fix=what to change
+```
+
+| | |
+|---|---|
+| `at` | where in the submodel — the path of idShorts down to the element |
+| `saw` | what was actually there, so you can tell this finding from a similar one |
+| `per` | the clause this reading comes from, for when you have to cite it |
+| `fix` | what to change. Every finding has one; a finding without a remedy is a complaint |
+| `note` | something this run did, not a defect in the file. Nothing to change — which is why a note has no `fix` |
+
+Below the findings: one line per channel that was folded, then the
+notes, then the key, then the summary. The metamodel channel is folded
+by default — it is relayed from aas-core3.0 rather than read off a
+template, and on the official example it is 77 of 87 findings. Folded,
+not dropped: the summary still counts them and `--show-meta` lists them.
+`-f json` is never folded.
+
+The summary line opens with the verdict, `ok` or `FAILED` — the same
+answer the exit code gives, reached once and printed as well as
+returned. Then how many of each severity, the file, and how many of its
+submodels were judged. Under `-W` the findings are identical and the
+verdict is not, which is the case the word is there for.
+`(not a full verdict: some of it was not read)` is appended when
+something was refused or would not parse — a different thing from a
+file that was read and failed.
+
 
 ## What it catches
 
@@ -282,28 +319,6 @@ One dependency
 pure Python, no C extensions. Both wheels fit on a USB stick and
 install with `--no-index --find-links`; the single file above needs not
 even that.
-
-### Reading a finding
-
-Four labelled lines under each one, and a finding uses the ones it has:
-
-| | |
-|---|---|
-| `at` | where in the submodel — the path of idShorts down to the element |
-| `saw` | what was actually there, so you can tell this finding from a similar one |
-| `per` | the clause this reading comes from, for when you have to cite it |
-| `fix` | what to change. Every finding has one; a finding without a remedy is a complaint |
-
-Below them, one line per channel that was folded and then the summary.
-The metamodel channel is folded by default — it is relayed from
-aas-core3.0 rather than read off a template, and on the official example
-it is 77 of 87 findings. Folded, not dropped: the summary still counts
-them and `--show-meta` lists them. `-f json` is never folded.
-
-The summary line says how many of each severity, then the file, then how
-many of its submodels were judged. `(not a full verdict: some of it was
-not read)` is appended when something was refused or would not parse —
-which is a different thing from a file that was read and failed.
 
 ## What it checks
 

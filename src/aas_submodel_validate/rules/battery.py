@@ -258,8 +258,13 @@ def bat_r2_shared_identifier_without_a_table(ctx):
 @rule(R8_ID, kind="template", prio="SHOULD",
       title="elements the template permits absent that a published "
             "reading of the regulation requires",
+      # "its own row" stood here. A rule's `spec` is what a finding
+      # prints when the violation carries none, so this is reader-facing
+      # -- and `row` is this project's word for a line of its own table,
+      # not an AAS word and not an IDTA one. A reader who went and
+      # learned the standard would not find it.
       spec="Regulation (EU) 2023/1542; each finding names the provision "
-           "its own row cites, and docs/divergences.md #37 records whose "
+           "it reads from, and docs/divergences.md #37 records whose "
            "reading of it this answers for",
       fix="Provide the element, or record that this battery is outside "
           "the provision read as requiring it. The template will not ask "

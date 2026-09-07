@@ -154,7 +154,11 @@ def test_a_run_with_a_note_does_not_call_itself_ok(tmp_path, capsys):
     path.write_bytes(env_json("urn:acme:private"))
     assert main([str(path), "--allow-unmatched"]) == 0
     out = capsys.readouterr().out
-    assert "ok --" not in out
+    # The clean sentence, not the word. `ok` is on this line now: the
+    # run passed and the summary says so, which is the point of the
+    # word. What must not appear is the sentence claiming there was
+    # nothing to report.
+    assert "rules registered" not in out
     assert "note    SMT-D1 (allowed)" in out
 
     clean = tmp_path / "clean.json"

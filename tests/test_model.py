@@ -264,14 +264,23 @@ def test_a_run_with_warnings_does_not_wear_the_clean_banner():
     notes. The first is implied by the second (a failing run has the
     error finding that failed it), so the guard that can actually decide
     is "no findings": a warnings-only run is `ok` and must still show its
-    findings, not the sentence that says there were none."""
+    findings, not the sentence that says there were none.
+
+    Asserted against the clean sentence and not against the word `ok`.
+    The word was a usable proxy while the branch with findings led with
+    a count -- and then that branch learned to say its verdict too,
+    because a warnings-only run is the commonest thing this tool prints
+    and was the one thing it could not call passed. `rules registered`
+    is what only the clean branch says."""
     from aas_submodel_validate.report import render
     report = _report()   # one error, two warnings, three info
     report.findings = [f for f in report.findings
                        if str(f.severity) != "error"]
     report.notes = []    # or the notes guard hides the findings guard
     text = render(report)
-    assert "ok --" not in text
+    assert "rules registered" not in text
+    assert text.splitlines()[-1].startswith("ok -- 0 error(s), 2 warning(s)"), \
+        text.splitlines()[-1]
     assert "warning" in text
 
 
@@ -303,6 +312,11 @@ def test_the_clean_banner_spells_ok_the_way_the_others_look_for():
     report.checked = 123
     banner = render(report)
     assert banner.startswith("ok -- ")
+    # And the phrase the two `not in` assertions above and in the CLI
+    # tests now look for. They stopped keying on the word `ok` the day
+    # the branch with findings learned to print it, so this is the
+    # second thing that has to stay spelled as they expect.
+    assert "rules registered" in banner, banner
     assert all(ord(character) < 128 for character in banner), banner
 
 

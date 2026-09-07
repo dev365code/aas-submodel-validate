@@ -154,8 +154,16 @@ VERDICT_LINES = [
     (19, [(140, N, "note", 1),
           (180, N, "BAT-R8 reported 1 of the 9 elements this table holds;", 0)]),
     (24, [(180, N, "8 of them turn on a battery category this file does not settle" + ELISION, 0)]),
-    (19, [(28, T, "0 error(s), 1 warning(s), 3 info", 1),
-          (280, N, "-- battery-passport.json; judged 0 of 1 submodel", 0)]),
+    # The key, drawn because it is the answer to the question this
+    # picture's own labels raise. A reader meets `at`, `saw`, `per` and
+    # `fix` four lines up and the page that explains them is a scroll
+    # away; the tool prints this and so does the picture of it.
+    (19, [(140, N, "key", 1),
+          (180, N, "at=where saw=what is there now per=the clause fix=what to change", 0)]),
+    (19, [(140, N, "key", 1),
+          (180, N, "note=something this run did, not a defect -- nothing to change", 0)]),
+    (19, [(28, T, "ok -- 0 error(s), 1 warning(s), 3 info", 1),
+          (327, N, "-- battery-passport.json; judged 0 of 1 submodel", 0)]),
 ]
 
 SHOT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 %(h)d" role="img" aria-label="Real smtv output on a battery passport: one warning, BAT-R8, conformant to the template and not to the regulation, with the element named, the clause cited and a remedy">
