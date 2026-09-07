@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import pathlib
 import stat
 import tracemalloc
@@ -1727,7 +1728,7 @@ def test_a_path_under_a_directory_we_cannot_enter_is_refused_not_crashed(tmp_pat
     locked.mkdir()
     target = locked / "env.json"
     target.write_text(json.dumps(hd_env()), "utf-8")
-    pathlib.os.chmod(locked, 0o000)
+    os.chmod(locked, 0o000)
     try:
         try:
             target.exists()
@@ -1738,7 +1739,7 @@ def test_a_path_under_a_directory_we_cannot_enter_is_refused_not_crashed(tmp_pat
                         "(running as root?), so there is nothing to measure")
         code = main([str(target), "-q"])
     finally:
-        pathlib.os.chmod(locked, 0o755)
+        os.chmod(locked, 0o755)
     assert code == EXIT_ERROR, (
         "a path this reader cannot reach came back as %d; 1 is the code "
         "for a verdict with findings and nothing was judged" % code)
