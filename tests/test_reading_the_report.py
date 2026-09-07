@@ -325,3 +325,32 @@ def test_a_document_a_finding_tells_you_to_cite_is_one_you_can_reach():
              fn=lambda ctx: (), fix="mend it"),
         Violation("wrong", subject="A"))]
     assert "divergences" not in render(quiet), render(quiet)
+
+
+def test_a_run_that_reads_the_regulation_says_it_is_reading_it():
+    """A finding citing a law is a claim, and the report made no claim
+    about the claim.
+
+    `docs/scope.md` says this is not a certificate of compliance and the
+    README says it in the battery section, two thirds down. Neither is
+    on the screen, and `--help` does not say it either -- so the person
+    whose report carries `Regulation (EU) 2023/1542 Annex VII Part A (1)`
+    into somebody else's inbox was never told, where they were reading,
+    that what they have is a published reading and not a determination.
+
+    On the runs that cite it, and only those. A Handover Documentation
+    file mentions no law and gets no sentence about one."""
+    report = Report(path="x.json")
+    cites = Rule(id="T1", kind="template", prio="SHOULD", title="t",
+                 spec="Regulation (EU) 2023/1542 Annex VII Part A (1)",
+                 fn=lambda ctx: (), fix="mend it")
+    report.findings = [Finding(cites, Violation("wrong", subject="A"))]
+    printed = render(report)
+    assert "not a determination of compliance" in printed, printed
+
+    quiet = Report(path="x.json")
+    quiet.findings = [Finding(
+        Rule(id="T2", kind="template", prio="SHOULD", title="t",
+             spec="IDTA 02004-2-0 §2.1", fn=lambda ctx: (), fix="mend it"),
+        Violation("wrong", subject="A"))]
+    assert "determination" not in render(quiet), render(quiet)

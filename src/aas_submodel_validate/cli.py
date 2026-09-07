@@ -32,7 +32,16 @@ def main(argv: Optional[list] = None) -> int:
         # who depends on them was least likely to look.
         # Wrapped by hand: a raw-description epilog is printed as
         # written, and this ran off the eightieth column in one line.
-        epilog="exit codes:\n"
+        # A line about what a verdict is, where somebody wiring this into
+        # a build reads first. The scope document says it and the front
+        # page says it two thirds down a section; neither is in front of
+        # the person deciding what to do with the exit code.
+        epilog="a verdict here is conformance to a submodel template. Where\n"
+               "this tool reads a regulation it reports where a published\n"
+               "reading of it and a template disagree, which is not a\n"
+               "determination of compliance and not legal advice.\n"
+               "\n"
+               "exit codes:\n"
                "  0  nothing at error severity\n"
                "  1  at least one error -- or a warning, under -W\n"
                "  2  could not run: a path that cannot be read, or an input\n"

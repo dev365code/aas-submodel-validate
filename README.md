@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=d6679e91" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=59729ba4" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate

@@ -80,6 +80,22 @@ LABELS = (("at", "where"), ("saw", "what is there now"),
 #: `site-packages` where it is no more citable than it was. An address
 #: is the citable form, and one line carries it however many findings
 #: point there.
+#: A finding that cites a law is making a claim, and the report made no
+#: claim about the claim. `docs/scope.md` says this is not a certificate
+#: of compliance and the README says it two thirds down the battery
+#: section; neither is on the screen, and `--help` does not say it
+#: either. The reader carrying `Regulation (EU) 2023/1542 Annex VII Part
+#: A (1)` into somebody else's inbox is the one who needs it.
+#:
+#: On the runs that cite it and no others. A Handover Documentation file
+#: mentions no law, and a sentence about the law on that report would be
+#: noise a reader learns to skip -- which is how the ones that matter
+#: get skipped too.
+REGULATION = "Regulation (EU)"
+READING_ONLY = ("this reports where a published reading of the regulation "
+                "and a template disagree; it is not a determination of "
+                "compliance")
+
 DIVERGENCES = "docs/divergences.md"
 DIVERGENCES_AT = ("https://github.com/dev365code/aas-submodel-validate/blob/"
                   "main/docs/divergences.md")
@@ -199,6 +215,8 @@ def render(report: Report, *, show_meta: bool = False,
     # Only where a printed line actually sent the reader there. Derived
     # from what reached the screen, like the labels above: a run that
     # never cites the document gets no line about it.
+    if any(REGULATION in line for line in lines):
+        keyed.append(READING_ONLY)
     if any(DIVERGENCES in line for line in lines):
         keyed.append("%s is at %s" % (DIVERGENCES, DIVERGENCES_AT))
     for entry in keyed:

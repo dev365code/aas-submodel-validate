@@ -163,7 +163,12 @@ VERDICT_LINES = [
           (180, N, "at=where saw=what is there now per=the clause fix=what to change", 0)]),
     (19, [(140, N, "key", 1),
           (180, N, "note=something this run did, not a defect -- nothing to change", 0)]),
-    # The third key line: seventeen rules send a reader to
+    # A finding citing a law is a claim, and the picture is where most
+    # readers meet one. On the runs that cite it, and no others.
+    (19, [(140, N, "key", 1),
+          (180, N, "this reports where a published reading of the regulation and a"
+                   + ELISION, 0)]),
+    # The next key line: seventeen rules send a reader to
     # `docs/divergences.md` and a wheel carries no `docs/`, so the
     # address is printed where the citation is. Drawn to the elision
     # because the URL is wider than the terminal in the picture.
