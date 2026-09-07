@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=59729ba4" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=91e589d4" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -29,7 +29,7 @@ $ smtv --meta info your-battery-passport.json
 warning BAT-R8   conformant to the template; a published reading of the regulation expects it for LMT batteries: 'RemainingCapacity' is absent
         at   RemainingCapacity
         saw  IDTA 02035-5 V1.0.2 makes it ZeroToOne. Read as expected for LMT by: European Commission guidance, Digital Batteries Passport -- data point by category v2.0, data point 62; BatteryPass-Ready Data Attribute Longlist v1.3 (draft) row 60. Asked anywhere under the submodel: this rule is about the data being present, not about where the template puts it
-        per  Regulation (EU) 2023/1542 Annex VII Part A (1); docs/divergences.md #37 for whose reading of it this answers
+        per  Regulation (EU) 2023/1542 Annex XIII 4 (b), Annex VII Part A (1); docs/divergences.md #37 for whose reading of it this answers
         fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
 …
 ok -- 0 error(s), 1 warning(s), 8 info -- your-battery-passport.json; judged 3 of 3 submodels

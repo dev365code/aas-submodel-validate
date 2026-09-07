@@ -664,8 +664,9 @@ BAT_R8_SENTENCES = {
         "provision read as requiring it. The template will not ask for it "
         "-- that is the point of the finding.",
     "per":
-        "Regulation (EU) 2023/1542 Annex IV Part A (1), Annex IV (2); "
-        "docs/divergences.md #37 for whose reading of it this answers",
+        "Regulation (EU) 2023/1542 Annex XIII 4 (a), Annex IV Part A (1), "
+        "Annex IV (2); docs/divergences.md #37 for whose reading of it this "
+        "answers",
     "message":
         "conformant to the template; a published reading of the regulation "
         "expects it for LMT batteries: 'CapacityFade' is absent",
@@ -1021,9 +1022,15 @@ def test_the_front_pages_row_still_has_all_three_sources_agreeing():
 
     # (a) the law: the clause the row cites, read from the index derived
     # from the pinned text, and stating no qualifier of its own.
+    #
+    # Among the citations rather than the whole of them: the row cites
+    # the Commission's own reference into Annex XIII as well, which is
+    # the list of what a passport must carry and a different question
+    # from what the parameter is. Both are printed; this one is the
+    # substantive clause the reading rests on.
     provisions = _index("requirements-annex-parameters.json")
     clause = provisions[HERO_PROVISION_ID]
-    assert row["citations"] == (HERO_CLAUSE,), row["citations"]
+    assert HERO_CLAUSE in row["citations"], row["citations"]
     assert clause["section"] == HERO_CLAUSE, clause["section"]
     assert clause["mandatory"] == "yes", clause
     assert not SOFT_QUALIFIER.search(clause["text"]), clause["text"]
@@ -1168,3 +1175,38 @@ def test_the_category_is_read_a_bounded_number_of_times(tmp_path, monkeypatch):
     # And bounded, not merely equal: two runs that both read it a
     # thousand times would satisfy the line above.
     assert large <= 4, large
+
+
+def test_no_clause_line_names_one_provision_twice(tmp_path):
+    """`Annex XIII (1k)` and `Annex XIII 1 (k)` are one point.
+
+    The long list parenthesises the point and its letter together and the
+    Commission writes them apart, and once the guidance's citations were
+    joined in, `CapacityThresholdExhaustion` printed both -- two
+    spellings of one clause reading as two clauses on the line a reader
+    copies into a report.
+
+    The key here is computed independently of the one the renderer uses:
+    strip everything that is not a letter or a digit and fold the case,
+    so the two spellings collide whatever the renderer thinks. A gate
+    that borrowed the normaliser would assert that normalised things are
+    normalised."""
+    from aas_submodel_validate.rules.battery import _clauses
+
+    def key(clause):
+        return re.sub(r"[^a-z0-9]", "", clause.lower())
+
+    for row in (battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
+                + battery_tables.CONDITIONAL_ON_CATEGORY):
+        printed = _clauses(row["citations"])
+        keys = [key(part) for part in printed.split(", ")]
+        assert len(keys) == len(set(keys)), (row["element_id_short"], printed)
+
+    # And on a real run, over the line a reader is actually shown.
+    for finding in _run(tmp_path, _passport("lmt")).findings:
+        if finding.id != "BAT-R8":
+            continue
+        clauses = finding.spec.split("; ")[0].replace(
+            "Regulation (EU) 2023/1542 ", "")
+        keys = [key(part) for part in clauses.split(", ")]
+        assert len(keys) == len(set(keys)), (finding.violation.subject, clauses)

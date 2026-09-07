@@ -192,7 +192,23 @@ def _law_rows(idta, join, indexes, provisions) -> list:
             if record is None:
                 continue
             spoke = True
-            for reference in record.get("legal_references") or []:
+            # Both fields. The long list writes `legal_references` and
+            # names the substantive annex -- Annex IV or VII, the
+            # parameter itself. The Commission's guidance writes
+            # `legal_source` and names Annex XIII, the list of what a
+            # passport must carry. They answer different questions and
+            # four rows had a guidance citation that never reached the
+            # screen, so `per` gave half the basis for a row two
+            # documents ground.
+            #
+            # The `BR ` prefix goes: the finding already opens
+            # "Regulation (EU) 2023/1542", and "BR" expands to the same
+            # thing one abbreviation further from the reader.
+            for reference in ((record.get("legal_references") or [])
+                              + [record["legal_source"]]
+                              if record.get("legal_source")
+                              else (record.get("legal_references") or [])):
+                reference = re.sub(r"^BR\s+", "", reference)
                 if reference not in citations:
                     citations.append(reference)
             for name, verdict in (record.get("applicability") or {}).items():

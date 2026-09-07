@@ -368,8 +368,14 @@ def bat_r2_shared_identifier_without_a_table(ctx):
 #: into a report of their own.
 CLAUSE = re.compile(
     r"Art(?:icle)?\.?\s*\d+(?:\s*\(\d+\))?"
-    r"|Annex\s+[IVX]+(?:\s+Part\s+[AB])?(?:\s*\(\s*\d+[a-z]?\s*\))?"
-    r"(?:\s*\(\s*[a-z]\s*\))?", re.I)
+    r"|Annex\s+[IVX]+(?:\s+Part\s+[AB])?"
+    # Two ways the sources number a point below an annex. The long list
+    # parenthesises it -- `Annex IV (2)`, `Annex XIII (1k)` -- and the
+    # Commission's guidance does not: `Annex XIII 4 (b)`. Only the first
+    # was matched, so every guidance citation flattened to a bare
+    # `Annex XIII`, which names a list of twenty-odd points and tells a
+    # reader nothing about which one.
+    r"(?:\s*\(\s*\d+\s*[a-z]?\s*\)|\s+\d+\s*\(\s*[a-z]\s*\))?", re.I)
 
 #: How an index id is written for someone who has neither index. E6: the
 #: long list is the "BatteryPass-Ready Data Attribute Longlist", which is
@@ -413,12 +419,27 @@ def _qualified(row) -> str:
     return QUALIFIED % stated[0]
 
 
+#: One point, written two ways. The long list parenthesises the point and
+#: its letter together -- `Annex XIII (1k)` -- and the Commission writes
+#: them apart -- `Annex XIII 1 (k)`. Both cite the same provision, and
+#: with the guidance's citations joined in, `CapacityThresholdExhaustion`
+#: printed both. Two spellings of one clause read as two clauses.
+_JOINED_POINT = re.compile(r"^(Annex\s+[IVX]+)\s*\(\s*(\d+)\s*([a-z])\s*\)$", re.I)
+
+
+def _canonical(clause) -> str:
+    joined = _JOINED_POINT.match(clause)
+    if joined:
+        return "%s %s (%s)" % joined.groups()
+    return clause
+
+
 def _clauses(citations) -> str:
     """The clause identifiers a row cites, in the row's own order."""
     found = []
     for citation in citations:
         for hit in CLAUSE.findall(citation):
-            hit = " ".join(hit.split()).rstrip(".:,")
+            hit = _canonical(" ".join(hit.split()).rstrip(".:,"))
             if hit not in found:
                 found.append(hit)
     return ", ".join(found or list(citations))
