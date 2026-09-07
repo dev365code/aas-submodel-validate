@@ -54,7 +54,14 @@ and `data/battery-passport/NOTICE.md` carries the per-source attribution
 -- rightsholder, licence and its URI, the recommended citation where the
 source supplies one, the source's own disclaimer, and a statement of how
 the material was modified. **That directory is in the repository and in
-no distribution**, so a reader who has only this file has only this
+no distribution** -- but the rule table generated from it,
+`aas_submodel_validate/rules/battery_tables.py`, is a Python module and
+ships in every one. It carries element descriptions, legal-reference
+cells and the qualifying phrase of a conditional provision **verbatim**
+from three of the four sources, so `NOTICE` names it and states how the
+material was modified; this sentence used to stop at the directory and
+leave a reader of a wheel holding CC BY material with no attribution
+beside it. A reader who has only this file has only this
 paragraph: the indexes and their notice are at
 <https://github.com/dev365code/aas-submodel-validate/tree/main/data/battery-passport>. This sentence used to point at the bundle's
 `README.md`, which names the licences and stops there: CC BY 4.0 §3(a)

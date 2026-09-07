@@ -24,6 +24,52 @@ The example package embeds three PDF documents whose own metadata names
 Frank Scherenschlich as their author, and a STEP model produced with
 FreeCAD/OpenCASCADE. They travel unmodified.
 
+This distribution also carries material *derived from* three further
+sources, in `aas_submodel_validate/rules/battery_tables.py`. That file is
+generated from the indexes under `data/battery-passport/`, which are in
+the repository and in no distribution -- but the table it produces is a
+Python module and ships in the wheel, the source distribution and
+smtv.pyz. Nine rows, and what each carries:
+
+  - the element description of each row, taken **verbatim** from the
+    IDTA 02035-1, 02035-4 and 02035-5 submodel templates (Digital
+    Battery Passport, parts 1, 4 and 5). Industrial Digital Twin
+    Association and the templates' contributors, CC BY 4.0
+    (https://creativecommons.org/licenses/by/4.0/).
+  - the legal references each row cites, taken **verbatim** from the
+    corresponding cells of the *BatteryPass-Ready Data Attribute
+    Longlist v1.3* (draft, 25 March 2026). Copyright (c) 2026
+    BatteryPass-Ready Consortium, CC BY 4.0. Recommended citation, as
+    the Consortium asks: BatteryPass-Ready Consortium (2026). Battery
+    Passport Data Attribute Longlist v1.3. Note the edition: earlier
+    Battery Pass material is under a different, non-commercial licence.
+  - the qualifying phrase of a provision that states itself
+    conditionally -- "where applicable", "where possible", "where
+    appropriate" -- taken **verbatim** from Regulation (EU) 2023/1542,
+    consolidated text CELEX 02023R1542-20250731. (c) European Union,
+    1998-2026; reuse of EUR-Lex editorial content is authorised under
+    CC BY 4.0 provided the source is acknowledged and changes are
+    indicated.
+
+**How the material was modified**, which CC BY 4.0 section 3(a) asks to
+be stated: nothing above is reproduced whole. Individual descriptions,
+reference cells and qualifying phrases were extracted, joined across the
+four sources by attribute name, and reduced to the rows where the
+readings differ. The per-category verdicts beside them are this
+project's reading of those sources and not text from any of them.
+`docs/divergences.md` #37 records that reading; the full per-source
+notice -- rightsholder, licence, recommended citation, each source's own
+disclaimer -- is `data/battery-passport/NOTICE.md`, in the repository at
+https://github.com/dev365code/aas-submodel-validate/tree/main/data/battery-passport
+
+**The consolidated text carries its own disclaimer, and it belongs with
+anything built from it:** that text is meant purely as a documentation
+tool and has no legal effect; the Union's institutions do not assume any
+liability for its contents; the authentic versions of the relevant acts
+are those published in the Official Journal of the European Union.
+Nothing in this distribution is legal advice or a determination of
+compliance.
+
 Copyright for that material: Industrial Digital Twin Association (IDTA)
 and the template's contributors. THIRD_PARTY.md travels beside this file
 and names the upstream revision they were taken from; the SHA-256 digest

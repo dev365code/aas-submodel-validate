@@ -170,16 +170,106 @@ def test_the_attribution_names_paths_that_exist_where_it_is_read():
     distribution does -- a wheel, an sdist's installed form and the
     single file all carry them under the import name. Somebody holding
     an install could not match an entry to a file, which is the one
-    thing the entry is for."""
+    thing the entry is for.
+
+    Found by what a path looks like rather than by where it sits on the
+    line. The first version read every bullet as a path, so a bullet of
+    prose broke it and, worse, a path named in a sentence went
+    unchecked -- and the attribution that had to be added for the
+    generated battery table names its file in a sentence.
+    """
     import pathlib
+    import re as _re
     root = pathlib.Path(__file__).resolve().parents[1]
     notice = (root / "NOTICE").read_text(encoding="utf-8")
-    named = [line.strip()[2:] for line in notice.splitlines()
-             if line.strip().startswith("- ")]
-    assert named, "NOTICE names no vendored file"
+    #: A path into the installed package, wherever it appears. The
+    #: import name is the anchor: that is what a reader holding a wheel
+    #: has, and naming `src/...` was the fault this test was written for.
+    paths = _re.compile(r"(?:src/)?aas_submodel_validate/[\w./-]+")
+    named = sorted(set(paths.findall(notice)))
+    assert named, "NOTICE names no packaged file"
     for path in named:
         assert not path.startswith("src/"), (
             "NOTICE names %r, which is a path in this tree and not in "
             "anything it ships in" % path)
         assert (root / "src" / path).is_file(), \
             "NOTICE names %r and no such file is packaged" % path
+
+
+def test_a_shipped_module_carrying_a_sources_own_words_is_attributed():
+    """The attribution followed the vendored *files* and missed a
+    generated one.
+
+    `data/battery-passport/` is in the repository and in no
+    distribution, and `THIRD_PARTY.md` said so -- correctly, and then
+    stopped. The rule table generated from it is a Python module: it
+    ships in the wheel, the source distribution and smtv.pyz, and it
+    carries each row's element description verbatim from the IDTA 02035
+    templates (CC BY 4.0), the legal references verbatim from the
+    BatteryPass-Ready longlist (CC BY 4.0), and the qualifying phrase of
+    a conditional provision verbatim from the consolidated regulation.
+    So somebody holding a wheel held CC BY material with no attribution
+    beside it.
+
+    Derived, not asserted: the verbatim-ness is measured against the
+    indexes here, so a table that stops copying stops needing the
+    paragraph, and one that starts copying somewhere new fails until
+    somebody says where it came from.
+    """
+    import json
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    data = root / "data" / "battery-passport"
+    if not data.is_dir():
+        pytest.skip("the indexes are not in this tree (an sdist ships "
+                    "the table, not the indexes it came from)")
+    from aas_submodel_validate.rules import battery_tables
+
+    def index(name):
+        return json.loads((data / name).read_text("utf-8"))["records"]
+
+    idta = {r["id"]: r for r in index("requirements-idta.json")}
+    rows = (battery_tables.LAW_REQUIRES_TEMPLATE_OPTIONAL
+            + battery_tables.CONDITIONAL_ON_CATEGORY)
+    copied = [r for r in rows
+              if idta.get(r["element"], {}).get("text") == r["text"] and r["text"]]
+    assert copied, "no row copies a source's words any more; check this test"
+
+    notice = (root / "NOTICE").read_text("utf-8")
+    assert "aas_submodel_validate/rules/battery_tables.py" in notice, (
+        "%d of %d rows carry an IDTA description verbatim into a module "
+        "that ships, and NOTICE does not name the file"
+        % (len(copied), len(rows)))
+    # What CC BY 4.0 section 3(a) asks for, beside the file: the
+    # licence and its URI, and a statement that the material was
+    # modified. A path on its own is a citation, not an attribution.
+    #
+    # Asked of the passage that names the file, not of the document.
+    # Over the whole of NOTICE this passed with the licence URI deleted
+    # from here, because another section carries one -- the assertion
+    # was measuring that the document mentions CC BY somewhere, which it
+    # would do if this paragraph were removed entirely.
+    start = notice.index("aas_submodel_validate/rules/battery_tables.py")
+    passage = notice[start:notice.index("Copyright for that material:", start)]
+    # Each of these is a thing one of the three sources asks for and
+    # nothing else in the passage supplies. `BatteryPass-Ready` alone was
+    # here and a mutation that unnamed the document survived it: the
+    # word occurs again in the rightsholder's name a line below, so the
+    # assertion was satisfied by a different sentence. The Consortium's
+    # own recommended citation cannot be satisfied by accident.
+    for owed in ("CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/",
+                 "How the material was modified",
+                 "BatteryPass-Ready Consortium (2026). Battery",
+                 "Data Attribute Longlist v1.3",
+                 "CELEX 02023R1542-20250731",
+                 "IDTA 02035-1, 02035-4 and 02035-5"):
+        assert owed in passage, (
+            "the passage attributing the generated table does not carry %r"
+            % owed)
+    # And the claim next door has to stay true of the directory while
+    # being untrue of the table: the sentence that misled is the one
+    # that stopped at the directory.
+    third_party = (root / "THIRD_PARTY.md").read_text("utf-8")
+    assert "battery_tables.py" in third_party, \
+        "THIRD_PARTY still says the material is in no distribution and stops"
