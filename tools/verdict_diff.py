@@ -292,6 +292,61 @@ def build_corpus(into: Path):
         cases.append(("an aas-suppl relationship: %s" % label,
                       build_aasx(into / ("suppl-%d.aasx" % len(cases)),
                                  payload=payload, **kwargs)))
+
+    # The shapes 0.1.3 changed the answer for. A corpus that predates a
+    # release measures the release against the questions somebody
+    # thought to ask before it, and reports "three of forty-seven" while
+    # four whole classes of input are not in it -- which reads as a
+    # small change and is not the measurement it looks like.
+    import json as _json
+
+    from builders import hd_env as _hd_env
+
+    def _without_a_value(label):
+        """A required property present and carrying nothing."""
+        document = _json.loads(_json.dumps(_hd_env()))
+
+        def strip(node):
+            if isinstance(node, dict):
+                if node.get("idShort") == label and node.get("modelType") == "Property":
+                    node.pop("value", None)
+                    return True
+                return any(strip(v) for v in node.values())
+            if isinstance(node, list):
+                return any(strip(v) for v in node)
+            return False
+        assert strip(document), label
+        target = into / ("no-value-%s.json" % label)
+        target.write_text(_json.dumps(document), "utf-8")
+        return target
+
+    cases.append(("a required property present and carrying no value",
+                  _without_a_value("DocumentDomainId")))
+
+    deep = into / "deeply-nested.json"
+    deep.write_text("[" * 200000 + "]" * 200000, "utf-8")
+    cases.append(("well-formed JSON this reader cannot build", deep))
+
+    cases.append(("a path that is not there", into / "absent.json"))
+
+    a_directory = into / "directory.json"
+    a_directory.mkdir(exist_ok=True)
+    cases.append(("a directory wearing a file's name", a_directory))
+
+    lzma_broken = into / "lzma-stream-damaged.aasx"
+    import zipfile as _zipfile
+    source = build_aasx(into / "lzma-source.aasx", payload=_json.dumps(_hd_env()).encode())
+    with _zipfile.ZipFile(source) as zin, \
+            _zipfile.ZipFile(lzma_broken, "w", _zipfile.ZIP_LZMA) as zout:
+        for info in zin.infolist():
+            zout.writestr(info.filename, zin.read(info.filename))
+    raw = bytearray(lzma_broken.read_bytes())
+    with _zipfile.ZipFile(lzma_broken) as archive:
+        biggest = max(archive.infolist(), key=lambda i: i.compress_size)
+    raw[biggest.header_offset + 30 + len(biggest.filename) + biggest.compress_size - 4] ^= 0xFF
+    lzma_broken.write_bytes(bytes(raw))
+    cases.append(("an LZMA member with a damaged stream", lzma_broken))
+
     return cases
 
 
@@ -320,7 +375,14 @@ def _judge(src: Path, target: Path):
     try:
         report = json.loads(run.stdout)
     except ValueError:
-        return ("did not produce a report", run.returncode)
+        # The same shape as a verdict, with no findings in it. It used to
+        # be a two-tuple carrying a sentence, and then `set(before[0])`
+        # walked the characters of that sentence and the unpack below
+        # died -- on the one comparison this release actually needed,
+        # because 0.1.3 is the change that gives exit 2 a report. An
+        # instrument that cannot compare "said nothing" with "said
+        # something" is no instrument for a change of exactly that kind.
+        return ((), 0, run.returncode, None, "no report")
     findings = sorted(
         (f.get("rule"), f.get("severity")) for f in report.get("findings", []))
     ours = [f for f in findings if f[0] != "META"]
@@ -335,12 +397,15 @@ def _judge(src: Path, target: Path):
 def _verdict_of(judged):
     """The part a pipeline acts on. `rulesNotAsked` is deliberately not
     in here: it changes no exit code and fails no build."""
-    return judged[:3] if len(judged) > 2 else judged
+    # The marker counts. "Said nothing at exit 2" and "said one thing at
+    # exit 2" are different answers to a consumer parsing stdout, and
+    # comparing only the first three fields calls them the same.
+    return judged[:3] + judged[4:]
 
 
 def _describe(verdict):
-    if len(verdict) == 2:
-        return "%s (exit %d)" % verdict
+    if len(verdict) > 4:
+        return "did not produce a report (exit %d)" % verdict[2]
     ours, relayed, code, not_asked = verdict
     counts = {}
     for _rule, severity in ours:

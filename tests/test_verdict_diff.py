@@ -38,20 +38,32 @@ def corpus(tmp_path_factory):
     return verdict_diff.build_corpus(tmp_path_factory.mktemp("corpus"))
 
 
-def test_every_input_in_the_corpus_can_be_read(corpus):
-    """A refused input is not a measurement.
+def test_every_input_in_the_corpus_says_something_that_could_change(corpus):
+    """An input that says nothing is not a measurement.
 
-    `complete` is the report's own answer to "did everything I was
-    handed get read". An entry that comes back false is one both
-    versions refuse for the same reason, and it contributes a row that
-    can never move however much the reader changes.
+    This asked whether every entry was *read* -- `complete` -- on the
+    reasoning that a refused input "contributes a row that can never
+    move however much the reader changes". That reasoning was true when
+    it was written and this release is the one that disproves it: a
+    refusal now carries a report, so what it says can change, and four
+    of the seven rows that moved in 0.1.3 are refusals. Three of them
+    moved *from* saying nothing.
+
+    So the question is the one that was meant: does this entry say
+    anything a later version could say differently. A run with no
+    findings and nothing refused is a row that cannot move; a refusal
+    with a finding on it is a row that just did.
     """
-    unreadable = []
+    empty = []
     for label, target in corpus:
         report = runner.run(str(target))
-        if not report.complete:
-            unreadable.append((label, [f.id for f in report.findings]))
-    assert not unreadable, unreadable
+        # A clean pass is a row with content: it moves the day a rule
+        # wrongly starts firing on it, and several entries here are
+        # exactly that. What cannot move is a refusal that says nothing,
+        # which is what a refusal used to be.
+        if not report.complete and not report.findings:
+            empty.append((label, "refused and said nothing"))
+    assert not empty, empty
 
 
 def test_the_corpus_tells_inputs_apart(corpus):
