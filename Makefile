@@ -6,7 +6,7 @@ RUFF_VERSION := 0.16.3
 PYTHON       ?= python3
 export PYTHONPATH := $(CURDIR)/src:$(CURDIR)/tests
 
-.PHONY: help check test lint fix dev generated vendored exercised
+.PHONY: help check ci-axes test lint fix dev generated vendored exercised
 
 help:
 	@echo "make check   everything CI runs: lint, gates, the test suite"
@@ -19,6 +19,14 @@ help:
 	@echo "make dev     install the pinned dev tools"
 
 check: lint generated vendored battery-data test exercised
+
+# The two things CI can see and `check` cannot: which tree the suite
+# runs from, and which interpreter runs it. Both have gone red on a
+# green `check`. Not folded into `check` -- it builds a distribution and
+# installs into throwaway environments, which is too slow for every
+# edit. Run it before a push.
+ci-axes:
+	sh tools/ci_axes.sh
 
 generated:
 	$(PYTHON) tools/extract_smt_rules.py --check

@@ -1735,8 +1735,16 @@ def test_a_path_under_a_directory_we_cannot_enter_is_refused_not_crashed(tmp_pat
         except PermissionError:
             pass
         else:
-            pytest.skip("this process can traverse a 0o000 directory "
-                        "(running as root?), so there is nothing to measure")
+            # Two ways this happens and the message used to name only
+            # one. Running as root is the obvious one; the other is the
+            # interpreter, measured here: `Path.exists()` raises on an
+            # untraversable parent through 3.13 and returns False on
+            # 3.14, so on 3.14 there is nothing to catch and the tool
+            # answers "no such file" instead. Still exit 2 either way.
+            pytest.skip("`Path.exists()` did not raise on a directory this "
+                        "process cannot enter -- either it can (root) or "
+                        "this interpreter swallows it (3.14 does). Nothing "
+                        "to measure here; the exit code is 2 either way")
         code = main([str(target), "-q"])
     finally:
         os.chmod(locked, 0o755)
