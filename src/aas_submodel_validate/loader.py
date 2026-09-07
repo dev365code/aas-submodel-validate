@@ -70,19 +70,7 @@ RELATIONSHIP_DOCTYPE_REMEDY = (
     "than bound what it expands to.")
 
 class UnreadablePath(Exception):
-    """Nothing could be read from the path at all: absent, or not permitted.
-
-    It carries its own remedy. Every refusal here has a different one and
-    they are not interchangeable: an author told to re-create an archive
-    because the file is merely unreadable goes and rebuilds a document
-    that was never wrong. Reporting this reader's difficulty as the
-    author's defect is what X5 was written to stop, and this is the same
-    sentence about the path instead of the payload.
-    """
-
-    def __init__(self, message, fix=None):
-        super().__init__(message)
-        self.fix = fix
+    """Nothing could be read from the path at all: absent, or not permitted."""
 
 
 @dataclass(frozen=True)
@@ -137,25 +125,6 @@ def _is_an_interpreter_limit(exc) -> bool:
     return isinstance(exc, ValueError) and not isinstance(exc, json.JSONDecodeError)
 
 
-#: What to do about an operating system saying no, by what it said.
-#: Derived from the error and never from the extension: the same denial
-#: reached `.aasx` through the container reader and `.json` through this
-#: one, and an extension is not a reason.
-def _access_remedy(exc) -> str:
-    if isinstance(exc, PermissionError):
-        return ("Check that this file and every directory above it are "
-                "readable by the account running this. Nothing here is a "
-                "defect in the document -- it was not read, so it was not "
-                "judged.")
-    if isinstance(exc, MemoryError):
-        return ("This reader ran out of memory before it could read the "
-                "path. Nothing is wrong with what you sent; it was "
-                "refused, not judged.")
-    return ("The operating system refused this path (%s). Nothing here is "
-            "a defect in the document -- it was not read, so it was not "
-            "judged." % type(exc).__name__)
-
-
 def _cannot_reach(path, exc) -> UnreadablePath:
     """The refusal for an operating system saying no about a path.
 
@@ -167,8 +136,7 @@ def _cannot_reach(path, exc) -> UnreadablePath:
     in one place so they cannot drift into two sentences about it.
     """
     return UnreadablePath("cannot read %s: %s: %s"
-                          % (path, type(exc).__name__, exc),
-                          fix=_access_remedy(exc))
+                          % (path, type(exc).__name__, exc))
 
 
 @dataclass
@@ -327,32 +295,9 @@ def load(path) -> Loaded:
     except OSError as exc:
         raise _cannot_reach(path, exc) from exc
     if not there:
-        raise UnreadablePath(
-            "no such file: %s" % path,
-            fix="Check the path. Nothing was opened, so nothing here is a "
-                "statement about a document.")
+        raise UnreadablePath("no such file: %s" % path)
     if not a_file:
-        raise UnreadablePath(
-            "not a file: %s" % path,
-            fix="Point this at a file rather than at a directory. Nothing "
-                "was opened, so nothing here is a statement about a "
-                "document.")
-    # And whether it opens, asked in the same place and for the same
-    # reason. It was asked by whichever reader the extension chose, and
-    # they answer differently: an unreadable `.aasx` reached
-    # `AasxPackage`, which cannot tell a permission denial from a
-    # malformed archive and reported one -- so its author was told to
-    # re-create a package that was never wrong, which is the remedy X5
-    # exists to refuse. The same file named `.json` reached the JSON
-    # reader and raised.
-    #
-    # One byte, so a large file is not read to find out, and closed at
-    # once.
-    try:
-        with open(path, "rb") as probe:
-            probe.read(1)
-    except OSError as exc:
-        raise _cannot_reach(path, exc) from exc
+        raise UnreadablePath("not a file: %s" % path)
 
     suffix = path.suffix.lower()
     if suffix == ".aasx":
@@ -365,11 +310,7 @@ def load(path) -> Loaded:
         if raw is not None:
             _parse_environment(loaded, raw, part=None, form="environment-xml")
         return loaded
-    raise UnreadablePath(
-        "cannot tell what %s is: expected .aasx, .json or .xml" % path,
-        fix="Name the file .aasx for a package, .json or .xml for an AAS "
-            "environment or a bare Submodel. The extension is how the "
-            "format is chosen here; the contents were not looked at.")
+    raise UnreadablePath("cannot tell what %s is: expected .aasx, .json or .xml" % path)
 
 
 def _load_json(path: Path) -> Loaded:

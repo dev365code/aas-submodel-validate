@@ -15,7 +15,7 @@ from . import (
     container,
     rules,  # noqa: F401  - importing registers every rule
 )
-from .loader import Loaded, LoadError, UnreadablePath, load
+from .loader import Loaded, load
 from .model import KINDS, META_KIND, Finding, Report, Rule, Severity, Violation
 from .registry import all_rules
 from .rules import detect
@@ -241,23 +241,9 @@ def _digest(path, limit: int) -> str:
 
 def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
         profile: str = None) -> Report:
-    """Validate one input.
-
-    A path this reader cannot open comes back as a report rather than as
-    an exception. It used to propagate -- "the caller's mistake and the
-    CLI's exit-2, not a finding about the file" -- which is a defensible
-    reading and was not what happened: the same permission denial reached
-    an `.aasx` through the container reader and became an `X1` finding
-    with a JSON document behind it, while `.json` and `.xml` reached this
-    function and raised. One contract instead, since a consumer that
-    parses stdout should not have to know which extension it sent.
-    """
-    try:
-        loaded = load(path)
-    except UnreadablePath as exc:
-        loaded = Loaded(path=str(path), form="unopened")
-        loaded.errors.append(LoadError("access", str(exc), subject=str(path),
-                                       fix=getattr(exc, "fix", None)))
+    """Validate one input. UnreadablePath propagates: that is the caller's
+    mistake and the CLI's exit-2, not a finding about the file."""
+    loaded = load(path)
     rules_to_run = all_rules()
     # The same bound the reader itself applies to a bare document. A
     # container may deliver more in total, and a container this reader

@@ -180,7 +180,7 @@ def test_every_kind_in_the_vocabulary_has_a_user():
 MUST_RULES = {
     "DBP2-D2", "DBP2-D3", "DBP2-D4", "DBP2-D7",
     "HD-D2", "HD-D3", "HD-D4", "HD-D7", "HD-D8",
-    "SMT-D1", "TD-D1", "TD-D2", "X1", "X2", "X3", "X5", "X6",
+    "SMT-D1", "TD-D1", "TD-D2", "X1", "X2", "X3", "X5",
 }
 SHOULD_RULES = {
     "BAT-R2", "BAT-R8",
@@ -508,10 +508,6 @@ REMEDIES = {
         "Add the missing part to the archive or delete the aas-suppl "
         "relationship that names it; a declared file a consumer cannot "
         "extract is a broken promise either way.",
-    "X6":
-        "Check the path and what the account running this may read. "
-        "Nothing was opened, so nothing here is a statement about a "
-        "document.",
     "X5":
         "This reader takes in no single document over 64 MiB, and no "
         "container whose parts come to over 256 MiB together. Nothing "

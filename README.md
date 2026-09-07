@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aas-submodel-validate?label=PyPI&color=2f6fb3)](https://pypi.org/project/aas-submodel-validate/)
-[![templates](https://img.shields.io/badge/IDTA_templates-3_·_126_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
+[![templates](https://img.shields.io/badge/IDTA_templates-3_·_125_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
 [![licence](https://img.shields.io/badge/licence-Apache--2.0-5f6a75)](https://github.com/dev365code/aas-submodel-validate/blob/main/LICENSE)
 
 &nbsp;**Apache-2.0**&nbsp;·&nbsp;**Python 3.9–3.13**&nbsp;·&nbsp;**Linux · macOS · Windows**&nbsp;·&nbsp;**zero network, by design**
@@ -120,7 +120,7 @@ file that was read and failed.
 
 ## What it catches
 
-Five of the 126, in the words the tool actually prints:
+Five of the 125, in the words the tool actually prints:
 
 | You ship this | `smtv` says |
 |---|---|
@@ -264,7 +264,7 @@ metamodel channel, so that listing is one line longer than the count.
 timeline
     title Where aas-submodel-validate is going
     Shipped : Three IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2
-            : 126 rules, 86 of them generated from the vendored official template files
+            : 125 rules, 86 of them generated from the vendored official template files
             : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
@@ -340,7 +340,7 @@ even that.
 
 ## What it checks
 
-126 rules, 116 of them across three IDTA templates — 86 generated from the vendored
+125 rules, 116 of them across three IDTA templates — 86 generated from the vendored
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), 30 hand-written where a
 template file cannot speak. Of the nine that belong to no template,
@@ -409,7 +409,7 @@ a separate `meta` channel (the JSON field is `kind`) — warnings by
 default, folded into one line unless `--show-meta`, `--meta error` to
 promote — and never re-implemented here.
 
-The rule counts (126, 86), the drift figures above and the sample are pinned by the test
+The rule counts (125, 86), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
 ## Using this validator in your product
