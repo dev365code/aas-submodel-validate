@@ -674,6 +674,16 @@ def test_each_pin_says_which_version_it_is():
 
 # -- what the tools import, and what declares it ------------------------------
 
+#: An unpacked sdist carries `PKG-INFO` at its root; a checkout does not
+#: (it is written at build time and nothing tracks it). The gate below
+#: reads sources `MANIFEST.in` deliberately does not ship, so it has a
+#: subject only in a checkout -- and the way to say so has to be a fact
+#: about the tree that is *present*, never the absence of the directory
+#: being read. Absence is also what a deleted directory looks like, and
+#: a gate that reads the two the same way goes quiet exactly where it is
+#: needed. This is the shape the suite already fell for elsewhere.
+FROM_AN_SDIST = (ROOT / "PKG-INFO").exists()
+
 #: Import name -> the distribution that provides it, where they differ.
 DISTRIBUTION_OF = {"fitz": "pymupdf"}
 
@@ -732,7 +742,15 @@ def test_every_reader_the_battery_tools_import_is_declared():
     answer is `pip install -e ".[battery]"` and the pin is in one place.
     """
     pyproject = (ROOT / "pyproject.toml").read_text("utf-8")
-    imported = _third_party_imports(ROOT / "data" / "battery-passport" / "tools")
+    tools = ROOT / "data" / "battery-passport" / "tools"
+    if FROM_AN_SDIST and not tools.is_dir():
+        pytest.skip("no data/battery-passport here (unpacked sdist); "
+                    "MANIFEST.in does not ship it")
+    assert tools.is_dir(), (
+        "data/battery-passport/tools is missing from a tree that is not an "
+        "unpacked sdist; the gate reads it, so its absence is a failure and "
+        "not a reason to stay quiet")
+    imported = _third_party_imports(tools)
     if imported is None:
         pytest.skip("needs sys.stdlib_module_names (Python 3.10+) to tell a "
                     "standard-library import from a dependency")
