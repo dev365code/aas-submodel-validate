@@ -39,8 +39,8 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
         with:
           python-version: "3.12"
 
@@ -177,7 +177,7 @@ jobs:
         # produced these bytes -- the question a reviewer actually asks,
         # and the one a checksum file cannot answer. No key for anyone
         # to manage or lose.
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a  # v3
         with:
           # Named, not globbed. `dist/*.whl` now also matches the
           # dependency wheel downloaded for the offline route, and
@@ -190,7 +190,7 @@ jobs:
             dist/smtv.pyz
 
       # The publisher below uploads exactly these bytes; nothing is rebuilt.
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
         with:
           name: dist
           path: dist/
@@ -295,12 +295,12 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
         with:
           name: dist
           path: dist
       - name: only the wheel and the sdist go to PyPI
         run: mkdir up && cp dist/aas_submodel_validate-*.whl dist/aas_submodel_validate-*.tar.gz up/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
         with:
           packages-dir: up

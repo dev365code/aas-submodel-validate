@@ -622,3 +622,51 @@ def test_the_declared_pins_are_not_matched_by_a_longer_version(where, pattern):
             % (where, pattern % near, version))
     assert re.search(re.escape(pattern % version) + r"(?![\w.])", text), (
         "%s does not pin ruff %s" % (where, version))
+
+
+# -- what the pipeline actually runs -----------------------------------------
+
+def _action_uses():
+    """(workflow, line number, reference) for every action a job runs."""
+    found = []
+    for workflow in _workflows():
+        for number, line in enumerate(
+                workflow.read_text(encoding="utf-8").splitlines(), 1):
+            bare = line.split("#", 1)[0].strip()
+            match = re.match(r"^-?\s*uses:\s*(\S+)", bare)
+            if match:
+                found.append((workflow.name, number, match.group(1)))
+    return found
+
+
+def test_every_action_is_pinned_to_a_commit():
+    """A tag and a branch are names somebody else can move.
+
+    This project's release attaches signed provenance and publishes with
+    a short-lived OIDC token, and every one of those steps is somebody
+    else's code fetched by a name at the moment the tag is pushed.
+    `@v5` is a tag the owner can repoint; `@release/v1` -- which is what
+    received the publishing token -- is a *branch*, so it is whatever
+    was pushed to it last. Pinning the rest and leaving that one is the
+    version of this that looks done.
+
+    A digest is the only reference that means the same bytes tomorrow.
+    The readable version goes in a comment beside it, which is what a
+    person updating this needs and what a resolver must not read.
+    """
+    unpinned = ["%s:%d %s" % row for row in _action_uses()
+                if not re.search(r"@[0-9a-f]{40}$", row[2])]
+    assert not unpinned, (
+        "these run by a name its owner can move:\n  " + "\n  ".join(unpinned))
+
+
+def test_each_pin_says_which_version_it_is():
+    """A digest nobody can read is a digest nobody updates."""
+    for workflow in _workflows():
+        for line in workflow.read_text(encoding="utf-8").splitlines():
+            if not re.search(r"uses:\s*\S+@[0-9a-f]{40}", line):
+                continue
+            assert re.search(r"#\s*v?\d+(\.\d+)*\s*$", line), (
+                "%s pins a digest and does not say which version it is, so "
+                "nobody can tell what updating it would change: %s"
+                % (workflow.name, line.strip()))
