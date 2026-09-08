@@ -429,6 +429,69 @@ def test_the_verdict_gate_names_the_commit_and_the_workflow():
         "success satisfies it")
 
 
+def _concurrency(path):
+    """The workflow's top-level `concurrency:` block as key -> value.
+
+    A regex rather than a YAML parser, for the reason at the top of this
+    file: something that understood the whole format would be a third
+    thing to keep in step. Only the top-level block is read -- an
+    indented one belongs to a job and cannot cancel the run.
+    """
+    block = re.search(r"(?m)^concurrency:\n((?:[ \t]+.*\n|\n)*)",
+                      path.read_text(encoding="utf-8"))
+    if not block:
+        return {}
+    settings = {}
+    for line in block.group(1).splitlines():
+        found = re.match(r"\s+([\w-]+):\s*(.*?)\s*$", line.split("#")[0])
+        if found:
+            settings[found.group(1)] = found.group(2)
+    return settings
+
+
+def _pushes_to_a_branch(path):
+    head = path.read_text(encoding="utf-8").split("jobs:", 1)[0]
+    return bool(re.search(r"(?m)^\s+push:\s*$", head)
+                and re.search(r"(?m)^\s+branches:", head))
+
+
+def test_a_push_to_a_branch_is_not_cancelled_by_the_next_push():
+    """A cancelled run is not a verdict, and the release gate needs one.
+
+    `cancel-in-progress: true` with a per-ref group means the second
+    push to main kills the first run. That is right for a pull request,
+    where only the newest commit matters, and wrong for a branch where
+    every commit is a commit somebody may later tag: the abandoned one
+    ends `completed`/`cancelled`, which is exactly what the release
+    gate above refuses. So the commit cannot be released at all until
+    CI is re-run for it, and nothing says so at the time.
+
+    Measured in this repository's own history: `064b2201` on main
+    concluded `cancelled`. It is not hypothetical, and it also empties
+    the evidence for "every commit was green on its own" -- the claim
+    a per-commit CI history exists to support.
+
+    Pull requests keep the cancellation. Superseding your own push
+    there is the normal case and the runner time is real.
+    """
+    for workflow in _workflows():
+        if not _pushes_to_a_branch(workflow):
+            continue
+        setting = _concurrency(workflow).get("cancel-in-progress")
+        if setting is None:
+            continue
+        assert setting != "true", (
+            "%s cancels in progress for every event, so a push to a "
+            "branch abandons the previous commit's run and leaves it "
+            "`cancelled` -- a commit with no verdict, which the release "
+            "gate cannot pass" % workflow.name)
+        if setting.startswith("${{"):
+            assert "pull_request" in setting, (
+                "%s decides cancellation with %r, which does not "
+                "distinguish a pull request from a branch push"
+                % (workflow.name, setting))
+
+
 #: What `gh` prints, and whether the gate may let the release through.
 #: The empty string is the case that matters: no completed CI run for
 #: this commit at all. A gate that treats absence as consent is the

@@ -10,7 +10,19 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A pull request's older run is genuinely superseded, so cancelling it
+  # costs nothing and saves a runner. A push to main is not superseded:
+  # the abandoned run ends `completed`/`cancelled`, which is not a
+  # verdict about that commit -- it is the absence of one. The release
+  # workflow asks CI what it concluded about the exact commit being
+  # tagged, so a commit cancelled this way cannot be released until CI
+  # is re-run for it, and nothing says so at the time it happens. It
+  # also puts a hole in the per-commit history that "every commit was
+  # green on its own" rests on. `064b2201` on main is that hole.
+  #
+  # The cost is that two pushes to main now queue instead of one dying;
+  # the intended habit is to let a run finish before pushing again.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
