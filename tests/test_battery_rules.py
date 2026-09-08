@@ -1218,12 +1218,13 @@ def _two_categories(first, second):
     """A passport that states two different battery categories.
 
     Both go inside the one Technical Data submodel. The reported case
-    was two submodels, and built that way the fixture changes a second
-    thing: a duplicated Technical Data makes `BAT-R8` stop reporting
-    altogether, so a test written on it would be measuring that instead.
-    What `declared_category` walks is every category element in the
-    file, and one submodel holding two is the same walk with one axis
-    moved.
+    was two submodels, and built that way the fixture moves a second
+    axis: a duplicated Technical Data reports every finding twice --
+    measured, two `BAT-R8` findings become four with the category left
+    alone -- so a count taken from it would be measuring the duplication
+    as much as the categories. What `declared_category` walks is every
+    category element in the file, and one submodel holding two is the
+    same walk with one axis moved.
     """
     env = _passport(first)
     body = json.dumps(env)
