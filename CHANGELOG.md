@@ -30,6 +30,18 @@ without a citation of their own and inherited that one, sending a reader
 arguing about a *type* to the provision about *counts*. They now cite
 the declaration they actually read.
 
+**Contributors: `make dev` works inside a virtualenv, and the battery
+readers are declared.** It used `pip install --user`, which pip refuses
+in a virtualenv, and installed neither the package nor the two readers
+the battery-passport gate imports -- so `make check` straight after
+`make dev` could not pass. Those readers are now a `battery` extra with
+bounds, rather than an unpinned `pip install` line inside two workflows.
+
+**Every GitHub Action this project runs is pinned to a commit digest.**
+The release attaches signed provenance and publishes with a short-lived
+token, and each step doing that was fetched by a name its owner can
+move -- including the publisher, which was referenced by a *branch*.
+
 **A tag only releases a commit CI has judged.** The release ran
 `make check` on the tag's tree — one Python on one Linux — and nothing
 asked what CI concluded about that commit across its ten rows. It now
