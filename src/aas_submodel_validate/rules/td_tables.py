@@ -4,6 +4,7 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02003_2-0-1 template.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
+TEMPLATE_CITATION = 'IDTA 02003-2-0-1 template'
 TEMPLATE_SEMANTIC_ID = '0173-1#01-AHX837#002'
 TEMPLATE_SUBMODEL_SID_TYPE = 'ModelReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('0173-1#01-AHX837#002',)

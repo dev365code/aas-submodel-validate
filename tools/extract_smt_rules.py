@@ -134,12 +134,20 @@ ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
 #: One entry per vendored template. `source` names the file in the header
 #: of the generated module, so a reader lands on the right upstream
 #: artefact; `prefix` is the rule-id namespace the registry keeps unique.
+#: `citation` is how a finding's `per` line names this template to a
+#: reader who has to argue with it -- the document, without the file
+#: extension, spelled the way the standard is cited rather than the way
+#: the file is named. It was written out by hand in each rule module
+#: until a finding needed to cite the same template for something other
+#: than the cardinality qualifier, and two copies of a citation are two
+#: chances to cite different documents for one reading.
 PACKS = (
     {
         "template": ROOT / "src/aas_submodel_validate/data/smt/02004/2.0.1/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/hd_tables.py",
         "prefix": "HD-E",
         "source": "IDTA 02004-2-0-1 template.json",
+        "citation": "IDTA 02004-2-0-1 template",
         "item_names": HD_ITEM_NAMES,
         "example_types": ("ExampleValue",),
         "skip_sids": frozenset(),
@@ -149,6 +157,7 @@ PACKS = (
         "output": ROOT / "src/aas_submodel_validate/rules/td_tables.py",
         "prefix": "TD-E",
         "source": "IDTA 02003_2-0-1 template.json",
+        "citation": "IDTA 02003-2-0-1 template",
         "item_names": TD_ITEM_NAMES,
         "example_types": ("SMT/ExampleValue/ECLASS", "SMT/ExampleValue/CDD",
                           "SMT/ExampleValue/UNSPSC", "SMT/ExampleValue/CustomerSpecific"),
@@ -166,6 +175,7 @@ PACKS = (
         "output": ROOT / "src/aas_submodel_validate/rules/dbp_tables.py",
         "prefix": "DBP2-E",
         "source": "IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json",
+        "citation": "IDTA 02035-2 1.0 template",
         "item_names": DBP_ITEM_NAMES,
         "example_types": ("ExampleValue",),
         "skip_sids": frozenset(),
@@ -332,6 +342,7 @@ def generate(pack) -> str:
         "Source: %s (CC BY 4.0, (c) IDTA and" % pack["source"],
         'contributors; pin and hashes in THIRD_PARTY.md)."""',
         "",
+        "TEMPLATE_CITATION = %r" % pack["citation"],
         "TEMPLATE_SEMANTIC_ID = %r" % submodel_sid,
         "TEMPLATE_SUBMODEL_SID_TYPE = %r" % submodel_sid_type,
         "TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = %r" % (tuple(sorted(supplemental)),),

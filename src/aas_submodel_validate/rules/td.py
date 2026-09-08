@@ -46,8 +46,9 @@ for _row in td_tables.ROWS:
                % (_row["label"], _row["sid"] or "by structure"),
          # The four unnamed list items carry no qualifier at all; the
          # PDF's element tables are what give them 0..*.
-         spec="IDTA 02003-2-0-1 template, SMT/Cardinality qualifier "
-              "(unnamed list items: 0..* per the PDF's element tables)",
+         spec="%s, SMT/Cardinality qualifier (unnamed list items: "
+              "0..* per the PDF's element tables)"
+              % td_tables.TEMPLATE_CITATION,
          fix=_row["fix"])(_row_check(_row["id"]))
 
 

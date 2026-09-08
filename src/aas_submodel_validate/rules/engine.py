@@ -55,6 +55,28 @@ _KIND_WORDS = {(1, 1): "exactly one", (0, 1): "at most one", (1, None): "one or 
 _UNCOUNTED = "any number of"
 
 
+def _shared_identifier_item(row, actual):
+    """The row's own item, when the template gives the two one identifier.
+
+    Five Handover rows do (docs/divergences.md #39): `DigitalFiles` and
+    its `DigitalFile` are both `0173-1#02-ABK126#002`, and so are
+    Language/LanguageCode, RefersToEntities/RefersTo,
+    BasedOnReferences/BasedOn and TranslationOfEntities/TranslationOf.
+    An element written as the item alone therefore matches the *list's*
+    row, and it is not the wrong kind of element -- it is the right
+    element with no list around it.
+
+    Read off the table rather than listed here, so a template that stops
+    sharing an identifier stops taking this branch without anyone having
+    to remember to come back. `sid` must be truthy: a structural row and
+    a structural child both carry `None`, and two nothings are not the
+    same identifier.
+    """
+    return next((child for child in row["children"]
+                 if row["sid"] and child["sid"] == row["sid"]
+                 and child["kind"] == actual), None)
+
+
 def analyze(ctx, tables) -> Dict:
     """The walk for one template, computed once per input.
 
@@ -219,7 +241,7 @@ def _analyze(ctx, tables) -> Dict:
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
-               in_list=False)
+               in_list=False, citation=tables.TEMPLATE_CITATION)
         asked_here = set(per["instances"])
         per["lost_candidates"] = [rule_id for rule_id in per["lost_candidates"]
                                   if rule_id not in asked_here]
@@ -344,7 +366,8 @@ def _matches_row(candidates, main_empty: bool, kind_name: str, row, in_list: boo
     return in_list and main_empty and kind_name == row["kind"]
 
 
-def _scope(rows, elements, path: str, result, in_list: bool) -> None:
+def _scope(rows, elements, path: str, result, in_list: bool,
+           citation: str) -> None:
     indexed = [(index, element, element_candidate_values(element),
                 not candidate_values(element.semantic_id))
                for index, element in enumerate(elements)]
@@ -399,13 +422,32 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                 # the reader to add a second copy of the element they
                 # are looking at, and that is the cardinality finding
                 # this rule really is about.
+                # The remedy has to survive being followed. Where the
+                # template gives a list and its item one identifier,
+                # "change this into a list" is advice to delete the
+                # content: the reader ends with an empty list and the
+                # next run reports the item missing instead.
+                item = _shared_identifier_item(row, actual)
+                if item is not None:
+                    remedy = ("Wrap this element in a %s named '%s' and "
+                              "leave it inside as the list's item. The "
+                              "template gives the list and its item the "
+                              "same semanticId, so this element matched "
+                              "the list's row -- changing it into a %s "
+                              "would empty it and report '%s' missing "
+                              "instead." % (row["kind"], row["label"],
+                                            row["kind"], item["label"]))
+                else:
+                    remedy = ("Change this element from a %s to a %s. It is "
+                              "the right element -- the semanticId matched "
+                              "-- so adding another would be a second "
+                              "finding, not a fix for this one."
+                              % (actual, row["kind"]))
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must be a %s" % (row["label"], row["kind"]),
                     subject=subject, detail="found a %s" % actual,
-                    fix="Change this element from a %s to a %s. It is the "
-                        "right element -- the semanticId matched -- so "
-                        "adding another would be a second finding, not a "
-                        "fix for this one." % (actual, row["kind"])))
+                    spec="%s, the element's declared modelType" % citation,
+                    fix=remedy))
                 # Reported, and not recursed into -- so everything
                 # below this row left the run with it, and nothing said
                 # so. Twenty-one rules on the measured case, nine of
@@ -435,6 +477,7 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                     "'%s' is declared to hold %s; the template holds %s"
                     % (row["label"], listed.value, row["list_type"]),
                     subject=subject, detail="typeValueListElement is %s" % listed.value,
+                    spec="%s, the list's declared typeValueListElement" % citation,
                     fix="Change this list's typeValueListElement from %s to "
                         "%s. This is about what the list says it will hold, "
                         "not about what is in it -- an empty list declaring "
@@ -445,6 +488,7 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must carry valueType %s" % (row["label"], row["value_type"]),
                     subject=subject, detail="found %s" % declared.value,
+                    spec="%s, the element's declared valueType" % citation,
                     fix="Change this element's valueType from %s to %s. "
                         "The element itself is the right one; only the "
                         "type it declares for its value is not."
@@ -498,7 +542,8 @@ def _scope(rows, elements, path: str, result, in_list: bool) -> None:
             if row["children"]:
                 _scope(row["children"], getattr(element, "value", None) or [],
                        subject, result,
-                       in_list=(row["kind"] == "SubmodelElementList"))
+                       in_list=(row["kind"] == "SubmodelElementList"),
+                       citation=citation)
 
     # What this scope did not enter, and only where the reader has
     # already said something is wrong.

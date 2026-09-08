@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased
+
+126 rules, 86 generated from the vendored template files. No
+rule is added or removed here; two of them said something a reader could
+act on and be worse off for it.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
+**A wrong-kind finding on a shared identifier says to wrap, not to
+change.** The Handover template gives five lists and their own items one
+semanticId: `DigitalFiles` and `DigitalFile` are both
+`0173-1#02-ABK126#002`, and so are `Language`/`LanguageCode`,
+`RefersToEntities`/`RefersTo`, `BasedOnReferences`/`BasedOn` and
+`TranslationOfEntities`/`TranslationOf`. A file carrying the item alone
+matches the *list's* row, and the remedy read "change this element from
+a File to a SubmodelElementList" — which empties it, so the next run
+reports `DigitalFile` missing instead. It now says to wrap the element
+in the list it belongs to. The battery part has two of the five pairs;
+`docs/divergences.md` #39 said it had none, and now says which.
+
+**`per` no longer cites the cardinality qualifier for a finding about an
+element's type.** Every generated row's rule cites `SMT/Cardinality`,
+correctly, for how many of an element there must be. The kind,
+`valueType` and `typeValueListElement` findings were built beside it
+without a citation of their own and inherited that one, sending a reader
+arguing about a *type* to the provision about *counts*. They now cite
+the declaration they actually read.
+
+**A tag only releases a commit CI has judged.** The release ran
+`make check` on the tag's tree — one Python on one Linux — and nothing
+asked what CI concluded about that commit across its ten rows. It now
+does, and no completed run for the commit is a refusal rather than a
+pass. A push to `main` is no longer cancelled by the next one either: a
+cancelled run is the absence of a verdict, and this gate needs one.
+
 ## 0.1.3 — 2026-09-08
 
 126 rules, 86 generated from the vendored template files. One rule is

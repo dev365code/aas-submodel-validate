@@ -38,7 +38,7 @@ for _row in dbp_tables.ROWS:
     rule(_row["id"], kind="template", prio="MUST",
          title="'%s' as the template declares it (%s)"
                % (_row["label"], _row["sid"] or "by structure"),
-         spec="IDTA 02035-2 1.0 template, SMT/Cardinality qualifier",
+         spec="%s, SMT/Cardinality qualifier" % dbp_tables.TEMPLATE_CITATION,
          fix=_row["fix"])(_row_check(_row["id"]))
 
 

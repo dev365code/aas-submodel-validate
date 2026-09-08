@@ -38,7 +38,7 @@ for _row in hd_tables.ROWS:
     rule(_row["id"], kind="template", prio="MUST",
          title="'%s' as the template declares it (%s)"
                % (_row["label"], _row["sid"] or "by structure"),
-         spec="IDTA 02004-2-0-1 template, SMT/Cardinality qualifier",
+         spec="%s, SMT/Cardinality qualifier" % hd_tables.TEMPLATE_CITATION,
          fix=_row["fix"])(_row_check(_row["id"]))
 
 

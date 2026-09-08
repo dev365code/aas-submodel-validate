@@ -17,6 +17,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from aas_submodel_validate import runner
 from aas_submodel_validate.loader import load
 from aas_submodel_validate.rules import dbp_tables, engine, hd_tables, td_tables
@@ -653,3 +655,139 @@ def test_a_wrong_value_type_is_not_told_to_add_the_element_either(tmp_path):
         assert "xs:int" in finding.fix, (
             "the remedy does not say what the element declares today: %r"
             % finding.fix)
+
+
+# -- the five rows whose list and item share one identifier (divergences #39) --
+
+def _bare_item_in_place_of_its_list(env, row):
+    """The 2.0 shape: the list's item sitting where the list belongs.
+
+    The template gives `DigitalFiles` and its `DigitalFile` the same
+    semanticId, so a file written this way matches the *list's* row and
+    is reported as the wrong kind of element.
+    """
+    item = row["children"][0]
+    strip_row(env, row, hd_tables)
+    inject(env, hd_tables.BY_ID[row["parent"]], [
+        {"idShort": item["label"], "modelType": item["kind"],
+         "semanticId": {"type": "ExternalReference",
+                        "keys": [{"type": "GlobalReference",
+                                  "value": row["sid"]}]},
+         "contentType": "application/pdf",
+         "value": "/aasx/files/manual.pdf"}], hd_tables)
+    return item
+
+
+def test_the_remedy_for_a_shared_identifier_pair_says_to_wrap(tmp_path):
+    """A remedy that makes the file worse is worse than no remedy.
+
+    `DigitalFiles` is a SubmodelElementList and its item `DigitalFile`
+    is a File, and the template gives both the same semanticId
+    (docs/divergences.md #39). A file carrying the item alone matches
+    the list's row, and the standing advice for a wrong kind -- "change
+    this element from a File to a SubmodelElementList" -- is advice to
+    delete the file's contents: following it leaves an empty list and
+    the next run reports the item missing instead.
+
+    The element is not the wrong kind. It is the right element in the
+    wrong place, and the repair is to wrap it.
+    """
+    row = hd_tables.BY_LABEL["DigitalFiles"]
+    env = copy.deepcopy(hd_env())
+    item = _bare_item_in_place_of_its_list(env, row)
+    wrong_kind = [f for f in runner.run(_write(tmp_path, env)).findings
+                  if f.id == row["id"] and "must be a" in f.violation.message]
+    assert wrong_kind, "no wrong-kind finding to read the remedy off"
+    for finding in wrong_kind:
+        assert "Change this element" not in finding.fix, (
+            "the remedy tells the reader to turn the %s into a %s, which "
+            "empties it and reports '%s' missing next run: %r"
+            % (item["kind"], row["kind"], item["label"], finding.fix))
+        assert item["label"] in finding.fix, (
+            "the remedy does not name the item the list must hold, so a "
+            "reader cannot tell this element is the content: %r" % finding.fix)
+        assert row["label"] in finding.fix, (
+            "the remedy does not name the list to wrap it in: %r" % finding.fix)
+
+
+def test_a_kind_finding_does_not_cite_the_cardinality_qualifier(tmp_path):
+    """`per` is the line the front page tells a reader to cite, and on a
+    wrong-kind finding it cited the clause about how many.
+
+    Every generated row's rule carries one `spec`, the SMT/Cardinality
+    qualifier, because that is what the row's own rule is about. The
+    kind, valueType and typeValueListElement violations are built
+    beside it without a `spec` of their own and inherit that one --
+    sending a reader who is arguing about an element's *type* to the
+    provision that says how many of it there must be.
+    """
+    row = hd_tables.BY_LABEL["DigitalFiles"]
+    env = copy.deepcopy(hd_env())
+    _bare_item_in_place_of_its_list(env, row)
+    wrong_kind = [f for f in runner.run(_write(tmp_path, env)).findings
+                  if f.id == row["id"] and "must be a" in f.violation.message]
+    assert wrong_kind, "no wrong-kind finding to read `per` off"
+    for finding in wrong_kind:
+        assert "Cardinality" not in (finding.spec or ""), (
+            "a finding about what kind of element this is cites the "
+            "clause about how many there must be: per = %r" % finding.spec)
+        assert finding.spec, "the finding cites nothing at all"
+
+
+#: The shared-identifier pairs of docs/divergences.md #39, per pack: a
+#: `SubmodelElementList` and its own item wearing one semanticId. The
+#: battery part is a second Handover template over the same elements, so
+#: it has the two of the five whose rows it keeps -- the document said it
+#: had none until this test counted them.
+SHARED_IDENTIFIER_PAIRS = {
+    "hd_tables": {"DigitalFiles": "DigitalFile",
+                  "Language": "LanguageCode",
+                  "RefersToEntities": "RefersTo",
+                  "BasedOnReferences": "BasedOn",
+                  "TranslationOfEntities": "TranslationOf"},
+    "td_tables": {},
+    "dbp_tables": {"DigitalFiles": "DigitalFile",
+                   "Language": "LanguageCode"},
+}
+
+
+@pytest.mark.parametrize("tables", [hd_tables, td_tables, dbp_tables],
+                         ids=lambda t: t.__name__.split(".")[-1])
+def test_the_shared_identifier_pairs_are_the_ones_the_document_names(tables):
+    """The wrap remedy reads the pairs off the table instead of listing
+    them, so what needs pinning is that the tables still say what
+    docs/divergences.md #39 says they say.
+
+    #39 said Technical Data and the battery part had none. Technical
+    Data has none; the battery part has two, and the remedy that fires
+    for them is explained by a sentence that said they did not exist.
+    Counted here rather than believed.
+    """
+    name = tables.__name__.split(".")[-1]
+    found = {row["label"]: child["label"]
+             for row in tables.ROWS
+             for child in row["children"]
+             if row["sid"] and child["sid"] == row["sid"]}
+    assert found == SHARED_IDENTIFIER_PAIRS[name], (
+        "%s and docs/divergences.md #39 disagree about which rows share "
+        "an identifier with their own item" % name)
+
+
+@pytest.mark.parametrize("tables", [hd_tables, td_tables, dbp_tables],
+                         ids=lambda t: t.__name__.split(".")[-1])
+def test_every_shared_identifier_item_written_alone_is_told_to_wrap(tables):
+    """One pair is exercised end to end through the runner above. This
+    asks the reader itself about all of them, including the two in a
+    pack that test does not build a file for."""
+    name = tables.__name__.split(".")[-1]
+    for parent, child in SHARED_IDENTIFIER_PAIRS[name].items():
+        row = tables.BY_LABEL[parent]
+        item = engine._shared_identifier_item(
+            row, tables.BY_LABEL[child]["kind"])
+        assert item is not None and item["label"] == child, (
+            "%s: '%s' written alone would be told to change rather than "
+            "wrap" % (name, child))
+    for row in tables.ROWS:
+        assert engine._shared_identifier_item(row, None) is None, (
+            "%s: asked for a kind no element has, '%s' still matched"
+            % (name, row["label"]))
