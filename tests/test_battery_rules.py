@@ -33,7 +33,7 @@ import re
 import pytest
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.rules import battery_tables
+from aas_submodel_validate.rules import battery, battery_tables
 
 CARBON_FOOTPRINT = "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0"
 #: An element BAT-R8 reads once a category is settled, and where it sits.
@@ -1210,3 +1210,90 @@ def test_no_clause_line_names_one_provision_twice(tmp_path):
             "Regulation (EU) 2023/1542 ", "")
         keys = [key(part) for part in clauses.split(", ")]
         assert len(keys) == len(set(keys)), (finding.violation.subject, clauses)
+
+
+# -- a file that names two categories ----------------------------------------
+
+def _two_categories(first, second):
+    """A passport that states two different battery categories.
+
+    Both go inside the one Technical Data submodel. The reported case
+    was two submodels, and built that way the fixture changes a second
+    thing: a duplicated Technical Data makes `BAT-R8` stop reporting
+    altogether, so a test written on it would be measuring that instead.
+    What `declared_category` walks is every category element in the
+    file, and one submodel holding two is the same walk with one axis
+    moved.
+    """
+    env = _passport(first)
+    body = json.dumps(env)
+    assert body.count('"%s"' % first) == 1, (
+        "the fixture states %r %d times; the copy below would not be the "
+        "one axis it claims" % (first, body.count('"%s"' % first)))
+    general = None
+    for submodel in env["submodels"]:
+        for element in submodel.get("submodelElements", []):
+            if element.get("idShort") == "GeneralInformation":
+                general = element
+    assert general is not None, "no GeneralInformation holding the category"
+    twin = json.loads(json.dumps(general["value"][0]).replace(
+        '"%s"' % first, '"%s"' % second))
+    twin["idShort"] = twin.get("idShort", "BatteryCategory") + "2"
+    general["value"].append(twin)
+    return env
+
+
+@pytest.mark.parametrize("order", [("ev", "lmt"), ("lmt", "ev")])
+def test_two_declared_categories_settle_no_conditional_row(tmp_path, order):
+    """Whichever category was walked first used to win, silently.
+
+    Reported: `ev` then `lmt` gave six findings, all EV rows; the same
+    file reversed gave ten, all LMT rows. The verdict depended on the
+    order the walk happened to take and nothing said a choice was made.
+
+    The capacity threshold for exhaustion is required for an electric
+    vehicle and forbidden for light means of transport, so guessing
+    tells one of those two readers to add a field their own guidance
+    refuses. A file stating both has not settled the question, and this
+    now demands nothing on the strength of a guess -- the same as a file
+    that states no category at all, which is measured beside it.
+    """
+    demanded = [f for f in _run(tmp_path, _two_categories(*order)).findings
+                if f.id == battery.R8_ID and "expects it for" in f.violation.message]
+    assert not demanded, (
+        "the run chose a category and demanded rows for it: %s"
+        % [f.violation.message for f in demanded])
+    settled = [f for f in _run(tmp_path, _passport(order[0])).findings
+               if f.id == battery.R8_ID and "expects it for" in f.violation.message]
+    assert settled, (
+        "the control says nothing either, so the test above proves "
+        "nothing about the two categories")
+
+
+def test_the_note_says_the_run_declined_to_choose(tmp_path):
+    """A file can fail to settle the category by naming none or by
+    naming several, and those are not the same thing for a reader to
+    fix. Reported the first way, the note tells someone to supply what
+    they have already written down twice."""
+    from aas_submodel_validate import loader
+
+    path = tmp_path / "env.json"
+    path.write_bytes(json.dumps(_two_categories("ev", "lmt")).encode("utf-8"))
+    said = battery.coverage_note(loader.load(path).submodels)
+    assert "'ev'" in said and "'lmt'" in said, (
+        "the note does not name the two categories the file states: %s" % said)
+    assert "did not choose between them" in said, (
+        "the note does not say the run declined to choose: %s" % said)
+
+
+def test_the_two_orders_are_judged_the_same(tmp_path):
+    """The point of the change, stated as the property it restores:
+    a file and the same file with its submodels swapped are one file."""
+    forwards = _run(tmp_path, _two_categories("ev", "lmt"))
+    backwards = _run(tmp_path, _two_categories("lmt", "ev"))
+    def shape(report):
+        return sorted((f.id, f.violation.subject) for f in report.findings
+                      if f.id == battery.R8_ID)
+    assert shape(forwards) == shape(backwards), (
+        "the same file judged differently depending on which category "
+        "element the walk reached first")

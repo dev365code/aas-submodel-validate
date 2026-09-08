@@ -700,3 +700,41 @@ def test_the_longlist_is_named_by_the_edition_that_is_cc_by():
     assert not offenders, (
         "the short name names an earlier, non-commercially licensed "
         "series and is used here: %s" % ", ".join(offenders))
+
+
+# -- a field nothing fills, and a claim nothing keeps -------------------------
+
+BATTERY = Path(__file__).resolve().parents[1] / "data" / "battery-passport"
+
+
+def _indexes():
+    for path in sorted(BATTERY.glob("requirements-*.json")):
+        loaded = json.loads(path.read_text("utf-8"))
+        if isinstance(loaded, dict) and loaded.get("records"):
+            yield path.name, loaded["records"]
+
+
+def test_the_directory_says_which_of_its_sources_is_a_draft():
+    """The longlist calls itself a draft and the indexes carry the word.
+
+    `requirements-longlist.json` records the sheet it was read from --
+    `Data attribute longlist_DR_v1.3` -- and a finding's `per` line says
+    "v1.3 (draft)". The two documents a reader meets first said only
+    "v1.3", so the one surface that admits the source may still change
+    was the one nobody reads before citing it.
+    """
+    longlist = json.loads((BATTERY / "requirements-longlist.json").read_text("utf-8"))
+    sheet = longlist["provenance"][0]["sheet"]
+    assert "_DR_" in sheet, (
+        "the source sheet no longer marks itself a draft (%s); this test "
+        "and the surfaces it guards are about a status that changed" % sheet)
+    for name in ("README.md", "NOTICE.md"):
+        text = (BATTERY / name).read_text("utf-8")
+        # Not `[^.\n]`: the name carries a period ("longlist v1.3"), so a
+        # pattern that refused to cross one could not reach the word it
+        # was looking for -- and reported the surface as unmarked when
+        # the sentence said it plainly.
+        assert re.search(r"longlist[^\n]{0,120}draft|draft[^\n]{0,120}longlist",
+                         text, re.I), (
+            "%s names the longlist and never says it is a draft, while the "
+            "sheet it was read from is %s" % (name, sheet))

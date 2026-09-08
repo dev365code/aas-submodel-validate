@@ -84,7 +84,13 @@ point, with the applicability columns split per battery category.
 
 ---
 
-## BatteryPass-Ready Data Attribute Longlist v1.3 — `requirements-longlist.json`
+## BatteryPass-Ready Data Attribute Longlist v1.3 (draft) — `requirements-longlist.json`
+
+**A draft.** The sheet this index is read from is named `Data attribute
+longlist_DR_v1.3`, its change-log names its own columns "current name in
+Draft v1.3", and it states that some newly added information is subject
+to change. A finding that cites this source says `(draft)` for the same
+reason: it is a published reading, not a settled one.
 
 **Copyright © 2026 BatteryPass-Ready Consortium.** Made available under a
 CC BY Licence (Attribution),

@@ -8,13 +8,24 @@ institutional reuse decision — and one of them is a consolidated text that say
 of itself that it has no legal effect.**
 
 Machine-readable indexes of what an EU battery passport must contain, derived
-from four canonical sources and joined so the same obligation can be followed
-across all four: Regulation (EU) 2023/1542 Annex XIII (consolidated text
+from four canonical sources and joined where they can be joined: Regulation
+(EU) 2023/1542 Annex XIII (consolidated text
 02023R1542-20250731), the European Commission's guidance table *Digital
 Batteries Passport – data points by category* v2.0 (CC BY 4.0), the
-BatteryPass-Ready data attribute longlist v1.3 (CC BY 4.0), and the IDTA Digital
-Battery Passport
+BatteryPass-Ready data attribute longlist v1.3 (CC BY 4.0 — **a draft**: the
+sheet it is read from is named `Data attribute longlist_DR_v1.3` and says its
+requirements may still be altered), and the IDTA Digital Battery Passport
 submodel templates 02035-1 to -7 with 02099-1 (CC BY 4.0).
+
+There are two joins and they are not the same kind of thing. **By citation**:
+the guidance and the longlist each name the provision a data point comes from,
+and those citations are normalised and matched against the annex index; one that
+does not resolve is reported rather than repaired. **By name**: the templates
+cite nothing, so all that can be matched is an element name against an attribute
+name reduced to a bag of lowercase words — a weak join, recorded only on exact
+matches, with everything else left in the unmatched lists. There is no single
+chain running annex to guidance to longlist to element, and no record carries
+the ids of its counterparts in the other indexes.
 
 Each index records identifiers, section references, quotations and the
 cardinality or applicability the source itself states, pinned to the sha256 of

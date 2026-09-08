@@ -91,13 +91,14 @@ CATEGORY_COLUMNS = {"ev": "EV", "lmt": "LMT"}
 REQUIRED_READINGS = ("required", "required-by-batteries-regulation")
 
 
-def declared_category(submodels) -> str:
-    """The category the file states, lower-cased, or "" if it states none.
+def declared_categories(submodels) -> tuple:
+    """Every distinct category the file states, lower-cased.
 
     Over every submodel rather than the one being judged: the element
     lives in Technical Data and four of the eight rows it settles belong
     to other parts of the passport.
     """
+    found = []
     for submodel in submodels:
         pending = list(getattr(submodel, "submodel_elements", None) or [])
         while pending:
@@ -105,12 +106,35 @@ def declared_category(submodels) -> str:
             if CATEGORY_ELEMENT in element_candidate_values(element):
                 value = getattr(element, "value", None)
                 if isinstance(value, str) and value.strip():
-                    return value.strip().lower()
+                    word = value.strip().lower()
+                    if word not in found:
+                        found.append(word)
             for attribute in ("value", "statements", "annotations"):
                 children = getattr(element, attribute, None)
                 if isinstance(children, list):
                     pending.extend(c for c in children if hasattr(c, "semantic_id"))
-    return ""
+    return tuple(found)
+
+
+def declared_category(submodels) -> str:
+    """The one category the file states, or "" -- for none, or for more
+    than one.
+
+    Two Technical Data submodels stating different categories used to be
+    settled by whichever was walked first: `ev` then `lmt` reported six
+    findings, all EV rows, and the same file with the two reversed
+    reported ten, all LMT rows. Nothing said a choice had been made.
+
+    Returning "" is the conservative direction and the one the table's
+    own comment argues for. The capacity threshold for exhaustion is
+    required for an electric vehicle and forbidden for light means of
+    transport, so a run that guesses tells one of those two readers to
+    add a field their own guidance refuses. A file that names two
+    categories has not settled the question, and this says so rather
+    than picking.
+    """
+    found = declared_categories(submodels)
+    return found[0] if len(found) == 1 else ""
 
 
 def _rows_the_category_settles(submodels):
@@ -137,6 +161,16 @@ COVERAGE_NOTE = (
     "on a battery category this file does not settle, so whether a "
     "published reading of the law requires those is a question this run "
     "did not ask.%s" + COVERAGE_TAIL)
+#: A file can fail to settle the category by naming none or by naming
+#: several, and those are not the same thing to fix. The first reads as
+#: an omission; the second is a contradiction inside the file, and a run
+#: that reported it the first way told a reader to add something they
+#: had already written down twice.
+COVERAGE_NOTE_DISPUTED = (
+    "%s reported %d of the %d elements this table holds; %d of them turn "
+    "on a battery category, and this file states %s, so this run did not "
+    "choose between them -- whether a published reading of the law "
+    "requires those is a question it did not ask.%s" + COVERAGE_TAIL)
 #: The other reason an element goes unasked, which this note said with
 #: the first one's words. A file that states `ev` has settled the
 #: question; the six elements EV's guidance does not require were not
@@ -249,6 +283,15 @@ def coverage_note(submodels) -> str:
         # is what remains once the first two are taken out. Counted as
         # three independent numbers, the first version said the note
         # accounted for fifteen of nine.
+        disputed = declared_categories(submodels)
+        if len(disputed) > 1:
+            return COVERAGE_NOTE_DISPUTED % (
+                R8_ID, read, total, total - read - elsewhere,
+                # Sorted: the walk's order is exactly what this change
+                # stopped letting decide anything, and a note that
+                # printed it would put it back in the report.
+                " and ".join("'%s'" % word for word in sorted(disputed)),
+                _elsewhere_said(elsewhere), battery_tables.SOURCE_EDITION)
         return COVERAGE_NOTE % (R8_ID, read, total,
                                 total - read - elsewhere,
                                 _elsewhere_said(elsewhere),
