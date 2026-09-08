@@ -53,6 +53,16 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "aas_submodel_validate"
 OUTPUT = ROOT / "dist" / "smtv.pyz"
 
+def python_floor(text: str = None) -> str:
+    """The oldest Python pyproject says this runs on, as "X.Y"."""
+    if text is None:
+        text = (ROOT / "pyproject.toml").read_text("utf-8")
+    found = re.search(r'^requires-python = ">=([0-9]+\.[0-9]+)"', text, re.M)
+    assert found, ('pyproject.toml no longer declares requires-python as ">=X.Y"; '
+                   "the archive would be resolved for whichever Python built it")
+    return found.group(1)
+
+
 #: The archive carries no wheel metadata, so `Requires-Python` is not in
 #: it -- and the reader who most needs that number is the one who carried
 #: this file through a site's inbound review and cannot go and look it
@@ -62,18 +72,24 @@ OUTPUT = ROOT / "dist" / "smtv.pyz"
 #:
 #: The guard runs before the import whose failure it explains, and uses
 #: nothing newer than what it refuses.
-MAIN = """import sys
+#: Written from `python_floor()` rather than beside it. The tuple and
+#: the sentence were typed here while `requires-python` was read from
+#: pyproject three functions down, so moving the floor moved one of
+#: them -- and the test that watched this text accepted the error
+#: message as proof, because the message contains the number too.
+MAIN = ("""import sys
 
-if sys.version_info < (3, 9):
+if sys.version_info < FLOOR_TUPLE:
     sys.stderr.write(
-        "smtv: this needs Python 3.9 or newer; this one is %d.%d (%s)\\n"
+        "smtv: this needs Python FLOOR_WORDS or newer; this one is %d.%d (%s)\\n"
         % (sys.version_info[0], sys.version_info[1], sys.executable))
     sys.exit(2)
 
 from aas_submodel_validate.cli import main
 
 sys.exit(main())
-"""
+""".replace("FLOOR_TUPLE", "(%s, %s)" % tuple(python_floor().split(".")))
+        .replace("FLOOR_WORDS", python_floor()))
 
 SHEBANG = b"#!/usr/bin/env python3\n"
 
@@ -95,16 +111,6 @@ def _timestamp():
     except (ValueError, OSError, OverflowError):
         return FIXED_TIMESTAMP
     return min(max(stamp, ZIP_EARLIEST), ZIP_LATEST)
-
-
-def python_floor(text: str = None) -> str:
-    """The oldest Python pyproject says this runs on, as "X.Y"."""
-    if text is None:
-        text = (ROOT / "pyproject.toml").read_text("utf-8")
-    found = re.search(r'^requires-python = ">=([0-9]+\.[0-9]+)"', text, re.M)
-    assert found, ('pyproject.toml no longer declares requires-python as ">=X.Y"; '
-                   "the archive would be resolved for whichever Python built it")
-    return found.group(1)
 
 
 def dependencies() -> list:

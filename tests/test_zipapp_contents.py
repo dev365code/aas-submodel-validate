@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import ast
 import pathlib
+import re
+import sys
 
 import pytest
 
@@ -163,3 +165,88 @@ def test_the_example_is_named_the_same_from_the_archive_as_from_a_wheel():
     source = (ROOT / "src" / "aas_submodel_validate" / "cli.py").read_text("utf-8")
     assert "shown_as=example_name()" in source, \
         "the report names the example some other way again"
+
+
+# -- the floor the single file refuses below ---------------------------------
+
+def _floor():
+    """The floor pyproject declares, as a tuple."""
+    text = (ROOT / "pyproject.toml").read_text("utf-8")
+    found = re.search(r'^requires-python = ">=([0-9]+)\.([0-9]+)"', text, re.M)
+    assert found, "pyproject no longer declares requires-python as >=X.Y"
+    return int(found.group(1)), int(found.group(2))
+
+
+def _the_guard():
+    """The entry point's version check, without the import it protects."""
+    main = _entry_point()
+    guard, sep, _rest = main.partition("\nfrom aas_submodel_validate")
+    assert sep, "the entry point no longer imports the package after its guard"
+    return guard
+
+
+@pytest.mark.parametrize("below", [True, False])
+def test_the_single_file_refuses_exactly_below_the_declared_floor(
+        monkeypatch, capsys, below):
+    """Run the guard, do not read it.
+
+    What stood here asserted `"3.9" in main or "(3, 9)" in main`, and the
+    error message contains "3.9" -- so the tuple could be changed to
+    (3, 8), or to (2, 7), and this file went on passing. Measured both
+    ways. A guard is what it does on a version, so the floor is moved
+    under it and the exit code is what is believed.
+
+    One axis: the same guard, two adjacent versions, and only the
+    version differs between them.
+    """
+    major, minor = _floor()
+    version = (major, minor - 1) if below else (major, minor)
+    monkeypatch.setattr(sys, "version_info", version + (0, "final", 0))
+    namespace: dict = {}
+    if below:
+        with pytest.raises(SystemExit) as refused:
+            exec(compile(_the_guard(), "<guard>", "exec"), namespace)
+        assert refused.value.code == 2, (
+            "refused with %r; the single file's contract is exit 2"
+            % (refused.value.code,))
+        assert "%d.%d" % (major, minor) in capsys.readouterr().err, (
+            "the refusal does not name the version it wants")
+    else:
+        exec(compile(_the_guard(), "<guard>", "exec"), namespace)
+
+
+def test_the_guard_names_the_floor_pyproject_declares():
+    """The prose and the tuple are one fact written twice; the tuple is
+    now built from pyproject, and this is the half a reader reads."""
+    major, minor = _floor()
+    main = _entry_point()
+    assert "(%d, %d)" % (major, minor) in main, (
+        "the guard does not compare against the declared floor %d.%d"
+        % (major, minor))
+    assert "Python %d.%d or newer" % (major, minor) in main, (
+        "the refusal does not say the declared floor in words")
+
+
+def test_the_front_page_floor_is_the_declared_floor():
+    """`Python 3.9–3.13` on the front page was pinned by nothing.
+    Changing `requires-python` to >=3.10 left the page, the matrix's
+    floor row and the guard all saying 3.9, and every test passing."""
+    major, minor = _floor()
+    readme = (ROOT / "README.md").read_text("utf-8")
+    claimed = re.search(r"Python (\d+)\.(\d+)[–-](\d+)\.(\d+)", readme)
+    assert claimed, "the front page no longer states a Python range"
+    assert (int(claimed.group(1)), int(claimed.group(2))) == (major, minor), (
+        "the front page claims a floor of %s.%s and pyproject declares "
+        "%d.%d" % (claimed.group(1), claimed.group(2), major, minor))
+
+
+def test_the_matrix_runs_the_declared_floor():
+    """A floor nothing runs on is a floor nobody has measured."""
+    major, minor = _floor()
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
+    rows = re.findall(r'python:\s*"(\d+)\.(\d+)"', workflow)
+    assert rows, "no matrix rows name a Python"
+    lowest = min((int(a), int(b)) for a, b in rows)
+    assert lowest == (major, minor), (
+        "the matrix's lowest row is %s and pyproject declares %d.%d"
+        % (lowest, major, minor))
