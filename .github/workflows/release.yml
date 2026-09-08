@@ -109,7 +109,7 @@ jobs:
         # passes -- so a release would have run a weaker check than every
         # push that led to it, which is the wrong way round.
         run: |
-          pip install openpyxl pymupdf
+          pip install -e ".[battery]"
           make check
 
       - name: build the wheel and the sdist

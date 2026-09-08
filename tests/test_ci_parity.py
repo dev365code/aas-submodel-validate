@@ -670,3 +670,85 @@ def test_each_pin_says_which_version_it_is():
                 "%s pins a digest and does not say which version it is, so "
                 "nobody can tell what updating it would change: %s"
                 % (workflow.name, line.strip()))
+
+
+# -- what the tools import, and what declares it ------------------------------
+
+#: Import name -> the distribution that provides it, where they differ.
+DISTRIBUTION_OF = {"fitz": "pymupdf"}
+
+#: Import names that are this project, its declared runtime dependency,
+#: or the standard library's -- asked of the interpreter rather than
+#: listed, except for the two that are ours by construction.
+OURS_TO_IMPORT = {"aas_submodel_validate", "builders", "conftest"}
+
+
+def _third_party_imports(where):
+    """Every top-level module `where`'s Python files import."""
+    import ast
+    import sys as _sys
+
+    #: `sys.stdlib_module_names` arrived in 3.10. Below that the set is
+    #: empty and every `import argparse` reads as an undeclared
+    #: dependency -- the same gate answering differently depending on
+    #: which interpreter runs the suite, which is not a gate. The
+    #: callers skip rather than guess; nine of CI's ten rows answer it.
+    standard = getattr(_sys, "stdlib_module_names", None)
+    if standard is None:
+        return None
+    found = {}
+    for path in sorted(Path(where).rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
+        for node in ast.walk(tree):
+            names = []
+            if isinstance(node, ast.Import):
+                names = [alias.name.split(".")[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                names = [node.module.split(".")[0]]
+            for name in names:
+                if name in standard or name in OURS_TO_IMPORT:
+                    continue
+                #: A module sitting beside the file that imports it is
+                #: not a package anybody installs. `_common` is one, and
+                #: reading it as a dependency made the gate demand that
+                #: pyproject declare this directory's own helper.
+                if ((path.parent / (name + ".py")).exists()
+                        or (path.parent / name / "__init__.py").exists()):
+                    continue
+                found.setdefault(DISTRIBUTION_OF.get(name, name), set()).add(
+                    str(path))
+    return found
+
+
+def test_every_reader_the_battery_tools_import_is_declared():
+    """A dependency named only inside a CI step is a dependency nobody
+    installing this project can discover.
+
+    `openpyxl` and `pymupdf` were installed by one unpinned `pip
+    install` line in two workflows and declared in no metadata at all,
+    so the gate that reads the battery indexes passes locally by
+    skipping -- and a contributor who wants to run it has to read the
+    workflow to find out what to install. Declared as an extra, the
+    answer is `pip install -e ".[battery]"` and the pin is in one place.
+    """
+    pyproject = (ROOT / "pyproject.toml").read_text("utf-8")
+    imported = _third_party_imports(ROOT / "data" / "battery-passport" / "tools")
+    if imported is None:
+        pytest.skip("needs sys.stdlib_module_names (Python 3.10+) to tell a "
+                    "standard-library import from a dependency")
+    assert imported, "no third-party imports found; the probe is looking nowhere"
+    for distribution, files in sorted(imported.items()):
+        assert re.search(r'"%s[>=<~!\[]' % re.escape(distribution), pyproject), (
+            "%s is imported by %s and declared in no dependency group"
+            % (distribution, ", ".join(sorted(
+                Path(f).name for f in files))))
+
+
+def test_the_workflows_install_the_readers_by_the_name_that_declares_them():
+    """Two files listing the same two packages by hand is the drift the
+    extra exists to remove; the pin has to be the one metadata states."""
+    for name in ("ci.yml", "release.yml"):
+        text = (ROOT / ".github" / "workflows" / name).read_text("utf-8")
+        assert "pip install openpyxl pymupdf" not in text, (
+            "%s installs the readers by hand, so their versions are "
+            "whatever resolved that morning" % name)

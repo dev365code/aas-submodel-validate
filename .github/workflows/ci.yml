@@ -40,7 +40,7 @@ jobs:
       - name: the vendored official material matches its recorded hashes
         run: python tools/vendor_template.py --check
       - name: readers the battery-passport extractors import
-        run: pip install openpyxl pymupdf
+        run: pip install -e ".[battery]"
       - name: the battery-passport indexes agree with themselves
         run: python tools/battery_data_check.py
       - name: the join and its published table match their generator

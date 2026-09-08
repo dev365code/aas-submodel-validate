@@ -63,4 +63,9 @@ fix:
 	$(PYTHON) -m ruff check --no-cache --fix .
 
 dev:
-	$(PYTHON) -m pip install --user "ruff==$(RUFF_VERSION)" "pytest>=7" "aas-core3.0>=1.1.4,<2"
+# `--user` is refused inside a virtualenv -- "Can not perform a '--user'
+# install" -- which is where a contributor most likely is, and it
+# installed neither the package nor the battery readers, so `make check`
+# straight after `make dev` could not pass. The extras are the
+# declaration; this target is one way of reading it.
+	$(PYTHON) -m pip install -e ".[dev,battery]"

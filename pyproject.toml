@@ -38,6 +38,14 @@ Issues = "https://github.com/dev365code/aas-submodel-validate/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff==0.16.3"]
+# The readers the battery-passport extractors import. They were
+# installed by one `pip install openpyxl pymupdf` line inside two
+# workflows and declared in no metadata, so the versions were whatever
+# resolved that morning and a contributor who wanted to run that gate
+# had to read the workflow to find out what to install. Bounded the way
+# the runtime dependency is: a major nobody has run is not a major this
+# has been measured against.
+battery = ["openpyxl>=3.1,<4", "pymupdf>=1.24,<2"]
 
 [project.scripts]
 aas-submodel-validate = "aas_submodel_validate.cli:main"
