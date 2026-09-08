@@ -25,6 +25,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Reading what CI concluded about this commit. `contents: read` at
+      # the top of the file does not carry it, and without it the gate
+      # below meets a 403 -- which it treats as "no verdict" and refuses,
+      # correctly but unhelpfully, on every release.
+      actions: read
       # Signing. Without it the only trust story is a checksum file that
       # travels beside the files it vouches for and is replaceable by
       # whoever could replace them -- an integrity proof read as an
@@ -38,6 +43,37 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
+      - name: CI has judged this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # A tag is the only thing between a commit and PyPI, and until
+        # now the only question asked of that commit was whether
+        # `make check` passes here -- one Python on one Linux. CI asks
+        # ten rows, and the gap is not decorative: a change green
+        # locally and green on every ubuntu row broke `windows-latest`
+        # alone, and a tag pushed at that commit would have found this
+        # job green and published it.
+        #
+        # `--commit` and `--workflow` are both load-bearing. Without the
+        # first this asks what CI concluded most recently, which minutes
+        # after a green main is almost always success -- the gate
+        # measuring the repository instead of the commit. Without the
+        # second, any workflow's success counts, including this one.
+        #
+        # Absence is a refusal, not a pass: no completed run leaves
+        # `verdict` empty and the test exits 1. So a tag pushed while CI
+        # is still running stops here. That is the intended answer --
+        # re-run this job once CI is green rather than widening the
+        # gate, because "it was probably fine" is the belief this step
+        # exists to stop being load-bearing.
+        run: |
+          sha="$(git rev-parse HEAD)"
+          verdict="$(gh run list --workflow ci.yml --commit "$sha" \
+            --limit 20 --json status,conclusion \
+            --jq 'map(select(.status == "completed")) | .[0].conclusion // empty')"
+          [ "$verdict" = "success" ] || { echo "ci.yml on $sha concluded: ${verdict:-no completed run}"; exit 1; }
+          echo "ci.yml concluded success on $sha"
 
       - name: the tag and the version agree
         # Five places say the version -- the package, the build

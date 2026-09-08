@@ -9,7 +9,10 @@ third thing to keep in step.
 """
 from __future__ import annotations
 
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -361,3 +364,119 @@ def test_the_linter_runs_the_same_way_on_both_sides():
 def ci_commands_of_workflow(name):
     return [c for step in _steps(ROOT / ".github" / "workflows" / name)
             for c in step["commands"]]
+
+
+# -- the tag must name a commit CI judged, not merely a tree that builds ------
+
+def _asks_ci_for_a_verdict(step):
+    """Whether this step asks CI what it concluded, however it is spelled."""
+    return any("gh run list" in command for command in step["commands"])
+
+
+def _verdict_gates(path):
+    return [s for s in _steps(path) if _asks_ci_for_a_verdict(s)]
+
+
+def test_a_tag_only_releases_a_commit_ci_has_judged():
+    """`make check` on the tag's tree is a weaker check than the one every
+    push already survived, and it is the only one standing between a tag
+    and PyPI.
+
+    The release job runs on `ubuntu-latest` at one Python. CI runs ten
+    rows, and the difference is not decorative: a change green locally
+    and green on every ubuntu row has broken `windows-latest` alone. A
+    tag pushed at that commit would have found `make check` green here
+    and published it.
+
+    Nothing else in this file covers it. The gates above ask whether the
+    publishing workflow *runs* `make check` -- it does, which is exactly
+    what makes the hole invisible: the step is present, unweakened, and
+    answering a smaller question than the one the tag implies.
+    """
+    release = ROOT / ".github" / "workflows" / "release.yml"
+    gates = _verdict_gates(release)
+    assert gates, (
+        "release.yml never asks CI what it concluded about the commit "
+        "being released, so a tag on any commit publishes -- including "
+        "one CI judged red on a platform this job does not run. Its "
+        "steps run: %s" % [c for s in _steps(release) for c in s["commands"]])
+    for gate in gates:
+        assert gate["attrs"].get("continue-on-error", "false") != "true", (
+            "the CI-verdict gate is marked continue-on-error, so it "
+            "cannot stop the publish")
+        for command in gate["commands"]:
+            assert not command.rstrip().endswith("|| true"), (
+                "`|| true` on the CI-verdict gate: %s" % command)
+
+
+def test_the_verdict_gate_names_the_commit_and_the_workflow():
+    """Two ways to write this step that look identical and are not.
+
+    Asked without `--commit`, it answers about the repository's most
+    recent CI run, which on a tag pushed minutes after a green main is
+    almost always green -- the gate measuring the document instead of
+    the paragraph, the shape that has cost this project five separate
+    repairs. Asked without `--workflow`, any workflow's success counts,
+    including this release run itself.
+    """
+    (gate,) = _verdict_gates(ROOT / ".github" / "workflows" / "release.yml")
+    script = "\n".join(gate["commands"])
+    assert "--commit" in script, (
+        "the query does not name a commit, so it answers about whatever "
+        "CI ran last rather than about the commit being released")
+    assert "--workflow" in script, (
+        "the query does not name a workflow, so any workflow concluding "
+        "success satisfies it")
+
+
+#: What `gh` prints, and whether the gate may let the release through.
+#: The empty string is the case that matters: no completed CI run for
+#: this commit at all. A gate that treats absence as consent is the
+#: whole of D7 written a second time.
+VERDICTS = [("success\n", 0, "CI concluded success on this commit"),
+            ("failure\n", 1, "CI concluded failure"),
+            ("cancelled\n", 1, "the run was cancelled, which is not a pass"),
+            ("", 1, "no completed run for this commit -- absence must fail"),
+            ("\n", 1, "an empty line is not a verdict either")]
+
+
+@pytest.mark.parametrize("printed,expected,why",
+                         VERDICTS, ids=[v[2] for v in VERDICTS])
+def test_the_verdict_gate_fails_closed(tmp_path, printed, expected, why):
+    """The gate's own exit code, run against a stubbed `gh`.
+
+    Reading the step and finding the words in it proves the step is
+    there, not that it stops anything -- a gate whose text is right and
+    whose exit code is 0 reads the same way in a log. So the script is
+    lifted out of the workflow and run, with `gh` and `git` replaced by
+    stubs on PATH, and only the exit code is believed.
+
+    What this does not cover: the `--jq` expression that turns GitHub's
+    JSON into the word the stub prints. That runs inside `gh` and is
+    exercised on the next real release; the branch below it is what is
+    pinned here.
+    """
+    if not shutil.which("sh"):
+        pytest.skip("no POSIX shell here")
+    (gate,) = _verdict_gates(ROOT / ".github" / "workflows" / "release.yml")
+
+    stubs = tmp_path / "bin"
+    stubs.mkdir()
+    (stubs / "gh").write_text(
+        "#!/bin/sh\nprintf '%s' \"$STUB_PRINTS\"\n", encoding="utf-8")
+    (stubs / "git").write_text(
+        "#!/bin/sh\necho deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\n",
+        encoding="utf-8")
+    for stub in stubs.iterdir():
+        stub.chmod(0o755)
+
+    finished = subprocess.run(
+        ["sh", "-c", "\n".join(gate["commands"])],
+        cwd=tmp_path, capture_output=True, text=True,
+        env={**os.environ,
+             "PATH": "%s%s%s" % (stubs, os.pathsep, os.environ.get("PATH", "")),
+             "STUB_PRINTS": printed})
+    verdict = "released" if finished.returncode == 0 else "stopped"
+    assert (finished.returncode == 0) == (expected == 0), (
+        "gh printed %r (%s) and the gate %s.\nstdout: %s\nstderr: %s"
+        % (printed, why, verdict, finished.stdout, finished.stderr))
