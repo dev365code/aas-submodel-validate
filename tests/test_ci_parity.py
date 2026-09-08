@@ -130,8 +130,13 @@ def test_the_ruff_version_is_pinned_the_same_everywhere():
     workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
     pyproject = (ROOT / "pyproject.toml").read_text("utf-8")
     version = re.search(r"RUFF_VERSION\s*:=\s*(\S+)", makefile).group(1)
-    assert "ruff==%s" % version in workflow, "ci.yml ruff pin != Makefile RUFF_VERSION"
-    assert '"ruff==%s"' % version in pyproject, "pyproject dev ruff pin != Makefile RUFF_VERSION"
+    # Anchored. `"ruff==0.16.3" in text` is satisfied by a file
+    # installing `ruff==0.16.30`, so this said three files pinned one
+    # linter while two of them pinned different ones.
+    pin = re.escape("ruff==%s" % version) + r"(?![\w.])"
+    assert re.search(pin, workflow), "ci.yml ruff pin != Makefile RUFF_VERSION"
+    assert re.search('"' + pin, pyproject), \
+        "pyproject dev ruff pin != Makefile RUFF_VERSION"
 
 
 #: The words the front page uses for platforms, and the runner that
@@ -543,3 +548,77 @@ def test_the_verdict_gate_fails_closed(tmp_path, printed, expected, why):
     assert (finished.returncode == 0) == (expected == 0), (
         "gh printed %r (%s) and the gate %s.\nstdout: %s\nstderr: %s"
         % (printed, why, verdict, finished.stdout, finished.stderr))
+
+
+# -- a pin that is a substring is not a pin -----------------------------------
+
+def _ruff_version():
+    return re.search(r"RUFF_VERSION\s*:=\s*(\S+)", MAKEFILE).group(1)
+
+
+def _the_version_guard():
+    """The Makefile's `ruff --version` guard, as a runnable shell line."""
+    found = re.search(
+        r"(?m)^\t@\$\(PYTHON\) -m ruff --version \| (grep.*?)\s*\\\n\s*(\|\|.*)$",
+        MAKEFILE)
+    assert found, "the lint target no longer guards the ruff version"
+    return "%s %s" % (found.group(1), found.group(2))
+
+
+#: Versions that are not the pinned one, and share a prefix or a suffix
+#: with it. `0.16.30` is the next release the pin will meet.
+def _near_misses(version):
+    return (version + "0", "1" + version, version + ".1")
+
+
+@pytest.mark.parametrize("suffix", ["0", ".1"])
+def test_the_makefile_version_guard_rejects_a_longer_version(tmp_path, suffix):
+    """`grep -q 0.16.3` says yes to `ruff 0.16.30`.
+
+    The guard exists because a local `make lint` and a CI `ruff check`
+    running different linters are two gates wearing one name. A pin that
+    matches any version containing it as a substring is the same failure
+    one layer down: the day ruff 0.16.30 ships, this guard goes on
+    saying the pinned linter is installed.
+    """
+    version = _ruff_version()
+    guard = _the_version_guard().replace("$(RUFF_VERSION)", version)
+    script = 'echo "ruff %s%s" | %s' % (version, suffix, guard)
+    finished = subprocess.run(["sh", "-c", script],
+                              capture_output=True, text=True)
+    assert finished.returncode != 0, (
+        "the guard accepts ruff %s%s while pinning %s: %s"
+        % (version, suffix, version, guard))
+
+
+def test_the_makefile_version_guard_accepts_the_pinned_version():
+    """The other direction, so the repair above cannot be `exit 1`."""
+    version = _ruff_version()
+    guard = _the_version_guard().replace("$(RUFF_VERSION)", version)
+    finished = subprocess.run(
+        ["sh", "-c", 'echo "ruff %s" | %s' % (version, guard)],
+        capture_output=True, text=True)
+    assert finished.returncode == 0, (
+        "the guard rejects the version it pins: %s" % finished.stderr)
+
+
+@pytest.mark.parametrize("where,pattern", [
+    ("ci.yml", 'ruff==%s'),
+    ("pyproject.toml", '"ruff==%s"'),
+])
+def test_the_declared_pins_are_not_matched_by_a_longer_version(where, pattern):
+    """The same substring hole in the file comparison.
+
+    `"ruff==0.16.3" in workflow` is satisfied by a workflow installing
+    `ruff==0.16.30`, so the assertion that the three files pin one
+    linter passes while two of them pin different ones.
+    """
+    version = _ruff_version()
+    text = (ROOT / (".github/workflows/" + where if where.endswith(".yml")
+                    else where)).read_text("utf-8")
+    for near in _near_misses(version):
+        assert pattern % near not in text, (
+            "%s carries %r, which is not the pinned %s"
+            % (where, pattern % near, version))
+    assert re.search(re.escape(pattern % version) + r"(?![\w.])", text), (
+        "%s does not pin ruff %s" % (where, version))

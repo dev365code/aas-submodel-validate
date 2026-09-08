@@ -597,3 +597,76 @@ def test_a_member_that_stays_inside_is_not_called_an_escape(name):
     legal filename here and normalising it must not turn it into a
     finding."""
     assert not _gate()._escapes(name), name
+
+
+# -- what a wheel installs into site-packages --------------------------------
+
+def _wheel_with_top_level(tmp_path, extra_members,
+                          name="aas_submodel_validate-0.1.3-py3-none-any.whl"):
+    import zipfile
+
+    made = tmp_path / name
+    with zipfile.ZipFile(made, "w") as archive:
+        archive.writestr("aas_submodel_validate-0.1.3.dist-info/METADATA",
+                         "Metadata-Version: 2.4\nName: aas-submodel-validate\n")
+        archive.writestr("aas_submodel_validate-0.1.3.dist-info/top_level.txt",
+                         "aas_submodel_validate\n")
+        archive.writestr("aas_submodel_validate/__init__.py", "")
+        for member, text in extra_members.items():
+            archive.writestr(member, text)
+    return made
+
+
+def test_a_wheel_that_would_install_a_second_top_level_name_is_reported(tmp_path):
+    """The rule the tracked-files check cannot state.
+
+    `tools/rule_coverage.py` and `docs/scope.md` are tracked, so a wheel
+    that carries them satisfies "only what the repository tracks" and is
+    reported by nothing -- while installing `tools/` and `docs/` into
+    the site-packages of everyone who installs this project, where they
+    would shadow anybody else's. The question is not whether the file
+    belongs to us; it is what the archive puts on the import path.
+    """
+    made = _wheel_with_top_level(tmp_path, {
+        "tools/rule_coverage.py": "",
+        "docs/scope.md": "",
+    })
+    problems = _gate().top_level_problems(made)
+    assert problems, (
+        "a wheel installing tools/ and docs/ alongside the package drew "
+        "no problem at all")
+    said = " ".join(problems)
+    assert "tools" in said and "docs" in said, said
+
+
+def test_the_real_shape_of_a_wheel_draws_nothing(tmp_path):
+    """The other direction, so the rule above cannot be `return ["no"]`."""
+    assert _gate().top_level_problems(_wheel_with_top_level(tmp_path, {})) == []
+
+
+def test_a_wheel_whose_top_level_txt_disagrees_with_itself_is_reported(tmp_path):
+    """`top_level.txt` is what some installers read to decide what to
+    remove. A wheel whose declaration and contents disagree uninstalls
+    to something other than what it installed."""
+    import zipfile
+
+    made = tmp_path / "aas_submodel_validate-0.1.3-py3-none-any.whl"
+    with zipfile.ZipFile(made, "w") as archive:
+        archive.writestr("aas_submodel_validate-0.1.3.dist-info/METADATA",
+                         "Metadata-Version: 2.4\nName: aas-submodel-validate\n")
+        archive.writestr("aas_submodel_validate-0.1.3.dist-info/top_level.txt",
+                         "aas_submodel_validate\nsomething_else\n")
+        archive.writestr("aas_submodel_validate/__init__.py", "")
+    problems = _gate().top_level_problems(made)
+    assert problems and "something_else" in " ".join(problems), problems
+
+
+def test_an_sdist_is_not_asked_this(tmp_path):
+    """An sdist unpacks into a directory; it installs no top-level name,
+    and its `tools/` is the suite MANIFEST.in deliberately grafts."""
+    import tarfile
+
+    grafted = tarfile.TarInfo("aas_submodel_validate-0.1.1/tools/x.py")
+    grafted.size = 0
+    made = _sdist_with(tmp_path, [grafted])
+    assert _gate().top_level_problems(made) == []

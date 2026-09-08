@@ -52,7 +52,7 @@ battery-data:
 # way: the two invocations have to be the same check, and a cache is a
 # difference between them that nobody can see.
 lint:
-	@$(PYTHON) -m ruff --version | grep -q "$(RUFF_VERSION)" \
+	@$(PYTHON) -m ruff --version | grep -qx "ruff $(RUFF_VERSION)" \
 		|| { echo "ruff $(RUFF_VERSION) required (make dev)"; exit 1; }
 	$(PYTHON) -m ruff check --no-cache .
 

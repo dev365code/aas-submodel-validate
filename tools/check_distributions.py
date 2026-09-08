@@ -448,6 +448,74 @@ def script_problems(artifact) -> list:
     return problems
 
 
+def top_level_problems(artifact) -> list:
+    """What a wheel would install beside the package.
+
+    The tracked-files rule cannot state this one. `tools/` and `docs/`
+    are tracked, so a wheel carrying `tools/rule_coverage.py` and
+    `docs/scope.md` satisfies "only what the repository tracks" and is
+    reported by nothing -- while installing two more top-level names
+    into the site-packages of everyone who installs this project, where
+    a directory called `tools` or `docs` shadows anybody else's.
+
+    The question the other rules ask is whether a file belongs to us.
+    This one asks what the archive puts on the import path, which is a
+    different question with a different answer: both of those files do
+    belong to us, and neither belongs there.
+
+    Asked of wheels only. An sdist unpacks into a directory of its own
+    and installs no top-level name; its `tools/` is the suite that
+    `MANIFEST.in` grafts on purpose.
+    """
+    if not artifact.name.endswith(".whl"):
+        return []
+    names = [name for name, _repository in members(artifact)]
+    package = IMPORT_ROOT.rstrip("/")
+    #: A head of "" is a member whose name starts with a separator --
+    #: one that unpacks outside the wheel entirely. That is a different
+    #: rule's finding, and counting it here would report it twice under
+    #: a name that does not describe it.
+    tops = {name.split("/", 1)[0] for name in names}
+    tops.discard("")
+
+    problems = []
+    stray = sorted(top for top in tops
+                   if top != package and not _is_our_metadata(top))
+    if stray:
+        problems.append(
+            "%s installs %s beside the package; a wheel's top-level names "
+            "go into site-packages, and only %s and its metadata belong "
+            "there" % (artifact.name, ", ".join(stray), package))
+
+    #: `top_level.txt` is what several installers read to decide what an
+    #: uninstall removes. A wheel whose declaration and contents
+    #: disagree uninstalls to something other than what it installed.
+    for name in names:
+        if not name.endswith(".dist-info/top_level.txt"):
+            continue
+        with zipfile.ZipFile(artifact) as archive:
+            stated = {line.strip() for line
+                      in archive.read(name).decode("utf-8").splitlines()
+                      if line.strip()}
+        carried = {top for top in tops if not _is_our_metadata(top)}
+        #: Only the direction the rule above cannot see. A stray
+        #: directory is already reported there, and asking `stated !=
+        #: carried` printed the same cause twice under two names.
+        absent = sorted(stated - carried)
+        if absent:
+            problems.append(
+                "%s declares top-level %s and does not carry %s"
+                % (artifact.name, ", ".join(sorted(stated)),
+                   ", ".join(absent)))
+    return problems
+
+
+def _is_our_metadata(top: str) -> bool:
+    """A wheel's own metadata directories, which are not importable."""
+    return (top.startswith(OURS)
+            and top.endswith((".dist-info", ".data")))
+
+
 def main() -> int:
     survive()
     if not DIST.is_dir():
@@ -484,6 +552,7 @@ def main() -> int:
                                 % (artifact.name, name))
     for artifact in artifacts:
         problems.extend(script_problems(artifact))
+        problems.extend(top_level_problems(artifact))
     for problem in problems:
         print("distribution: %s" % problem, file=sys.stderr)
     if problems:
