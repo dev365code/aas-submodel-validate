@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.1.4 — 2026-09-09
 
-126 rules, 86 generated from the vendored template files. No
-rule is added or removed here; three of them said something a reader
-could act on and be worse off for it.
+126 rules, 86 generated from the vendored template files. No rule is
+added or removed here, and no count on the front page moves. Three of
+them said something a reader could act on and be worse off for it, and
+one of those called a conformant package broken.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
