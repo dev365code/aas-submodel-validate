@@ -186,6 +186,37 @@ def test_a_payload_whose_entry_name_holds_an_escape_is_still_read(tmp_path):
     assert "SMT-D1" not in ids, "the payload was never read, so no template ran"
 
 
+def test_the_exact_spelling_wins_over_the_folded_one_inside_the_index(tmp_path):
+    """Two indexes answer for oddly-spelled entries, and their order is
+    the guarantee.
+
+    `part` asks the canonical index first and the ASCII-folded one after,
+    for the same reason the literal attempts come before either: an
+    archive holding a name in the case the document wrote must answer
+    with that entry. Where the entries are spelled normally the exact
+    matches above settle it and neither index is reached -- so the
+    ordering *between the indexes* only shows on entries that are both
+    oddly spelled and differ in case.
+
+    Measured: emptying the canonical index alone leaves the whole suite
+    green, because the folded index answers for everything the other test
+    of these indexes asks. It is this case that tells them apart.
+    """
+    path = tmp_path / "both.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode("utf-8"))
+        archive.writestr("aasx/./files/Manual.pdf", b"UPPER")
+        archive.writestr("aasx/./files/manual.pdf", b"lower")
+    with AasxPackage(path) as package:
+        assert package.part("/aasx/files/Manual.pdf") == "aasx/./files/Manual.pdf"
+        assert package.part("/aasx/files/manual.pdf") == "aasx/./files/manual.pdf"
+
+
 def test_a_part_stored_under_a_non_canonical_name_is_still_found(tmp_path):
     """The archive's own entry names are written by tools that were not
     all reading ECMA-376, so an entry may be stored as `aasx/./files/x`
