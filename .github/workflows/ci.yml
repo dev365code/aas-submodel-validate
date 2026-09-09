@@ -107,7 +107,7 @@ jobs:
       - run: pip install -e ".[dev]"
       - if: matrix.pin
         run: pip install "${{ matrix.pin }}"
-      - run: pytest -q
+      - run: pytest -q -rs
       - name: every rule id fired somewhere
         run: python tools/rule_coverage.py --check
       # Also in the lint job, deliberately: this one runs on every OS in
@@ -174,7 +174,7 @@ jobs:
           unpacked="$(mktemp -d)"
           tar -xzf dist/*.tar.gz -C "$unpacked"
           cd "$unpacked"/*/
-          PYTHONPATH="$PWD/src:$PWD/tests" python -m pytest -q
+          PYTHONPATH="$PWD/src:$PWD/tests" python -m pytest -q -rs
 
       - name: the wheel must carry the vendored template and not the corpus
         run: |

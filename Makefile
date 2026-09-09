@@ -57,7 +57,10 @@ lint:
 	$(PYTHON) -m ruff check --no-cache .
 
 test:
-	$(PYTHON) -m pytest -q
+	# `-rs` names every skip and why. A skipped test is a gate that did
+	# not run, and the summary counts them without saying which: one
+	# gate sat behind "1 skipped" on this floor for a day.
+	$(PYTHON) -m pytest -q -rs
 
 fix:
 	$(PYTHON) -m ruff check --no-cache --fix .

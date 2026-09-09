@@ -9,6 +9,7 @@ third thing to keep in step.
 """
 from __future__ import annotations
 
+import ast
 import os
 import re
 import shutil
@@ -687,25 +688,27 @@ FROM_AN_SDIST = (ROOT / "PKG-INFO").exists()
 #: Import name -> the distribution that provides it, where they differ.
 DISTRIBUTION_OF = {"fitz": "pymupdf"}
 
-#: Import names that are this project, its declared runtime dependency,
-#: or the standard library's -- asked of the interpreter rather than
-#: listed, except for the two that are ours by construction.
+#: Import names that are this project's own.
 OURS_TO_IMPORT = {"aas_submodel_validate", "builders", "conftest"}
+
+#: The standard-library modules these seven scripts import, listed rather
+#: than asked of the interpreter. `sys.stdlib_module_names` arrived in 3.10,
+#: so asking meant this gate could not run on the floor the front page
+#: names -- and worse, the answer moves with the version, because a module
+#: that is the standard library's on one release was a dependency on the
+#: one before it. Asking gave the same tree different verdicts on different
+#: rows; a list gives one verdict everywhere. It is short because the
+#: scripts are small, and a name arriving here that is not in the standard
+#: library has to be written into a set that says it is.
+STANDARD_LIBRARY = {
+    "argparse", "hashlib", "html", "importlib", "json", "os", "re", "sys",
+    "warnings",
+}
 
 
 def _third_party_imports(where):
-    """Every top-level module `where`'s Python files import."""
-    import ast
-    import sys as _sys
-
-    #: `sys.stdlib_module_names` arrived in 3.10. Below that the set is
-    #: empty and every `import argparse` reads as an undeclared
-    #: dependency -- the same gate answering differently depending on
-    #: which interpreter runs the suite, which is not a gate. The
-    #: callers skip rather than guess; nine of CI's ten rows answer it.
-    standard = getattr(_sys, "stdlib_module_names", None)
-    if standard is None:
-        return None
+    """Every top-level module `where`'s Python files import that is neither
+    this project's nor the standard library's."""
     found = {}
     for path in sorted(Path(where).rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
@@ -715,8 +718,22 @@ def _third_party_imports(where):
                 names = [alias.name.split(".")[0] for alias in node.names]
             elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                 names = [node.module.split(".")[0]]
+            #: A dependency fetched by name at runtime is still a
+            #: dependency. Measured: without this, a file that reached
+            #: `openpyxl` through `importlib.import_module` satisfied the
+            #: gate while declaring nothing. Only a literal is readable
+            #: here -- a name assembled at runtime is not something this
+            #: file can see, and saying so is better than implying the
+            #: reading is complete.
+            elif (isinstance(node, ast.Call)
+                    and _called_name(node.func) in ("import_module",
+                                                    "__import__")
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                    and isinstance(node.args[0].value, str)):
+                names = [node.args[0].value.split(".")[0]]
             for name in names:
-                if name in standard or name in OURS_TO_IMPORT:
+                if name in STANDARD_LIBRARY or name in OURS_TO_IMPORT:
                     continue
                 #: A module sitting beside the file that imports it is
                 #: not a package anybody installs. `_common` is one, and
@@ -751,9 +768,6 @@ def test_every_reader_the_battery_tools_import_is_declared():
         "unpacked sdist; the gate reads it, so its absence is a failure and "
         "not a reason to stay quiet")
     imported = _third_party_imports(tools)
-    if imported is None:
-        pytest.skip("needs sys.stdlib_module_names (Python 3.10+) to tell a "
-                    "standard-library import from a dependency")
     assert imported, "no third-party imports found; the probe is looking nowhere"
     for distribution, files in sorted(imported.items()):
         assert re.search(r'"%s[>=<~!\[]' % re.escape(distribution), pyproject), (
@@ -770,3 +784,81 @@ def test_the_workflows_install_the_readers_by_the_name_that_declares_them():
         assert "pip install openpyxl pymupdf" not in text, (
             "%s installs the readers by hand, so their versions are "
             "whatever resolved that morning" % name)
+# -- gates the floor cannot run -----------------------------------------------
+
+#: Tests allowed to skip because the interpreter running them is too old.
+#: Empty, and it needs to stay empty. A test gated on the version does not
+#: run on the floor this project supports, so the suite on the floor
+#: answers less than the suite above it and reports the difference as a
+#: number. One did: the gate reading what the battery tools import asked
+#: `sys.stdlib_module_names`, which arrived in 3.10, and skipped below it.
+#: It therefore never ran on the floor row, nor on a maintainer's 3.9 --
+#: `make check` said "1 skipped" and nothing said which, or that what had
+#: gone quiet was a gate. An entry here is a deliberate exemption and needs
+#: justifying beside the CI row that does run the test.
+VERSION_GATED_SKIPS: dict = {}
+
+#: What a skip's own source looks like when the interpreter version is what
+#: decided it. A text rule, like the rest of this file: it catches the shape
+#: that appeared here and does not claim to catch a version test written
+#: without naming a version.
+_DECIDED_BY_VERSION = re.compile(
+    r"version_info|stdlib_module_names|Python \d+\.\d+|\b\d+\.\d+\+")
+
+
+def _called_name(func):
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    if isinstance(func, ast.Name):
+        return func.id
+    return ""
+
+
+def _skip_calls():
+    """Every `skip(...)` and `skipif(...)` the suite makes, as
+    (identifier, source).
+
+    The identifier names the file and the call's own text, never its line
+    number. An exemption keyed to a line moves to a different skip the
+    first time somebody inserts a paragraph above it -- measured here: an
+    entry written for one skip stopped covering it, and had a second skip
+    been sitting on that line it would have been excused instead, with
+    nobody having justified it. Keying on the text costs the opposite
+    thing, which is the one worth paying: edit the skip and the exemption
+    stops applying, so it has to be argued again. Two textually identical
+    skips share an identifier, and one entry excuses both -- they say the
+    same thing, so the same justification answers for them.
+    """
+    for path in sorted((ROOT / "tests").glob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        for node in ast.walk(ast.parse(text, str(path))):
+            if not (isinstance(node, ast.Call)
+                    and _called_name(node.func) in ("skip", "skipif")):
+                continue
+            segment = ast.get_source_segment(text, node)
+            assert segment is not None, (
+                "%s:%d: could not read the source of this skip, so nothing "
+                "below can say what decided it" % (path.name, node.lineno))
+            yield "%s  %s" % (path.name, " ".join(segment.split())), segment
+
+
+def test_no_gate_goes_quiet_because_the_python_is_older():
+    """A skip decided by the interpreter version is a gate the floor never
+    runs.
+
+    Every other skip in this suite is about what the tree has -- no
+    `data/`, no `git`, no POSIX shell -- and those answer the same way for
+    everyone standing in the same place. A version skip does not: it makes
+    the floor row and the newest row check different things, while the
+    summary line says only how many. The remedy is to decide the question
+    without asking the interpreter, so the gate runs everywhere, rather
+    than to let it run in eight rows out of ten and stay silent in the two
+    that matter most for a project whose front page names 3.9.
+    """
+    gated = sorted({identifier for identifier, source in _skip_calls()
+                    if _DECIDED_BY_VERSION.search(source)
+                    and identifier not in VERSION_GATED_SKIPS})
+    assert not gated, (
+        "these skip on the interpreter version, so they do not run on the "
+        "floor this project supports. Each line below is the key an entry "
+        "in VERSION_GATED_SKIPS would need:\n  " + "\n  ".join(gated))
