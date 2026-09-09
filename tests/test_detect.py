@@ -24,6 +24,7 @@ import pytest
 from aas_submodel_validate import runner
 from aas_submodel_validate.report import render
 from builders import env_json, hd_env, wearing_our_anchor_as_a_supplemental
+from verdicts import by_id
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -34,7 +35,7 @@ TECHNICAL_DATA_ID = "0173-1#01-AHX837#002"
 def _findings(tmp_path, payload: bytes):
     path = tmp_path / "env.json"
     path.write_bytes(payload)
-    return {f.id: f for f in runner.run(path).findings}
+    return by_id(runner.run(path))
 
 
 def test_a_handover_submodel_satisfies_the_presence_rule(tmp_path):

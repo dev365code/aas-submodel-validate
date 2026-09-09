@@ -16,6 +16,7 @@ import json
 
 from aas_submodel_validate import runner
 from builders import build_aasx, corrupt_part, env_json, hd_env, td_env
+from verdicts import by_id
 
 PART = "aasx/files/manual.pdf"
 
@@ -94,7 +95,7 @@ def test_a_file_value_that_is_no_part_name_is_told_apart(tmp_path):
     path = build_aasx(tmp_path / "p.aasx", payload=json.dumps(env).encode("utf-8"),
                       files=[("aasx/files/logo.png", b"\x89PNG"),
                              ("aasx/files/front.png", b"\x89PNG")])
-    findings = {f.id: f for f in runner.run(path).findings}
+    findings = by_id(runner.run(path))
     assert "not a part name" in findings["TD-D2"].violation.message
 
 

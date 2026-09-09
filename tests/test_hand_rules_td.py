@@ -21,6 +21,7 @@ import pytest
 from aas_submodel_validate import runner
 from builders import build_aasx, td_env
 from test_hand_rules import FILE_VALUES
+from verdicts import by_id
 
 LOGO = "aasx/files/logo.png"
 IMAGE = "aasx/files/front.png"
@@ -29,7 +30,7 @@ IMAGE = "aasx/files/front.png"
 def _ids(tmp_path, env: dict):
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
-    return {finding.id: finding for finding in runner.run(path).findings}
+    return by_id(runner.run(path))
 
 
 def _general(env):
@@ -76,7 +77,7 @@ def _td_container(tmp_path, env, parts):
 
 
 def _container_ids(path):
-    return {finding.id: finding for finding in runner.run(path).findings}
+    return by_id(runner.run(path))
 
 
 def test_a_logo_the_archive_does_not_hold_is_reported(tmp_path):

@@ -1,6 +1,7 @@
 """X rules: every stage of a broken way in has one voice."""
 from aas_submodel_validate import runner
 from builders import build_aasx, env_json
+from verdicts import by_id
 
 
 def _ids(path):
@@ -24,5 +25,5 @@ def test_a_broken_chain_is_x2(tmp_path):
 
 def test_an_unparsable_payload_is_x3_and_names_the_part(tmp_path):
     packed = build_aasx(tmp_path / "x.aasx", payload=b"<not xml", payload_name="aasx/env.xml")
-    findings = {f.id: f for f in runner.run(packed).findings}
+    findings = by_id(runner.run(packed))
     assert findings["X3"].violation.subject == "aasx/env.xml"

@@ -33,6 +33,7 @@ from builders import (
     hd_env,
     rels,
 )
+from verdicts import by_id
 
 PART = "aasx/files/manual.pdf"
 
@@ -78,7 +79,7 @@ def test_every_spelling_of_a_part_this_archive_holds_is_found(tmp_path, spelling
 def test_a_value_that_is_not_a_part_name_says_so(tmp_path, spelling):
     path = build_aasx(tmp_path / "p.aasx", payload=_container_with(spelling),
                       files=[(PART, b"%PDF-1.4 ")])
-    findings = {f.id: f for f in runner.run(path).findings}
+    findings = by_id(runner.run(path))
     assert "HD-D7" in findings
     # A value that is not a part name and a part that is absent are two
     # defects, and the finding has to say which one it met.

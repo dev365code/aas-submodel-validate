@@ -21,6 +21,7 @@ import pytest
 from aas_submodel_validate import runner
 from aas_submodel_validate.rules import td_tables
 from builders import inject, strip_row, stub_of, td_env
+from verdicts import by_id
 
 #: What to put under a row's identifier so its kind check fires. A
 #: Property is the odd one out: something has to differ from it.
@@ -30,7 +31,7 @@ _WRONG_KIND = {"Property": "MultiLanguageProperty"}
 def _ids(tmp_path, env: dict):
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
-    return {finding.id: finding for finding in runner.run(path).findings}
+    return by_id(runner.run(path))
 
 
 def test_the_golden_environment_is_clean(tmp_path):

@@ -23,6 +23,7 @@ from aas_submodel_validate import runner
 from aas_submodel_validate.loader import load
 from aas_submodel_validate.rules import dbp_tables, engine, hd_tables, td_tables
 from builders import hd_env, inject, strip_row
+from verdicts import by_id
 
 
 class _Key:
@@ -510,7 +511,7 @@ def test_a_submodel_with_no_elements_at_all_is_judged_not_crashed(tmp_path):
     it. Iterating `None` is a TypeError."""
     env = copy.deepcopy(hd_env())
     env["submodels"][0].pop("submodelElements", None)
-    findings = {f.id: f for f in runner.run(_write(tmp_path, env)).findings}
+    findings = by_id(runner.run(_write(tmp_path, env)))
     assert "HD-E01" in findings
     assert not [f for f in findings.values()
                 if "could not run" in f.violation.message]

@@ -19,6 +19,7 @@ from aas_submodel_validate.rules import engine, hd_tables
 from aas_submodel_validate.rules import handover as handover_rules
 from aas_submodel_validate.rules import handover as rules_handover
 from builders import build_aasx, hd_env
+from verdicts import by_id
 
 
 def _write(tmp_path, env):
@@ -27,27 +28,13 @@ def _write(tmp_path, env):
     return path
 
 
-def _findings(tmp_path, env, allow_crash=False):
-    """Every finding by rule id -- and, unless a test says otherwise, a
-    refusal to return a crash as if it were a judgement.
+def _findings(tmp_path, env):
+    """Every finding by rule id, through the shared reader.
 
-    `runner.execute` reports a rule that raised under that rule's own id,
-    so `assert "HD-D9" in _findings(...)` is satisfied by a rule that
-    stopped working. Measured: turning `_folded` into an unconditional
-    `.strip()` makes HDL4 raise on a `DocumentId` naming half a pair, and
-    the test written to catch exactly that walk stayed green, because the
-    crash arrived wearing the id the test was looking for. Every
-    `rule_id in _findings(...)` in this file had that hole.
+    Almost every test in this file starts from an environment dict
+    rather than from a path, which is all this adds.
     """
-    findings = {f.id: f for f in runner.run(_write(tmp_path, env)).findings}
-    if not allow_crash:
-        crashed = sorted(rule_id for rule_id, finding in findings.items()
-                         if runner.COULD_NOT_RUN in (finding.violation.message or ""))
-        assert not crashed, (
-            "%s came back as a crash rather than a judgement; a test asking "
-            "whether a rule fired cannot tell those apart, so it is asked "
-            "here instead" % ", ".join(crashed))
-    return findings
+    return by_id(runner.run(_write(tmp_path, env)))
 
 
 def _first_document(env):
@@ -289,7 +276,7 @@ def test_a_declared_supplementary_part_that_is_absent_warns(tmp_path):
                         files=(("aasx/files/manual.pdf", b"%PDF-1.4"),),
                         suppl_targets=["aasx/files/manual.pdf",
                                        "aasx/files/ghost.step"])
-    findings = {f.id: f for f in runner.run(packed).findings}
+    findings = by_id(runner.run(packed))
     assert findings["X4"].violation.subject == "aasx/files/ghost.step"
 
 
@@ -705,7 +692,7 @@ def test_a_file_with_no_value_is_silence_not_a_crash(tmp_path):
     _digital_files(env)["value"][0].pop("value", None)
     packed = build_aasx(tmp_path / "p.aasx",
                         payload=json.dumps(env).encode("utf-8"))
-    findings = {f.id: f for f in runner.run(packed).findings}
+    findings = by_id(runner.run(packed))
     assert "HD-D7" not in findings
     assert not [f for f in findings.values()
                 if "could not run" in f.violation.message]

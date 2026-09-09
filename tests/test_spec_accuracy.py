@@ -11,12 +11,13 @@ import json
 from aas_submodel_validate import runner
 from aas_submodel_validate.rules import hd_tables, td_tables
 from builders import hd_env, td_env
+from verdicts import by_id
 
 
 def _findings(tmp_path, env):
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
-    return {f.id: f for f in runner.run(path).findings}
+    return by_id(runner.run(path))
 
 
 def _classification(env):

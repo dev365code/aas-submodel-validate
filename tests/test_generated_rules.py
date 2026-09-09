@@ -21,6 +21,7 @@ from aas_submodel_validate.rules import (
     td_tables,
 )
 from builders import break_row, hd_env, inject, strip_row, stub_of
+from verdicts import by_id
 
 
 def _ids(tmp_path, env: dict):
@@ -138,7 +139,7 @@ def test_a_kind_mismatch_names_both_kinds(tmp_path):
     inject(env, hd_tables.BY_ID[row["parent"]], [wrong], hd_tables)
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
-    findings = {f.id: f for f in runner.run(path).findings}
+    findings = by_id(runner.run(path))
     assert "must be a Property" in findings[row["id"]].violation.message
 
 
@@ -152,7 +153,7 @@ def test_a_value_type_mismatch_is_reported(tmp_path):
     inject(env, hd_tables.BY_ID[row["parent"]], [wrong], hd_tables)
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
-    findings = {f.id: f for f in runner.run(path).findings}
+    findings = by_id(runner.run(path))
     assert "xs:date" in findings[row["id"]].violation.message
 
 

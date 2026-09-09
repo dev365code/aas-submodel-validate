@@ -14,6 +14,7 @@ import json
 
 from aas_submodel_validate import runner
 from builders import build_aasx, dbp_env
+from verdicts import by_id
 
 PROFILE = "02035-2"
 
@@ -21,7 +22,7 @@ PROFILE = "02035-2"
 def _findings(tmp_path, env):
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))
-    return {f.id: f for f in runner.run(path, profile=PROFILE).findings}
+    return by_id(runner.run(path, profile=PROFILE))
 
 
 def _first_document(env):

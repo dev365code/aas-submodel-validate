@@ -32,6 +32,7 @@ from builders import (
     hd_env,
     rels,
 )
+from verdicts import by_id
 
 
 def test_the_cap_is_the_documented_number():
@@ -131,7 +132,7 @@ def test_a_missing_package_rels_is_reported_as_the_package_root(tmp_path):
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr("[Content_Types].xml", CONTENT_TYPES)
         archive.writestr("aasx/aasx-origin", b"")
-    findings = {f.id: f for f in runner.run(path).findings}
+    findings = by_id(runner.run(path))
     assert "X2" in findings
     assert "the package root" in findings["X2"].violation.message
 
@@ -1644,7 +1645,7 @@ def _limit_finding(tmp_path, payload: str):
     path = tmp_path / "probe.json"
     path.write_text(payload, "utf-8")
     report = runner.run(path)
-    return {f.id: f for f in report.findings}, report
+    return by_id(report), report
 
 
 def test_a_document_this_interpreter_cannot_build_is_not_bad_syntax(tmp_path):

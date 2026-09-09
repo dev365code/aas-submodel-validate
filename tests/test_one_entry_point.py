@@ -25,6 +25,7 @@ import zipfile
 from aas_submodel_validate import runner
 from aas_submodel_validate.container import AasxPackage
 from builders import CONTENT_TYPES, ORIGIN_REL, SPEC_REL, hd_env, rels
+from verdicts import by_id
 
 VALUE = "/aasx/files/manual.pdf"
 
@@ -49,7 +50,7 @@ def _archive(path, entries, value=None, suppl=()):
 
 
 def _report(path):
-    return {f.id: f for f in runner.run(path).findings}
+    return by_id(runner.run(path))
 
 
 def test_a_value_that_climbs_out_of_the_package_is_refused_by_both(tmp_path):
