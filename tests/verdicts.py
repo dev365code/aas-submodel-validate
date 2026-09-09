@@ -2,9 +2,8 @@
 copy of it each.
 
 Twenty-three call sites built `{finding.id: finding for finding in
-report.findings}` themselves, in four spellings, and a couple more built
-the same thing as sorted `(id, severity)` tuples. That is what this
-replaces.
+report.findings}` themselves, in four spellings. That is what this
+replaces, and all it does.
 
 It deliberately asserts nothing. The property those call sites needed --
 that a rule which *crashed* is not read as a rule that fired, since the
@@ -24,13 +23,3 @@ from __future__ import annotations
 def by_id(report) -> dict:
     """`report`'s findings keyed by rule id."""
     return {finding.id: finding for finding in report.findings}
-
-
-def judged(report) -> list:
-    """`report`'s findings, in the order it put them.
-
-    For the tests that compare a whole set as ordered tuples rather than
-    by lookup; `list(report.findings)` reads as an accident at the call
-    site, and this says the reading was meant.
-    """
-    return list(report.findings)
