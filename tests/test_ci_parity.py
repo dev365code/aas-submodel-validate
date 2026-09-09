@@ -242,15 +242,20 @@ def _steps(path):
 #: How a workflow says something leaves here that a person could install.
 #: Not "uploads an artifact", which is too wide -- a workflow uploading a
 #: diagnostic for a human to read publishes nothing.
-PUBLISHES = ("pypi-publish", "gh release create")
+#: Named rather than guessed at. A second clause used to sit behind this
+#: list -- any `path:` mentioning `dist` -- which is the reading the
+#: paragraph above disclaims, and the two disagreed silently until a
+#: workflow appeared that moves `dist/` between jobs and publishes
+#: nothing. An artifact handed to the next job expires with the run.
+#: What belongs here is a name that sends bytes somewhere a person can
+#: install them from, and adding one is a line rather than a heuristic.
+PUBLISHES = ("pypi-publish", "gh release create", "action-gh-release",
+             "upload-release-asset")
 
 
 def _publishes(path):
-    text = path.read_text(encoding="utf-8")
-    if any(marker in text for marker in PUBLISHES):
-        return True
-    return any("dist" in line.split("path:", 1)[1]
-               for line in text.splitlines() if line.strip().startswith("path:"))
+    return any(marker in path.read_text(encoding="utf-8")
+               for marker in PUBLISHES)
 
 
 def _runs_the_gate(command):
