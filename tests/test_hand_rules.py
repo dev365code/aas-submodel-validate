@@ -13,7 +13,8 @@ import json
 import aas_core3.verification as verification
 import pytest
 
-from aas_submodel_validate import runner
+from aas_submodel_validate import loader, runner
+from aas_submodel_validate.rules import engine, hd_tables
 from aas_submodel_validate.rules import handover as handover_rules
 from aas_submodel_validate.rules import handover as rules_handover
 from builders import build_aasx, hd_env
@@ -427,6 +428,142 @@ def test_an_element_level_reference_type_drift_is_linted(tmp_path):
 def _digital_files(env):
     return next(child for child in _document_version(env)["value"]
                 if child.get("idShort") == "DigitalFiles")
+
+
+def _dissolve(parent, label):
+    """Take a wrapping SubmodelElementList out and leave its children
+    standing where it stood -- what a file that skips the list looks
+    like."""
+    for index, child in enumerate(parent["value"]):
+        if child.get("idShort") == label:
+            parent["value"] = (parent["value"][:index] + list(child["value"])
+                               + parent["value"][index + 1:])
+            return
+    raise KeyError(label)                        # pragma: no cover - fixture
+
+
+def _flat_ids_without_a_primary(env):
+    document = _first_document(env)
+    ids = document["value"][0]
+    first = ids["value"][0]
+    first["value"] = [child for child in first["value"]
+                      if child.get("idShort") != "DocumentIsPrimary"]
+    second = copy.deepcopy(first)
+    _set_property(second, "DocumentIdentifier", "XF90-885")
+    ids["value"] = [first, second]
+    _dissolve(document, "DocumentIds")
+    return "HD-D5"
+
+
+def _flat_ids_repeated_by_a_second_document(env):
+    documents = env["submodels"][0]["submodelElements"][0]["value"]
+    documents.append(copy.deepcopy(documents[0]))
+    for document in documents:
+        _dissolve(document, "DocumentIds")
+    return "HDL4"
+
+
+def _flat_classification_without_english(env):
+    for child in _classification(env)["value"]:
+        if child.get("idShort") == "ClassName":
+            child["value"] = [{"language": "de", "text": "Betrieb"}]
+    _dissolve(_first_document(env), "DocumentClassifications")
+    return "HD-D4"
+
+
+@pytest.mark.parametrize("bend", (_flat_ids_without_a_primary,
+                                  _flat_ids_repeated_by_a_second_document,
+                                  _flat_classification_without_english),
+                         ids=("D5 DocumentIds", "L4 DocumentIds",
+                              "D4 DocumentClassifications"))
+def test_a_file_that_skips_a_wrapping_list_is_still_read(tmp_path, bend):
+    """Four hand rules navigate `child_of(parent, "<Label>s") or parent`,
+    and until this test nothing anywhere exercised the second half.
+    Three of the four are here; the fourth cannot reach it at all, and
+    the test below this one is why.
+
+    The template makes each of those lists `SMT/Cardinality: One`, so a
+    file that states its `DocumentId`s -- or classifications, or digital
+    files -- directly on their parent is not conformant, and it is
+    refused for that: measured, such a file draws `HD-E03` at error and
+    leaves by 1. What the fallback decides is not whether the file is
+    accepted but whether this tool also says what else is wrong with it.
+    It does, and that is the same reading the container chain was given
+    when it stopped at the first payload it could not read: a reader that
+    reports one defect sends an author away to fix it and then says the
+    next one, of the same kind, on their return.
+
+    It cannot cost a conformant file anything -- a conformant file has
+    the list, `child_of` finds it, and the fallback is never reached.
+    That asymmetry is the whole argument, and it is why matching by
+    semanticId is what makes the reading available: a collection wearing
+    `DocumentId`'s identifier is a `DocumentId` wherever a file puts it.
+
+    Recorded as docs/divergences.md #42.
+    """
+    env = copy.deepcopy(hd_env())
+    rule_id = bend(env)
+    findings = _findings(tmp_path, env)
+    assert any(found.startswith("HD-E") for found in findings), (
+        "the missing wrapping list should still be reported by a generated "
+        "rule; this fixture no longer shows what it says it shows")
+    assert rule_id in findings, (
+        "%s went unreported on a file that states the elements it reads "
+        "without their wrapping list" % rule_id)
+
+
+def test_the_digital_files_fallback_is_shadowed_by_its_own_guard(tmp_path):
+    """The fourth of those four lines is written exactly like the other
+    three and cannot do what they do. This pins why, because the reason
+    is in the template rather than in the code and reading the code will
+    not show it.
+
+    02004 gives `DigitalFiles` and its sole child `DigitalFile` **one**
+    identifier, `0173-1#02-ABK126#002`, where it gives `DocumentIds` and
+    `DocumentId` two different ones. Matching does not consult element
+    kind once an identifier hits (`_matches_row`), so on a version that
+    states its file flat, `child_of(version, "DigitalFiles")` returns the
+    `File` itself -- truthy -- and `or version` never runs. The rule then
+    asks that `File` for its children, a `File` has a string where a list
+    would be, and the answer is nothing.
+
+    What it costs: such a file gets no HD-D7 and no HD-D10. It is already
+    refused -- the list is `SMT/Cardinality: One` and a generated rule
+    says so -- so nothing passes that should fail. It is a finding not
+    made, on a file that is failing anyway.
+
+    Why it is recorded and not repaired: the obvious repair, asking for
+    the children directly when the list lookup comes back empty, reports
+    HD-D10 against the *list element* when a version carries an empty
+    `DigitalFiles`, because the list wears the child's identifier too.
+    Trading a missing finding for a finding with the wrong subject is not
+    an improvement, and the alternative -- teaching matching to consult
+    kind -- is the walk's business and not one rule's
+    (docs/divergences.md #11, #42).
+
+    The last assertion is the one that keeps this honest: the fallback's
+    own expression *does* find the file. The line is not wrong; it is
+    unreachable.
+    """
+    env = copy.deepcopy(hd_env())
+    _dissolve(_document_version(env), "DigitalFiles")
+    path = _write(tmp_path, env)
+    submodel = loader.load(path).submodels[0]
+    version = submodel.submodel_elements[0].value[0].value[2].value[0]
+
+    guard = engine.child_of(version, "DigitalFiles", hd_tables)
+    assert type(guard).__name__ == "File", (
+        "child_of no longer mistakes the flat File for its list; if that "
+        "changed on purpose, this limitation and divergences #42 are stale")
+    assert engine.children_of(guard, "DigitalFile", hd_tables) == [], (
+        "a File has no children to read")
+    assert len(engine.children_of(version, "DigitalFile", hd_tables)) == 1, (
+        "the fallback expression itself finds the file; the line is "
+        "unreachable, not wrong")
+
+    assert "HD-D10" not in _findings(tmp_path, env), (
+        "HD-D10 now reads a flat DigitalFile -- good, but #42 and the "
+        "docstring above say it cannot, so one of them needs rewriting")
 
 
 def test_a_class_name_with_no_entries_at_all_is_reported_not_a_crash(tmp_path):
@@ -1311,6 +1448,41 @@ def test_whitespace_around_a_vocabulary_value_is_not_the_defect(
     assert rule_id not in _findings(tmp_path, env), (
         "%s: %r drew %s, and the value is the one the rule asks for"
         % (label, pad % good, rule_id))
+
+
+def test_one_document_repeating_its_own_pair_is_not_two_documents(tmp_path):
+    """`HDL4` says "two documents share one (domain, identifier) pair",
+    and the guard that makes that sentence true is `seen[pair] !=
+    subject`. Drop it and a document that states the same pair twice is
+    reported for sharing it with itself -- a message that is not true of
+    the file, sending an author to look for a second document that does
+    not exist.
+
+    Both edges on one fixture, because the negative alone would pass on a
+    rule that had stopped working: the twin `DocumentId` stays silent
+    where it is, and reports the moment it belongs to somebody else.
+
+    Whether one document repeating its own identifier is worth saying
+    anything about is a separate question and not this rule's -- it would
+    be a different sentence, and inventing it here would put it under a
+    published rule id.
+    """
+    env = copy.deepcopy(hd_env())
+    documents = env["submodels"][0]["submodelElements"][0]["value"]
+    ids = documents[0]["value"][0]
+    ids["value"].append(copy.deepcopy(ids["value"][0]))
+    assert "HDL4" not in _findings(tmp_path, env), (
+        "a document was reported for sharing an identifier pair with "
+        "itself; the rule's own sentence says two documents")
+
+    moved = copy.deepcopy(hd_env())
+    documents = moved["submodels"][0]["submodelElements"][0]["value"]
+    twin = copy.deepcopy(documents[0])
+    twin["value"][0]["value"] = [copy.deepcopy(documents[0]["value"][0]["value"][0])]
+    documents.append(twin)
+    assert "HDL4" in _findings(tmp_path, moved), (
+        "the same pair under a second document went unreported, so the "
+        "silence above proves nothing")
 
 
 def test_an_incomplete_document_id_does_not_hide_the_duplicate_behind_it(
