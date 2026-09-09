@@ -34,8 +34,25 @@ REACHES_THE_NETWORK = {
 }
 
 
+def _called_name(func):
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    if isinstance(func, ast.Name):
+        return func.id
+    return ""
+
+
 def _imported(path: Path):
-    """Every module a file imports, as dotted names."""
+    """Every module a file imports, as dotted names.
+
+    Statements and the two ways of asking for a module by name.
+    Measured: without the second, a module reaching the network through
+    `__import__("socket")` passed this gate -- the same shape as an
+    undeclared dependency fetched at runtime, which another gate in this
+    suite already had to learn. A name assembled at runtime is still not
+    visible here, and the test below that removes the socket is why that
+    is a gap and not a hole.
+    """
     tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -43,6 +60,12 @@ def _imported(path: Path):
                 yield alias.name
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
             yield node.module
+        elif (isinstance(node, ast.Call)
+                and _called_name(node.func) in ("import_module", "__import__")
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)):
+            yield node.args[0].value
 
 
 def _reaches(name: str) -> bool:
