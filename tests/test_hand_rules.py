@@ -437,6 +437,40 @@ def test_a_content_type_is_matched_without_regard_to_case(tmp_path):
     assert "HD-D10" not in _findings(tmp_path, env)
 
 
+def test_a_version_with_no_files_does_not_hide_the_next_version(tmp_path):
+    """The existing pair above walks the files inside one version. This
+    walks the versions.
+
+    A `DocumentVersion` carrying no `DigitalFile` at all is not this
+    rule's finding -- absence is the cardinality rule's -- so the walk
+    steps past it. Stepping past has to mean continuing: a version with
+    no files, followed by one whose only rendition is a STEP model, is a
+    file that should draw `HD-D10` and would come back clean if the walk
+    stopped at the first.
+
+    Measured before this was written: turning that skip into a stop left
+    the whole suite green, because no fixture had an empty version in
+    front of an offending one.
+    """
+    env = copy.deepcopy(hd_env())
+    versions = _first_document(env)["value"][2]["value"]
+    offending = copy.deepcopy(versions[0])
+    for child in offending["value"]:
+        if child.get("idShort") == "DigitalFiles":
+            for digital in child["value"]:
+                digital["contentType"] = "application/step"
+                digital["value"] = "/aasx/files/model.step"
+    #: The first version keeps its identity and loses its files, so the
+    #: only thing that differs between the two is what the rule reads.
+    empty = versions[0]
+    empty["value"] = [child for child in empty["value"]
+                      if child.get("idShort") != "DigitalFiles"]
+    versions.append(offending)
+    assert "HD-D10" in _findings(tmp_path, env), (
+        "a version whose only rendition is not a PDF was not reported; "
+        "the walk stopped at the version in front of it")
+
+
 @pytest.mark.parametrize("pdf_first", (True, False), ids=("pdf first", "pdf second"))
 def test_a_version_carrying_more_than_the_pdf_still_has_its_pdf(tmp_path, pdf_first):
     """HD-D10 asks whether a PDF/A is *among* the renditions, not whether
@@ -1234,6 +1268,38 @@ def test_whitespace_around_a_vocabulary_value_is_not_the_defect(
     assert rule_id not in _findings(tmp_path, env), (
         "%s: %r drew %s, and the value is the one the rule asks for"
         % (label, pad % good, rule_id))
+
+
+def test_an_incomplete_document_id_does_not_hide_the_duplicate_behind_it(
+        tmp_path):
+    """`HDL4` walks a document's `DocumentId`s, and one naming only half
+    a pair is not this rule's finding -- a missing half is the
+    cardinality rule's -- so the walk steps past it.
+
+    Stepping past has to mean continuing. A document carrying an
+    incomplete `DocumentId` first and a duplicate of another document's
+    pair second is a duplicate that comes back unreported if the walk
+    stops at the first one it cannot read.
+
+    Measured before this was written: turning that skip into a stop left
+    the whole suite green, because every fixture that duplicates a pair
+    states the pair in the document's first `DocumentId`.
+    """
+    env = copy.deepcopy(hd_env())
+    documents = env["submodels"][0]["submodelElements"][0]["value"]
+    twin = copy.deepcopy(documents[0])
+    ids_list = twin["value"][0]
+    duplicate = copy.deepcopy(ids_list["value"][0])
+    #: Half a pair. The rule reads None for the missing half, and None is
+    #: what makes it step past rather than compare.
+    incomplete = ids_list["value"][0]
+    incomplete["value"] = [child for child in incomplete["value"]
+                           if child.get("idShort") != "DocumentDomainId"]
+    ids_list["value"] = [incomplete, duplicate]
+    documents.append(twin)
+    assert "HDL4" in _findings(tmp_path, env), (
+        "a duplicate identifier pair went unreported; the walk stopped at "
+        "the incomplete DocumentId in front of it")
 
 
 @pytest.mark.parametrize("pad", ["%s", " %s", "%s ", "\t%s\n"])
