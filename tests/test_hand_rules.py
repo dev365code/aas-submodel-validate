@@ -619,7 +619,11 @@ def test_the_digital_files_fallback_is_shadowed_by_its_own_guard(tmp_path):
 
     02004 gives `DigitalFiles` and its sole child `DigitalFile` **one**
     identifier, `0173-1#02-ABK126#002`, where it gives `DocumentIds` and
-    `DocumentId` two different ones. Matching does not consult element
+    `DocumentId` two different ones. That sharing is docs/divergences.md
+    #39, and the direction it already guards -- asking for the item and
+    getting the list -- is spied on by `test_engine_seam.py` across a
+    whole run. This is the other direction, which only a file missing
+    the list can reach, so that spy never sees it. Matching does not consult element
     kind once an identifier hits (`_matches_row`), so on a version that
     states its file flat, `child_of(version, "DigitalFiles")` returns the
     `File` itself -- truthy -- and `or version` never runs. The rule then
