@@ -231,3 +231,116 @@ jobs:
           /tmp/v/bin/pip install --quiet dist/*.whl
           /tmp/v/bin/smtv --version
           /tmp/v/bin/aas-submodel-validate --rules > /dev/null
+
+  # The release path runs for the first time when a tag is pushed, which
+  # is the worst place to learn that a step of it is broken: the tag
+  # exists, the version is spent, and the fix needs a new one. Everything
+  # below is what `release.yml` does between building and signing, run on
+  # every push to main and every pull request, against no tag and with no
+  # credential. `tests/test_ci_parity.py` asserts these are the same
+  # commands, so the copy cannot quietly drift from the original.
+  #
+  # What is deliberately not here: the two steps that read a tag, the
+  # attestation and the upload to the index, which need a token this job
+  # has no business holding. The signing step's own property -- that it
+  # offers exactly what this project built -- is asserted in the suite
+  # instead.
+  release-path:
+    name: the release path, minus the tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - name: build the wheel and the sdist
+        run: |
+          pip install build
+          python -m build
+      - name: no distribution carries what it must not
+        run: python tools/check_distributions.py
+      - name: the dependency travels too, or the offline route is a lie
+        run: |
+          pip download --no-deps --only-binary=:all: --python-version 3.9 \
+            "$(python -c 'import aas_submodel_validate, importlib.metadata as m; print(m.requires("aas-submodel-validate")[0])')" \
+            -d dist/
+          rm -rf offline && mkdir offline
+          python -m venv offline/venv
+          offline/venv/bin/pip install --no-index --find-links dist/ aas-submodel-validate
+          offline/venv/bin/smtv --example > /dev/null
+          echo "offline install: works from the release assets alone"
+          rm -rf offline
+      - name: build the single file twice; the hashes must match
+        run: |
+          python tools/build_zipapp.py -o dist/smtv.pyz --check
+          python tools/build_zipapp.py -o /tmp/again.pyz
+          cmp dist/smtv.pyz /tmp/again.pyz
+          echo "reproducible: yes"
+      - name: the package index will accept the description
+        run: |
+          pip install "twine>=6.1"
+          twine check --strict dist/aas_submodel_validate-*
+      - name: one checksum file beside them
+        run: cd dist && rm -f SHA256SUMS && shasum -a 256 * > SHA256SUMS && cat SHA256SUMS
+      - name: dist holds exactly what this release publishes
+        run: |
+          cd dist
+          if grep -q '[[:space:]]SHA256SUMS$' SHA256SUMS; then
+            echo "SHA256SUMS has a record for itself, which nothing can verify"
+            exit 1
+          fi
+          records=$(grep -c '[^[:space:]]' SHA256SUMS || true)
+          if [ "$records" != "4" ]; then
+            echo "SHA256SUMS carries $records records, not the 4 it must vouch for"
+            cat SHA256SUMS
+            exit 1
+          fi
+          count=$(ls -1 | wc -l | tr -d ' ')
+          if [ "$count" != "5" ]; then
+            echo "dist holds $count files, not the 5 this release publishes:"
+            ls -1
+            exit 1
+          fi
+          for pattern in 'aas_submodel_validate-*.whl' \
+                         'aas_submodel_validate-*.tar.gz' \
+                         'smtv.pyz' 'aas_core3_0-*.whl' 'SHA256SUMS'; do
+            n=$(ls -1 $pattern 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$n" != "1" ]; then
+              echo "expected exactly one $pattern in dist, found $n"
+              exit 1
+            fi
+          done
+          echo "dist holds the 5 files this release publishes, and SHA256SUMS vouches for the 4 beside it"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          overwrite: true
+
+  # The other half of the round trip. `upload-artifact` and
+  # `download-artifact` are a matched pair and both moved a major version
+  # on 2026-09-09; a release was the only thing that had ever exercised
+  # them together. This job proves the bytes survive the trip and that
+  # the checksums written on the way out still verify on the way back.
+  round-trip:
+    name: the artifact round trip
+    needs: release-path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: dist
+          path: dist
+      - name: what came back is what went out
+        run: |
+          cd dist
+          ls -1
+          count=$(ls -1 | wc -l | tr -d ' ')
+          if [ "$count" != "5" ]; then
+            echo "the round trip returned $count files, not the 5 that went out"
+            exit 1
+          fi
+          shasum -a 256 -c SHA256SUMS
+          echo "the checksums written before the upload verify after the download"

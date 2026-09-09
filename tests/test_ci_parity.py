@@ -1039,9 +1039,9 @@ def test_pypi_gets_the_two_files_that_belong_to_this_project(tmp_path):
 # -- who is allowed to do what, and where ------------------------------------
 
 
-def _release_jobs():
-    """Each job in release.yml, as name -> its block."""
-    text = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+def _jobs(path):
+    """Each job in a workflow, as name -> its block."""
+    text = path.read_text(encoding="utf-8")
     body = text.split("\njobs:\n", 1)[1]
     starts = [(m.start(), m.group(1))
               for m in re.finditer(r"(?m)^  ([a-z][\w-]*):$", body)]
@@ -1050,6 +1050,10 @@ def _release_jobs():
         end = starts[index + 1][0] if index + 1 < len(starts) else len(body)
         jobs[name] = body[offset:end]
     return jobs
+
+
+def _release_jobs():
+    return _jobs(ROOT / ".github" / "workflows" / "release.yml")
 
 
 def _granted(block):
@@ -1103,3 +1107,74 @@ def test_the_publishing_job_does_not_rebuild_what_it_uploads():
         assert forbidden not in block, (
             "the publishing job runs `%s`, so what it uploads need not be "
             "what was signed" % forbidden)
+# -- the release path, rehearsed ---------------------------------------------
+
+#: The steps `release.yml` runs between building and signing. Each one is
+#: rehearsed on every push, because a tag is the worst place to learn that
+#: one of them is broken -- the tag exists, the version is spent, and the
+#: fix needs a new one.
+REHEARSED = ("build the wheel and the sdist",
+             "no distribution carries what it must not",
+             "the dependency travels too, or the offline route is a lie",
+             "build the single file twice; the hashes must match",
+             "the package index will accept the description",
+             "one checksum file beside them",
+             "dist holds exactly what this release publishes")
+
+
+def _step_bodies(block):
+    """Each named step in one job's block, as name -> the command it runs.
+
+    Asked of a job and never of a whole file. Two jobs may legitimately
+    run a step of the same name -- `twine check` is rehearsed here and
+    also runs against the wheel built for the install test -- and a
+    reading that collapsed them would compare one job's paragraph while
+    claiming something about another's. It did: the first version of this
+    took the file, kept the first of each name, and a step deleted from
+    the rehearsal went unnoticed because a different job still had one
+    spelled the same way.
+    """
+    bodies = {}
+    for found in re.finditer(
+            r"      - name: ([^\n]+)\n(?:\s+#[^\n]*\n)*"
+            r"        run: (\|\n(?:(?:[ ]{10}[^\n]*)?\n)+|[^\n]+\n)", block):
+        name = found.group(1).strip()
+        assert name not in bodies, (
+            "one job runs two steps named %r, so neither can be pointed at"
+            % name)
+        bodies[name] = found.group(2).rstrip("\n")
+    return bodies
+
+
+def test_the_release_path_is_rehearsed_on_every_push():
+    """A copy that drifts from what it rehearses is worse than no
+    rehearsal: it goes green while the thing it stands for changes.
+
+    So the comparison is the commands themselves, not the step names. If
+    a step here gains a line, the rehearsal fails until it gains the same
+    one.
+    """
+    release = _step_bodies(_release_jobs()["build"])
+    rehearsal = _step_bodies(
+        _jobs(ROOT / ".github" / "workflows" / "ci.yml")["release-path"])
+    missing = [name for name in REHEARSED if name not in rehearsal]
+    assert not missing, (
+        "the release path runs these and nothing rehearses them:\n  "
+        + "\n  ".join(missing))
+    drifted = [name for name in REHEARSED
+               if release.get(name) != rehearsal.get(name)]
+    assert not drifted, (
+        "these run different commands in the release than in its "
+        "rehearsal:\n  " + "\n  ".join(drifted))
+
+
+def test_the_rehearsal_holds_no_credential_and_reads_no_tag():
+    """It is a rehearsal because it cannot publish. A job that could
+    would be the release, running on every push."""
+    text = (ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8")
+    for forbidden in ("id-token: write", "attestations: write",
+                      "contents: write", "GITHUB_REF_NAME",
+                      "pypa/gh-action-pypi-publish", "attest-build-provenance"):
+        assert forbidden not in text, (
+            "the rehearsal names `%s`, which makes it something other than "
+            "a rehearsal" % forbidden)
