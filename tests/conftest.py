@@ -130,8 +130,21 @@ def _observe_which_rules_fire():
 
     def wrapped(path, **kwargs):
         report = original(path, **kwargs)
+        # A stop in the relayed metamodel channel is not one of this
+        # project's rules crashing, and `runner` models it as its own
+        # thing: same message, but `RELAY_STOPPED` for a remedy, which
+        # says a channel went quiet rather than that this validator is
+        # defective. It is an expected outcome on inputs aas-core3.0
+        # cannot process -- a year with more digits than CPython will
+        # convert, a nesting depth past the interpreter's stack -- so
+        # whether it happens is a property of the platform, not of the
+        # file. Measured the hard way: this check went in without the
+        # exclusion, `make check` was green here, and nine CI jobs went
+        # red on `META could not run` because their stack gives out
+        # where this machine's does not.
         crashed = sorted(finding.id for finding in report.findings
-                         if finding.violation.message == runner.COULD_NOT_RUN)
+                         if finding.violation.message == runner.COULD_NOT_RUN
+                         and finding.fix != runner.RELAY_STOPPED)
         assert _ALLOWS_CRASH or not crashed, (
             "%s could not run, and this test would otherwise have read that "
             "as a verdict: a crashed rule is reported under its own id, at "

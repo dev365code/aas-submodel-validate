@@ -88,6 +88,42 @@ def test_the_refusal_survives_a_rule_that_only_breaks_sometimes(
         runner.run(_write(tmp_path, env))
 
 
+def test_the_relayed_channel_stopping_is_not_one_of_our_rules_crashing(
+        tmp_path, monkeypatch):
+    """The distinction this check got wrong on its first push.
+
+    `runner` reports a stop in the relayed metamodel channel with the
+    same message a crashed rule gets, and a different remedy: a channel
+    went quiet, which need not mean this validator is defective --
+    aas-core3.0 may have met a file its own code cannot process, such as
+    a year past CPython's digit limit for `int()` or a nesting depth past
+    the interpreter's stack.
+
+    So whether it happens is a property of the machine. `make check` was
+    green here and nine CI jobs went red on `META could not run`, because
+    their stack gives out where this one's does not. Keying the refusal
+    on the message alone made a platform difference look like a broken
+    rule.
+
+    Forced here rather than waited for, so that the difference is a test
+    on every machine instead of a surprise on some of them.
+    """
+    def stop(target):
+        raise RecursionError("injected by %s" % __name__)
+
+    monkeypatch.setattr(runner.verification, "verify", stop)
+
+    report = runner.run(_write(tmp_path, hd_env()))
+    stopped = [finding for finding in report.findings
+               if finding.violation.message == runner.COULD_NOT_RUN]
+    assert [finding.id for finding in stopped] == ["META"], (
+        "the relayed channel did not stop, so this test no longer shows "
+        "what it says it shows")
+    assert stopped[0].fix == runner.RELAY_STOPPED, (
+        "a relayed stop now carries the crash remedy, and the refusal in "
+        "conftest tells the two apart by exactly that")
+
+
 @pytest.mark.allow_crash
 def test_the_door_out_of_that_refusal_opens(tmp_path, monkeypatch):
     """A test whose subject *is* the crash path has to be able to hold
