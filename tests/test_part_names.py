@@ -445,6 +445,7 @@ def test_a_scheme_is_ascii_and_the_letters_are_named_not_asked(value):
     ("mailto:docs@example.com", True),
     ("http://example.com/manual.pdf", True),
     ("a+b-c.d:x", True),                    # every character §3.1 allows
+    ("ws://example.com/live", True),        # two letters is still a scheme
     ("C:\\docs\\manual.pdf", False),        # a drive letter, not a scheme
     ("files/a://absent.pdf", False),        # contains "://" and is a part name
     ("aasx/http:/example.com/manual.pdf", False),   # a URI already resolved
@@ -452,10 +453,17 @@ def test_a_scheme_is_ascii_and_the_letters_are_named_not_asked(value):
 ])
 def test_what_the_scheme_test_answers(value, expected):
     """Both edges, so the predicate cannot be widened or narrowed
-    without a red. The last two are the ones that cost something: a
-    substring test called the third a scheme and skipped a MUST, and
-    the fourth is what joining a URI to a directory produces -- asked
-    after that join, every scheme is gone."""
+    without a red. Two of these are the ones that cost something: a
+    substring test called `files/a://absent.pdf` a scheme and skipped a
+    MUST, and `aasx/http:/…` is what joining a URI to a directory
+    produces -- asked after that join, every scheme is gone.
+
+    `ws:` pins the shortest head this accepts. The minimum is two
+    letters rather than RFC 3986's one, so that `C:\\…` stays a path
+    rather than becoming a scheme; that choice is what the drive-letter
+    row above protects. Until `ws:` was added, raising the minimum to
+    three left the whole suite green -- the sentence at the top of this
+    docstring was true of one edge and not the other."""
     assert has_scheme(value) is expected
 
 
