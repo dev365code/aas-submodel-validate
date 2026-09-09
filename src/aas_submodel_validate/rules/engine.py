@@ -468,9 +468,19 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             # item type and carries none is metamodel-clean, satisfies
             # every row, and said nothing at all.
             #
-            # Only a disagreement. `typeValueListElement` is optional in
-            # the metamodel and a file that says nothing is not a file
-            # that says something wrong.
+            # Only a disagreement -- but not for the reason this comment
+            # used to give. It said `typeValueListElement` is optional in
+            # the metamodel, and it is not: `aas_core3` takes it as a
+            # required argument and both JSON and XML deserialisation
+            # refuse a file without one, before any rule here runs. The
+            # optional field is `valueTypeListElement`, one letter-order
+            # away and a different thing. So `listed is not None` cannot
+            # fire, and neither can its twin below on `valueType`; both
+            # stay as the kind of guard that costs nothing and would
+            # turn a relaxed metamodel into a finding rather than an
+            # `AttributeError`. `test_engine_seam` pins that, so the day
+            # either field becomes optional the guards stop being
+            # unreachable and somebody is told.
             listed = getattr(element, "type_value_list_element", None)
             if row["list_type"] and listed is not None and listed.value != row["list_type"]:
                 result["violations"].setdefault(row["id"], []).append(Violation(

@@ -12,11 +12,12 @@ where a mistake here cannot be seen from the outside at all.
 """
 from __future__ import annotations
 
+import copy
 import inspect
 
 from aas_submodel_validate import runner
 from aas_submodel_validate.rules import dbp_tables, engine, hd_tables, td_tables
-from builders import wearing_our_anchor_as_a_supplemental
+from builders import hd_env, wearing_our_anchor_as_a_supplemental
 
 #: Everything a rule module uses to read a walk. Each one is a place a
 #: table could have been guessed.
@@ -170,3 +171,82 @@ def test_no_hand_rule_navigates_to_a_child_that_is_not_there(tmp_path):
     finally:
         for module in holders:
             module.child_of = original
+
+
+def test_a_list_or_property_reaching_the_walk_has_declared_its_type():
+    """A precondition two guards in `_scope` rest on, and the comment
+    explaining one of them named the wrong field.
+
+    `_scope` compares a list's declared item type and a property's
+    declared value type against the template, each behind
+    `<declaration> is not None`. The comment said
+    `typeValueListElement` is optional in the metamodel and that a file
+    saying nothing is not a file saying something wrong.
+
+    Measured, it is mandatory: `SubmodelElementList.type_value_list_element`
+    and `Property.value_type` are both required arguments in `aas_core3`,
+    and both JSON and XML deserialisation refuse a file that omits them
+    -- refuse it before this project's rules run at all. So neither guard
+    can fire, and the reason given for one of them was not its reason.
+
+    The optional field is `valueTypeListElement`, one letter-order away
+    from `typeValueListElement` and a different thing entirely. That is
+    almost certainly where the comment came from, and it is why this is
+    pinned rather than argued: if `aas_core3` ever relaxes either field,
+    those guards stop being unreachable and start being load-bearing,
+    and whoever is here then should be told by a red test rather than by
+    a crash in `None.value`.
+    """
+    import inspect
+
+    import aas_core3.jsonization as jsonization
+    import aas_core3.types as core_types
+    import aas_core3.xmlization as xmlization
+
+    for owner, field in ((core_types.SubmodelElementList, "type_value_list_element"),
+                         (core_types.Property, "value_type")):
+        parameter = inspect.signature(owner.__init__).parameters[field]
+        assert parameter.default is inspect.Parameter.empty, (
+            "%s.%s has become optional; the guards in `_scope` that assume "
+            "otherwise are now reachable" % (owner.__name__, field))
+
+    #: The confusable one, asserted so the distinction cannot rot back.
+    optional = inspect.signature(
+        core_types.SubmodelElementList.__init__).parameters["value_type_list_element"]
+    assert optional.default is None
+
+    def refuses(strip_key, model_type):
+        env = copy.deepcopy(hd_env())
+
+        def walk(node):
+            if isinstance(node, dict):
+                if node.get("modelType") == model_type and strip_key in node:
+                    node.pop(strip_key)
+                    return True
+                return any(walk(v) for v in node.values())
+            if isinstance(node, list):
+                return any(walk(item) for item in node)
+            return False
+
+        assert walk(env), "the fixture no longer has a %s to strip" % model_type
+        try:
+            jsonization.environment_from_jsonable(env)
+        except Exception as exc:                     # noqa: BLE001
+            return strip_key in str(exc)
+        return False
+
+    assert refuses("typeValueListElement", "SubmodelElementList")
+    assert refuses("valueType", "Property")
+
+    #: And the same on the other serialisation, because an AASX payload
+    #: may be either and only one of them was checked here at first.
+    bare = ("<environment xmlns=\"https://admin-shell.io/aas/3/0\">"
+            "<submodels><submodel><id>urn:x</id><submodelElements>"
+            "<submodelElementList><idShort>L</idShort><value/>"
+            "</submodelElementList></submodelElements></submodel></submodels>"
+            "</environment>")
+    try:
+        xmlization.environment_from_str(bare)
+        raise AssertionError("XML accepted a list with no typeValueListElement")
+    except Exception as exc:                         # noqa: BLE001
+        assert "typeValueListElement" in str(exc), exc
