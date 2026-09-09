@@ -437,12 +437,28 @@ for finding in report["findings"]:
     print(finding["rule"], finding["severity"], finding["message"], finding["fix"])
 ```
 
-**Versions and updates.** Semantic versioning on the package. A new
-rule, or a rule that becomes stricter, is a minor version and is listed
-in [CHANGELOG.md](https://github.com/dev365code/aas-submodel-validate/blob/main/CHANGELOG.md)
-with the reading behind it. Vendored IDTA template files are pinned by
-commit and verified by hash on every run of the suite, so an upstream
-change cannot arrive silently.
+**Versions and updates.** The package is in `0.x`, and that is the
+honest statement of what may change. The reading behind a rule, the set
+of findings a given file draws, and the exit code that follows from them
+have all moved between releases here — 0.1.3 judged seven of fifty-two
+corpus inputs differently, and five of those changed an exit code. Every
+such change is listed in
+[CHANGELOG.md](https://github.com/dev365code/aas-submodel-validate/blob/main/CHANGELOG.md)
+with the reading behind it, under a paragraph that names the exit codes
+that move. If you gate a build on the exit code, read that file before
+upgrading.
+
+What has not moved is the report. `schemaVersion` is 1; keys are added
+without moving it, and nothing has been renamed or removed under it. No
+rule id has been renamed or reused — the ids of the last release are
+written down in the test suite and checked against every build, because
+a rule id is a citation somebody else made. Vendored IDTA template files
+are pinned by commit and verified by hash on every run of the suite, so
+an upstream change cannot arrive silently.
+
+Packaging and internals are not a contract: there is no importable
+Python API, and the module layout and what the wheel carries beyond the
+paths named above may change in any release.
 
 **Support.** Open an issue; where to send it and what makes a report
 answerable is in [SUPPORT.md](https://github.com/dev365code/aas-submodel-validate/blob/main/SUPPORT.md).
