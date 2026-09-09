@@ -24,6 +24,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      # Creating the Release and attaching the assets to it. This is the
+      # strongest lift in the file and the one a reader will ask about
+      # first, so it says why here rather than being inferred from the
+      # step that uses it.
       contents: write
       # Reading what CI concluded about this commit. `contents: read` at
       # the top of the file does not carry it, and without it the gate

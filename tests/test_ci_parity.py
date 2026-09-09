@@ -1036,3 +1036,70 @@ def test_pypi_gets_the_two_files_that_belong_to_this_project(tmp_path):
     assert uploaded == sorted(n for n in BUILT
                               if n.startswith("aas_submodel_validate-")), (
         "PyPI would be offered %s" % uploaded)
+# -- who is allowed to do what, and where ------------------------------------
+
+
+def _release_jobs():
+    """Each job in release.yml, as name -> its block."""
+    text = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+    body = text.split("\njobs:\n", 1)[1]
+    starts = [(m.start(), m.group(1))
+              for m in re.finditer(r"(?m)^  ([a-z][\w-]*):$", body)]
+    jobs = {}
+    for index, (offset, name) in enumerate(starts):
+        end = starts[index + 1][0] if index + 1 < len(starts) else len(body)
+        jobs[name] = body[offset:end]
+    return jobs
+
+
+def _granted(block):
+    """The `permissions:` a block declares, as name -> level."""
+    found = re.search(r"(?m)^(\s+)permissions:\n((?:\1  .*\n|\s*#.*\n|\n)+)",
+                      block)
+    if found is None:
+        return None
+    return dict(re.findall(r"(?m)^\s+([a-z-]+):\s*(\S+)\s*$", found.group(2)))
+
+
+def test_the_workflow_floor_is_read_and_a_job_asks_for_more_itself():
+    """A token minted at the top of a file is one every job holds,
+    including the ones that only read. The floor here is `contents:
+    read`, and the two lifts above it are declared by the job that needs
+    them -- which is also where a reader looks to ask why."""
+    text = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+    floor = re.search(r"(?m)^permissions:\n((?:  .*\n)+)", text)
+    assert floor is not None, "release.yml declares no floor, so it inherits one"
+    assert dict(re.findall(r"(?m)^\s+([a-z-]+):\s*(\S+)\s*$",
+                           floor.group(1))) == {"contents": "read"}, (
+        "the floor is not `contents: read`: %r" % floor.group(1))
+
+
+def test_only_the_job_that_signs_and_the_one_that_publishes_mint_a_token():
+    """`id-token: write` is the credential that speaks for this
+    repository to a service that has never seen it. Two steps need it --
+    the attestation and the upload to PyPI -- and a third job holding it
+    is a third place it can leak from."""
+    minting = sorted(name for name, block in _release_jobs().items()
+                     if (_granted(block) or {}).get("id-token") == "write")
+    assert minting == ["build", "publish"], minting
+
+
+def test_the_publishing_job_is_allowed_to_do_one_thing():
+    """It uploads. It does not need to write to this repository, read
+    what CI concluded, or attest anything -- those happened before it
+    ran, in a job that cannot upload."""
+    granted = _granted(_release_jobs()["publish"])
+    assert granted == {"id-token": "write"}, granted
+
+
+def test_the_publishing_job_does_not_rebuild_what_it_uploads():
+    """The bytes on the index have to be the bytes the Release carries
+    and the attestation covers. A job that checked the source out and
+    built again would produce its own, and every hash published beside
+    them would be a hash of something else."""
+    block = _release_jobs()["publish"]
+    for forbidden in ("actions/checkout", "python -m build", "pip install -e",
+                      "make check"):
+        assert forbidden not in block, (
+            "the publishing job runs `%s`, so what it uploads need not be "
+            "what was signed" % forbidden)
