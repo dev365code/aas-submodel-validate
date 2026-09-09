@@ -916,3 +916,123 @@ def test_the_signature_covers_what_this_project_built_and_nothing_else():
     assert matched == ours, (
         "the signing step attests %s; it must attest exactly what this "
         "workflow built:\n  offered: %s" % (list(matched), patterns))
+# -- what the release directory is allowed to hold -----------------------------
+
+
+def _dist_manifest_script():
+    """The step that says what `dist/` must hold, lifted so it can run
+    here.
+
+    Both the checksum file and the Release are made from `dist/*`: the
+    step above sums whatever is in the directory, and the one that
+    attaches the assets passes the same glob. So a file that arrives
+    there by accident is checksummed and published, and nothing said
+    what belonged. This runs the step's own script against directories
+    built here, rather than reading it, for the reason the harness
+    measured: a gate read is a gate assumed.
+    """
+    text = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+    found = re.search(
+        r"- name: dist holds exactly what this release publishes\n"
+        r"(?:\s+#.*\n)*"
+        r"\s+run: \|\n((?:[ ]{10}[^\n]*\n|\n)+)", text)
+    assert found is not None, (
+        "release.yml has no step saying what dist/ must hold, so `dist/*` "
+        "is whatever the build left there")
+    return "".join(line[10:] if line.startswith(" " * 10) else line
+                   for line in found.group(1).splitlines(keepends=True))
+
+
+def _dist(tmp_path, names, records=None, sums_lists_itself=False):
+    """A `dist/` built by hand, and the exit code the step gives it."""
+    import subprocess
+    root = tmp_path
+    dist = root / "dist"
+    dist.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        (dist / name).write_bytes(b"x")
+    if records is not None:
+        lines = ["%064d  %s" % (0, n) for n in records]
+        if sums_lists_itself:
+            lines.append("%064d  SHA256SUMS" % 0)
+        (dist / "SHA256SUMS").write_text("\n".join(lines) + "\n")
+    script = root / "step.sh"
+    script.write_text(_dist_manifest_script())
+    return subprocess.run(["sh", str(script)], cwd=str(root),
+                          capture_output=True, text=True)
+
+
+BUILT = ["aas_submodel_validate-0.1.3-py3-none-any.whl",
+         "aas_submodel_validate-0.1.3.tar.gz",
+         "smtv.pyz",
+         "aas_core3_0-1.1.4-py3-none-any.whl"]
+
+
+def test_the_release_directory_holds_what_the_release_publishes(tmp_path):
+    """The five that go out, and nothing else."""
+    done = _dist(tmp_path, BUILT + ["SHA256SUMS"], records=BUILT)
+    assert done.returncode == 0, done.stdout + done.stderr
+
+
+def test_a_file_nobody_built_does_not_ride_out_with_them(tmp_path):
+    """`dist/*` would checksum and publish it."""
+    done = _dist(tmp_path, BUILT + ["notes.md", "SHA256SUMS"], records=BUILT)
+    assert done.returncode != 0
+    assert "6" in done.stdout, done.stdout
+
+
+def test_an_empty_checksum_file_is_not_a_passing_one(tmp_path):
+    """`sha256sum -c` on a file with no records exits 0 where it is not
+    GNU's, so a checksum file that vouches for nothing reads as one that
+    vouches for everything. The count is asserted rather than assumed."""
+    done = _dist(tmp_path, BUILT + ["SHA256SUMS"], records=[])
+    assert done.returncode != 0
+    assert "0 record" in done.stdout or "not 4" in done.stdout, done.stdout
+
+
+def test_a_missing_artifact_is_caught_before_it_is_published(tmp_path):
+    """One of the four absent means the offline route ships incomplete."""
+    done = _dist(tmp_path, BUILT[:-1] + ["SHA256SUMS"], records=BUILT[:-1])
+    assert done.returncode != 0
+
+
+def test_the_checksum_file_does_not_vouch_for_itself(tmp_path):
+    """A record for SHA256SUMS inside SHA256SUMS can never verify."""
+    done = _dist(tmp_path, BUILT + ["SHA256SUMS"], records=BUILT[:-1],
+                 sums_lists_itself=True)
+    assert done.returncode != 0
+def test_pypi_gets_the_two_files_that_belong_to_this_project(tmp_path):
+    """The index and the Release publish different sets, and only one of
+    them is a package index.
+
+    `dist/` holds five things by the time the Release is made: the two
+    this project uploads, the single file, the dependency wheel carried
+    for the offline route, and the checksums. The publisher uploads a
+    *directory*, so pointing it at `dist` would offer PyPI a wheel
+    belonging to another project and a file that is not a distribution
+    at all. It points at one built for the purpose instead -- and
+    nothing said so until here.
+    """
+    text = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+    directory = re.search(r"packages-dir:\s*(\S+)", text)
+    assert directory is not None, "release.yml names no packages-dir"
+    assert directory.group(1) != "dist", (
+        "the publisher would offer PyPI everything in dist, including a "
+        "wheel this project did not build")
+
+    #: Build the named directory the way the workflow does, from a `dist`
+    #: holding all five, and see what ends up in it.
+    import subprocess
+    copy = re.search(r"run: (mkdir \S+ && cp [^\n]+)", text)
+    assert copy is not None, "release.yml has no step filling that directory"
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    for name in BUILT + ["SHA256SUMS"]:
+        (dist / name).write_bytes(b"x")
+    done = subprocess.run(["sh", "-c", copy.group(1)], cwd=str(tmp_path),
+                          capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    uploaded = sorted(q.name for q in (tmp_path / directory.group(1)).iterdir())
+    assert uploaded == sorted(n for n in BUILT
+                              if n.startswith("aas_submodel_validate-")), (
+        "PyPI would be offered %s" % uploaded)

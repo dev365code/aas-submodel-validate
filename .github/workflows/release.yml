@@ -171,6 +171,45 @@ jobs:
         # and a maintainer re-running this by hand is not.
         run: cd dist && rm -f SHA256SUMS && shasum -a 256 * > SHA256SUMS && cat SHA256SUMS
 
+      - name: dist holds exactly what this release publishes
+        # The checksum file above sums `dist/*` and the Release below is
+        # created from `dist/*`, so anything else that arrives in this
+        # directory is vouched for and published. Nothing said what
+        # belonged there.
+        #
+        # The record count is asserted rather than assumed because a
+        # checksum file with no records is one that `sha256sum -c` exits
+        # 0 on where that is not GNU's -- a file vouching for nothing
+        # reads exactly like a file vouching for everything.
+        run: |
+          cd dist
+          if grep -q '[[:space:]]SHA256SUMS$' SHA256SUMS; then
+            echo "SHA256SUMS has a record for itself, which nothing can verify"
+            exit 1
+          fi
+          records=$(grep -c '[^[:space:]]' SHA256SUMS || true)
+          if [ "$records" != "4" ]; then
+            echo "SHA256SUMS carries $records records, not the 4 it must vouch for"
+            cat SHA256SUMS
+            exit 1
+          fi
+          count=$(ls -1 | wc -l | tr -d ' ')
+          if [ "$count" != "5" ]; then
+            echo "dist holds $count files, not the 5 this release publishes:"
+            ls -1
+            exit 1
+          fi
+          for pattern in 'aas_submodel_validate-*.whl' \
+                         'aas_submodel_validate-*.tar.gz' \
+                         'smtv.pyz' 'aas_core3_0-*.whl' 'SHA256SUMS'; do
+            n=$(ls -1 $pattern 2>/dev/null | wc -l | tr -d ' ')
+            if [ "$n" != "1" ]; then
+              echo "expected exactly one $pattern in dist, found $n"
+              exit 1
+            fi
+          done
+          echo "dist holds the 5 files this release publishes, and SHA256SUMS vouches for the 4 beside it"
+
       - name: sign what was built
         # After this, `gh attestation verify smtv.pyz --repo <this>`
         # answers with the workflow, the repository and the commit that
