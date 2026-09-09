@@ -290,3 +290,33 @@ def test_every_way_the_chain_refuses_is_caught_and_staged(tmp_path, monkeypatch,
     assert bool(loaded.submodels) is read_anyway
     if says:
         assert says in (loaded.errors[0].fix or ""), loaded.errors[0].fix
+def test_one_unreachable_spec_part_does_not_hide_the_next(tmp_path):
+    """The chain reports every part it could not read, not the first.
+
+    A package may declare more than one `aas-spec` payload, and each is
+    read in turn. A reader that stopped at the first failure would tell
+    an author to fix one thing, and tell them the same thing again after
+    they fixed it -- the shape this project treats as worst after
+    inventing a defect: making somebody run the tool twice to learn what
+    the first run already knew.
+
+    Measured before this was written: turning that loop's `continue`
+    into a `break` left the whole suite green, because no fixture
+    declared two payloads that both fail.
+    """
+    path = tmp_path / "two.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        #: Two payloads the origin names and the archive does not hold.
+        #: `read` refuses each with a ContainerError, which the chain
+        #: records and walks past.
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/first.json"),
+                               (SPEC_REL, "/aasx/second.json")]))
+    loaded = load(path)
+    named = " ".join(error.message for error in loaded.errors)
+    assert "first.json" in named and "second.json" in named, (
+        "the chain stopped at the first payload it could not read: %s"
+        % [error.message for error in loaded.errors])
