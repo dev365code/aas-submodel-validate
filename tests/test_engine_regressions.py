@@ -321,6 +321,94 @@ def test_a_kind_violation_does_not_silence_the_element_beside_it(tmp_path):
         "the second element's defect stopped being reported: %s" % said
 
 
+NS = "https://admin-shell.io/vdi/2770/1/0/"
+
+#: (seen tail, expected tail, is it near enough) with the reason. The
+#: near-miss lint's docstring promises both edges -- a genuine
+#: singular/plural typo is caught, an unrelated neighbour that merely
+#: shares a directory is not -- and nothing held either of them.
+NEAR_ENOUGH = [
+    ("Entity", "Entities", True,
+     "the singular/plural typo the lint exists for, and it sits exactly on "
+     "the bound: three edits against a bound of three"),
+    ("EntityForDocumentation", "EntitiesForDocumentation", True,
+     "the same typo on the identifiers the official example actually "
+     "carries (docs/divergences.md #2)"),
+    ("ClassId", "ClassName", False,
+     "two real sibling rows of one template, four edits apart. Telling an "
+     "author who wrote ClassId that they probably meant ClassName is the "
+     "false hint the bound exists to prevent"),
+    ("Subtitle", "Title", False,
+     "likewise, and short enough that the bound is its floor rather than "
+     "a quarter of the length"),
+]
+
+
+@pytest.mark.parametrize("seen,expected,near,why",
+                         NEAR_ENOUGH,
+                         ids=[c[0] + "->" + c[1] for c in NEAR_ENOUGH])
+def test_the_near_miss_bound_holds_at_both_edges(seen, expected, near, why):
+    """`_near_miss` decides whether an unmatched identifier gets a "you
+    probably meant this" diagnosis, and how near is near enough is a
+    bound nothing measured: dropping it to two, raising it to three, and
+    turning `<=` into `<` all left the suite green.
+
+    That matters more than a hint usually would. #23 measures what the
+    lint carries: of the rows a version bump takes out, **every one**
+    still speaks through this lint, and that is the measurement which
+    justifies it existing. So a bound that stops catching real drift
+    takes those rows to silence, and a bound that catches anything
+    nearby fills a report with confident wrong guesses.
+
+    Both edges are here, on values from the templates rather than
+    invented ones, and each case says which side of the bound it is
+    testing and why. `%s`
+    """
+    got = engine._near_miss({NS + seen}, [NS + expected])
+    assert bool(got) is near, why
+    if near:
+        assert got == (NS + seen, NS + expected)
+
+
+def test_the_near_miss_bound_cannot_be_widened_past_what_it_can_measure():
+    """The bound is `max(3, len(expected) // 4)` and `edit_distance`
+    stops counting at `cap` and answers `cap + 1`. Where the bound
+    reaches that answer the comparison is `7 <= 7` for every input, and
+    the lint stops being a bound at all -- two segments with nothing in
+    common come back as a near miss.
+
+    Measured: the longest last segment in all three vendored templates
+    is 24 characters, giving a bound of 6, so nothing published reaches
+    it. Twenty-eight characters would. This is pinned rather than
+    repaired because repairing it changes what a published diagnostic
+    says, and no template has asked yet -- but it is pinned, because the
+    distance is four characters and a new template is one file.
+    """
+    from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
+    from aas_submodel_validate.semantics import edit_distance
+
+    longest = max(
+        len(value.rstrip("/").rpartition("/")[2])
+        for tables in (hd_tables, td_tables, dbp_tables)
+        for row in tables.ROWS
+        for value in row["match"]
+        if "://" in value)
+    assert longest == 24, (
+        "the longest published last segment moved to %d; the bound there "
+        "is %d and `edit_distance` answers at most %d, so check whether "
+        "the lint still bounds anything" % (longest, max(3, longest // 4),
+                                            edit_distance("a" * 40, "b" * 40)))
+    assert max(3, longest // 4) < edit_distance("a" * 40, "b" * 40), (
+        "the bound has reached what edit_distance can answer: every "
+        "candidate sharing a namespace is now a near miss")
+
+    #: And what it looks like on the other side of that line.
+    unrelated = engine._near_miss({NS + "a" * 28}, [NS + "b" * 28])
+    assert unrelated is not None, (
+        "the vacuous case stopped being vacuous, which is good news and "
+        "means the paragraph above is stale")
+
+
 def test_one_element_draws_one_near_miss(tmp_path):
     """An element carries every identifier it declares into the near-miss
     search, so it can be almost-right for more than one row at once. It
