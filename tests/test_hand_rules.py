@@ -72,6 +72,49 @@ def test_a_class_name_without_english_fails(tmp_path):
     assert "HD-D4" in _findings(tmp_path, env)
 
 
+@pytest.mark.parametrize("unreadable", ("no ClassName", "wrong kind"),
+                         ids=("absent", "wrong kind"))
+def test_a_classification_this_rule_cannot_read_does_not_hide_the_next(
+        tmp_path, unreadable):
+    """`HD-D4` walks a document's VDI classifications, and two kinds of
+    classification are not its finding: one with no `ClassName` at all
+    (the generated cardinality rule's) and one whose `ClassName` is the
+    wrong kind of element (the generated kind rule's, and the test above
+    is why this rule stays silent about it rather than crashing).
+
+    Both have to be skips. As stops, a document that states a
+    classification of either kind before a German-only one comes back
+    with no English entry unreported -- and a document with more than one
+    classification is not exotic: 02004 lets a document be classified in
+    several systems, and the VDI filter above keeps only the ones this
+    rule can speak about, so the ones it steps past are exactly what
+    a real file has.
+
+    Measured before this was written: both stops left the whole suite
+    green. Every fixture here classifies a document once.
+    """
+    env = copy.deepcopy(hd_env())
+    classifications = _first_document(env)["value"][1]["value"]
+    offending = copy.deepcopy(classifications[0])
+    for child in offending["value"]:
+        if child.get("idShort") == "ClassName":
+            child["value"] = [{"language": "de", "text": "Betrieb"}]
+    first = classifications[0]
+    if unreadable == "no ClassName":
+        first["value"] = [child for child in first["value"]
+                          if child.get("idShort") != "ClassName"]
+    else:
+        for child in first["value"]:
+            if child.get("idShort") == "ClassName":
+                child["modelType"] = "Property"
+                child["value"] = "Operation"
+                child["valueType"] = "xs:string"
+    classifications.append(offending)
+    assert "HD-D4" in _findings(tmp_path, env), (
+        "a ClassName with no English entry went unreported; the walk "
+        "stopped at the classification with %s in front of it" % unreadable)
+
+
 def test_two_document_ids_but_no_primary_warns(tmp_path):
     env = copy.deepcopy(hd_env())
     ids_list = _first_document(env)["value"][0]
