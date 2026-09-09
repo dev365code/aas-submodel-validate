@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import types
 from pathlib import Path
 
 import pytest
@@ -44,8 +45,10 @@ def test_02035_2_answers_eleven_of_the_fourteen():
 def test_a_pack_that_cannot_answer_a_rule_is_refused_at_import(monkeypatch):
     """Not a KeyError at validation time, in a report a user reads."""
     monkeypatch.setattr(registry, "_registry", {})
-    with pytest.raises(SystemExit, match="StatusValue"):
+    with pytest.raises(SystemExit) as refused:
         handover.install("PROBE", dbp_tables)
+    assert "StatusValue" in str(refused.value)
+    assert "dbp_tables" in str(refused.value), str(refused.value)
 
 
 def test_a_pack_that_omits_a_rule_it_could_answer_is_refused_too(monkeypatch):
@@ -53,8 +56,127 @@ def test_a_pack_that_omits_a_rule_it_could_answer_is_refused_too(monkeypatch):
     lack. A pack that quietly checks less than it could is the failure;
     `omit` is where somebody says the loss was meant."""
     monkeypatch.setattr(registry, "_registry", {})
-    with pytest.raises(SystemExit, match="omits -D2"):
+    with pytest.raises(SystemExit) as refused:
         handover.install("PROBE", hd_tables, omit=("-D2",))
+    #: The name of the table is half the message: it is what tells a
+    #: reader which of the two packs has the row that makes the omission
+    #: a loss. Matching only "omits -D2" left that half unchecked.
+    assert "omits -D2" in str(refused.value)
+    assert "hd_tables" in str(refused.value), str(refused.value)
+
+
+def test_a_rule_title_names_the_rows_the_table_actually_has():
+    """`install` substitutes `%s` in a title with the table's own File
+    rows, and until this test nothing read a title at all.
+
+    That the substitution happens is not cosmetic here: the two packs get
+    different sentences from one row, which is the whole reason the row
+    is written with a placeholder rather than the names. Turn the
+    substitution off and every reader of `HD-D7` is told a rule called
+    "files named by %s exist in the container" failed -- a format string
+    in a report, and one that no longer says which elements were read.
+    """
+    hd_title = registry._registry["HD-D7"].title
+    dbp_title = registry._registry["DBP2-D7"].title
+    assert hd_title == "files named by DigitalFile/PreviewFile exist in the container"
+    assert dbp_title == "files named by DigitalFile exist in the container"
+    for rule_id, rule in registry._registry.items():
+        assert "%s" not in rule.title, (
+            "%s reached a reader with an unsubstituted placeholder in its "
+            "title: %r" % (rule_id, rule.title))
+
+
+def test_an_inherited_rule_says_whose_requirement_it_is_carrying():
+    """02035-2 declares 02004's submodel identifier and asks for
+    something different (divergences #26), and eleven of these rules are
+    installed for it on the strength of the row overlap that entry
+    measures. A reader who sees `DBP2-D7` cite "IDTA 02004-2-0 §2.8"
+    and nothing else has been shown a clause from a different document
+    with no sentence saying why it applies here.
+
+    `install` appends that sentence, and nothing read it. Suppress the
+    appending and every 02035-2 spec still names only 02004 -- the
+    verdict unchanged, the reason for it gone. This project's rule is
+    that a verdict cannot move without the sentence explaining it moving
+    too; this is the same rule pointed the other way, at a sentence that
+    is doing the explaining for a verdict that did not move.
+    """
+    inherited = registry._registry["DBP2-D7"].spec
+    assert inherited.endswith(
+        "; IDTA 02035-2 1.0 inherits it (docs/divergences.md #26)"), inherited
+    assert inherited.startswith(registry._registry["HD-D7"].spec), (
+        "the inherited spec should be 02004's own, with the citation added")
+    assert "inherits" not in (registry._registry["HD-D7"].spec or ""), (
+        "02004 inherits nothing; the pack that owns a rule should not say "
+        "it borrowed it")
+    #: Read out of the roster rather than matched by prefix. Five of
+    #: these suffixes are spelled without the dash -- `HDL4`, not
+    #: `HD-L4` -- so a prefix of "DBP2-L" checks none of them and stays
+    #: green on the six it does reach, which is the same half-checked
+    #: shape the two guards below were in.
+    borrowed = ["DBP2" + suffix for suffix, *_rest in handover.ROSTER
+                if "DBP2" + suffix in registry._registry]
+    assert len(borrowed) == 11, borrowed
+    for rule_id in borrowed:
+        assert "inherits it" in (registry._registry[rule_id].spec or ""), (
+            "%s is installed for 02035-2 and does not say whose requirement "
+            "it carries" % rule_id)
+
+
+def test_a_pack_that_omits_a_name_this_module_does_not_have_is_refused(monkeypatch):
+    """The other direction of `omit`, and the one nothing asked for.
+
+    The two guards above refuse a pack that cannot answer a rule and a
+    pack that omits one it could answer. Between them sits a third: a
+    name in `omit` that is no rule at all. Without it a typo omits
+    nothing and is not a loss anybody said was meant -- `omit` is the one
+    place in this module where somebody writes down that a check is
+    deliberately not run, and a line there that names nothing is a
+    sentence with no subject.
+    """
+    monkeypatch.setattr(registry, "_registry", {})
+    with pytest.raises(SystemExit) as refused:
+        handover.install("PROBE", hd_tables, omit=("-D99",))
+    assert "-D99" in str(refused.value), str(refused.value)
+
+
+def test_a_table_with_no_file_rows_does_not_claim_the_file_rule(monkeypatch):
+    """`-D7` is the one rule whose labels are not in its `needs`: it
+    navigates whatever rows the table declares as Files, so a table with
+    none can no more answer it than a table missing a named row can. The
+    discard that says so was never measured, because all three real
+    tables have File rows -- 02004 two, 02035-2 one, 02003 two.
+
+    `answerable` is a function of the table and nothing else, so the
+    missing case can simply be built: 02004's rows with the File ones
+    taken out. Both halves are asserted, since a discard that fired
+    always would be just as wrong and just as green.
+    """
+    #: `BY_LABEL` is left whole on purpose. Every other rule stays
+    #: answerable, so the only thing that can move the result is the File
+    #: rows, and the refusal below has to be about D7 rather than about
+    #: whichever rule a narrower table happened to lose first.
+    fileless = types.SimpleNamespace(
+        __name__="tests.fileless_tables",
+        ROWS=[row for row in hd_tables.ROWS if row["kind"] != "File"],
+        BY_LABEL=hd_tables.BY_LABEL)
+    assert handover._file_labels(hd_tables) == ("DigitalFile", "PreviewFile")
+    assert handover._file_labels(fileless) == ()
+    assert "-D7" in handover.answerable(hd_tables)
+    assert "-D7" not in handover.answerable(fileless)
+    #: Everything else it could answer, it still answers -- the discard
+    #: takes one rule away and not the roster.
+    assert (handover.answerable(hd_tables) - handover.answerable(fileless)
+            == {"-D7"})
+
+    monkeypatch.setattr(registry, "_registry", {})
+    with pytest.raises(SystemExit) as refused:
+        handover.install("PROBE", fileless)
+    #: The remedy has to name something. `needs` is empty for this rule,
+    #: so the list of missing labels is empty too, and without the
+    #: fallback the sentence reads "navigates , which ...".
+    assert "a File row" in str(refused.value), str(refused.value)
+    assert "fileless_tables" in str(refused.value), str(refused.value)
 
 
 def test_the_file_labels_come_from_the_table(monkeypatch):
