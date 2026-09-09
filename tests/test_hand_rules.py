@@ -511,6 +511,57 @@ def test_a_dangling_reference_is_reported_and_names_its_own_label(
 
 
 
+def test_a_reference_the_walk_skips_does_not_hide_the_one_behind_it(tmp_path):
+    """The walk steps past a reference it cannot judge; it does not stop.
+
+    `HD-D9` reads a list of ReferenceElements and skips the ones it has
+    no question about -- an external reference, or one pointing into
+    another submodel, which this reader cannot resolve offline. A skip
+    that ended the walk instead would let one unjudgeable reference hide
+    every dangling one behind it, and the file would come back clean.
+
+    Measured before this was written: turning either of those two skips
+    into a stop left the whole suite green, because every fixture put
+    the dangling reference first or alone.
+    """
+    env = copy.deepcopy(hd_env())
+    parent = _first_document(env)
+    dangling = {"type": "ModelReference", "keys": [
+        {"type": "Submodel", "value": "urn:example:handover"},
+        {"type": "SubmodelElementList", "value": "Documents"},
+        {"type": "SubmodelElementCollection", "value": "77"}]}
+    def item(value):
+        return {"modelType": "ReferenceElement",
+                "semanticId": {"type": "ExternalReference", "keys": [
+                    {"type": "GlobalReference",
+                     "value": "https://admin-shell.io/vdi/2770/1/0/"
+                              "Document/DocumentedEntity"}]},
+                "value": value}
+    parent["value"].append({
+        "idShort": "DocumentedEntities", "modelType": "SubmodelElementList",
+        "typeValueListElement": "ReferenceElement",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference",
+             "value": "https://admin-shell.io/vdi/2770/1/0/"
+                      "Document/DocumentedEntities"}]},
+        "value": [
+            #: Not a ModelReference at all -- nothing to resolve, so the
+            #: walk has no question about it and steps past.
+            item({"type": "ExternalReference", "keys": [
+                {"type": "GlobalReference", "value": "https://example.com/x"}]}),
+            #: And one naming a submodel that is not this one, which this
+            #: reader cannot follow offline; also stepped past.
+            item({"type": "ModelReference", "keys": [
+                {"type": "Submodel", "value": "urn:example:elsewhere"},
+                {"type": "SubmodelElementCollection", "value": "77"}]}),
+            #: The one that is actually broken, behind both of them.
+            item(dangling),
+        ]})
+    assert "HD-D9" in _findings(tmp_path, env), (
+        "a dangling reference behind two the walk steps past was not "
+        "reported; the walk stopped instead of continuing")
+
+
 def _file_values(env):
     """Every File value the environment names, canonicalised the way the
     container does."""
