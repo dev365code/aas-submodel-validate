@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import json
 
+import aas_core3.jsonization as jsonization
 import aas_core3.verification as verification
 import pytest
 
@@ -26,8 +27,27 @@ def _write(tmp_path, env):
     return path
 
 
-def _findings(tmp_path, env):
-    return {f.id: f for f in runner.run(_write(tmp_path, env)).findings}
+def _findings(tmp_path, env, allow_crash=False):
+    """Every finding by rule id -- and, unless a test says otherwise, a
+    refusal to return a crash as if it were a judgement.
+
+    `runner.execute` reports a rule that raised under that rule's own id,
+    so `assert "HD-D9" in _findings(...)` is satisfied by a rule that
+    stopped working. Measured: turning `_folded` into an unconditional
+    `.strip()` makes HDL4 raise on a `DocumentId` naming half a pair, and
+    the test written to catch exactly that walk stayed green, because the
+    crash arrived wearing the id the test was looking for. Every
+    `rule_id in _findings(...)` in this file had that hole.
+    """
+    findings = {f.id: f for f in runner.run(_write(tmp_path, env)).findings}
+    if not allow_crash:
+        crashed = sorted(rule_id for rule_id, finding in findings.items()
+                         if runner.COULD_NOT_RUN in (finding.violation.message or ""))
+        assert not crashed, (
+            "%s came back as a crash rather than a judgement; a test asking "
+            "whether a rule fired cannot tell those apart, so it is asked "
+            "here instead" % ", ".join(crashed))
+    return findings
 
 
 def _first_document(env):
@@ -63,6 +83,33 @@ def test_a_class_id_outside_the_twelve_fails(tmp_path):
     _set_property(_classification(env), "ClassId", "99-99")
     finding = _findings(tmp_path, env)["HD-D3"]
     assert "99-99" in (finding.violation.detail or finding.violation.message)
+
+
+def test_a_classification_with_no_class_id_is_the_cardinality_rules_finding(tmp_path):
+    """`HD-D3` refuses a `ClassId` outside VDI 2770's twelve, and `None`
+    is not a value outside them -- it is no value at all, which the
+    generated cardinality rule already asks about.
+
+    Without the `is not None` guard the rule reports "ClassId is not a
+    VDI 2770 Blatt 1:2020 class" with a detail of `None` against a
+    classification that simply has not stated one, at MUST, over the top
+    of the rule whose question that is. Nothing measured the guard.
+
+    The other edge is `test_a_class_id_outside_the_twelve_fails` above;
+    asserted here in one line as well, because silence from a rule that
+    had stopped working looks the same.
+    """
+    env = copy.deepcopy(hd_env())
+    classification = _classification(env)
+    classification["value"] = [child for child in classification["value"]
+                               if child.get("idShort") != "ClassId"]
+    findings = _findings(tmp_path, env)
+    assert "HD-D3" not in findings, (
+        "a classification that states no ClassId was told its ClassId is "
+        "not one of the twelve")
+    assert any(found.startswith("HD-E") for found in findings), (
+        "nothing reported the missing ClassId at all, so the silence "
+        "above is not the guard working")
 
 
 def test_a_class_name_without_english_fails(tmp_path):
@@ -247,6 +294,71 @@ def test_a_declared_supplementary_part_that_is_absent_warns(tmp_path):
 
 
 # --- HD-D9: entity references resolve --------------------------------------
+
+
+@pytest.mark.parametrize("kind,first_key,conformant", (
+    ("ModelReference", "AssetAdministrationShell", True),
+    ("ExternalReference", "Submodel", False),
+), ids=("a model reference that names no submodel",
+        "an external reference wearing a Submodel key"))
+def test_hd_d9_only_follows_a_model_reference_into_this_submodel(
+        tmp_path, kind, first_key, conformant):
+    """Two terms decide whether `HD-D9` follows a reference at all: it
+    must be a `ModelReference`, and its first key must be the `Submodel`
+    this file is judging. Both were unmeasured, and each one alone lets
+    a reference through that the rule has no business resolving.
+
+    The shapes that distinguish them are odd, and how odd differs, which
+    is why both are here with their metamodel standing measured rather
+    than argued:
+
+    * A `ModelReference` whose first key is an `AssetAdministrationShell`
+      carrying this submodel's id draws **no metamodel finding at all**.
+      It is a conformant file, and without the first term the rule walks
+      its remaining keys as a path inside this submodel and reports what
+      it cannot find. A finding invented against a conformant file is the
+      direction this project treats as worst.
+    * An `ExternalReference` whose first key is a `Submodel` is refused
+      by the relayed channel -- AASd-122, "for external references the
+      value of type of the first key of keys shall be one of Generic
+      Globally Identifiables", and a `Submodel` key is not one. So that
+      file is already being reported. The guard still earns its place:
+      the second finding would be untrue, and stacking an untrue finding
+      on a true one is how a reader stops believing either.
+
+    Both were checked against `aas_core3` directly rather than against a
+    constraint number recalled from memory; an earlier reading of this
+    same clause had `Submodel` as permitted, and it is not.
+    """
+    env = copy.deepcopy(hd_env())
+    submodel = env["submodels"][0]
+    document = submodel["submodelElements"][0]["value"][0]
+    document["value"].append({
+        "idShort": "DocumentedEntities", "modelType": "SubmodelElementList",
+        "typeValueListElement": "ReferenceElement",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference",
+             "value": "https://admin-shell.io/vdi/2770/1/0/"
+                      "Document/DocumentedEntities"}]},
+        "value": [{"modelType": "ReferenceElement",
+                   "semanticId": {"type": "ExternalReference", "keys": [
+                       {"type": "GlobalReference",
+                        "value": "https://admin-shell.io/vdi/2770/1/0/"
+                                 "Document/DocumentedEntity"}]},
+                   "value": {"type": kind, "keys": [
+                       {"type": first_key, "value": submodel["id"]},
+                       {"type": "SubmodelElementCollection",
+                        "value": "no-such-element"}]}}]})
+
+    #: What the relayed channel says about this file, measured here so
+    #: the docstring above cannot quietly go stale.
+    reported = verification.verify(
+        jsonization.environment_from_jsonable(env))
+    assert (not list(reported)) is conformant
+
+    assert "HD-D9" not in _findings(tmp_path, env), (
+        "HD-D9 resolved a reference it has no business following: a %s "
+        "whose first key is a %s" % (kind, first_key))
 
 
 def test_the_dangling_reference_rule_does_not_read_a_conditional_clause_as_a_law():
@@ -1448,6 +1560,41 @@ def test_whitespace_around_a_vocabulary_value_is_not_the_defect(
     assert rule_id not in _findings(tmp_path, env), (
         "%s: %r drew %s, and the value is the one the rule asks for"
         % (label, pad % good, rule_id))
+
+
+def test_two_half_stated_identifiers_are_not_the_same_pair(tmp_path):
+    """`HDL4` compares `(domain, identifier)` pairs and steps past one
+    that states only half, because a missing half is the cardinality
+    rule's finding. Take that guard away and the halves that *are* there
+    get compared as if they were whole pairs.
+
+    Two documents carry the same `DocumentIdentifier` here and neither
+    states a domain. Whether they are duplicates is not knowable from
+    that -- an identifier means nothing without the domain it is issued
+    under, which is why the pair is a pair. Without the guard both
+    collapse to `(None, identifier)` and the second is reported for
+    sharing a pair neither of them stated. It is the worst direction
+    this project knows: a finding invented out of what a file did not
+    say, and it moves the exit code.
+    """
+    env = copy.deepcopy(hd_env())
+    documents = env["submodels"][0]["submodelElements"][0]["value"]
+    twin = copy.deepcopy(documents[0])
+    documents.append(twin)
+    for document in documents:
+        document_id = document["value"][0]["value"][0]
+        document_id["value"] = [child for child in document_id["value"]
+                                if child.get("idShort") != "DocumentDomainId"]
+    assert "HDL4" not in _findings(tmp_path, env), (
+        "two documents that never stated a domain were reported for "
+        "sharing one")
+
+    stated = copy.deepcopy(hd_env())
+    documents = stated["submodels"][0]["submodelElements"][0]["value"]
+    documents.append(copy.deepcopy(documents[0]))
+    assert "HDL4" in _findings(tmp_path, stated), (
+        "a pair both documents do state went unreported, so the silence "
+        "above proves nothing")
 
 
 def test_one_document_repeating_its_own_pair_is_not_two_documents(tmp_path):
