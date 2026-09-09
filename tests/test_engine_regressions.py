@@ -445,6 +445,64 @@ def test_a_reference_addresses_by_position_only_inside_a_list(tmp_path):
     assert not engine.resolve_in_submodel(submodel, [_Key("urn:x"), _Key("0")])
 
 
+def test_a_wrong_kind_element_is_told_to_wrap_only_when_wrapping_is_the_fix(
+        tmp_path):
+    """An element of the wrong kind gets one of two remedies, and which
+    one depends on whether the template gives this row and its own item
+    the same identifier (docs/divergences.md #39).
+
+    Where it does -- `DigitalFiles` and `DigitalFile` are both
+    `0173-1#02-ABK126#002` -- an element written as the item alone
+    matched the *list's* row, and "change this into a list" is advice to
+    delete the content: the reader ends with an empty list and the next
+    run reports the item missing. So it says to wrap.
+
+    Where it does not, wrapping is wrong. `Documents` is a list and its
+    child `Document` carries a different identifier, so a collection
+    sitting on that row matched by its own identifier and is simply the
+    wrong kind. Telling that author to wrap it names a child they never
+    wrote.
+
+    The test that separates them: the branch is chosen by
+    `child["sid"] == row["sid"]`, and dropping that comparison leaves the
+    whole suite green while handing every wrong-kind element the wrapping
+    advice. Measured across the three tables, fourteen 02004 rows, eleven
+    02035-2 and fifteen 02003 would then name a child that shares nothing
+    with them.
+    """
+    def kind_finding(env):
+        findings = by_id(runner.run(_write(tmp_path, env)))
+        wrong = [f for f in findings.values() if "must be a" in (f.violation.message or "")]
+        assert wrong, "nothing reported an element of the wrong kind"
+        return wrong[0]
+
+    #: No shared identifier: `Documents` is a list, `Document` is not it.
+    plain = copy.deepcopy(hd_env())
+    documents = plain["submodels"][0]["submodelElements"][0]
+    documents["modelType"] = "SubmodelElementCollection"
+    documents.pop("typeValueListElement", None)
+    remedy = kind_finding(plain).fix or ""
+    assert remedy.startswith("Change this element from a "), remedy
+    assert "Wrap" not in remedy, (
+        "an element on a row that shares no identifier with its child was "
+        "told to wrap itself around a child it never wrote: %s" % remedy)
+
+    #: Shared identifier (#39): the item alone, with no list around it.
+    shared = copy.deepcopy(hd_env())
+    version = shared["submodels"][0]["submodelElements"][0]["value"][0]["value"][2]["value"][0]
+    for index, child in enumerate(version["value"]):
+        if child.get("idShort") == "DigitalFiles":
+            version["value"][index] = child["value"][0]
+            break
+    else:                                        # pragma: no cover - fixture
+        raise AssertionError("the fixture has no DigitalFiles to dissolve")
+    remedy = kind_finding(shared).fix or ""
+    assert remedy.startswith("Wrap this element in a "), remedy
+    assert "would empty it" in remedy, (
+        "the wrapping remedy no longer says why changing the kind is the "
+        "wrong move, which is the whole reason this branch exists")
+
+
 def test_an_index_beats_an_illegal_id_short_that_collides_with_it(tmp_path):
     """Inside a list, a key can match two children at once: one by its
     position and another by an idShort it should not have. The walk takes
