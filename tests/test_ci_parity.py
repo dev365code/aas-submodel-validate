@@ -10,6 +10,7 @@ third thing to keep in step.
 from __future__ import annotations
 
 import ast
+import fnmatch
 import os
 import re
 import shutil
@@ -862,3 +863,56 @@ def test_no_gate_goes_quiet_because_the_python_is_older():
         "these skip on the interpreter version, so they do not run on the "
         "floor this project supports. Each line below is the key an entry "
         "in VERSION_GATED_SKIPS would need:\n  " + "\n  ".join(gated))
+
+# -- what the signature covers ------------------------------------------------
+
+
+def _dist_at_release():
+    """`(what this project builds, what it only carries)`, as the release
+    workflow leaves them in `dist/` before signing."""
+    version = re.search(r'(?m)^version = "([^"]+)"',
+                        (ROOT / "pyproject.toml").read_text("utf-8")).group(1)
+    ours = ("dist/aas_submodel_validate-%s-py3-none-any.whl" % version,
+            "dist/aas_submodel_validate-%s.tar.gz" % version,
+            "dist/smtv.pyz")
+    #: The dependency wheel the workflow downloads so the offline route
+    #: has something to install from. A representative name rather than a
+    #: pin: what matters is that a wheel this project did not build sits
+    #: in the same directory as the ones it did.
+    theirs = ("dist/aas_core3_0-1.1.4-py3-none-any.whl",)
+    return ours, theirs
+
+
+def _subject_paths():
+    """The paths the signing step offers for attestation."""
+    text = (ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8")
+    block = re.search(r"\n(\s+)subject-path: \|\n((?:\1  .*\n)+)", text)
+    assert block is not None, "release.yml offers no subject-path to attest"
+    return [line.strip() for line in block.group(2).splitlines() if line.strip()]
+
+
+def test_the_signature_covers_what_this_project_built_and_nothing_else():
+    """A build attestation says these bytes came out of this workflow.
+    Saying it about a file the workflow downloaded is a claim this
+    project has no standing to make, and it is one directory listing
+    away: the dependency wheel for the offline route is written into
+    `dist/` beside the three built here, so `dist/*.whl` would sign it.
+
+    The patterns are checked by applying them, not by reading them. Two
+    of the three contain a `*` -- they are anchored to this project's own
+    distribution name rather than spelled out -- so a rule about glob
+    characters would fail on the correct file and pass on
+    `dist/aas_core3_0-*.whl`. What the release has to be true of is which
+    names come out matched, and that is a question with an answer.
+
+    Measured on 0.1.3: the three built here verify against this
+    repository, and `gh attestation verify` answers 404 for the
+    dependency wheel, which is the shape this asserts.
+    """
+    ours, theirs = _dist_at_release()
+    patterns = _subject_paths()
+    matched = tuple(name for name in ours + theirs
+                    if any(fnmatch.fnmatch(name, p) for p in patterns))
+    assert matched == ours, (
+        "the signing step attests %s; it must attest exactly what this "
+        "workflow built:\n  offered: %s" % (list(matched), patterns))

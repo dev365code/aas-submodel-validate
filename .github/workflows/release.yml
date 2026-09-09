@@ -179,11 +179,17 @@ jobs:
         # to manage or lose.
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a  # v3
         with:
-          # Named, not globbed. `dist/*.whl` now also matches the
-          # dependency wheel downloaded for the offline route, and
-          # attesting that would be this workflow claiming to have built
-          # somebody else's artifact -- the opposite of what a build
-          # attestation is for. Its provenance is upstream's to give.
+          # Anchored to this project's own distribution name. Two of
+          # the three carry a `*`, so the claim is not that these are
+          # spelled out -- it is that `dist/*.whl` also matches the
+          # dependency wheel downloaded for the offline route, which is
+          # written into this same directory. Attesting that would be
+          # this workflow claiming to have built somebody else's
+          # artifact, the opposite of what a build attestation is for;
+          # its provenance is upstream's to give. Asserted by applying
+          # these patterns to the names the directory holds at this
+          # point, because a rule about glob characters would fail on
+          # this file and pass on `dist/aas_core3_0-*.whl`.
           subject-path: |
             dist/aas_submodel_validate-*.whl
             dist/aas_submodel_validate-*.tar.gz
