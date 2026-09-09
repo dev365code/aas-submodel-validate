@@ -264,6 +264,45 @@ def build_corpus(into: Path):
         written.write_text(json.dumps(environment), encoding="utf-8")
         cases.append(("a battery passport declaring category %r" % category, written))
 
+    # And one stating two of them. `BAT-R8` used to answer on whichever
+    # category the walk reached first -- the same file with the two
+    # reversed drew a different set of rows -- and it now answers only
+    # when a file states one. That is a verdict change, and the corpus
+    # could not see it: every input above states exactly one, so the
+    # comparison for the release that made it read "none of these is
+    # judged differently" while saying nothing about the only shape it
+    # touched. A zero from a corpus that cannot hold the case reads
+    # exactly like a zero from one that can.
+    #
+    # Both categories sit in one submodel. Two submodels each stating one
+    # would also change how many Technical Data submodels the file has,
+    # and then a difference could not be attributed to the categories.
+    both = []
+    for index, sid in enumerate(sorted(by_submodel)):
+        value = []
+        if sid.endswith("TechnicalData/1/0"):
+            value.append({
+                "idShort": "GeneralInformation",
+                "modelType": "SubmodelElementCollection",
+                "semanticId": _ref("urn:samm:io.admin-shell.idta.batterypass."
+                                   "technical_data:1.0.0#generalInformation"),
+                "value": [{"idShort": "BatteryCategory%d" % seat,
+                           "modelType": "Property", "valueType": "xs:string",
+                           "value": stated,
+                           "semanticId": _ref("urn:samm:io.admin-shell.idta."
+                                              "batterypass.technical_data:1.0.0"
+                                              "#batteryCategory")}
+                          for seat, stated in enumerate(("ev", "lmt"))]})
+        both.append({"idShort": "Part%d" % index, "modelType": "Submodel",
+                     "id": "urn:corpus:battery:both:%d" % index,
+                     "kind": "Instance", "semanticId": _ref(sid),
+                     "submodelElements": value})
+    written = into / "battery-two-categories.json"
+    written.write_text(json.dumps(
+        {"assetAdministrationShells": [], "conceptDescriptions": [],
+         "submodels": both}), encoding="utf-8")
+    cases.append(("a battery passport declaring two categories", written))
+
     # And the shapes an aas-suppl relationship's target takes. The last
     # is the question the rule exists for and must not move; without it
     # the three above are equally satisfied by a rule switched off.

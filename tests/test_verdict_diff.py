@@ -20,6 +20,7 @@ whether an answer of "nothing moved" would mean anything.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -130,3 +131,78 @@ def test_the_held_spelling_inputs_hold_the_part_their_value_names(corpus):
     assert [r for _e, _v, r in verdict_diff.HELD_SPELLINGS].count(False) == 1, (
         "the row that must stay refused is what stops an over-eager fix"
     )
+def test_the_corpus_holds_a_passport_that_states_two_categories(corpus):
+    """A shape the corpus could not see, and a release said so.
+
+    `BAT-R8` withheld the rows that turn on a battery category from a
+    file stating two of them -- a verdict change -- and the corpus
+    comparison for that release read "none of the inputs is judged
+    differently". Both sentences were true: every battery input here
+    states exactly one category, so the measurement was silent about the
+    only shape the change touched. A count of zero from a corpus that
+    cannot hold the case is not evidence, and it reads exactly like one.
+
+    Two categories, in one submodel. Two submodels each stating one
+    would move a second thing -- how many Technical Data submodels a
+    file has -- and then a difference could not be attributed.
+    """
+    seen = []
+    for _label, path in corpus:
+        if not path.name.endswith(".json"):
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, UnicodeDecodeError, RecursionError, OSError):
+            #: The corpus carries inputs written to be unreadable -- one
+            #: of them is legal JSON nested deeply enough to exhaust the
+            #: parser and another is a path that names nothing, which are
+            #: the cases `X3` and `X6` exist for. An input this walk
+            #: cannot read states no category, which is the honest answer
+            #: rather than a reason to narrow the walk to filenames.
+            continue
+        stated = _categories_stated(data)
+        if len(stated) > 1:
+            seen.append((path.name, stated))
+    assert seen, (
+        "every battery input states at most one category, so a verdict "
+        "that turns on a file stating two cannot be measured here")
+
+
+#: What the template calls a battery category. Read from the document by
+#: identifier, never by `idShort` -- two of these live in one collection
+#: and AAS requires their idShorts to differ, so a walk keyed on the name
+#: would find one of the two and report the file states a single
+#: category. That is also the rule this project judges by.
+CATEGORY_ID = ("urn:samm:io.admin-shell.idta.batterypass."
+               "technical_data:1.0.0#batteryCategory")
+
+
+def _categories_stated(data):
+    """Every distinct battery category value an environment states.
+
+    Walks the document rather than asking the validator, so that what
+    the corpus contains is established by something other than the code
+    whose verdict the corpus exists to measure.
+    """
+    found = []
+
+    def names_the_category(node):
+        semantic = node.get("semanticId") or {}
+        return any(key.get("value") == CATEGORY_ID
+                   for key in (semantic.get("keys") or []))
+
+    def walk(node):
+        if isinstance(node, dict):
+            if names_the_category(node):
+                value = (node.get("value") or "")
+                value = value.strip().lower() if isinstance(value, str) else ""
+                if value and value not in found:
+                    found.append(value)
+            for child in node.values():
+                walk(child)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child)
+
+    walk(data)
+    return tuple(found)
