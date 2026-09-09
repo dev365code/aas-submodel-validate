@@ -204,6 +204,35 @@ def test_a_declared_supplementary_part_that_is_absent_warns(tmp_path):
 
 # --- HD-D9: entity references resolve --------------------------------------
 
+
+def test_the_dangling_reference_rule_does_not_read_a_conditional_clause_as_a_law():
+    """`HD-D9` is a SHOULD, and the clause behind it is conditional.
+
+    Its citation used to quote IDTA 02004-2-0 §2.2 as "the creation of an
+    Entity element is required", which reads as a requirement on every
+    file and is not one. Read from the published document, page 7: the
+    paragraph opens "the documentation of a complex piece of equipment
+    *may* include further supplier parts. These parts *can* be marked as
+    separate entities", describes two categorisations, and closes "In any
+    case" -- meaning in either of those two, not in every file.
+
+    A proposal to promote this rule to MUST rested on that quote. Reading
+    a conditional clause as an unconditional one is the defect the front
+    page carried until 0.1.3, so the quote is pinned out of the citation
+    here: what would reintroduce the argument is the sentence returning
+    without its condition.
+    """
+    from aas_submodel_validate.registry import all_rules
+    rule = next(r for r in all_rules() if r.id == "HD-D9")
+    assert rule.prio == "SHOULD", (
+        "HD-D9 became a %s; the clause it cites is conditional, and "
+        "docs/divergences.md #41 is where that argument is kept" % rule.prio)
+    assert "the creation of an Entity element is required" not in rule.spec, (
+        "the citation quotes the clause without the condition that governs "
+        "it, which is what made it read as a requirement on every file")
+    assert "docs/divergences.md #41" in rule.spec, (
+        "the citation should point at the reading it answers for")
+
 def _with_entities_and_reference(target_idshort="Machine"):
     env = copy.deepcopy(hd_env())
     submodel = env["submodels"][0]

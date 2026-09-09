@@ -488,10 +488,13 @@ ROSTER = (
      ("Document", "DocumentIds", "DocumentId", "DocumentDomainId",
       "DocumentIdentifier"), _l4),
     ("-D9", "template", "SHOULD", "document/entity references resolve to an element that exists",
-     "IDTA 02004-2-0 §2.2 (DocumentedEntity: \"the creation of an Entity "
-     "element is required\"); §2.8 for the DocumentVersion reference lists, "
-     "where the same integrity question is asked of document-to-document "
-     "references",
+     "IDTA 02004-2-0 §2.2, which says a Document relating to a dependent "
+     "Entity \"shall\" use a DocumentedEntity ReferenceElement, and requires "
+     "an Entity be created where equipment documentation marks supplier "
+     "parts as entities at all; §2.8 describes the DocumentVersion "
+     "reference lists without requiring anything of what they resolve to. "
+     "docs/divergences.md #41 for why a reference that resolves to nothing "
+     "is a warning here",
      # Unreachable: `_d9` gives every violation its own remedy, naming the
      # label that dangled, and `Finding.fix` prefers that one. Kept and
      # pinned rather than deleted -- standing advice that has stopped
