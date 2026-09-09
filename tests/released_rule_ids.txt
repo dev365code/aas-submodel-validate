@@ -1,4 +1,4 @@
-# The rule ids the last release published, taken at v0.1.3.
+# The rule ids the last release published, taken at v0.1.4.
 #
 # The front page says no rule id has been renamed or reused. A promise in
 # prose goes quietly false -- the sentence beside this one used to say a

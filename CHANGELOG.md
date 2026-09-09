@@ -3,13 +3,40 @@
 ## 0.1.4 — 2026-09-09
 
 126 rules, 86 generated from the vendored template files. No rule is
-added or removed here, and no count on the front page moves. Three of
-them said something a reader could act on and be worse off for it, and
-one of those called a conformant package broken.
+added or removed here, and no count on the front page moves. Four said
+something a reader could act on and be worse off for it, one of those
+called a conformant package broken, and one let the order of a walk
+decide a verdict. Paragraphs that move a verdict are marked
+**`verdict`**.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
 directory of names at 16 MiB.
+
+**If you gate a build on the exit code, read this paragraph.** Measured
+over the 52 corpus inputs against 0.1.3: none is judged differently. Two
+shapes the corpus does not hold do move, both from 1 to 0. A container
+whose `File` value differs from its archive entry only in ASCII case
+stops drawing `HD-D7`, which is a MUST. And a battery passport stating
+two categories stops drawing the `BAT-R8` rows that turn on one:
+measured on such a file, the rows that were demanded are withdrawn, and
+with `--meta info -W` the run goes from exit 1 to exit 0. At the default
+`--meta` level that same file still exits 1 under `-W`, because the
+findings relayed from the metamodel are counted as warnings — so whether
+this moves your build depends on which channel you were failing on.
+
+**A file stating two battery categories no longer has one chosen for
+it.** **`verdict`** `declared_category` returned on the first category
+element the walk reached, so a passport stating `ev` and then `lmt` drew
+one set of `BAT-R8` findings and the same file with the two reversed
+drew another — the verdict depended on the order the walk happened to
+take, and nothing said a choice had been made. It answers now only when
+the file states one category, and the coverage note names both and says
+the run did not choose. The capacity threshold for exhaustion is
+required for an electric vehicle and forbidden for light means of
+transport, so guessing tells one of those two readers to add a field
+their own guidance refuses. No corpus input states two categories, which
+is why the corpus comparison above says nothing about this.
 
 **A wrong-kind finding on a shared identifier says to wrap, not to
 change.** The Handover template gives five lists and their own items one
@@ -37,6 +64,14 @@ advice to whoever writes a package, so `É` and `é` remain two names. It
 is asked last, after every exact spelling, so an archive holding a name
 in the case the document wrote still answers with that one. No verdict
 in the corpus moves.
+
+**`HD-D9` cites the clause with the condition that governs it.** The
+rule reports a document or entity reference that resolves to nothing,
+and quoted IDTA 02004-2-0 §2.2 as "the creation of an Entity element is
+required" — a sentence which is conditional where it is written and read
+as unconditional where it was quoted. The severity does not change; the
+citation now carries the case the clause governs, and
+`docs/divergences.md` #41 keeps the reading and the passage it rests on.
 
 **`per` no longer cites the cardinality qualifier for a finding about an
 element's type.** Every generated row's rule cites `SMT/Cardinality`,
