@@ -445,6 +445,44 @@ def test_a_reference_addresses_by_position_only_inside_a_list(tmp_path):
     assert not engine.resolve_in_submodel(submodel, [_Key("urn:x"), _Key("0")])
 
 
+def test_a_count_finding_lists_the_elements_only_when_there_are_some(tmp_path):
+    """A cardinality finding carries the elements it counted, and when it
+    counted none there is nothing to carry.
+
+    Both directions were unmeasured. Forced on, a "found 0" finding
+    reports `detail="elements: "` -- a label introducing a list that is
+    not there, printed under a message whose whole content is that
+    nothing was found. Forced off, the several-elements case loses the
+    only part of the finding that says *which* ones, leaving a reader
+    who has been told there are two of something with no way to find
+    either.
+
+    The zero case is the common one: it is what a missing mandatory
+    element produces, which is most of what this validator reports.
+    """
+    def count_finding(env, needle):
+        for finding in by_id(runner.run(_write(tmp_path, env))).values():
+            if needle in (finding.violation.message or ""):
+                return finding.violation
+        raise AssertionError("no finding said %r" % needle)
+
+    absent = copy.deepcopy(hd_env())
+    document = absent["submodels"][0]["submodelElements"][0]["value"][0]
+    document["value"] = [child for child in document["value"]
+                         if child.get("idShort") != "DocumentIds"]
+    assert count_finding(absent, "found 0").detail is None, (
+        "a finding that counted nothing introduced a list of what it "
+        "counted")
+
+    doubled = copy.deepcopy(hd_env())
+    document = doubled["submodels"][0]["submodelElements"][0]["value"][0]
+    document["value"].insert(1, copy.deepcopy(document["value"][0]))
+    detail = count_finding(doubled, "found 2").detail or ""
+    assert detail.startswith("elements: "), detail
+    assert detail.count("DocumentIds") == 2, (
+        "the finding says there are two and names %d" % detail.count("DocumentIds"))
+
+
 def test_a_wrong_kind_element_is_told_to_wrap_only_when_wrapping_is_the_fix(
         tmp_path):
     """An element of the wrong kind gets one of two remedies, and which
