@@ -445,6 +445,55 @@ def test_a_reference_addresses_by_position_only_inside_a_list(tmp_path):
     assert not engine.resolve_in_submodel(submodel, [_Key("urn:x"), _Key("0")])
 
 
+def test_an_index_beats_an_illegal_id_short_that_collides_with_it(tmp_path):
+    """Inside a list, a key can match two children at once: one by its
+    position and another by an idShort it should not have. The walk takes
+    the first match, which is the index -- and divergences #10 says why
+    that is the right one: "reference resolution accepts the index inside
+    a SubmodelElementList regardless of any idShort present: the idShort
+    is the AASd-120 violation, the reference is correct."
+
+    Nothing measured it. The test above walks an index where nothing
+    competes for it, and taking the *last* match instead of the first
+    left the whole suite green -- so the sentence in #10 was a decision
+    the code made silently.
+
+    The collision is not hypothetical: the official 02004 example gives
+    all three children of its `Languages` list the idShort `Language`,
+    which is the same shape one step further along. Here the collision is
+    built directly, because a reference has to walk *through* the
+    disputed child for the two answers to differ, and the example's
+    language codes are leaves.
+    """
+    env = copy.deepcopy(hd_env())
+    #: Two items. The second wears "0" as an idShort, which the metamodel
+    #: forbids on a list child and which a real file has no reason to
+    #: carry -- that is the point: the walk must not follow it.
+    def item(id_short, child_name):
+        #: An absent idShort is absent, not null: the deserialiser refuses
+        #: an explicit null, which is a fair reading and cost a minute.
+        node = {"modelType": "SubmodelElementCollection",
+                "value": [{"idShort": child_name, "modelType": "Property",
+                           "valueType": "xs:string", "value": "x"}]}
+        if id_short is not None:
+            node["idShort"] = id_short
+        return node
+
+    env["submodels"][0]["submodelElements"].append({
+        "idShort": "Disputed", "modelType": "SubmodelElementList",
+        "typeValueListElement": "SubmodelElementCollection",
+        "value": [item(None, "AtIndexZero"), item("0", "AtIndexOne")]})
+
+    submodel = load(_write(tmp_path, env)).submodels[0]
+    walk = [_Key("urn:x"), _Key("Disputed"), _Key("0")]
+
+    assert engine.resolve_in_submodel(submodel, walk + [_Key("AtIndexZero")]), (
+        "key '0' inside a list did not reach the child at position 0")
+    assert not engine.resolve_in_submodel(submodel, walk + [_Key("AtIndexOne")]), (
+        "key '0' followed the illegal idShort instead of the index, so a "
+        "reference into the element at position 0 walks somewhere else")
+
+
 #: What survives everything above, measured, with the reason -- so the
 #: next person measuring does not spend an afternoon rediscovering it.
 #:
