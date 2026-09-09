@@ -87,6 +87,72 @@ def test_a_relationship_target_without_a_slash_resolves_against_its_part(tmp_pat
         assert suppl == ["aasx/files/manual.pdf"]
 
 
+def test_a_target_wearing_whitespace_reaches_the_part_it_names(tmp_path):
+    """Which side the whitespace falls on used to decide the answer.
+
+    `startswith("/")` is false for `" /aasx/…"`, so a target whose only
+    defect was a leading space took the relative branch and was joined
+    into `aasx/ /aasx/…` -- a string naming nothing -- and `X4` reported
+    the archive as not holding a part sitting in it. The same target with
+    the space on the *other* end took the absolute branch and resolved.
+    One package, two answers, separated by nothing a reader would think
+    mattered.
+
+    Measured before this was written: with that branch removed the whole
+    suite still passed, so the repair existed and nothing watched it. And
+    the first version of this test passed with the branch removed too --
+    it declared its targets through the helper that prepends a slash, so
+    the archive never held the shape the branch is for, and `part`'s own
+    stripping answered instead. The targets are written verbatim now, and
+    the asymmetry is asserted rather than the repair: a trailing space
+    resolves by a different route and has to keep doing so.
+    """
+    holds = "aasx/files/manual.pdf"
+    for target in (" files/manual.pdf",          # leading, relative
+                   " /aasx/files/manual.pdf",    # leading, absolute
+                   "  files/manual.pdf  ",       # both sides
+                   "files/manual.pdf "):         # trailing: the mirror
+        path = build_aasx(tmp_path / ("w%d.aasx" % len(target)),
+                          payload=env_json(), files=[(holds, b"%PDF-1.4 ")],
+                          suppl_targets=[], suppl_verbatim=[target])
+        with AasxPackage(path) as package:
+            reached = [name for _type, name, _external
+                       in package.relationships("aasx/env.json")]
+        assert reached == [holds], (
+            "a target spelled %r reached %s instead of the part it names"
+            % (target, reached))
+
+
+def test_an_entry_whose_name_holds_a_space_stays_reachable(tmp_path):
+    """The stripped reading is asked second, and this is what that buys.
+
+    An archive may genuinely hold an entry whose name carries whitespace.
+    A target spelling it exactly must reach *that* entry -- if the
+    stripped reading were tried first, or tried at all when the literal
+    already matched, the target would be answered with a different part
+    and the one it names would be unreachable. That is
+    `docs/divergences.md` #18 one layer out, which is why the repair for
+    the leading-space case is ordered behind the literal attempt rather
+    than in front of it.
+
+    Measured: with `name is None` dropped from that condition -- so the
+    stripped reading runs even when the literal found something -- this
+    goes red and the leading-space test above does not.
+    """
+    holds = "aasx/files/manual.pdf "          # the archive really holds the space
+    other = "aasx/files/manual.pdf"
+    path = build_aasx(tmp_path / "held.aasx", payload=env_json(),
+                      files=[(holds, b"%PDF-1.4 with space"),
+                             (other, b"%PDF-1.4 without")],
+                      suppl_targets=[], suppl_verbatim=["/" + holds])
+    with AasxPackage(path) as package:
+        reached = [name for _type, name, _external
+                   in package.relationships("aasx/env.json")]
+    assert reached == [holds], (
+        "the target spells the entry the archive holds; it reached %s"
+        % reached)
+
+
 def test_both_spellings_of_a_relationship_reach_the_same_parts(tmp_path):
     """Absolute and relative are two ways of writing one package, so they
     have to produce one answer."""
