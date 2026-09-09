@@ -3,8 +3,8 @@
 ## Unreleased
 
 126 rules, 86 generated from the vendored template files. No
-rule is added or removed here; two of them said something a reader could
-act on and be worse off for it.
+rule is added or removed here; three of them said something a reader
+could act on and be worse off for it.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
@@ -21,6 +21,21 @@ a File to a SubmodelElementList" — which empties it, so the next run
 reports `DigitalFile` missing instead. It now says to wrap the element
 in the list it belongs to. The battery part has two of the five pairs;
 `docs/divergences.md` #39 said it had none, and now says which.
+
+**A `File` value that differs from the archive entry only in ASCII case
+now finds its part.** ECMA-376 Part 2 (5th edition, December 2021)
+6.2.2.3 says equivalence of part names is decided by ASCII
+case-insensitive matching, and 7.2.5.5 maps a ZIP item to a part name
+with an *equivalent* prefix rather than an identical one. A package
+holding `aasx/files/Manual.pdf` against a value of
+`/aasx/files/manual.pdf` is conformant, and `HD-D7` reported the
+container as holding no part there — telling the author to add a file
+already in the package. The folding is ASCII and stops there: the same
+subclause keeps Unicode normalisation collisions under *should not*, as
+advice to whoever writes a package, so `É` and `é` remain two names. It
+is asked last, after every exact spelling, so an archive holding a name
+in the case the document wrote still answers with that one. No verdict
+in the corpus moves.
 
 **`per` no longer cites the cardinality qualifier for a finding about an
 element's type.** Every generated row's rule cites `SMT/Cardinality`,

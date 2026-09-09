@@ -541,3 +541,63 @@ def test_the_report_carries_the_reason_the_walk_gave(tmp_path):
                           files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
         (finding,) = [f for f in runner.run(str(path)).findings if f.id == "HD-D7"]
         assert finding.violation.detail == "%s: %s" % (value, part_name_problem(value))
+def test_a_name_differing_only_in_ascii_case_names_the_same_part(tmp_path):
+    """ECMA-376 Part 2 (5th edition, December 2021) 6.2.2.3: "Equivalence
+    of part names shall be determined by ASCII case-insensitive matching."
+    The clause spells out the mapping -- 0x41-0x5A treated as 0x61-0x7A --
+    and its Example 1 says a package holding "/a" cannot also hold "/A",
+    because those are one name. 7.2.5.5 carries it into the physical
+    package: a ZIP item maps to a part name with an *equivalent* prefix,
+    not an identical one.
+
+    So an archive written by a tool that capitalised the file and a
+    document that did not are naming the same part, and reporting the
+    part absent tells the author to add a file that is already there.
+    """
+    entry = "aasx/files/Manual.pdf"
+    path = build_aasx(tmp_path / "p.aasx",
+                      payload=_container_with("/aasx/files/manual.pdf"),
+                      files=[(entry, b"%PDF-1.4 ")])
+    assert "HD-D7" not in {f.id for f in runner.run(path).findings}
+    with AasxPackage(path) as package:
+        assert package.part("/aasx/files/manual.pdf") == entry
+
+
+def test_the_case_folding_is_ascii_and_stops_there(tmp_path):
+    """The clause says ASCII, and names the two code point ranges. It
+    does not say Unicode: the same subclause puts NFC/NFD collisions
+    under "should not", as a recommendation to package authors, and
+    never says two names differing outside ASCII are one name.
+
+    `str.lower()` would fold them anyway -- 'E WITH ACUTE' to its small
+    form -- and answer that a part the archive does not hold is present.
+    """
+    path = build_aasx(tmp_path / "p.aasx",
+                      files=[("aasx/files/\u00c9.pdf", b"%PDF-1.4 ")])
+    with AasxPackage(path) as package:
+        assert package.part("aasx/files/\u00c9.pdf") == "aasx/files/\u00c9.pdf"
+        assert package.part("/aasx/files/\u00e9.pdf") is None
+
+def test_the_archive_own_case_still_wins_over_the_folded_reading(tmp_path):
+    """Case folding is the last question asked, not the first.
+
+    An archive holding both spellings is already outside 6.2.2.3, which
+    says a package may not hold two parts with equivalent names. It can
+    still be read: each document value that names one of them exactly
+    gets that one. Folding earlier would merge two files the way folding
+    whitespace earlier once took the archive's own spelling out of reach
+    (docs/divergences.md #18), and the fix there was the ordering this
+    keeps.
+    """
+    path = build_aasx(tmp_path / "p.aasx",
+                      files=[("aasx/files/Manual.pdf", b"UPPER"),
+                             ("aasx/files/manual.pdf", b"lower")])
+    with AasxPackage(path) as package:
+        assert package.part("/aasx/files/Manual.pdf") == "aasx/files/Manual.pdf"
+        assert package.part("/aasx/files/manual.pdf") == "aasx/files/manual.pdf"
+        #: Neither spelling is in the archive, so the folded index
+        #: answers -- in the archive's own write order, which is the only
+        #: order it has. Pinned because the sibling index resolved a
+        #: clash by hash seed once, and the same archive then answered
+        #: differently on different runs.
+        assert package.part("/aasx/files/MANUAL.pdf") == "aasx/files/Manual.pdf"

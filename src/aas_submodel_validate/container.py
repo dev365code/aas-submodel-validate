@@ -440,6 +440,24 @@ def _resolve_part_name(value: str):
     return resolved, None
 
 
+#: ASCII case folding, and nothing past it. ECMA-376 Part 2 (5th edition,
+#: December 2021) 6.2.2.3 defines part name equivalence as "ASCII
+#: case-insensitive matching" and then says exactly what that means:
+#: compare as though every code point in 0x41-0x5A were the corresponding
+#: one in 0x61-0x7A. `str.lower()` is a different function. It folds "\u00c9"
+#: to "\u00e9", which that clause does not make one name -- the same subclause
+#: keeps Unicode normalisation collisions under "should not", as advice
+#: to whoever writes the package, never as a rule for whoever reads it.
+#: Folding further would answer that a part is present that the archive
+#: does not hold, which is the one direction a reader must not invent.
+_ASCII_LOWER = {code: code + 0x20 for code in range(0x41, 0x5B)}
+
+
+def ascii_folded(value: str) -> str:
+    """`value` with ASCII A-Z lowered and every other code point left."""
+    return value.translate(_ASCII_LOWER)
+
+
 def canonical_part_name(value: str):
     """The archive entry a part name refers to, or None if it names none.
 
@@ -608,6 +626,9 @@ class AasxPackage:
         self._counted = set()
         #: Entry names by their normalised spelling, built on first need.
         self._canonical = None
+        #: The same index folded to ASCII lower case, for the last
+        #: question `part` asks. Built only if something gets that far.
+        self._folded = None
 
     # -- files ---------------------------------------------------------------
     def names(self) -> List[str]:
@@ -677,7 +698,31 @@ class AasxPackage:
                 key = canonical_part_name(name)
                 if key is not None:
                     self._canonical.setdefault(key, name)
-        return self._canonical.get(canonical)
+        found = self._canonical.get(canonical)
+        if found is not None:
+            return found
+        # Last of all: the same name in another case. ECMA-376 Part 2
+        # 6.2.2.3 makes part names equivalent under ASCII case-insensitive
+        # matching, and 7.2.5.5 maps a ZIP item to a part name with an
+        # *equivalent* prefix rather than an identical one -- so an
+        # archive whose tool capitalised the file and a document that did
+        # not are naming one part, and answering None sent the author to
+        # add a file that was already in the package.
+        #
+        # After every exact spelling and not before, for the reason the
+        # steps above are ordered that way: an archive holding a name in
+        # the case the document wrote must answer with that one. Two
+        # entries folding together cannot both be right -- 6.2.2.3 says a
+        # package may not hold two parts with equivalent names, so such an
+        # archive is already outside the standard -- and archive order is
+        # the only order it has, as above.
+        if self._folded is None:
+            self._folded = {}
+            for name in self._zip.namelist():
+                key = canonical_part_name(name)
+                if key is not None:
+                    self._folded.setdefault(ascii_folded(key), name)
+        return self._folded.get(ascii_folded(canonical))
 
     def read(self, name: str) -> bytes:
         if name not in self._names:
