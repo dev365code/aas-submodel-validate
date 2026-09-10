@@ -1048,8 +1048,13 @@ def _jobs(path):
     """Each job in a workflow, as name -> its block."""
     text = path.read_text(encoding="utf-8")
     body = text.split("\njobs:\n", 1)[1]
+    # GitHub's job id: a letter or `_` first, then letters, digits, `-`
+    # and `_`; quoted or not, and a comment may follow. Lower case first
+    # letter only, which is all this repository wrote, let a job named
+    # otherwise fold into the one above it and borrow its settings.
     starts = [(m.start(), m.group(1))
-              for m in re.finditer(r"(?m)^  ([a-z][\w-]*):$", body)]
+              for m in re.finditer(
+                  r"""(?m)^  ["']?([A-Za-z_][\w-]*)["']?:[ \t]*(?:#.*)?$""", body)]
     jobs = {}
     for index, (offset, name) in enumerate(starts):
         end = starts[index + 1][0] if index + 1 < len(starts) else len(body)
@@ -1077,10 +1082,21 @@ def test_every_job_has_a_time_limit():
     nothing goes red -- would hold a runner that long before anyone saw
     it. The limit is set well past the longest measured run of each job,
     so it can only fire on something that is not going to finish."""
-    missing = [(path.name, job) for path in _workflows()
-               for job, block in _jobs(path).items()
-               if not re.search(r"(?m)^    timeout-minutes: [1-9]\d*\s*$", block)]
-    assert not missing, "jobs without a time limit: %s" % missing
+    missing, found = [], {}
+    for path in _workflows():
+        jobs = _jobs(path)
+        found[path.name] = len(jobs)
+        for job, block in jobs.items():
+            # A job that calls a reusable workflow cannot carry one: GitHub
+            # accepts only a short list of keys on it, and this is not one.
+            if re.search(r"(?m)^    uses: ", block):
+                continue
+            limit = re.search(r"(?m)^    timeout-minutes: (\d+)[ \t]*(?:#.*)?$", block)
+            # 360 is GitHub's own ceiling, which is no limit at all.
+            if limit is None or not 1 <= int(limit.group(1)) <= 60:
+                missing.append((path.name, job, limit and limit.group(1)))
+    assert all(found.values()), "a workflow whose jobs this could not read: %s" % found
+    assert not missing, "jobs without a time limit of an hour or less: %s" % missing
 
 
 def test_the_workflow_floor_is_read_and_a_job_asks_for_more_itself():

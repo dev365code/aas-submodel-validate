@@ -377,9 +377,11 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
     # one would have gone quietly stale beside it.
     from aas_submodel_validate import container
     assert ("one document at %d MiB, a container's parts at %d MiB each and %d MiB"
+            " together, and a container's directory of names at %d MiB"
             % (container.MAX_PART_BYTES // 1024 ** 2,
                container.MAX_PART_BYTES // 1024 ** 2,
-               container.MAX_TOTAL_PART_BYTES // 1024 ** 2)) in " ".join(unreleased.split())
+               container.MAX_TOTAL_PART_BYTES // 1024 ** 2,
+               container.MAX_DIRECTORY_BYTES // 1024 ** 2)) in " ".join(unreleased.split())
 
 
 def test_every_file_the_readme_tells_a_stranger_to_run_exists():

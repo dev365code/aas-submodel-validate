@@ -245,8 +245,9 @@ def test_a_declaration_behind_a_lookalike_is_still_found(raw):
     resuming short of the close does not answer wrongly -- it does not
     answer. Two bytes before `?>` instead of two after it lands the
     `<?pi <?>` fixture back on the `<?` it just left, for ever. In
-    process that is not a red test but a suite that never finishes, and
-    CI sets no job time limit, so nothing would go red for hours."""
+    process that is not a red test but a suite that never finishes; CI
+    stops the job after its time limit, but a stopped job does not say
+    which test hung, and this does."""
     assert _declares_doctype_within(raw)
 
 
