@@ -117,7 +117,10 @@ def test_a_directory_is_refused_as_not_a_file(tmp_path):
     folder.mkdir()
     with pytest.raises(UnreadablePath, match="not a file") as refused:
         load(folder)
-    assert "directory" in refused.value.fix
+    # The remedy for this, not the access remedy: that one says "every
+    # directory above it", so a fragment like "directory" passed either way.
+    assert "Point this at a file rather than at a directory" in refused.value.fix, (
+        refused.value.fix)
 
 
 def test_a_bare_submodel_that_cannot_be_built_says_why(tmp_path):
