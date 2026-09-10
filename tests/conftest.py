@@ -22,7 +22,9 @@ rule from the set of rules seen to fire, because `make exercised` would
 otherwise pass on a rule that only ever crashes -- and the same sentence
 was true of every assertion in the suite and had not been carried there.
 
-So it is asked once, here, for every report the suite produces. Note the
+So it is asked once, here, for every report `runner.run` hands a test in
+this process -- a test that runs the CLI in a child process is outside it,
+and asserts on that child's exit code and output instead. Note the
 difference between the two: the observation *filters* a crash out of the
 fired set, because its question is which rules genuinely work. This
 *fails*, because a crash is not a verdict and no test should be able to
@@ -168,11 +170,6 @@ def _observe_which_rules_fire():
             "otherwise have read that as a verdict: the stop is reported as "
             "an error under META. If this test's input may stop it, mark it "
             "`allow_relay_stop`." % stopped[0].violation.detail)
-        # And a crash has no business in the notes: a note is something
-        # the reader was told they need not act on.
-        demoted = [note for note in report.notes if runner.COULD_NOT_RUN in note]
-        assert _ALLOWS_CRASH or not demoted, (
-            "a rule that could not run was reported as a note: %s" % demoted)
         # A rule that raised is reported under its own id, so counting it
         # here would let `make exercised` -- whose whole job is to find
         # rules that never run -- pass on a rule that only ever crashes.

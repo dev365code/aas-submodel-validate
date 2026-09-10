@@ -97,8 +97,9 @@ def test_the_relayed_channel_stopping_is_not_one_of_our_rules_crashing(
     same message a crashed rule gets, and a different remedy: a channel
     went quiet, which need not mean this validator is defective --
     aas-core3.0 may have met a file its own code cannot process, such as
-    a year past CPython's digit limit for `int()` or a nesting depth past
-    the interpreter's stack.
+    a year past CPython's digit limit for `int()`. (Nesting does not get
+    there: measured, the loader refuses a deep document before the
+    channel ever runs.)
 
     So whether it happens is a property of the interpreter. `make check`
     was green here and nine CI jobs went red on `META could not run`: they
