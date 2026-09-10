@@ -1809,6 +1809,46 @@ def test_the_limits_are_told_apart_by_type_and_not_by_message():
         UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte"))
 
 
+@pytest.mark.parametrize("raised, decoding, reason", [
+    (RecursionError("too deep"), True, "nesting"),
+    (RecursionError("too deep"), False, "nesting"),
+    (MemoryError(), False, "memory"),
+    (ValueError("Exceeds the limit (4300 digits) for integer string conversion"), True, "number"),
+], ids=["nesting-decoding", "nesting-building", "memory", "a-number-too-long"])
+def test_every_reason_this_reader_stops_is_said_and_nothing_more(raised, decoding, reason):
+    """Each reason the reader can stop short gets its own clause, and the
+    sentence says only what is known: that it stopped, and why. The digit
+    limit exists from CPython 3.9.14 and 3.11 on, so the one interpreter
+    that runs this suite locally cannot produce it end to end -- it is
+    asked of the classifier, which has no version in it."""
+    message, remedy = loader._failure(raised, decoding=decoding)
+    assert message == "this reader could not build the document"
+    assert remedy == loader.limit_remedy(reason)
+    assert "Nothing is wrong" not in remedy and "is JSON" not in remedy
+    assert "not judged" in remedy
+
+
+@pytest.mark.parametrize("raised, decoding", [
+    (ValueError("Incorrect padding"), False),
+    (UnicodeEncodeError("ascii", "\u00e9", 0, 1, "ordinal not in range(128)"), False),
+    (json.JSONDecodeError("Expecting value", "{ not json", 2), True),
+], ids=["a-value-error-while-building", "an-encode-error-while-building", "bad-syntax"])
+def test_what_is_the_documents_gets_the_standing_advice(raised, decoding):
+    """The same types, raised by the document rather than by this
+    interpreter, are not the reader's to explain away."""
+    assert loader._failure(raised, decoding=decoding) is None
+
+
+def test_bytes_that_stop_halfway_through_a_character_are_told_apart_from_the_wrong_encoding():
+    cut = b'{"note": "\xc3'
+    wrong = b'{"note": "\xff"}'
+    for raw, remedy in ((cut, loader.CUT_SHORT), (wrong, loader.NOT_UTF8)):
+        try:
+            raw.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            assert loader._failure(exc, decoding=True) == ("the file is not JSON", remedy)
+
+
 def test_a_path_under_a_directory_we_cannot_enter_is_refused_not_crashed(tmp_path):
     """`Path.exists()` raises when the parent cannot be traversed.
 

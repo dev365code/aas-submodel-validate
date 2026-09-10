@@ -122,12 +122,34 @@ class LoadError:
 #: upstream prose and not ours to pattern-match. The digit limit does not
 #: exist before 3.11, which is why this is a classifier with no version
 #: in it rather than a fixture that can only run on some of them.
-LIMIT_OF_THIS_READER = (
-    "This document is JSON; building it is what this reader could not do, "
-    "and the limit is the interpreter's rather than the file's. Nothing is "
-    "wrong with what you sent -- it was refused, not judged. Where the "
-    "document nests very deeply or carries a very long number, the part "
-    "that needs checking will go through on its own.")
+#:
+#: What the reader is told says only what is known: that this reader
+#: stopped before the end of the document, and why. It used to say "This
+#: document is JSON ... Nothing is wrong with what you sent", and neither
+#: is known about a document nobody read to the end -- a thousand
+#: brackets followed by text that is not JSON at all stops the parser at
+#: the brackets, and was told both.
+_STOPPED_BECAUSE = {
+    "nesting": "it nests deeper than this interpreter's stack will follow",
+    "number": "it carries a number longer than this interpreter will convert",
+    "memory": "building it needed more memory than this reader had",
+}
+
+
+def limit_remedy(reason: str) -> str:
+    """The remedy for a document this reader stopped short of the end of."""
+    return ("This reader stopped before the end of the document: %s. What "
+            "comes after that point was not read, and nothing here is a "
+            "verdict on the document -- it was refused, not judged."
+            % _STOPPED_BECAUSE[reason])
+
+
+#: For bytes that end halfway through a character: a copy or a download
+#: that stopped early, not a file saved in the wrong encoding.
+CUT_SHORT = (
+    "The bytes end in the middle of a character, the way a copy or "
+    "download that stopped early leaves a file. Send the whole file "
+    "again; what arrived was not judged.")
 
 
 #: For bytes that do not decode. Not the standing advice X3 gives -- "fix
@@ -156,6 +178,33 @@ def _is_an_interpreter_limit(exc) -> bool:
         return True
     return isinstance(exc, ValueError) and not isinstance(
         exc, (json.JSONDecodeError, UnicodeError))
+
+
+def _failure(exc, *, decoding: bool):
+    """(message, remedy) for a JSON document that could not be read, or None
+    where the failure is the document's and the rule's standing advice holds.
+
+    One answer for every place a JSON document is read -- a bare file, a
+    bare Submodel, the payload of a package -- so the same failure gets the
+    same answer wherever it happens. `decoding` says which step raised:
+    running out of stack or memory is this interpreter's at either step,
+    but a `ValueError` is the digit limit, and a `UnicodeDecodeError` is
+    about the bytes, only while the bytes are being decoded. Raised while
+    building the environment, the same types are the document's -- a Blob
+    value that is not base64 raises one of each.
+    """
+    if isinstance(exc, RecursionError):
+        return "this reader could not build the document", limit_remedy("nesting")
+    if isinstance(exc, MemoryError):
+        return "this reader could not build the document", limit_remedy("memory")
+    if not decoding:
+        return None
+    if _is_an_interpreter_limit(exc):
+        return "this reader could not build the document", limit_remedy("number")
+    if isinstance(exc, UnicodeDecodeError):
+        cut = exc.reason == "unexpected end of data" and exc.end == len(exc.object)
+        return "the file is not JSON", CUT_SHORT if cut else NOT_UTF8
+    return None
 
 
 #: What to do about an operating system saying no, by what it said.
@@ -305,24 +354,14 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
         else:
             environment = xmlization.environment_from_str(_decode(raw))
     except Exception as exc:
-        # Asked the way `_load_json` asks it of a bare file, so the same
-        # bytes get the same answer zipped or not: a part this interpreter
-        # could not build is refused rather than judged, and bytes that are
-        # not UTF-8 are told so. Both used to be told to fix the syntax
-        # their parser rejects. JSON only -- the limit sentence says JSON --
-        # and `ValueError` only while decoding, where it is the digit limit;
-        # what building the environment raises is the document's.
-        json_form = form.endswith("json")
-        limit = json_form and (isinstance(exc, (RecursionError, MemoryError))
-                               or (decoding and _is_an_interpreter_limit(exc)))
-        undecodable = json_form and decoding and isinstance(exc, UnicodeError)
+        # Asked the way `_load_json` asks it of a bare file (`_failure`), so
+        # the same failure gets the same answer zipped or not. JSON only:
+        # XML declares its own encoding and has its own reader.
+        answered = _failure(exc, decoding=decoding) if form.endswith("json") else None
+        message, fix = answered or ("the document could not be read as an AAS environment", None)
         loaded.errors.append(LoadError(
-            "payload",
-            "this reader could not build the document" if limit
-            else "the file is not JSON" if undecodable
-            else "the document could not be read as an AAS environment",
-            subject=part or loaded.path, detail="%s: %s" % (type(exc).__name__, exc),
-            fix=LIMIT_OF_THIS_READER if limit else NOT_UTF8 if undecodable else None))
+            "payload", message, subject=part or loaded.path,
+            detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
         return
     loaded.environments.append(environment)
     loaded.submodels.extend(environment.submodels or [])
@@ -423,15 +462,10 @@ def _load_json(path: Path) -> Loaded:
     try:
         document = json.loads(_decode(raw))
     except Exception as exc:
-        limit = _is_an_interpreter_limit(exc)
+        message, fix = _failure(exc, decoding=True) or ("the file is not JSON", None)
         loaded.errors.append(LoadError(
-            "payload",
-            "this reader could not build the document"
-            if limit else "the file is not JSON",
-            subject=str(path),
-            detail="%s: %s" % (type(exc).__name__, exc),
-            fix=LIMIT_OF_THIS_READER if limit
-            else NOT_UTF8 if isinstance(exc, UnicodeError) else None))
+            "payload", message, subject=str(path),
+            detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
         return loaded
 
     if isinstance(document, dict) and document.get("modelType") == "Submodel":
@@ -439,9 +473,11 @@ def _load_json(path: Path) -> Loaded:
         try:
             loaded.submodels.append(jsonization.submodel_from_jsonable(document))
         except Exception as exc:
-            loaded.errors.append(LoadError("payload", "the document could not be read as a Submodel",
-                                           subject=str(path),
-                                           detail="%s: %s" % (type(exc).__name__, exc)))
+            message, fix = (_failure(exc, decoding=False)
+                            or ("the document could not be read as a Submodel", None))
+            loaded.errors.append(LoadError("payload", message, subject=str(path),
+                                           detail="%s: %s" % (type(exc).__name__, exc),
+                                           fix=fix))
         return loaded
 
     _parse_environment(loaded, raw, part=None, form="environment-json",

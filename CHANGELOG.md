@@ -11,15 +11,19 @@ the **`verdict`** mark. Two changes in that release moved a verdict --
 that one and the two-category `BAT-R8` rows -- and the entry marked only
 the second.
 
-**A JSON document this reader cannot build, or whose bytes are not
-UTF-8, is told so, packaged or not.** A bare `.json` that is not UTF-8
-was told nothing was wrong with it; the same bytes as the payload of a
-package, like a payload nested past this interpreter's stack, were told
-to fix the syntax their parser rejects. There was no syntax to fix in
-any of them. Each now gets the remedy for what it is -- save the file as
-UTF-8, or, for the interpreter's limit, nothing is wrong with what you
-sent and it was refused rather than judged -- and the same bytes get the
-same answer whether or not they arrive zipped. No exit code moves.
+**When this reader stops before the end of a JSON document, it says so
+and nothing more.** A document nested deeper than this interpreter's
+stack follows, or carrying a number longer than it converts, was told
+"This document is JSON ... Nothing is wrong with what you sent" -- which
+nobody knows about a document read only part of the way, and which was
+false of malformed input that ran out of stack before its syntax error.
+It is now told where the reader stopped and why, and that what comes
+after was not read or judged. The same failure gets the same answer in a
+bare file, a bare Submodel and the payload of a package, where it was
+told to fix the syntax its parser rejects. Bytes that are not UTF-8 are
+told to save the file as UTF-8 rather than that nothing was wrong, and a
+file that ends halfway through a character is told it looks cut short.
+No exit code moves.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's

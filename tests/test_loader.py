@@ -167,7 +167,7 @@ def test_a_bare_file_that_is_not_an_environment_is_named_by_its_path(tmp_path):
 
 
 @pytest.mark.parametrize("raw, remedy", [
-    (b"[" * 200000 + b"]" * 200000, "LIMIT_OF_THIS_READER"),
+    (b"[" * 200000 + b"]" * 200000, "nesting"),
     (b'{"submodels": [], "note": "\xff"}', "NOT_UTF8"),
 ], ids=["this-interpreter's-limit", "not-utf-8"])
 def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path, raw, remedy):
@@ -183,12 +183,118 @@ def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path
     bare = tmp_path / "bare.json"
     bare.write_bytes(raw)
     (bare_error,) = load(bare).errors
-    assert bare_error.fix == getattr(loader, remedy), bare_error.fix
+    expected = getattr(loader, remedy) if remedy.isupper() else loader.limit_remedy(remedy)
+    assert bare_error.fix == expected, bare_error.fix
 
     packed = build_aasx(tmp_path / "packed.aasx", payload=raw)
     (part_error,) = [e for e in load(packed).errors if e.stage == "payload"]
     assert (part_error.message, part_error.fix) == (bare_error.message, bare_error.fix)
     assert part_error.subject == "aasx/env.json"
+
+
+def _collection_chain(depth):
+    """A Submodel whose one element is a collection `depth` levels deep --
+    valid JSON that `json.loads` reads and that building then runs out of
+    stack on."""
+    element = {"idShort": "leaf", "modelType": "Property", "valueType": "xs:string",
+               "value": "x"}
+    for level in range(depth):
+        element = {"idShort": "c%d" % level, "modelType": "SubmodelElementCollection",
+                   "value": [element]}
+    return {"id": "urn:test:deep", "modelType": "Submodel", "submodelElements": [element]}
+
+
+def _stopped(error, reason):
+    from aas_submodel_validate import loader
+
+    assert error.message == "this reader could not build the document", error.message
+    assert error.fix == loader.limit_remedy(reason), error.fix
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_a_document_that_runs_out_of_stack_is_not_told_it_is_json(tmp_path, zipped):
+    """Out of stack before its syntax error: a thousand brackets and then
+    text that is not JSON at all. The reader stops at the brackets, and it
+    used to say "This document is JSON ... Nothing is wrong with what you
+    sent" -- neither of which anyone knows about a document nobody read to
+    the end, and here both are false. It is told where the reader stopped
+    and why, and nothing it does not know."""
+    raw = b"[" * 100000 + b" this is not json"
+    path = tmp_path / ("p.aasx" if zipped else "bare.json")
+    build_aasx(path, payload=raw) if zipped else path.write_bytes(raw)
+    (error,) = [e for e in load(path).errors if e.stage == "payload"]
+    _stopped(error, "nesting")
+    assert "Nothing is wrong" not in error.fix and "is JSON" not in error.fix
+
+
+def test_what_the_reader_did_not_reach_is_not_declared_sound(tmp_path):
+    """The same defect, an unknown key, on either side of a collection too
+    deep to build. Before it, the defect is reported. After it, the reader
+    never gets there -- and the answer used to be that nothing was wrong
+    with the file. It is now that the reader stopped, which is true in
+    both orders."""
+    deep = json.dumps(_collection_chain(350))
+    after = '{"submodels": [%s], "bogus": true}' % deep
+    before = '{"bogus": true, "submodels": [%s]}' % deep
+    json.loads(after)                              # valid JSON: the stop is in building
+    for name, text in (("after", after), ("before", before)):
+        (tmp_path / (name + ".json")).write_text(text, "utf-8")
+    (stopped,) = load(tmp_path / "after.json").errors
+    _stopped(stopped, "nesting")
+    (reported,) = load(tmp_path / "before.json").errors
+    assert reported.message == "the document could not be read as an AAS environment"
+    assert "bogus" in reported.detail and reported.fix is None
+
+
+def test_a_bare_submodel_too_deep_to_build_is_told_the_reader_stopped(tmp_path):
+    """The one form that still told a document this reader could not
+    build to fix the syntax its parser rejects: a bare Submodel, which is
+    read by its own branch and was never asked why building failed."""
+    path = tmp_path / "submodel.json"
+    path.write_text(json.dumps(_collection_chain(350)), "utf-8")
+    (error,) = load(path).errors
+    _stopped(error, "nesting")
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_a_file_cut_short_in_a_character_is_told_it_looks_cut_short(tmp_path, zipped):
+    """Bytes that end halfway through a character are a copy or download
+    that stopped early, not a file saved in the wrong encoding -- telling
+    its author to save it as UTF-8 sends them to change a setting that was
+    never wrong."""
+    from aas_submodel_validate import loader
+
+    raw = '{"submodels": [], "note": "\u00e4"}'.encode("utf-8")[:-3]
+    path = tmp_path / ("p.aasx" if zipped else "bare.json")
+    build_aasx(path, payload=raw) if zipped else path.write_bytes(raw)
+    (error,) = [e for e in load(path).errors if e.stage == "payload"]
+    assert error.fix == loader.CUT_SHORT, error.fix
+
+
+@pytest.mark.parametrize("value", ["abc", "\u00e9"], ids=["bad-base64", "not-ascii"])
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_what_building_raises_is_the_documents_whatever_its_type(tmp_path, zipped, value):
+    """A Blob value that is not base64 fails while building the environment
+    -- a `binascii.Error`, which is a `ValueError`, or a
+    `UnicodeEncodeError`. Raised while *decoding* those types mean this
+    interpreter's digit limit and bytes that are not UTF-8; raised while
+    building they are the document's defect, and only which step raised
+    tells the two apart. Measured on the classifier this replaced: with
+    that step left marked as decoding, both came back wrong -- one told
+    nothing was being judged, one told to save the file as UTF-8 -- and
+    the suite passed; no fixture carried a Blob. The classifier now asks
+    for a decode error by name, so the encode error no longer depends on
+    the step; the `ValueError` still does, and both stay pinned."""
+    env = {"submodels": [{"id": "urn:test:blob", "modelType": "Submodel",
+                          "submodelElements": [{"idShort": "b", "modelType": "Blob",
+                                                "contentType": "application/octet-stream",
+                                                "value": value}]}]}
+    raw = json.dumps(env).encode("utf-8")
+    path = tmp_path / ("p.aasx" if zipped else "bare.json")
+    build_aasx(path, payload=raw) if zipped else path.write_bytes(raw)
+    (error,) = [e for e in load(path).errors if e.stage == "payload"]
+    assert error.message == "the document could not be read as an AAS environment"
+    assert error.fix is None, error.fix
 
 
 def test_an_environment_json_is_read_from_disk_once(tmp_path, monkeypatch):
