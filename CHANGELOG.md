@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.5 — unreleased
+
+A security patch on 0.1.4. 126 rules, 86 generated from the vendored
+template files; no rule is added or removed.
+
+**Security: a DTD refused at any smaller size could be processed in an
+oversized UTF-16 relationships part.** `verdict` A relationships part
+written in UTF-16 whose UTF-8 form crosses the 64 MiB bound was read as
+it stood: the conversion to UTF-8 was abandoned for its size and the
+bytes handed on, past the DTD check, which reads UTF-8, to a parser that
+decodes UTF-16 itself and expands the DTD -- so a nested-entity DTD, a
+decompression-free way to exhaust a reader, was processed, and the size
+bound it crossed was not applied. Such a document is refused for its
+size now, whether it is a relationships part or a payload, bare or
+packaged, and the same holds for any XML whose UTF-8 form is over the
+bound. Present in 0.1.3 and 0.1.4; the payload path was already refused
+there, by a message about encoding rather than size, because decoding
+the unconverted UTF-16 as UTF-8 failed before the parser saw it.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
 ## 0.1.4 — 2026-09-09
 
 126 rules, 86 generated from the vendored template files. No rule is

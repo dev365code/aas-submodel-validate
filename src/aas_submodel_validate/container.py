@@ -287,12 +287,18 @@ def _as_utf8(raw: bytes, encoding: str) -> bytes:
     """The bytes as UTF-8, or as they arrived if that cannot be done.
 
     This is the one transform here that can grow: a legacy code page is
-    one byte per character and UTF-8 is up to four, so a part inside the
-    bound can leave it twice the size. The bound is measured on the
-    bytes that arrived, which was harmless while every conversion here
-    shrank or was the identity. A converted document that would break
-    it comes back unconverted -- the parser then answers for the bytes,
-    which is what this function does with everything it cannot handle.
+    one byte per character and UTF-8 is up to four -- and UTF-16 is two
+    for a character UTF-8 spends three on, so a run of CJK grows -- so a
+    part inside the bound can leave it larger. The bound is measured on
+    the bytes that arrived, which was harmless while every conversion here
+    shrank or was the identity.
+
+    A converted document over the bound is refused for its size, not
+    handed on unconverted. Handed on, the bytes went to a parser that
+    reads UTF-16 itself, past a `declares_doctype` that reads only UTF-8
+    -- so a DTD refused at any smaller size was processed, and the bound
+    it crossed was not applied. It is the document the reader would build
+    that is over the bound; the caller turns this into that refusal.
     """
     try:
         text = raw.decode(encoding)
@@ -306,7 +312,11 @@ def _as_utf8(raw: bytes, encoding: str) -> bytes:
         # parent.
         return raw
     converted = _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
-    return raw if len(converted) > MAX_PART_BYTES else converted
+    if len(converted) > MAX_PART_BYTES:
+        raise PartTooLarge(
+            "a document declaring %s is %d bytes as UTF-8, above the %d byte "
+            "limit" % (encoding, len(converted), MAX_PART_BYTES))
+    return converted
 
 
 def declares_doctype(raw: bytes) -> bool:

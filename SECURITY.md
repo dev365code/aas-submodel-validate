@@ -8,7 +8,11 @@ as hostile — parsing failures become findings, not crashes, and the test
 suite carries deliberately broken containers and documents. What this
 reader takes in is bounded: one document at 64 MiB, and a container's
 parts at 64 MiB each and 256 MiB together — so a container may deliver
-four times what a bare document may. The total is asked of what has been
+four times what a bare document may. The bound is on the document as the
+reader builds it: an XML file re-encoded to UTF-8 counts by that form,
+which for UTF-16 holding CJK text is larger than the bytes on disk, and a
+document over the bound in that form is refused before it is parsed
+rather than handed to the parser as it arrived. The total is asked of what has been
 read so far, before each next part is decompressed -- so a container
 stops costing once it is past the bound, having read the part that
 crossed it: the ceiling in practice is the bound plus one part, and what

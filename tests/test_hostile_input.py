@@ -1886,3 +1886,77 @@ def test_each_refusal_gets_its_own_remedy_and_not_one_sentence(tmp_path,
     # accusations: what you sent was not read, so it was not judged.
     for sentence in (permission, loop, out_of_memory):
         assert "not judged" in sentence, sentence
+
+
+# -- security: an oversized UTF-16 conversion must not slip the DTD guard ----
+from builders import SUPPL_REL  # noqa: E402
+
+
+def _by_id(report):
+    return {f.id: f for f in report.findings}
+
+_STRADDLE_CAP = 40000
+
+
+def _utf16_across_the_cap(inner: str) -> bytes:
+    """A UTF-16 XML document under `_STRADDLE_CAP` bytes as stored and over
+    it once converted to UTF-8 (CJK is two bytes in UTF-16, three in
+    UTF-8): read, then abandoned by the conversion, which let the parser
+    see the bytes and their DTD."""
+    body = '<?xml version="1.0" encoding="UTF-16"?>%s<!--%s-->' % (inner, "中" * 15000)
+    return body.encode("utf-16")
+
+
+@pytest.mark.parametrize("target", ["/aasx/files/from-the-dtd.pdf", "/aasx/files/manual.pdf"],
+                         ids=["dtd-target", "real-target"])
+def test_a_relationships_part_whose_utf8_form_is_over_the_cap_is_refused(
+        tmp_path, monkeypatch, target):
+    """A UTF-16 relationships part read as it stood, whose UTF-8 form crosses
+    the cap: the conversion was abandoned, `declares_doctype` could not see
+    `<!DOCTYPE` in UTF-16, and the parser decoded the UTF-16 and expanded the
+    DTD -- a nested-entity DTD refused at any smaller size, processed, and
+    the size bound it crossed not applied. It is refused for its size now."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", _STRADDLE_CAP)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 4 * _STRADDLE_CAP)
+    rels_part = _utf16_across_the_cap(
+        '<!DOCTYPE Relationships [<!ENTITY t "%s">]>'
+        '<Relationships xmlns="%s"><Relationship Type="%s" Target="&t;" Id="R1"/>'
+        '</Relationships>' % (target, RELS_NS, SUPPL_REL))
+    assert len(rels_part) < _STRADDLE_CAP < len(rels_part.decode("utf-16").encode("utf-8"))
+    path = tmp_path / "p.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", env_json("urn:x"))
+        archive.writestr("aasx/files/manual.pdf", b"%PDF-1.4")
+        archive.writestr("aasx/_rels/env.json.rels", rels_part)
+    report = runner.run(path)
+    ids = _by_id(report)
+    assert "X4" not in ids, "the DTD (or an over-cap part) was read"
+    assert "X5" in ids, sorted(ids)
+    assert not report.complete
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_an_xml_document_whose_utf8_form_is_over_the_cap_is_refused(
+        tmp_path, monkeypatch, zipped):
+    """The same for a payload, where it was caught only because decoding the
+    unconverted UTF-16 as UTF-8 failed and it fell to an answer about
+    encoding, not size. Refused for its size, bare or packaged."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", _STRADDLE_CAP)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 4 * _STRADDLE_CAP)
+    body = _utf16_across_the_cap(
+        '<!DOCTYPE environment [<!ENTITY t "x">]>'
+        '<environment xmlns="https://admin-shell.io/aas/3/0"/>')
+    assert len(body) < _STRADDLE_CAP < len(body.decode("utf-16").encode("utf-8"))
+    path = tmp_path / ("p.aasx" if zipped else "probe.xml")
+    if zipped:
+        build_aasx(path, payload=body, payload_name="aasx/env.xml")
+    else:
+        path.write_bytes(body)
+    report = runner.run(path)
+    ids = _by_id(report)
+    assert "X5" in ids, sorted(ids)
+    assert not report.complete

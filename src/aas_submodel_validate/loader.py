@@ -267,7 +267,16 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
         # byte of it. The refusal matched bytes, and a byte pattern finds
         # `<!DOCTYPE` in UTF-8 and nowhere else -- so the same declaration
         # written UTF-16 came back not as a refusal but as a clean read.
-        raw = xml_as_utf8(raw)
+        try:
+            raw = xml_as_utf8(raw)
+        except PartTooLarge as exc:
+            # The document's UTF-8 form is over the bound. Its bytes on disk
+            # were under it -- UTF-16 is narrower than UTF-8 for the CJK it
+            # holds -- so the size shows only once it is converted the way
+            # the parser reads it. Recorded with no fix of its own, so X5
+            # gives the per-form remedy.
+            loaded.errors.append(LoadError("bounds", str(exc), subject=part or loaded.path))
+            return
         if declares_doctype(raw):
             loaded.errors.append(LoadError(
                 "payload", "the XML declares a DOCTYPE, which is refused",
