@@ -295,17 +295,34 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
                 subject=part or loaded.path,
                 fix=PAYLOAD_DOCTYPE_REMEDY))
             return
+    decoding = True
     try:
         if form.endswith("json"):
             if document is None:
                 document = json.loads(_decode(raw))
+            decoding = False
             environment = jsonization.environment_from_jsonable(document)
         else:
             environment = xmlization.environment_from_str(_decode(raw))
     except Exception as exc:
+        # Asked the way `_load_json` asks it of a bare file, so the same
+        # bytes get the same answer zipped or not: a part this interpreter
+        # could not build is refused rather than judged, and bytes that are
+        # not UTF-8 are told so. Both used to be told to fix the syntax
+        # their parser rejects. JSON only -- the limit sentence says JSON --
+        # and `ValueError` only while decoding, where it is the digit limit;
+        # what building the environment raises is the document's.
+        json_form = form.endswith("json")
+        limit = json_form and (isinstance(exc, (RecursionError, MemoryError))
+                               or (decoding and _is_an_interpreter_limit(exc)))
+        undecodable = json_form and decoding and isinstance(exc, UnicodeError)
         loaded.errors.append(LoadError(
-            "payload", "the document could not be read as an AAS environment",
-            subject=part or loaded.path, detail="%s: %s" % (type(exc).__name__, exc)))
+            "payload",
+            "this reader could not build the document" if limit
+            else "the file is not JSON" if undecodable
+            else "the document could not be read as an AAS environment",
+            subject=part or loaded.path, detail="%s: %s" % (type(exc).__name__, exc),
+            fix=LIMIT_OF_THIS_READER if limit else NOT_UTF8 if undecodable else None))
         return
     loaded.environments.append(environment)
     loaded.submodels.extend(environment.submodels or [])

@@ -166,6 +166,31 @@ def test_a_bare_file_that_is_not_an_environment_is_named_by_its_path(tmp_path):
     assert error.subject == str(bare)
 
 
+@pytest.mark.parametrize("raw, remedy", [
+    (b"[" * 200000 + b"]" * 200000, "LIMIT_OF_THIS_READER"),
+    (b'{"submodels": [], "note": "\xff"}', "NOT_UTF8"),
+], ids=["this-interpreter's-limit", "not-utf-8"])
+def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path, raw, remedy):
+    """The same bytes, zipped or not. A bare `.json` that nests past this
+    interpreter's stack is told it was refused rather than judged, and one
+    that is not UTF-8 is told to save it as UTF-8 -- and the same bytes as
+    the payload of a package were told, both times, to fix the syntax
+    their parser rejects: the part had no classifier at all. There is no
+    syntax to fix in either, and a reader who zipped their file should not
+    get a different answer about it than one who did not."""
+    from aas_submodel_validate import loader
+
+    bare = tmp_path / "bare.json"
+    bare.write_bytes(raw)
+    (bare_error,) = load(bare).errors
+    assert bare_error.fix == getattr(loader, remedy), bare_error.fix
+
+    packed = build_aasx(tmp_path / "packed.aasx", payload=raw)
+    (part_error,) = [e for e in load(packed).errors if e.stage == "payload"]
+    assert (part_error.message, part_error.fix) == (bare_error.message, bare_error.fix)
+    assert part_error.subject == "aasx/env.json"
+
+
 def test_an_environment_json_is_read_from_disk_once(tmp_path, monkeypatch):
     """The JSON branch read the whole file, decided it was an environment
     rather than a bare submodel, and then read it again -- the second

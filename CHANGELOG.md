@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.5 — unreleased
+
+126 rules, 86 generated from the vendored template files. No rule is
+added or removed so far.
+
+**A correction to 0.1.4 first.** Its paragraph on a `File` value that
+differs from the archive entry only in ASCII case should have carried
+the **`verdict`** mark. Two changes in that release moved a verdict --
+that one and the two-category `BAT-R8` rows -- and the entry marked only
+the second.
+
+**A JSON document this reader cannot build, or whose bytes are not
+UTF-8, is told so, packaged or not.** A bare `.json` that is not UTF-8
+was told nothing was wrong with it; the same bytes as the payload of a
+package, like a payload nested past this interpreter's stack, were told
+to fix the syntax their parser rejects. There was no syntax to fix in
+any of them. Each now gets the remedy for what it is -- save the file as
+UTF-8, or, for the interpreter's limit, nothing is wrong with what you
+sent and it was refused rather than judged -- and the same bytes get the
+same answer whether or not they arrive zipped. No exit code moves.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
 ## 0.1.4 — 2026-09-09
 
 126 rules, 86 generated from the vendored template files. No rule is
