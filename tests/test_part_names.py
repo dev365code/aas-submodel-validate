@@ -621,6 +621,18 @@ def test_an_archive_holding_a_directory_entry_still_answers_for_a_missing_part(t
         assert package.part("/aasx/files/missing.pdf") is None
 
 
+def test_the_character_check_ends_where_ascii_ends():
+    """RFC 3986 names the characters a part name may carry, all of them
+    ASCII, and what lies outside ASCII is recorded rather than refused.
+    DEL is the last ASCII character and is not one of them; U+0080 is the
+    first that is not ASCII. That edge is one comparison, and `< 127`,
+    `<= 128` and `< 129` all passed the suite."""
+    from aas_submodel_validate.container import part_name_problem
+
+    assert "'\\x7f'" in (part_name_problem("aasx/files/a\x7fb.pdf") or "")
+    assert part_name_problem("aasx/files/a\x80b.pdf") is None
+
+
 def test_the_case_folding_is_ascii_and_stops_there(tmp_path):
     """The clause says ASCII, and names the two code point ranges. It
     does not say Unicode: the same subclause puts NFC/NFD collisions

@@ -50,7 +50,8 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
                origin_rel: bool = True, origin_rels: bool = True,
                spec_rel: bool = True, bom: bool = False,
                files=(), suppl_targets=None, relative_targets: bool = False,
-               suppl_external=(), suppl_verbatim=(), outside_first: bool = False):
+               suppl_external=(), suppl_verbatim=(), outside_first: bool = False,
+               root_first=()):
     """Write an .aasx; every keyword exists so a test can break one link.
 
     `files` are (name, data) parts to store; `suppl_targets` declares the
@@ -80,6 +81,10 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
     order, and every archive this builder wrote put its own parts first,
     so a reader that stopped at the first outside target lost nothing any
     test could see.
+
+    `root_first` declares other package relationships -- a thumbnail, the
+    core properties -- in `_rels/.rels` ahead of the origin, which is
+    where the tools that write them put them.
     """
     marker = b"\xef\xbb\xbf" if bom else b""
     suppl = [name for name, _ in files] if suppl_targets is None else suppl_targets
@@ -94,7 +99,8 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
         if content_types:
             archive.writestr("[Content_Types].xml", CONTENT_TYPES)
         if root_rels:
-            pairs = [(ORIGIN_REL, target("aasx/aasx-origin", ""))] if origin_rel else []
+            pairs = list(root_first)
+            pairs += [(ORIGIN_REL, target("aasx/aasx-origin", ""))] if origin_rel else []
             archive.writestr("_rels/.rels", marker + rels(pairs))
         archive.writestr("aasx/aasx-origin", b"")
         if origin_rels:

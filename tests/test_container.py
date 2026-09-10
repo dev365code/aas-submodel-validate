@@ -55,6 +55,20 @@ def test_missing_relationships_of_a_part_name_that_part(tmp_path):
         _ = package.spec_parts
 
 
+def test_the_origin_is_found_wherever_it_sits_among_the_package_relationships(tmp_path):
+    """`_rels/.rels` carries more than the origin -- tools write the
+    thumbnail and the core properties there -- and OPC gives
+    relationships no order. The origin is the one of its type. Every
+    archive the builder wrote declared it alone, so answering with the
+    first relationship, whatever its type, passed the whole suite."""
+    thumbnail = ("http://schemas.openxmlformats.org/package/2006/"
+                 "relationships/metadata/thumbnail", "/thumbnail.png")
+    packed = build_aasx(tmp_path / "t.aasx", root_first=[thumbnail])
+    with AasxPackage(packed) as package:
+        assert package.origin == "aasx/aasx-origin"
+        assert package.spec_parts == ["aasx/env.json"]
+
+
 def test_a_missing_origin_relationship_names_the_relationship(tmp_path):
     packed = build_aasx(tmp_path / "x.aasx", origin_rel=False)
     with AasxPackage(packed) as package, pytest.raises(ContainerError, match="aasx-origin"):

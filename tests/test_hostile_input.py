@@ -88,6 +88,22 @@ def test_parts_summing_exactly_to_the_total_cap_are_all_read(tmp_path, monkeypat
             package.read("aasx/b.bin")                 # the crossing read
 
 
+def test_a_read_crossing_the_total_by_one_byte_is_refused(tmp_path, monkeypatch):
+    """The other edge of the same cap. The read that crosses it above goes
+    over by thirty bytes, so a count that started one byte short of zero
+    still refused it -- and let a container through at exactly one byte
+    over. One byte is the crossing that decides where the count starts."""
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 40)
+    path = tmp_path / "byone.aasx"
+    build_aasx(path, payload=b"<x/>" + b" " * 16, payload_name="aasx/env.xml",
+               files=[("aasx/a.bin", b"y" * 20), ("aasx/b.bin", b"z")])
+    with AasxPackage(path) as package:
+        package.read("aasx/env.xml")
+        package.read("aasx/a.bin")                     # exactly at the cap
+        with pytest.raises(container.PartTooLarge):
+            package.read("aasx/b.bin")                 # one byte over
+
+
 def test_the_early_total_check_reads_the_total_cap_not_the_part_cap(tmp_path, monkeypatch):
     """The refusal hoisted above the decompressor compares the same
     number the late one does. Comparing it against the *part* cap
@@ -396,6 +412,21 @@ def test_only_the_declaration_loses_its_encoding(tmp_path):
            '<note><![CDATA[<?xml version="1.0" encoding="ISO-8859-1"?>]]></note>'
            '</environment>').encode()
     assert b'encoding="ISO-8859-1"' in container.xml_as_utf8(raw)
+
+
+def test_a_document_converted_to_exactly_the_bound_is_kept_converted(monkeypatch):
+    """Converting UTF-16 to UTF-8 can grow a document past the bound, and
+    then the bytes as they arrived are kept for the size check to refuse.
+    "Past" means more than, as everywhere this reader states a bound:
+    converted to exactly the bound, the document is read converted. No
+    fixture sat on that edge, so `>=` passed as well as `>`."""
+    raw = '<?xml version="1.0" encoding="UTF-16"?><x>abc</x>'.encode("utf-16")
+    converted = container.xml_as_utf8(raw)
+    assert converted != raw and converted.startswith(b"<?xml")
+    monkeypatch.setattr(container, "MAX_PART_BYTES", len(converted))
+    assert container.xml_as_utf8(raw) == converted, "exactly at the bound"
+    monkeypatch.setattr(container, "MAX_PART_BYTES", len(converted) - 1)
+    assert container.xml_as_utf8(raw) == raw, "one byte past it"
 
 
 def test_a_declaration_still_loses_the_encoding_it_no_longer_has(tmp_path):
