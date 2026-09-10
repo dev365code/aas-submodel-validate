@@ -861,6 +861,7 @@ def test_a_document_the_reader_cannot_decode_does_not_crash(tmp_path, declared, 
     assert code in (0, 1, 2), code
 
 
+@pytest.mark.filterwarnings("ignore:Duplicate name")
 @pytest.mark.parametrize("order", ["defective-first", "defective-last"])
 def test_an_archive_naming_one_part_twice_is_refused(tmp_path, order):
     """A ZIP holding two members of the identical name is malformed OPC --
