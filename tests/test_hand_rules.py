@@ -574,6 +574,49 @@ def _flat_classification_without_english(env):
     return "HD-D4"
 
 
+def test_an_element_of_the_wrong_kind_is_not_walked_as_the_kind_it_wears(tmp_path):
+    """The walk counts an element that wears a row's identity whatever its
+    kind -- the count and the kind are the generated rules' findings --
+    and hands the hand rules only the ones of the row's kind. A Property
+    wearing a PreviewFile's identity is a kind defect HD-E34 names; it is
+    not a file for HD-D7 to look up. Handed on, HD-D7 read the Property's
+    string as a part name and reported the archive missing a file nobody
+    declared as one. Measured before this was written: with every matched
+    element handed on, the whole suite still passed -- no fixture put
+    another kind where a File belongs."""
+    env = copy.deepcopy(hd_env())
+    _document_version(env)["value"].append({
+        "idShort": "PreviewFile", "modelType": "Property", "valueType": "xs:string",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
+                                 "value": "0173-1#02-ABK127#002"}]},
+        "value": "/aasx/files/missing.jpg"})
+    packed = build_aasx(tmp_path / "p.aasx", payload=json.dumps(env).encode("utf-8"),
+                        files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+    ids = {f.id for f in runner.run(packed).findings}
+    assert "HD-E34" in ids, "the generated kind rule no longer names the Property"
+    assert "HD-D7" not in ids, "HD-D7 looked up a Property's string as a part name"
+
+
+def test_a_property_row_filled_by_another_kind_reads_as_absent(tmp_path):
+    """`property_value` answers with a string or with nothing. A child that
+    wears a Property's identity and is another kind -- a
+    MultiLanguageProperty where `ClassificationSystem` belongs -- has a
+    list for a value, and the hand rules strip what they are handed: given
+    the list, they crash on a file whose defect HD-E12 names exactly.
+    Measured before this was written: with the string check gone, the
+    whole suite still passed -- no fixture put another kind where a
+    Property belongs. The refusal in conftest is what turns such a crash
+    into a failure here."""
+    env = copy.deepcopy(hd_env())
+    for child in _classification(env)["value"]:
+        if child.get("idShort") == "ClassificationSystem":
+            child["modelType"] = "MultiLanguageProperty"
+            child["value"] = [{"language": "en", "text": "VDI2770:2018"}]
+            child.pop("valueType", None)
+    assert "HD-E12" in _findings(tmp_path, env)
+
+
 @pytest.mark.parametrize("bend", (_flat_ids_without_a_primary,
                                   _flat_ids_repeated_by_a_second_document,
                                   _flat_classification_without_english),

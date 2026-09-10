@@ -390,10 +390,12 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         if matched:
             claimed_by[row["id"]] = True
 
-        # Only kind-matching elements are navigable, so only they go into
-        # `instances`: a Property wearing a collection's id is a kind
-        # violation (reported below), not something the hand rules should
-        # try to walk into and crash on.
+        # Only kind-matching elements go into `instances`: a Property
+        # wearing a File's id is a kind violation (reported below), not a
+        # file. The child lookups already tolerate the wrong kind, so what
+        # this stops is not a crash but a misreading -- handed on, HD-D7
+        # looked the Property's string up as a part name and reported the
+        # archive missing a file nobody declared.
         result["instances"].setdefault(row["id"], []).extend(
             (_subject(path, element, index), element)
             for index, element in matched if type(element).__name__ == row["kind"])
