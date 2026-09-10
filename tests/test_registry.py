@@ -641,6 +641,12 @@ SHIPPED_REMEDIES = {
     "runner/a-rule-that-crashed":
         "This is a defect in the validator, not in your file; please "
         "report it.",
+    "runner/a-rule-that-ran-out-of-resources":
+        "This reader ran out of the memory or stack a rule's walk of this "
+        "document needed. The input is within the size bound, but building "
+        "and checking a document costs a multiple of the bytes it holds -- "
+        "so this is a limit of the machine it ran on, not a defect in your "
+        "file or in this tool. Nothing here is a verdict on the document.",
     "runner/the-metamodel-channel":
         "Fix the constraint aas-core3.0 names; these are IDTA 01001 "
         "metamodel rules, upstream of any template.",
@@ -771,6 +777,7 @@ def _sentences_violations_carry() -> dict:
     for form in NON_CONTAINER_FORMS:
         built["X5/%s" % form] = container_rules._bounds_remedy(form)
     built["runner/a-rule-that-crashed"] = runner.CRASH_REMEDY
+    built["runner/a-rule-that-ran-out-of-resources"] = runner.RESOURCE_REMEDY
     built["runner/the-metamodel-channel"] = runner.META_REMEDY
     # The comment above this constant in `runner.py` says both sentences
     # beside it were unpinned and that rewriting one to blame the author

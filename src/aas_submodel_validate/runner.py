@@ -57,6 +57,21 @@ RELAY_STOPPED = ("The metamodel channel stopped, so this report does not "
 
 CRASH_REMEDY = ("This is a defect in the validator, not in your file; "
                 "please report it.")
+#: What running out of memory or stack while a rule walks the document
+#: gets, instead of `CRASH_REMEDY`. `CRASH_REMEDY` says the validator has a
+#: bug to report, and that is true of a rule that raised on unexpected data
+#: and false here: the input is within the size bound, but building and
+#: checking a document costs a multiple of the bytes it holds (SECURITY.md
+#: says the bound does not cover that), so running out is the machine's
+#: limit, not a defect in the file or one to file against this tool. Told
+#: to report it, an author files a bug about their own large-but-legal
+#: document.
+RESOURCE_REMEDY = ("This reader ran out of the memory or stack a rule's walk "
+                   "of this document needed. The input is within the size "
+                   "bound, but building and checking a document costs a "
+                   "multiple of the bytes it holds -- so this is a limit of "
+                   "the machine it ran on, not a defect in your file or in "
+                   "this tool. Nothing here is a verdict on the document.")
 META_REMEDY = ("Fix the constraint aas-core3.0 names; these are IDTA 01001 "
                "metamodel rules, upstream of any template.")
 
@@ -67,6 +82,16 @@ def execute(rules_to_run, ctx) -> List[Finding]:
     for rule in rules_to_run:
         try:
             findings.extend(Finding(rule, violation) for violation in rule.fn(ctx))
+        except (MemoryError, RecursionError) as exc:
+            # Running out of memory or stack is not a rule with a bug; it is
+            # the machine's limit, met on a document within the size bound
+            # whose parse and checks cost a multiple of it. `CRASH_REMEDY`
+            # would send the author to file a bug about their own file.
+            findings.append(Finding(rule, Violation(
+                COULD_NOT_RUN,
+                detail="%s: %s" % (type(exc).__name__, exc),
+                fix=RESOURCE_REMEDY,
+                severity=Severity.ERROR)))
         except Exception as exc:  # noqa: BLE001 - the isolation is the point
             # At `error`, whatever the rule asks for. For the 23
             # registered rules below MUST this arrived as a warning or

@@ -8,7 +8,7 @@ from aas_submodel_validate.model import (
     Severity,
     Violation,
 )
-from aas_submodel_validate.runner import COULD_NOT_RUN, execute
+from aas_submodel_validate.runner import COULD_NOT_RUN, CRASH_REMEDY, RESOURCE_REMEDY, execute
 
 
 def _rule(rule_id, fn):
@@ -32,6 +32,28 @@ def test_a_rule_that_raises_becomes_a_finding_not_a_crash():
     # collector filters on this string, and a near-match there
     # silently counts a crash as the rule working.
     assert crash.violation.message == COULD_NOT_RUN
+
+
+@pytest.mark.parametrize("exc", [MemoryError("no memory"), RecursionError("too deep")],
+                         ids=["memory", "stack"])
+def test_a_rule_that_runs_out_of_memory_or_stack_is_not_called_a_validator_defect(exc):
+    """A rule that raises is reported, and its remedy is `CRASH_REMEDY`:
+    a defect in the validator, please report it. That is true of a `KeyError`
+    and false of `MemoryError` -- the input is within the size bound, but a
+    parse and its checks cost a multiple of the bytes, so running out is the
+    machine's limit, not a bug to file. Told to report it, an author files a
+    bug about their own large-but-legal document."""
+    def hungry(ctx):
+        raise exc
+        yield  # pragma: no cover - makes it a generator like a real rule
+
+    (finding,) = execute([_rule("A", hungry)], ctx=None)
+    assert finding.severity is Severity.ERROR
+    assert finding.violation.message == COULD_NOT_RUN
+    assert type(exc).__name__ in (finding.violation.detail or "")
+    assert finding.fix == RESOURCE_REMEDY
+    assert finding.fix != CRASH_REMEDY
+    assert "defect in the validator" not in finding.fix
 
 
 @pytest.mark.parametrize("prio", sorted(set(PRIO_SEVERITY) - {"MUST"}))

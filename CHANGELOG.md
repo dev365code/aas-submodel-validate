@@ -57,6 +57,15 @@ conversion catches all three now, and a relationships part, which is
 handed to the parser as bytes and so met them a step later, reports that
 it does not parse.
 
+**A rule that runs out of memory is not called a defect in the
+validator.** A rule that raises is reported as `could not run` with the
+advice that it is a bug in this tool to report -- true of a rule that
+tripped on unexpected data, false of one that ran out of memory or stack
+walking a document within the size bound, whose parse and checks cost a
+multiple of the bytes. Told to report it, an author files a bug about
+their own large-but-legal file. Running out of memory or stack now says
+it is a limit of the machine, not a defect in the file or the tool.
+
 **An environment read beside a broken part is a verdict, not "could not
 run".** `verdict` "Judged" was "a submodel this tool has a table for came
 out", so an environment holding a shell and no such submodel, beside a
