@@ -383,6 +383,7 @@ def test_the_near_miss_bound_cannot_be_widened_past_what_it_can_measure():
     repaired because repairing it changes what a published diagnostic
     says, and no template has asked yet -- but it is pinned, because the
     distance is four characters and a new template is one file.
+    Recorded as docs/divergences.md #43.
     """
     from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
     from aas_submodel_validate.semantics import edit_distance
