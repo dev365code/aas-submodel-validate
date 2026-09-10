@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.1.5 — unreleased
+## 0.1.5 — 2026-09-11
+
+Who should take this release: anyone validating AASX containers from
+sources they do not control on 0.1.3 or 0.1.4.
 
 A security patch on 0.1.4. 126 rules, 86 generated from the vendored
 template files; no rule is added or removed.
