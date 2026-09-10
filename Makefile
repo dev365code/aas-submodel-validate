@@ -6,7 +6,7 @@ RUFF_VERSION := 0.16.3
 PYTHON       ?= python3
 export PYTHONPATH := $(CURDIR)/src:$(CURDIR)/tests
 
-.PHONY: help check ci-axes test lint fix dev generated vendored exercised
+.PHONY: help check ci-axes test lint fix dev generated vendored exercised mutants
 
 help:
 	@echo "make check   everything CI runs: lint, gates, the test suite"
@@ -27,6 +27,13 @@ check: lint generated vendored battery-data test exercised
 # edit. Run it before a push.
 ci-axes:
 	sh tools/ci_axes.sh
+
+# Each gate in this repository says it stops some mistake; this applies a
+# mutation that makes the mistake and checks a test fails. Not folded
+# into `check` -- it runs the suite once per gate, which is too slow for
+# every edit. `tools/mutation_table.py` (no --run) lists what it checks.
+mutants:
+	$(PYTHON) tools/mutation_table.py --run
 
 generated:
 	$(PYTHON) tools/extract_smt_rules.py --check

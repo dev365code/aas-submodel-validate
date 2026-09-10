@@ -803,6 +803,7 @@ NOT_OURS = {
     "--find-links": "pip, in the offline install route",
     "--fix": "named in order to say this tool does not have it",
     "-m": "python, in `python3 -m pip` and `python3 -m aas_submodel_validate`",
+    "--run": "tools/mutation_table.py, in the mutation-table line",
 }
 
 

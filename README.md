@@ -480,7 +480,10 @@ generated file is written by a generator that travels in the source
 distribution beside it, the vendored official material carries the
 hashes it was verified against, and the test suite ships too — so a fork
 inherits a tree that can rebuild and re-check itself rather than a pile
-of output nobody can regenerate. That is the most one maintainer can
+of output nobody can regenerate. Those tests are checked against their
+own mutations: `python3 tools/mutation_table.py` lists each gate and the
+mistake it catches, and `--run` applies each mistake and confirms a test
+fails. That is the most one maintainer can
 honestly offer, and it is worth more than a promise about response
 times, which is why there is no promise about response times.
 
