@@ -2,12 +2,19 @@
 
 ## 0.2.0 — unreleased
 
+Who should take this release: anyone running an offline gate on AASX
+containers or AAS documents from suppliers, who reads the exit code or
+`complete` to decide a build. It turns crashes and silent passes on
+malformed or hostile input into findings, so some inputs that exited 0 or
+2 before now exit 1, and one that crashed now exits 2. If you only
+validate files you produce yourself, 0.1.x is fine; the security fix in
+it also ships as 0.1.5, a patch on 0.1.4 alone.
+
 126 rules, 86 generated from the vendored template files. No rule is
 added or removed. This is a minor release because it moves verdicts and
 exit codes on inputs the corpus does not hold -- refusals that were
 crashes or silent passes become findings. Paragraphs that move a verdict
-are marked **`verdict`**. The security fix below also ships as 0.1.5, a
-patch on 0.1.4 alone.
+are marked **`verdict`**.
 
 **Security: a DTD refused at any smaller size could be processed in an
 oversized UTF-16 relationships part.** `verdict` A relationships part
