@@ -223,8 +223,51 @@ def test_a_declaration_behind_a_lookalike_is_still_found(raw):
     still landed on the declaration -- including one that stepped
     *backwards* from the close and found the lookalike tag instead. With
     a `<` inside, resuming anywhere but past the close reads the inside
-    as the prolog and calls the document clean."""
-    assert container.declares_doctype(raw)
+    as the prolog and calls the document clean.
+
+    Asked in a child process with a time limit, because one way of
+    resuming short of the close does not answer wrongly -- it does not
+    answer. Two bytes before `?>` instead of two after it lands the
+    `<?pi <?>` fixture back on the `<?` it just left, for ever. In
+    process that is not a red test but a suite that never finishes, and
+    CI sets no job time limit, so nothing would go red for hours."""
+    assert _declares_doctype_within(raw)
+
+
+def _declares_doctype_within(raw: bytes, seconds: int = 60) -> bool:
+    """`container.declares_doctype(raw)`, answered by a child that is
+    killed if it has not answered in `seconds`."""
+    import subprocess
+    import sys
+
+    src = str(pathlib.Path(container.__file__).resolve().parents[1])
+    code = ("import sys; sys.path.insert(0, %r); "
+            "from aas_submodel_validate.container import declares_doctype; "
+            "print(declares_doctype(sys.stdin.buffer.read()))" % src)
+    try:
+        done = subprocess.run([sys.executable, "-c", code], input=raw,
+                              capture_output=True, timeout=seconds)
+    except subprocess.TimeoutExpired:
+        pytest.fail("declares_doctype gave no answer for %r within %ds" % (raw, seconds))
+    assert done.returncode == 0, done.stderr.decode("utf-8", "replace")
+    return done.stdout.strip() == b"True"
+
+
+def test_a_document_quoted_after_the_root_is_not_its_prolog():
+    """The root element ends the prolog, and the walk stops there.
+
+    `declares_doctype` promises that a document may *mention* a DTD --
+    in CDATA, in the text of a page about XML -- and a page about XML
+    quotes whole documents, declaration and DTD included. A walk that
+    went on past the root treating markup as a processing instruction
+    jumps to the quoted declaration's `?>` and lands on the quoted
+    `<!DOCTYPE`, refusing a conformant file for what it talks about.
+    Measured before this was written: with the walk treating every
+    markup it meets as a processing instruction, the whole suite still
+    passed -- no fixture had a `?>` between its root and a mention."""
+    raw = (b'<r><![CDATA[<?xml version="1.0"?>'
+           b'<!DOCTYPE note SYSTEM "note.dtd"><note/>]]></r>')
+    assert not container.declares_doctype(raw)
 
 
 def test_a_four_byte_utf16_document_is_still_recognised(tmp_path):
