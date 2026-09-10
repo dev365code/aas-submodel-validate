@@ -603,6 +603,24 @@ def test_a_name_differing_only_in_ascii_case_names_the_same_part(tmp_path):
         assert package.part("/aasx/files/manual.pdf") == entry
 
 
+def test_an_archive_holding_a_directory_entry_still_answers_for_a_missing_part(tmp_path):
+    """A ZIP tool may write directory entries -- `aasx/files/` -- and no
+    part name is spelled like one, so such an entry has no canonical
+    reading. Asked about a part the archive does not hold, the lookup
+    reaches the case-folded index last of all, and building that index
+    has to pass the directory entry by: folding its missing reading
+    raises, and X4 asks exactly this question about every declared file
+    the archive lacks. Measured before this was written: with the entry
+    folded anyway, the whole suite still passed -- no archive in it held
+    a directory entry.
+    """
+    path = build_aasx(tmp_path / "d.aasx", files=[("aasx/files/", b""),
+                                                  ("aasx/files/manual.pdf", b"%PDF-1.4 ")],
+                      suppl_targets=["aasx/files/manual.pdf"])
+    with AasxPackage(path) as package:
+        assert package.part("/aasx/files/missing.pdf") is None
+
+
 def test_the_case_folding_is_ascii_and_stops_there(tmp_path):
     """The clause says ASCII, and names the two code point ranges. It
     does not say Unicode: the same subclause puts NFC/NFD collisions
