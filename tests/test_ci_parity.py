@@ -1047,14 +1047,21 @@ def test_pypi_gets_the_two_files_that_belong_to_this_project(tmp_path):
 def _jobs(path):
     """Each job in a workflow, as name -> its block."""
     text = path.read_text(encoding="utf-8")
-    body = text.split("\njobs:\n", 1)[1]
+    body = re.split(r"(?m)^jobs:[ \t]*(?:#.*)?\n", text, maxsplit=1)[1]
     # GitHub's job id: a letter or `_` first, then letters, digits, `-`
     # and `_`; quoted or not, and a comment may follow. Lower case first
     # letter only, which is all this repository wrote, let a job named
     # otherwise fold into the one above it and borrow its settings.
+    # A job line may carry a YAML anchor (`test: &base`, GitHub's own
+    # example). What it may not do here is take its settings from
+    # somewhere else -- an alias (`alt: *base`) or a flow mapping
+    # (`lint: {runs-on: ...}`) puts them where a line-by-line reader does
+    # not see them -- so such a job is kept, as its one line, and anything
+    # asked of its block fails rather than being answered by the job above.
     starts = [(m.start(), m.group(1))
               for m in re.finditer(
-                  r"""(?m)^  ["']?([A-Za-z_][\w-]*)["']?:[ \t]*(?:#.*)?$""", body)]
+                  r"""(?m)^  ["']?([A-Za-z_][\w-]*)["']?:[ \t]*"""
+                  r"""(?:&[\w-]+[ \t]*)?(?:[*{].*)?(?:#.*)?$""", body)]
     jobs = {}
     for index, (offset, name) in enumerate(starts):
         end = starts[index + 1][0] if index + 1 < len(starts) else len(body)
@@ -1080,8 +1087,10 @@ def test_every_job_has_a_time_limit():
     hours. A test that hangs instead of failing -- measured here: resuming
     the prolog walk at the wrong offset stops an in-process CLI test, and
     nothing goes red -- would hold a runner that long before anyone saw
-    it. The limit is set well past the longest measured run of each job,
-    so it can only fire on something that is not going to finish."""
+    it. Each limit is set well past the longest measured run of its job,
+    so it can only fire on something that is not going to finish -- except
+    the sign-off job's, which runs only on pull requests and had no run to
+    measure when it was set."""
     missing, found = [], {}
     for path in _workflows():
         jobs = _jobs(path)
