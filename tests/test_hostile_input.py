@@ -418,7 +418,7 @@ def test_only_the_declaration_loses_its_encoding(tmp_path):
 
 def test_a_document_converted_to_exactly_the_bound_is_kept_converted(monkeypatch):
     """Converting UTF-16 to UTF-8 can grow a document past the bound, and
-    then the bytes as they arrived are kept for the size check to refuse.
+    then it is refused for its size rather than handed on unconverted.
     "Past" means more than, as everywhere this reader states a bound:
     converted to exactly the bound, the document is read converted. No
     fixture sat on that edge, so `>=` passed as well as `>`."""
@@ -428,7 +428,8 @@ def test_a_document_converted_to_exactly_the_bound_is_kept_converted(monkeypatch
     monkeypatch.setattr(container, "MAX_PART_BYTES", len(converted))
     assert container.xml_as_utf8(raw) == converted, "exactly at the bound"
     monkeypatch.setattr(container, "MAX_PART_BYTES", len(converted) - 1)
-    assert container.xml_as_utf8(raw) == raw, "one byte past it"
+    with pytest.raises(container.PartTooLarge):
+        container.xml_as_utf8(raw)
 
 
 def test_a_declaration_still_loses_the_encoding_it_no_longer_has(tmp_path):
@@ -801,6 +802,81 @@ def test_an_index_that_ran_out_of_memory_half_built_is_not_answered_from(tmp_pat
     findings = by_id(report)
     assert "HD-D7" not in findings, findings["HD-D7"].violation.message
     assert findings["X5"].fix == loader.limit_remedy("memory", building=True)
+
+
+#: A cap the fixtures below sit a UTF-16 document across: wider than the
+#: document is in UTF-16, narrower than it is in UTF-8. CJK is two bytes in
+#: UTF-16 and three in UTF-8, so a run of it grows across the line.
+_STRADDLE_CAP = 40000
+
+
+def _utf16_across_the_cap(inner: str) -> bytes:
+    """A UTF-16 XML document under `_STRADDLE_CAP` bytes as it is stored and
+    over it once converted to UTF-8: read, then abandoned by the conversion,
+    which is what let the parser see the bytes and their DTD."""
+    pad = "中" * 15000        # 30 KB in UTF-16, 45 KB in UTF-8
+    body = '<?xml version="1.0" encoding="UTF-16"?>%s<!--%s-->' % (inner, pad)
+    return body.encode("utf-16")
+
+
+@pytest.mark.parametrize("target", ["/aasx/files/from-the-dtd.pdf", "/aasx/files/manual.pdf"],
+                         ids=["dtd-target", "real-target"])
+def test_a_relationships_part_whose_utf8_form_is_over_the_cap_is_refused(
+        tmp_path, monkeypatch, target):
+    """A UTF-16 relationships part read as it stood, whose UTF-8 form crosses
+    the cap: the conversion was abandoned, `declares_doctype` could not see
+    `<!DOCTYPE` in UTF-16, and the parser decoded the UTF-16 and expanded the
+    DTD -- so a nested-entity DTD, refused at any smaller size, was not, and
+    the size bound it crossed was not applied either. It is refused for its
+    size now, whatever it names, and the DTD is never reached."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", _STRADDLE_CAP)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 4 * _STRADDLE_CAP)
+    rels_part = _utf16_across_the_cap(
+        '<!DOCTYPE Relationships [<!ENTITY t "%s">]>'
+        '<Relationships xmlns="%s"><Relationship Type="%s" Target="&t;" Id="R1"/>'
+        '</Relationships>' % (target, RELS_NS, SUPPL_REL))
+    assert len(rels_part) < _STRADDLE_CAP < len(rels_part.decode("utf-16").encode("utf-8")), (
+        "the fixture no longer straddles the cap")
+    path = tmp_path / "p.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", env_json("urn:x"))
+        archive.writestr("aasx/files/manual.pdf", b"%PDF-1.4")
+        archive.writestr("aasx/_rels/env.json.rels", rels_part)
+    report = runner.run(path)
+    ids = by_id(report)
+    assert "X4" not in ids, "the DTD (or an over-cap part) was read: %s" % (
+        ids.get("X4") and ids["X4"].violation.subject)
+    assert "X5" in ids, sorted(ids)
+    assert ids["X5"].violation.subject == "aasx/_rels/env.json.rels"
+    assert not report.complete
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_an_xml_document_whose_utf8_form_is_over_the_cap_is_refused(
+        tmp_path, monkeypatch, zipped):
+    """The same for a payload, where it was caught only because decoding the
+    unconverted UTF-16 as UTF-8 failed and it fell to not-UTF-8 -- an answer
+    about encoding, not size, and one that hid that a DTD in it was never
+    looked at. It is refused for its size, bare or packaged."""
+    monkeypatch.setattr(container, "MAX_PART_BYTES", _STRADDLE_CAP)
+    monkeypatch.setattr(container, "MAX_TOTAL_PART_BYTES", 4 * _STRADDLE_CAP)
+    body = _utf16_across_the_cap(
+        '<!DOCTYPE environment [<!ENTITY t "x">]>'
+        '<environment xmlns="https://admin-shell.io/aas/3/0"/>')
+    assert len(body) < _STRADDLE_CAP < len(body.decode("utf-16").encode("utf-8"))
+    path = tmp_path / ("p.aasx" if zipped else "probe.xml")
+    if zipped:
+        build_aasx(path, payload=body, payload_name="aasx/env.xml")
+    else:
+        path.write_bytes(body)
+    report = runner.run(path)
+    ids = by_id(report)
+    assert "X5" in ids, sorted(ids)
+    assert not report.complete
 
 
 def test_a_parts_relationships_are_read_once_whoever_asks(tmp_path):

@@ -124,21 +124,25 @@ def test_a_document_declaring_utf8_is_not_round_tripped():
         assert xml_as_utf8(raw) == raw, encoding
 
 
-def test_a_conversion_that_would_break_the_part_bound_is_not_made(monkeypatch):
+def test_a_conversion_that_would_break_the_part_bound_is_refused(monkeypatch):
     """The one transform here that can grow: a legacy code page is one
     byte per character and UTF-8 is up to four, so a part inside the
     bound can leave it several times the size. The bound is measured on
     the bytes that arrived, which was harmless while every conversion
     shrank or was the identity.
 
-    A document that would break it comes back unconverted, and the
-    parser answers for the bytes -- what this layer does with everything
-    else it cannot handle.
+    A document whose UTF-8 form is over the bound is refused for its
+    size. It used to come back unconverted, "for the parser to answer
+    for" -- but the parser reads UTF-16 itself, past a `declares_doctype`
+    that reads UTF-8, so a DTD refused at any smaller size was processed
+    and the bound it crossed was not applied. It is the document the
+    reader would build that is over the bound.
     """
     raw = _document("iso-8859-1", body="<root>" + "é" * 400 + "</root>")
     assert xml_as_utf8(raw) != raw, "the fixture must be one that converts"
     monkeypatch.setattr(container, "MAX_PART_BYTES", len(raw))
-    assert xml_as_utf8(raw) == raw
+    with pytest.raises(container.PartTooLarge):
+        xml_as_utf8(raw)
 
 
 @pytest.mark.parametrize("encoding", ["utf-16", "utf-16-le", "utf-16-be"])

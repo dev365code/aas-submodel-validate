@@ -439,6 +439,16 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
         except MemoryError as exc:
             _payload_error(loaded, part, exc, _out_of_room(exc, building=False))
             return
+        except PartTooLarge as exc:
+            # The document's UTF-8 form is over the bound. Its bytes on disk
+            # were under it -- UTF-16 is narrower than UTF-8 for the CJK it
+            # holds -- so `_read_bounded` and the container's own read let it
+            # by, and the size shows only once it is converted the way the
+            # parser reads it. Recorded as `_read_bounded` records a bound,
+            # with no fix of its own, so X5 gives the per-form remedy.
+            loaded.errors.append(LoadError(
+                "bounds", str(exc), subject=part or loaded.path))
+            return
         if refused:
             loaded.errors.append(LoadError(
                 "payload", "the XML declares a DOCTYPE, which is refused",

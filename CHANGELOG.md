@@ -1,10 +1,26 @@
 # Changelog
 
-## 0.1.5 — unreleased
+## 0.2.0 — unreleased
 
 126 rules, 86 generated from the vendored template files. No rule is
-added or removed so far. Paragraphs that move a verdict are marked
-**`verdict`**.
+added or removed. This is a minor release because it moves verdicts and
+exit codes on inputs the corpus does not hold -- refusals that were
+crashes or silent passes become findings. Paragraphs that move a verdict
+are marked **`verdict`**. The security fix below also ships as 0.1.5, a
+patch on 0.1.4 alone.
+
+**Security: a DTD refused at any smaller size could be processed in an
+oversized UTF-16 relationships part.** `verdict` A relationships part
+written in UTF-16 whose UTF-8 form crosses the 64 MiB bound was read as
+it stood: the conversion to UTF-8 was abandoned for its size and the
+bytes handed on, past the DTD check, which reads UTF-8, to a parser that
+decodes UTF-16 itself and expands the DTD -- so a nested-entity DTD, a
+decompression-free way to exhaust a reader, was processed, and the size
+bound it crossed was not applied. Such a document is refused for its
+size now, whether it is a relationships part or a payload, bare or
+packaged, and the same is true of any XML whose UTF-8 form is over the
+bound. Present in 0.1.3 and 0.1.4; the payload path was already refused,
+by a message about encoding rather than size.
 
 **A correction to 0.1.4 first.** Its paragraph on a `File` value that
 differs from the archive entry only in ASCII case should have carried
