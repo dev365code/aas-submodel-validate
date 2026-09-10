@@ -104,7 +104,11 @@ def test_a_class_name_without_english_fails(tmp_path):
     for child in _classification(env)["value"]:
         if child.get("idShort") == "ClassName":
             child["value"] = [{"language": "de", "text": "Betrieb"}]
-    assert "HD-D4" in _findings(tmp_path, env)
+    found = _findings(tmp_path, env)
+    assert "HD-D4" in found
+    # The languages the ClassName does carry, which is what the reader
+    # checks against. Dropped, the line said "none" and nothing noticed.
+    assert found["HD-D4"].violation.detail == "languages present: de"
 
 
 @pytest.mark.parametrize("unreadable", ("no ClassName", "wrong kind"),
@@ -718,6 +722,17 @@ def test_a_content_type_is_matched_without_regard_to_case(tmp_path):
     env = copy.deepcopy(hd_env())
     _digital_files(env)["value"][0]["contentType"] = "Application/PDF"
     assert "HD-D10" not in _findings(tmp_path, env)
+
+
+def test_a_file_with_an_empty_content_type_is_reported_as_carrying_none(tmp_path):
+    """The detail lists the content types the version carries and says
+    `none` when there is nothing to list -- a file whose `contentType` is
+    empty. Every fixture printed a non-empty list, so the `none` could go
+    and the line would end on a bare colon."""
+    env = copy.deepcopy(hd_env())
+    _digital_files(env)["value"][0]["contentType"] = ""
+    found = _findings(tmp_path, env)
+    assert found["HD-D10"].violation.detail == "content types present: none"
 
 
 def test_a_version_with_no_files_does_not_hide_the_next_version(tmp_path):
