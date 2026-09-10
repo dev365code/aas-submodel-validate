@@ -135,6 +135,34 @@ def test_a_bare_submodel_that_cannot_be_built_says_why(tmp_path):
     assert "'id'" in error.detail, error.detail
 
 
+def test_a_refused_doctype_points_at_the_part_or_the_file(tmp_path):
+    """Where the refusal is said to be. A packaged payload is named by its
+    part and a bare file by its path -- what the parse failure beside it
+    says, and that one a test pinned. This one nothing read: naming the
+    archive for a packaged part, or nothing at all for a bare file, both
+    passed the suite."""
+    doc = (b'<?xml version="1.0"?><!DOCTYPE environment [<!ENTITY a "b">]>'
+           b'<environment xmlns="https://admin-shell.io/aas/3/0"/>')
+    packed = build_aasx(tmp_path / "p.aasx", payload=doc, payload_name="aasx/env.xml")
+    (refused,) = [e for e in load(packed).errors if "DOCTYPE" in e.message]
+    assert refused.subject == "aasx/env.xml"
+    bare = tmp_path / "env.xml"
+    bare.write_bytes(doc)
+    (refused,) = [e for e in load(bare).errors if "DOCTYPE" in e.message]
+    assert refused.subject == str(bare)
+
+
+def test_a_bare_file_that_is_not_an_environment_is_named_by_its_path(tmp_path):
+    """The parse failure's `at` for a file with no part to name. The
+    packaged case had a test; the bare one fell back on the path and
+    nothing checked that it did."""
+    bare = tmp_path / "env.xml"
+    bare.write_bytes(b"<environment>not the AAS namespace</environment>")
+    (error,) = load(bare).errors
+    assert error.message == "the document could not be read as an AAS environment"
+    assert error.subject == str(bare)
+
+
 def test_an_environment_json_is_read_from_disk_once(tmp_path, monkeypatch):
     """The JSON branch read the whole file, decided it was an environment
     rather than a bare submodel, and then read it again -- the second
