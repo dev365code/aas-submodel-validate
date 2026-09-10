@@ -657,6 +657,18 @@ SHIPPED_REMEDIES = {
         "however little the entries hold. Remove what the package "
         "does not need to carry. Nothing is wrong with what you sent; "
         "it was refused, not judged.",
+    "loader/limit-of-this-reader":
+        "This document is JSON; building it is what this reader could "
+        "not do, and the limit is the interpreter's rather than the "
+        "file's. Nothing is wrong with what you sent -- it was refused, "
+        "not judged. Where the document nests very deeply or carries a "
+        "very long number, the part that needs checking will go "
+        "through on its own.",
+    "loader/not-utf8":
+        "JSON exchanged between systems is UTF-8 (RFC 8259, 8.1), and "
+        "these bytes are not -- the line above says where decoding "
+        "stopped. Save the file as UTF-8; an editor's UTF-16 or ANSI "
+        "setting is the usual cause, and nothing else has to change.",
     "loader/relationship-doctype":
         "Remove the DTD from the named relationships part and write "
         "out whatever it declared. The chain itself is intact -- it "
@@ -709,6 +721,8 @@ def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
     built["loader/payload-doctype"] = loader.PAYLOAD_DOCTYPE_REMEDY
     built["loader/directory-bound"] = loader.directory_bound_remedy()
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY
+    built["loader/limit-of-this-reader"] = loader.LIMIT_OF_THIS_READER
+    built["loader/not-utf8"] = loader.NOT_UTF8
     for card, row in _one_row_per_cardinality().items():
         built["generated/%s..%s" % (card[0], "n" if card[1] is None else card[1])] = row["fix"]
     assert built == SHIPPED_REMEDIES

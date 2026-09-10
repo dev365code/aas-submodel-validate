@@ -130,6 +130,18 @@ LIMIT_OF_THIS_READER = (
     "that needs checking will go through on its own.")
 
 
+#: For bytes that do not decode. Not the standing advice X3 gives -- "fix
+#: the syntax its parser rejects" -- because there is no syntax to fix, and
+#: 0.1.0 already recorded that sentence as wrong for an encoding problem,
+#: one format over. Not the limit sentence either: something *is* wrong
+#: with what was sent.
+NOT_UTF8 = (
+    "JSON exchanged between systems is UTF-8 (RFC 8259, 8.1), and "
+    "these bytes are not -- the line above says where decoding "
+    "stopped. Save the file as UTF-8; an editor's UTF-16 or ANSI "
+    "setting is the usual cause, and nothing else has to change.")
+
+
 def _is_an_interpreter_limit(exc) -> bool:
     """Whether this failure is ours rather than the document's.
 
@@ -401,7 +413,8 @@ def _load_json(path: Path) -> Loaded:
             if limit else "the file is not JSON",
             subject=str(path),
             detail="%s: %s" % (type(exc).__name__, exc),
-            fix=LIMIT_OF_THIS_READER if limit else None))
+            fix=LIMIT_OF_THIS_READER if limit
+            else NOT_UTF8 if isinstance(exc, UnicodeError) else None))
         return loaded
 
     if isinstance(document, dict) and document.get("modelType") == "Submodel":

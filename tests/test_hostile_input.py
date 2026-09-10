@@ -1777,6 +1777,11 @@ def test_bytes_that_do_not_decode_are_the_files_defect_and_not_ours(tmp_path):
     assert "is not JSON" in said.violation.message, said.violation.message
     assert "UnicodeDecodeError" in (said.violation.detail or ""), said.violation.detail
     assert "not judged" not in (said.fix or ""), said.fix
+    # And the remedy is the encoding's. The first repair of this left the
+    # standing advice in place -- "fix the syntax its parser rejects" --
+    # for a file with no syntax to fix; 0.1.0 already recorded that
+    # sentence as wrong for an encoding problem, one format over.
+    assert said.fix == loader.NOT_UTF8, said.fix
 
 
 def test_the_limits_are_told_apart_by_type_and_not_by_message():
