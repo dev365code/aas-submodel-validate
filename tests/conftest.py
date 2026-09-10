@@ -105,22 +105,29 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers",
         "allow_crash: this test's subject is a rule that could not run")
+    config.addinivalue_line(
+        "markers",
+        "allow_relay_stop: this test's input may stop the relayed metamodel "
+        "channel on some interpreters")
 
 
 #: The test being run, and whether it said it expects a crash. Set by the
 #: autouse fixture below; read by the wrapper, which has no other way to
 #: know whose report it is holding.
 _ALLOWS_CRASH = False
+_ALLOWS_RELAY_STOP = False
 
 
 @pytest.fixture(autouse=True)
 def _crashes_are_not_verdicts(request):
-    global _ALLOWS_CRASH
+    global _ALLOWS_CRASH, _ALLOWS_RELAY_STOP
     _ALLOWS_CRASH = request.node.get_closest_marker("allow_crash") is not None
+    _ALLOWS_RELAY_STOP = request.node.get_closest_marker("allow_relay_stop") is not None
     try:
         yield
     finally:
         _ALLOWS_CRASH = False
+        _ALLOWS_RELAY_STOP = False
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -131,17 +138,22 @@ def _observe_which_rules_fire():
     def wrapped(path, **kwargs):
         report = original(path, **kwargs)
         # A stop in the relayed metamodel channel is not one of this
-        # project's rules crashing, and `runner` models it as its own
-        # thing: same message, but `RELAY_STOPPED` for a remedy, which
-        # says a channel went quiet rather than that this validator is
-        # defective. It is an expected outcome on inputs aas-core3.0
-        # cannot process -- a year with more digits than CPython will
-        # convert, a nesting depth past the interpreter's stack -- so
-        # whether it happens is a property of the platform, not of the
-        # file. Measured the hard way: this check went in without the
-        # exclusion, `make check` was green here, and nine CI jobs went
-        # red on `META could not run` because their stack gives out
-        # where this machine's does not.
+        # project's rules crashing: `runner` gives it the same message and
+        # `RELAY_STOPPED` for a remedy, because a channel going quiet need
+        # not mean this validator is defective. Nor is it a verdict. It
+        # arrives as an error under `META`, so a test asking whether the
+        # metamodel spoke is answered by a channel that said nothing --
+        # which is what setting stops aside wholesale allowed. So a stop
+        # is refused like a crash, and a test whose input may cause one
+        # says so with `allow_relay_stop`.
+        #
+        # Whether it happens is a property of the interpreter: the CI jobs
+        # that went red on `META could not run` were running the 4,301-digit
+        # year, which CPython refuses to convert from 3.9.14 on and the
+        # 3.9.6 here converts.
+        stopped = [finding for finding in report.findings
+                   if finding.violation.message == runner.COULD_NOT_RUN
+                   and finding.fix == runner.RELAY_STOPPED]
         crashed = sorted(finding.id for finding in report.findings
                          if finding.violation.message == runner.COULD_NOT_RUN
                          and finding.fix != runner.RELAY_STOPPED)
@@ -151,6 +163,16 @@ def _observe_which_rules_fire():
             "its own severity, with the subject it was reading. If that is "
             "what this test is about, mark it `allow_crash` and assert on "
             "the message." % ", ".join(crashed))
+        assert _ALLOWS_RELAY_STOP or not stopped, (
+            "the metamodel channel stopped (%s), and this test would "
+            "otherwise have read that as a verdict: the stop is reported as "
+            "an error under META. If this test's input may stop it, mark it "
+            "`allow_relay_stop`." % stopped[0].violation.detail)
+        # And a crash has no business in the notes: a note is something
+        # the reader was told they need not act on.
+        demoted = [note for note in report.notes if runner.COULD_NOT_RUN in note]
+        assert _ALLOWS_CRASH or not demoted, (
+            "a rule that could not run was reported as a note: %s" % demoted)
         # A rule that raised is reported under its own id, so counting it
         # here would let `make exercised` -- whose whole job is to find
         # rules that never run -- pass on a rule that only ever crashes.

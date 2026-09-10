@@ -88,6 +88,7 @@ def test_the_refusal_survives_a_rule_that_only_breaks_sometimes(
         runner.run(_write(tmp_path, env))
 
 
+@pytest.mark.allow_relay_stop
 def test_the_relayed_channel_stopping_is_not_one_of_our_rules_crashing(
         tmp_path, monkeypatch):
     """The distinction this check got wrong on its first push.
@@ -99,11 +100,11 @@ def test_the_relayed_channel_stopping_is_not_one_of_our_rules_crashing(
     a year past CPython's digit limit for `int()` or a nesting depth past
     the interpreter's stack.
 
-    So whether it happens is a property of the machine. `make check` was
-    green here and nine CI jobs went red on `META could not run`, because
-    their stack gives out where this one's does not. Keying the refusal
-    on the message alone made a platform difference look like a broken
-    rule.
+    So whether it happens is a property of the interpreter. `make check`
+    was green here and nine CI jobs went red on `META could not run`: they
+    ran the 4,301-digit year, which CPython refuses to convert from 3.9.14
+    on and the 3.9.6 here converts. Keying the refusal on the message
+    alone made a platform difference look like a broken rule.
 
     Forced here rather than waited for, so that the difference is a test
     on every machine instead of a surprise on some of them.
@@ -122,6 +123,22 @@ def test_the_relayed_channel_stopping_is_not_one_of_our_rules_crashing(
     assert stopped[0].fix == runner.RELAY_STOPPED, (
         "a relayed stop now carries the crash remedy, and the refusal in "
         "conftest tells the two apart by exactly that")
+
+
+def test_a_stopped_relay_cannot_be_read_as_a_verdict(tmp_path, monkeypatch):
+    """A stop in the relayed channel is not one of this project's rules
+    crashing -- and it is not a verdict either. It arrives as an error
+    under `META`, so `"META" in ids` is satisfied by a channel that said
+    nothing. The first version of this refusal set stops aside
+    wholesale, and a test asking whether the metamodel had spoken could
+    no longer tell. Only a test that says its input may stop the channel
+    gets to hold one."""
+    def stop(target):
+        raise RecursionError("injected by %s" % __name__)
+
+    monkeypatch.setattr(runner.verification, "verify", stop)
+    with pytest.raises(AssertionError, match="metamodel channel stopped"):
+        runner.run(_write(tmp_path, hd_env()))
 
 
 @pytest.mark.allow_crash

@@ -1335,6 +1335,7 @@ def test_a_name_that_is_not_utf8_is_refused_and_not_judged(tmp_path):
         "could-not-run; leaving by 1 says a verdict was reached")
 
 
+@pytest.mark.allow_relay_stop
 def test_a_year_too_long_to_convert_is_a_finding_and_not_a_crash(tmp_path):
     """A date whose year runs to 4,301 digits.
 
