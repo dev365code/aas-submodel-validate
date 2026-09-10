@@ -28,6 +28,30 @@ that end halfway through a character are told the file looks cut short,
 or, inside a package, that the package needs rebuilding from a complete
 document. No exit code moves.
 
+**XML gets the same answer.** A document nested deeper than this
+interpreter's stack follows was told to fix the syntax its parser rejects
+when it was XML, bare or packaged: the answer above was given to JSON
+only. XML is built as it is read, so it is now told that the reader
+stopped before the end, and why. No exit code moves.
+
+**A refusal no longer vouches for what it refused.** Five said that
+nothing was wrong with what was sent, or with its syntax, or that a
+relationships part names the parts it should -- the size and directory
+bounds, running out of memory reading a path, and a DTD in a payload or
+in a relationships part. None of that is known of something this reader
+did not read, and the last was false of a relationships part that names
+nothing at all. Each now gives its reason and then says that
+nothing here is a verdict on the document. No exit code moves.
+
+**A package that runs this reader out of memory is refused rather than
+crashing it.** Indexing the archive, decompressing a part and parsing a
+relationships part each let the error out as a traceback, and the
+process left by 1, the code for a verdict with findings. Each is now an
+`X5` finding saying that the reader stopped and why. The run leaves by
+2, the code a bare file that ran out of memory already left by -- or by
+1 where the stop was in a payload's own relationships part and the
+payload beside it was read and judged.
+
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
 directory of names at 16 MiB.

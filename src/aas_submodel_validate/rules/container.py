@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from .. import container
 from ..container import MAX_PART_BYTES, MAX_TOTAL_PART_BYTES, has_scheme
+from ..loader import REFUSED_NOT_JUDGED
 from ..model import Violation
 from ..registry import rule
 
@@ -26,7 +27,6 @@ from ..registry import rule
 _DIVIDES = ("An environment divides along its submodels, so fewer of them per "
             "file is the way through; one holding a single submodel does not "
             "divide, and a file that large cannot be checked here.")
-_NOT_YOUR_FAULT = "Nothing is wrong with what you sent; it was refused, not judged."
 
 
 def _bounds_remedy(form: str):
@@ -40,7 +40,7 @@ def _bounds_remedy(form: str):
     if form == "aasx":
         return None
     return "This reader takes in no single document over %d MiB. %s %s" % (
-        container.MAX_PART_BYTES // 1024 ** 2, _DIVIDES, _NOT_YOUR_FAULT)
+        container.MAX_PART_BYTES // 1024 ** 2, _DIVIDES, REFUSED_NOT_JUDGED)
 
 
 @rule("X1", kind="container", prio="MUST",
@@ -63,9 +63,10 @@ def x1_is_a_zip(ctx):
           "automatically; hand-built ZIPs almost never do.")
 def x2_chain_resolves(ctx):
     """A chain that goes nowhere is repaired by fixing the relationships.
-    A relationships part this reader refused is not: the chain names what
-    it should, and the decision was this tool's -- so it brings its own
-    remedy rather than being told to repair what is not broken."""
+    A relationships part this reader refused is not: the decision was this
+    tool's, and what the part names is not known until it is read -- so it
+    brings its own remedy rather than being told to repair what nobody has
+    seen broken."""
     for error in ctx.loaded.errors:
         if error.stage == "chain":
             yield Violation(error.message, subject=error.subject,
@@ -94,11 +95,11 @@ def x3_payload_parses(ctx):
       title="the input fits in what an offline reader will take in",
       spec="this project's own bounds -- see container.py",
       fix="This reader takes in no single document over %d MiB, and no "
-          "container whose parts come to over %d MiB together. Nothing is "
-          "wrong with what you sent; it was refused, not judged. Where the "
+          "container whose parts come to over %d MiB together. %s Where the "
           "input is a container, send the part that needs checking on its "
           "own or split the container."
-          % (MAX_PART_BYTES // 1024 ** 2, MAX_TOTAL_PART_BYTES // 1024 ** 2))
+          % (MAX_PART_BYTES // 1024 ** 2, MAX_TOTAL_PART_BYTES // 1024 ** 2,
+             REFUSED_NOT_JUDGED))
 def x5_within_the_readers_bounds(ctx):
     """Not a defect in the file, which is why it is not X1.
 

@@ -510,13 +510,17 @@ class ContainerError(Exception):
 
 
 class RefusedContent(ContainerError):
-    """This reader will not read this part, and nothing about it is wrong.
+    """This reader will not read this part, and says nothing about it.
 
     A sibling of `PartTooLarge` in the one way that matters: it is this
     tool's decision, not a claim about the file, so the remedy is not a
-    repair. Kept apart from its parent because the chain is intact -- it
-    names the parts it should -- and telling an author to fix it is the
-    kind of remedy this project promised not to write.
+    repair. Kept apart from its parent because nothing says the chain is
+    broken -- what the refused part names is not known until it is read,
+    and it was not -- and telling an author to fix it is the kind of
+    remedy this project promised not to write. It used to say the chain
+    was intact, which is the same claim from the other side: a
+    relationships part that names nothing at all, behind a DTD, was told
+    it names the parts it should.
     """
 
 
@@ -539,20 +543,20 @@ class NoRelationships(ContainerError):
 class PartTooLarge(ContainerError):
     """The archive is well-formed and this reader will not read it all.
 
-    Separate from its siblings because it is not a claim about the file.
-    Nothing here is malformed; the file is simply larger than a validator
-    meant for an air-gapped machine will take in, and the remedy is the
-    author's choice of what to send, not a repair.
+    Separate from its siblings because it is not a claim about the file,
+    in either direction: the file is larger than a validator meant for an
+    air-gapped machine will take in, whatever it holds, and the remedy is
+    the author's choice of what to send, not a repair.
     """
 
 
 class DirectoryTooLarge(ContainerError):
     """The archive declares more names than this reader will index.
 
-    A sibling of PartTooLarge and for the same reason: nothing here is
-    malformed. The archive may be perfectly well-formed and its parts all
-    honest, and it is still more than a validator meant for an air-gapped
-    machine will take in before it has read a byte of payload.
+    A sibling of PartTooLarge and for the same reason: it is not a claim
+    about the file. The archive may be perfectly well-formed and its parts
+    all honest, and it is still more than a validator meant for an
+    air-gapped machine will take in before it has read a byte of payload.
     """
 
 
@@ -563,6 +567,20 @@ class UnreadablePart(ContainerError):
     does not reach a payload is repaired by fixing the relationships,
     while this archive's relationships may be perfect and its own
     description of a part wrong. The loader routes the two differently.
+    """
+
+
+class OutOfMemory(ContainerError):
+    """This reader ran out of memory before it had finished reading.
+
+    A limit of the machine it runs on, not a claim about the file, so
+    neither X1's remedy nor X2's -- re-create the archive, repair the
+    chain -- is true of it: the loader stages it with the bounds and says
+    what is known, that the reader stopped and why. Raised where a package
+    is indexed, where a part is decompressed and where a relationships
+    part is parsed. Each of those let `MemoryError` out as a traceback
+    and exit 1, the code for a verdict with findings, about a package
+    nobody had finished reading.
     """
 
 
@@ -615,6 +633,9 @@ class AasxPackage:
                 "the %d byte limit" % (self.path, declared, MAX_DIRECTORY_BYTES))
         try:
             self._zip = zipfile.ZipFile(self.path)
+        except MemoryError as exc:
+            raise OutOfMemory("%s: this reader ran out of memory indexing the archive"
+                              % self.path) from exc
         except UNREADABLE as exc:
             raise ContainerError("cannot open %s as a ZIP container: %s: %s"
                                  % (self.path, type(exc).__name__, exc)) from exc
@@ -762,6 +783,9 @@ class AasxPackage:
             # no input could reach.
             with self._zip.open(name) as part:
                 data = part.read(MAX_PART_BYTES)
+        except MemoryError as exc:
+            raise OutOfMemory("%s: this reader ran out of memory reading %s"
+                              % (self.path, name)) from exc
         except UNREADABLE as exc:
             raise UnreadablePart(
                 "%s: %s cannot be read: %s: %s"
@@ -838,6 +862,9 @@ class AasxPackage:
                                  % (self.path, rels))
         try:
             root = ElementTree.fromstring(raw)
+        except MemoryError as exc:
+            raise OutOfMemory("%s: this reader ran out of memory parsing %s"
+                              % (self.path, rels)) from exc
         except ElementTree.ParseError as exc:
             raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc)) from exc
         # OPC resolves a target that begins with "/" against the package

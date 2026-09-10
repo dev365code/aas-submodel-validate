@@ -514,9 +514,9 @@ REMEDIES = {
     "X5":
         "This reader takes in no single document over 64 MiB, and no "
         "container whose parts come to over 256 MiB together. Nothing "
-        "is wrong with what you sent; it was refused, not judged. Where "
-        "the input is a container, send the part that needs checking on "
-        "its own or split the container.",
+        "here is a verdict on the document -- it was refused, not "
+        "judged. Where the input is a container, send the part that "
+        "needs checking on its own or split the container.",
 }
 
 
@@ -622,22 +622,22 @@ SHIPPED_REMEDIES = {
         "environment divides along its submodels, so fewer of them "
         "per file is the way through; one holding a single submodel "
         "does not divide, and a file that large cannot be checked "
-        "here. Nothing is wrong with what you sent; it was refused, "
-        "not judged.",
+        "here. Nothing here is a verdict on the document -- it was "
+        "refused, not judged.",
     "X5/environment-xml":
         "This reader takes in no single document over 64 MiB. An "
         "environment divides along its submodels, so fewer of them "
         "per file is the way through; one holding a single submodel "
         "does not divide, and a file that large cannot be checked "
-        "here. Nothing is wrong with what you sent; it was refused, "
-        "not judged.",
+        "here. Nothing here is a verdict on the document -- it was "
+        "refused, not judged.",
     "X5/submodel-json":
         "This reader takes in no single document over 64 MiB. An "
         "environment divides along its submodels, so fewer of them "
         "per file is the way through; one holding a single submodel "
         "does not divide, and a file that large cannot be checked "
-        "here. Nothing is wrong with what you sent; it was refused, "
-        "not judged.",
+        "here. Nothing here is a verdict on the document -- it was "
+        "refused, not judged.",
     "runner/a-rule-that-crashed":
         "This is a defect in the validator, not in your file; please "
         "report it.",
@@ -648,15 +648,15 @@ SHIPPED_REMEDIES = {
         "Remove the DTD and write out whatever it declared: a "
         "nested-entity DTD is a decompression-free way to exhaust a "
         "reader, so this one refuses the declaration rather than try "
-        "to bound what it expands to. Nothing is wrong with the "
-        "syntax; it is the declaration this reader will not take in.",
+        "to bound what it expands to. Nothing here is a verdict on the "
+        "document -- it was refused, not judged.",
     "loader/directory-bound":
         "This reader indexes no archive whose directory of names "
         "comes to more than 16 MiB -- a ZIP is indexed whole before "
         "any of it is read, so the cost is paid on the names alone, "
         "however little the entries hold. Remove what the package "
-        "does not need to carry. Nothing is wrong with what you sent; "
-        "it was refused, not judged.",
+        "does not need to carry. Nothing here is a verdict on the "
+        "document -- it was refused, not judged.",
     "loader/stopped/nesting":
         "This reader stopped before the end of the document: it nests "
         "deeper than this interpreter's stack will follow. The rest "
@@ -699,11 +699,24 @@ SHIPPED_REMEDIES = {
         "setting is the usual cause, and nothing else has to change.",
     "loader/relationship-doctype":
         "Remove the DTD from the named relationships part and write "
-        "out whatever it declared. The chain itself is intact -- it "
-        "names the parts it should -- and a nested-entity DTD is a "
+        "out whatever it declared: a nested-entity DTD is a "
         "decompression-free way to exhaust a reader, so this one "
         "refuses the declaration rather than bound what it expands "
-        "to.",
+        "to. Nothing here is a verdict on the document -- it was "
+        "refused, not judged.",
+    "loader/access/PermissionError":
+        "Check that this file and every directory above it are "
+        "readable by the account running this. Nothing here is a "
+        "defect in the document -- it was not read, so it was not "
+        "judged.",
+    "loader/access/MemoryError":
+        "This reader ran out of memory before it could read the path. "
+        "Nothing here is a verdict on the document -- it was refused, "
+        "not judged.",
+    "loader/access/OSError":
+        "The operating system refused this path (OSError). Nothing "
+        "here is a defect in the document -- it was not read, so it "
+        "was not judged.",
     "generated/0..1":
         "Provide at most one 'DocumentIsPrimary' element(s) under "
         "DocumentId with semanticId 0173-1#02-ABH995#003; example "
@@ -721,8 +734,10 @@ SHIPPED_REMEDIES = {
 }
 
 
-def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
-    """The other half of the remedy census, and the half a user reads."""
+def _sentences_violations_carry() -> dict:
+    """Every sentence a violation can carry, built by the code that ships
+    it -- which is what the census below compares, and what the test after
+    it reads."""
     built = {}
     for label in D9_LABELS:
         built["HD-D9/%s" % label] = handover.dangling_remedy(label)
@@ -749,6 +764,11 @@ def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
     built["loader/payload-doctype"] = loader.PAYLOAD_DOCTYPE_REMEDY
     built["loader/directory-bound"] = loader.directory_bound_remedy()
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY
+    # Every branch, and not only the one being changed: a census taken
+    # of one answer cannot see its neighbours drift.
+    for refusal in (PermissionError(13, "Permission denied"), MemoryError(),
+                    OSError(40, "Too many levels of symbolic links")):
+        built["loader/access/%s" % type(refusal).__name__] = loader._access_remedy(refusal)
     for reason in ("nesting", "number", "memory"):
         built["loader/stopped/%s" % reason] = loader.limit_remedy(reason, building=False)
     for reason in ("nesting", "memory"):
@@ -758,7 +778,28 @@ def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
     built["loader/not-utf8"] = loader.NOT_UTF8
     for card, row in _one_row_per_cardinality().items():
         built["generated/%s..%s" % (card[0], "n" if card[1] is None else card[1])] = row["fix"]
-    assert built == SHIPPED_REMEDIES
+    return built
+
+
+def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
+    """The other half of the remedy census, and the half a user reads."""
+    assert _sentences_violations_carry() == SHIPPED_REMEDIES
+
+
+def test_no_sentence_vouches_for_what_this_reader_did_not_read():
+    """A refusal knows that it refused and why, and nothing about the
+    document it refused. Five said more -- "Nothing is wrong with what you
+    sent", "Nothing is wrong with the syntax", "The chain itself is
+    intact" -- of documents this reader had declined to read to the end,
+    and the last was measured false: a relationships part that names
+    nothing at all, behind a DTD, was told that it names the parts it
+    should. Asked of every sentence this project ships, built by the code
+    that ships it rather than read off the census, so a sixth has to get
+    past this to ship."""
+    standing = [rule.fix for rule in all_rules()]
+    for sentence in standing + list(_sentences_violations_carry().values()):
+        for vouching in ("nothing is wrong", "is intact"):
+            assert vouching not in sentence.lower(), sentence
 
 
 def test_the_article_is_right_for_a_type_the_walk_cannot_hand_it():

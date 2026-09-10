@@ -24,12 +24,22 @@ from .container import (
     ContainerError,
     DirectoryTooLarge,
     NoRelationships,
+    OutOfMemory,
     PartTooLarge,
     RefusedContent,
     UnreadablePart,
     declares_doctype,
     xml_as_utf8,
 )
+
+#: What a refusal concludes, after the sentence saying why it refused: the
+#: words the stop sentences below end on, for the refusals that are not
+#: stops. Five of them said more than a refusal knows -- "Nothing is wrong
+#: with what you sent", "Nothing is wrong with the syntax", "The chain
+#: itself is intact" -- of a document this reader had declined to read,
+#: and the last was measured false. One constant for the five, since
+#: copies of a sentence are how they came to say different things.
+REFUSED_NOT_JUDGED = "Nothing here is a verdict on the document -- it was refused, not judged."
 
 #: One sentence, two raise sites: a DTD in the package's own relationships
 #: part and a DTD in a part's. They were copies, and a copy of a sentence
@@ -46,8 +56,7 @@ PAYLOAD_DOCTYPE_REMEDY = (
     "Remove the DTD and write out whatever it declared: a nested-entity "
     "DTD is a decompression-free way to exhaust a reader, so this one "
     "refuses the declaration rather than try to bound what it expands "
-    "to. Nothing is wrong with the syntax; it is the declaration this "
-    "reader will not take in.")
+    "to. %s" % REFUSED_NOT_JUDGED)
 
 
 def directory_bound_remedy() -> str:
@@ -58,17 +67,15 @@ def directory_bound_remedy() -> str:
             "comes to more than %d MiB -- a ZIP is indexed whole before "
             "any of it is read, so the cost is paid on the names alone, "
             "however little the entries hold. Remove what the package "
-            "does not need to carry. Nothing is wrong with what you "
-            "sent; it was refused, not judged."
-            % (container.MAX_DIRECTORY_BYTES // 1024 ** 2))
+            "does not need to carry. %s"
+            % (container.MAX_DIRECTORY_BYTES // 1024 ** 2, REFUSED_NOT_JUDGED))
 
 
 RELATIONSHIP_DOCTYPE_REMEDY = (
     "Remove the DTD from the named relationships part and write out "
-    "whatever it declared. The chain itself is intact -- it names the "
-    "parts it should -- and a nested-entity DTD is a decompression-free "
+    "whatever it declared: a nested-entity DTD is a decompression-free "
     "way to exhaust a reader, so this one refuses the declaration rather "
-    "than bound what it expands to.")
+    "than bound what it expands to. %s" % REFUSED_NOT_JUDGED)
 
 class UnreadablePath(Exception):
     """Nothing could be read from the path at all: absent, or not permitted.
@@ -216,6 +223,19 @@ def _cut_short(exc) -> bool:
     return True
 
 
+def _out_of_room(exc, *, building: bool):
+    """(message, remedy) where this interpreter ran out of stack or memory,
+    or None. Its two limits, asked of either format: neither is something
+    the document's author can go and fix, whatever the document is."""
+    if isinstance(exc, RecursionError):
+        return ("this reader could not build the document",
+                limit_remedy("nesting", building=building))
+    if isinstance(exc, MemoryError):
+        return ("this reader could not build the document",
+                limit_remedy("memory", building=building))
+    return None
+
+
 def _failure(exc, *, decoding: bool, packaged: bool = False):
     """(message, remedy) for a JSON document that could not be read, or None
     where the failure is the document's and the rule's standing advice holds.
@@ -230,12 +250,9 @@ def _failure(exc, *, decoding: bool, packaged: bool = False):
     not base64 raises a `ValueError`, or a `UnicodeEncodeError` where it is
     not ASCII.
     """
-    if isinstance(exc, RecursionError):
-        return ("this reader could not build the document",
-                limit_remedy("nesting", building=not decoding))
-    if isinstance(exc, MemoryError):
-        return ("this reader could not build the document",
-                limit_remedy("memory", building=not decoding))
+    stopped = _out_of_room(exc, building=not decoding)
+    if stopped is not None:
+        return stopped
     if not decoding:
         return None
     if _is_an_interpreter_limit(exc):
@@ -259,8 +276,7 @@ def _access_remedy(exc) -> str:
                 "judged.")
     if isinstance(exc, MemoryError):
         return ("This reader ran out of memory before it could read the "
-                "path. Nothing is wrong with what you sent; it was "
-                "refused, not judged.")
+                "path. %s" % REFUSED_NOT_JUDGED)
     return ("The operating system refused this path (%s). Nothing here is "
             "a defect in the document -- it was not read, so it was not "
             "judged." % type(exc).__name__)
@@ -403,10 +419,19 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
             environment = xmlization.environment_from_str(_decode(raw))
     except Exception as exc:
         # Asked the way `_load_json` asks it of a bare file (`_failure`), so
-        # the same failure gets the same answer zipped or not. JSON only:
-        # XML declares its own encoding and has its own reader.
-        answered = (_failure(exc, decoding=decoding, packaged=part is not None)
-                    if form.endswith("json") else None)
+        # the same failure gets the same answer zipped or not.
+        #
+        # XML is asked only about this interpreter's limits. It is read and
+        # built in one pass -- aas-core3.0 builds each element as the parser
+        # reaches it -- so a stop is a stop before the end, and a syntax
+        # error past that point is never seen: 350 collections, one inside
+        # the next, were told to fix the syntax their parser rejects. No
+        # encoding branch: XML declares its own encoding, and a failure to
+        # decode it is the document's, as any other failure to parse is.
+        if form.endswith("json"):
+            answered = _failure(exc, decoding=decoding, packaged=part is not None)
+        else:
+            answered = _out_of_room(exc, building=False)
         message, fix = answered or ("the document could not be read as an AAS environment", None)
         loaded.errors.append(LoadError(
             "payload", message, subject=part or loaded.path,
@@ -534,6 +559,18 @@ def _load_json(path: Path) -> Loaded:
     return loaded
 
 
+def _ran_out(exc, subject=None) -> LoadError:
+    """A package this reader ran out of memory reading, as X5's error.
+
+    X5's because the question is X5's -- whether the input fits in what
+    this reader will take in -- and with the sentence a document it stops
+    short on gets anywhere else: that it stopped before the end, and why,
+    and nothing about the rest. One place, for the four places a package
+    is read from."""
+    return LoadError("bounds", str(exc), subject=subject,
+                     fix=limit_remedy("memory", building=False))
+
+
 def _load_aasx(path: Path) -> Loaded:
     loaded = Loaded(path=str(path), form="aasx")
     try:
@@ -545,6 +582,9 @@ def _load_aasx(path: Path) -> Loaded:
         loaded.errors.append(LoadError(
             "bounds", str(exc), subject=str(path),
             fix=directory_bound_remedy()))
+        return loaded
+    except OutOfMemory as exc:
+        loaded.errors.append(_ran_out(exc, subject=str(path)))
         return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("zip", str(exc)))
@@ -559,6 +599,9 @@ def _load_aasx(path: Path) -> Loaded:
         parts = package.spec_parts
     except PartTooLarge as exc:
         loaded.errors.append(LoadError("bounds", str(exc)))
+        return loaded
+    except OutOfMemory as exc:
+        loaded.errors.append(_ran_out(exc))
         return loaded
     except UnreadablePart as exc:
         loaded.errors.append(LoadError("zip", str(exc)))
@@ -576,6 +619,9 @@ def _load_aasx(path: Path) -> Loaded:
         except PartTooLarge as exc:
             loaded.errors.append(LoadError("bounds", str(exc), subject=part))
             continue
+        except OutOfMemory as exc:
+            loaded.errors.append(_ran_out(exc, subject=part))
+            continue
         except UnreadablePart as exc:
             loaded.errors.append(LoadError("zip", str(exc), subject=part))
             continue
@@ -591,6 +637,8 @@ def _load_aasx(path: Path) -> Loaded:
             package.relationships(part)
         except PartTooLarge as exc:
             loaded.errors.append(LoadError("bounds", str(exc), subject=part))
+        except OutOfMemory as exc:
+            loaded.errors.append(_ran_out(exc, subject=part))
         except UnreadablePart as exc:
             loaded.errors.append(LoadError("zip", str(exc), subject=part))
         except NoRelationships:

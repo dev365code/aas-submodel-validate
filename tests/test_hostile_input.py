@@ -625,6 +625,102 @@ def test_a_read_that_runs_out_of_memory_could_not_run(tmp_path):
         assert main([str(path), "-q"]) == EXIT_ERROR
 
 
+#: Where reading a package can run this reader out of memory, and how to
+#: get there without spending the memory: the archive's index, built when
+#: the package is opened; a part's bytes, as they are decompressed; and a
+#: relationships part, as it is parsed. Each walked out of the loader and
+#: the CLI as a traceback, and the process left by 1 -- the code for a
+#: verdict with findings, about a package nobody had finished reading. The
+#: bare file above has left by 2 since that was measured.
+def _opening_runs_out():
+    return mock.patch.object(zipfile, "ZipFile", side_effect=MemoryError("simulated"))
+
+
+def _a_part_runs_out():
+    real = zipfile.ZipExtFile.read
+
+    def read(self, *args, **kwargs):
+        if self.name == "aasx/env.json":
+            raise MemoryError("simulated")
+        return real(self, *args, **kwargs)
+    return mock.patch.object(zipfile.ZipExtFile, "read", read)
+
+
+def _a_relationships_part_runs_out():
+    return mock.patch.object(ElementTree, "fromstring", side_effect=MemoryError("simulated"))
+
+
+MEMORY_RUNS_OUT = {
+    "opening-the-archive": _opening_runs_out,
+    "reading-a-part": _a_part_runs_out,
+    "parsing-a-relationships-part": _a_relationships_part_runs_out,
+}
+
+
+@pytest.mark.parametrize("where", sorted(MEMORY_RUNS_OUT))
+def test_a_package_that_runs_this_reader_out_of_memory_is_refused(tmp_path, where):
+    """Refused under X5, whose question this is -- whether the input fits
+    in what this reader will take in -- and told what the reader knows:
+    that it stopped before the end, and why. Not X1 or X2, whose remedies
+    repair an archive or a chain that nobody has seen broken."""
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json("urn:x"))
+    with MEMORY_RUNS_OUT[where]():
+        report = runner.run(path)
+    findings = by_id(report)
+    assert set(findings) == {"X5"}, sorted(findings)
+    assert findings["X5"].fix == loader.limit_remedy("memory", building=False)
+    assert "ran out of memory" in findings["X5"].violation.message
+    assert not report.judged
+
+
+def test_a_payload_whose_relationships_ran_this_reader_out_of_memory_is_still_read(
+        tmp_path):
+    """The one place in a package where the stop does not end the run: the
+    payload's own relationships part, read to see which supplementary
+    files it declares. What ran out is refused, and said so; the payload
+    beside it was read, and is judged -- a run that is incomplete, not one
+    that could not run."""
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json("urn:x"),
+                      files=[("aasx/files/manual.pdf", b"%PDF-1.4")])
+    real = ElementTree.fromstring
+
+    def fromstring(text, *args, **kwargs):
+        if b"aas-suppl" in text:
+            raise MemoryError("simulated")
+        return real(text, *args, **kwargs)
+
+    with mock.patch.object(ElementTree, "fromstring", fromstring):
+        report = runner.run(path)
+    (stopped,) = [f for f in report.findings if f.id == "X5"]
+    assert stopped.fix == loader.limit_remedy("memory", building=False)
+    assert stopped.violation.subject == "aasx/env.json"
+    assert "aasx/_rels/env.json.rels" in stopped.violation.message
+    assert report.judged and not report.complete
+
+
+@pytest.mark.parametrize("where", sorted(MEMORY_RUNS_OUT))
+def test_the_security_note_holds_where_a_package_runs_this_reader_out_of_memory(
+        tmp_path, where, capsys):
+    """SECURITY.md says what becomes of hostile input and of what this
+    reader refuses to read, and a package that ran it out of memory did
+    neither: a traceback, nothing on stdout, exit 1. The sentences are read
+    off the page, so the page cannot change without this noticing, and
+    neither can what the run does."""
+    text = " ".join((pathlib.Path(__file__).resolve().parents[1]
+                     / "SECURITY.md").read_text("utf-8").split())
+    assert "parsing failures become findings, not crashes" in text
+    assert ("What it refuses to read, it does not judge, the report says so, "
+            "and the run leaves by the could-not-run exit code rather than "
+            "reporting a verdict it does not have.") in text
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json("urn:x"))
+    with MEMORY_RUNS_OUT[where]():
+        code = main([str(path), "-f", "json"])
+    document = json.loads(capsys.readouterr().out)
+    assert document["findings"], "the report did not say so"
+    assert document["summary"]["judged"] is False
+    assert code == EXIT_ERROR
+
+
 def _archive_declaring_one_part_many_times(path, part_bytes: int, declarations: int):
     body = "".join('<Relationship Type="%s" Target="/aasx/env.json" Id="R%d"/>'
                    % (SPEC_REL, i) for i in range(declarations))
@@ -712,10 +808,10 @@ def test_a_refused_dtd_is_not_reported_as_a_syntax_error(tmp_path):
 
 def test_a_refused_rels_is_not_reported_as_a_broken_chain(tmp_path):
     """Routing the refusal to the chain stage -- which is what stopped it
-    being swallowed -- handed it X2's remedy, and the chain is not broken:
-    it names the parts it should, and this reader declined to read one of
-    them. The same false imperative in a second place, made by the repair
-    for the first."""
+    being swallowed -- handed it X2's remedy, and nothing says the chain
+    is broken: this reader declined to read one of its parts, so what that
+    part names is not known. The same false imperative in a second place,
+    made by the repair for the first."""
     path = build_aasx(tmp_path / "refused.aasx", payload=env_json("urn:x"))
     with zipfile.ZipFile(path, "a") as archive:
         archive.writestr("aasx/_rels/env.json.rels", _rels_with_dtd())
@@ -1111,7 +1207,7 @@ def test_an_input_that_went_unread_says_the_verdict_is_incomplete(stage, tmp_pat
 @pytest.mark.parametrize("stage", UNREAD_STAGES)
 def test_an_input_nothing_was_learned_about_leaves_by_the_could_not_run_code(
         stage, tmp_path, monkeypatch, capsys):
-    """X5's remedy ends "Nothing is wrong with what you sent; it was
+    """X5's remedy ended "Nothing is wrong with what you sent; it was
     refused, not judged" -- and the run then exited 1, the code for
     judged and found wanting. Two sentences about one run, disagreeing,
     across the seam between a rule's prose and a return value, which is

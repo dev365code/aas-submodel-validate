@@ -260,6 +260,93 @@ def test_a_bare_submodel_too_deep_to_build_is_told_the_reader_stopped(tmp_path):
     _stopped(error, "nesting", building=True)
 
 
+def _collection_chain_xml(depth, tail=""):
+    """The same chain written as AAS XML, with `tail` after the root.
+
+    aas-core3.0 builds XML as the parser streams it -- each element as it
+    is reached -- so a document it runs out of stack on was stopped before
+    its end, and whatever comes after, a syntax error included, was never
+    looked at."""
+    opened = "".join("<submodelElementCollection><idShort>c%d</idShort><value>" % level
+                     for level in range(depth))
+    closed = "</value></submodelElementCollection>" * depth
+    leaf = "<property><idShort>leaf</idShort><valueType>xs:string</valueType></property>"
+    return ('<environment xmlns="https://admin-shell.io/aas/3/0"><submodels><submodel>'
+            "<id>urn:test:deep</id><submodelElements>%s%s%s</submodelElements>"
+            "</submodel></submodels></environment>%s" % (opened, leaf, closed, tail))
+
+
+def _xml_at(tmp_path, name, text, zipped):
+    path = tmp_path / (name + (".aasx" if zipped else ".xml"))
+    if zipped:
+        build_aasx(path, payload=text.encode("utf-8"), payload_name="aasx/env.xml")
+    else:
+        path.write_text(text, "utf-8")
+    return path
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_xml_too_deep_to_follow_is_told_the_reader_stopped(tmp_path, zipped):
+    """Three hundred and fifty collections, one inside the next, is AAS XML
+    this interpreter runs out of stack on -- and the classifier was asked
+    of JSON only, so it was told to open the document and fix the syntax
+    its parser rejects. There is no syntax to fix, and here there is a
+    syntax error, after the point the reader stopped: it is told that the
+    reader stopped and why, and nothing about the rest. The same answer
+    zipped or not."""
+    text = _collection_chain_xml(350, tail="<<< this is not XML")
+    bare = [e for e in load(_xml_at(tmp_path, "bare", text, False)).errors
+            if e.stage == "payload"]
+    (error,) = [e for e in load(_xml_at(tmp_path, "probe", text, zipped)).errors
+                if e.stage == "payload"]
+    _stopped(error, "nesting", building=False)
+    assert "RecursionError" in error.detail, error.detail
+    assert (error.message, error.fix) == (bare[0].message, bare[0].fix)
+    assert error.subject == ("aasx/env.xml" if zipped else str(tmp_path / "probe.xml"))
+
+
+def test_the_deepest_xml_this_reader_builds_is_read_and_one_more_level_is_not(tmp_path):
+    """Near the edge, found rather than assumed: how deep a document may
+    nest before the stack runs out depends on the interpreter and on how
+    deep the caller already is, so the edge is searched for here by the
+    call the reader makes. One level short of it the document is read
+    whole and nothing is refused; at it the refusal is the stack's, and
+    not a syntax error."""
+    def loaded_at(depth):
+        return load(_xml_at(tmp_path, "d%d" % depth, _collection_chain_xml(depth), False))
+
+    shallow, deep = 1, 350
+    assert loaded_at(deep).errors, "the top of the search does not stop"
+    while shallow < deep:
+        middle = (shallow + deep) // 2
+        if loaded_at(middle).errors:
+            deep = middle
+        else:
+            shallow = middle + 1
+    edge = shallow
+    # A reader that stops a hundred levels in is broken, not bounded.
+    assert edge > 100, edge
+    below = loaded_at(edge - 1)
+    assert not below.errors and [s.id for s in below.submodels] == ["urn:test:deep"]
+    (stopped,) = loaded_at(edge).errors
+    _stopped(stopped, "nesting", building=False)
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_xml_that_runs_this_reader_out_of_memory_is_told_the_reader_stopped(
+        tmp_path, monkeypatch, zipped):
+    """The interpreter's other limit, reached the same way: XML is built as
+    it is read, so running out of memory is a stop before the end, and what
+    the document holds past that point is not known."""
+    def out_of_memory(text):
+        raise MemoryError()
+
+    path = _xml_at(tmp_path, "probe", _collection_chain_xml(3), zipped)
+    monkeypatch.setattr(xmlization, "environment_from_str", out_of_memory)
+    (error,) = [e for e in load(path).errors if e.stage == "payload"]
+    _stopped(error, "memory", building=False)
+
+
 @pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
 def test_a_file_cut_short_in_a_character_is_told_it_looks_cut_short(tmp_path, zipped):
     """Bytes that end halfway through a character are a copy or download
