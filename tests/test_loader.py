@@ -106,6 +106,35 @@ def test_a_missing_path_is_the_callers_problem(tmp_path):
         load(tmp_path / "no-such-file.aasx")
 
 
+def test_a_directory_is_refused_as_not_a_file(tmp_path):
+    """Named as what it is, with the remedy for it. Without its own
+    branch a directory still fails -- opening it raises -- but under the
+    access remedy for an operating system saying no, which sends the
+    reader to check permissions on something that was never a file.
+    Measured before this was written: with the branch gone, the whole
+    suite still passed; no test handed the reader a directory."""
+    folder = tmp_path / "looks-like.json"
+    folder.mkdir()
+    with pytest.raises(UnreadablePath, match="not a file") as refused:
+        load(folder)
+    assert "directory" in refused.value.fix
+
+
+def test_a_bare_submodel_that_cannot_be_built_says_why(tmp_path):
+    """The error branch for a single Submodel -- a document that says it
+    is one and is not -- had never run: every bare Submodel in the suite
+    was a good one. Measured before this was written: with the line that
+    words its reason broken, the whole suite still passed, and a file
+    that should have been told it lacks an `id` would have stopped the
+    reader instead."""
+    path = tmp_path / "submodel.json"
+    path.write_text(json.dumps({"modelType": "Submodel"}), "utf-8")
+    (error,) = load(path).errors
+    assert error.message == "the document could not be read as a Submodel"
+    assert error.detail.startswith("DeserializationException: "), error.detail
+    assert "'id'" in error.detail, error.detail
+
+
 def test_an_environment_json_is_read_from_disk_once(tmp_path, monkeypatch):
     """The JSON branch read the whole file, decided it was an environment
     rather than a bare submodel, and then read it again -- the second
