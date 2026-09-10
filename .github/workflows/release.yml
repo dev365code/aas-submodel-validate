@@ -23,6 +23,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       # Creating the Release and attaching the assets to it. This is the
       # strongest lift in the file and the one a reader will ask about
@@ -340,6 +341,7 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: pypi
     permissions:
       id-token: write

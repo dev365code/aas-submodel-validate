@@ -1070,6 +1070,19 @@ def _granted(block):
     return dict(re.findall(r"(?m)^\s+([a-z-]+):\s*(\S+)\s*$", found.group(2)))
 
 
+def test_every_job_has_a_time_limit():
+    """A job with no `timeout-minutes` runs until GitHub's own ceiling, six
+    hours. A test that hangs instead of failing -- measured here: resuming
+    the prolog walk at the wrong offset stops an in-process CLI test, and
+    nothing goes red -- would hold a runner that long before anyone saw
+    it. The limit is set well past the longest measured run of each job,
+    so it can only fire on something that is not going to finish."""
+    missing = [(path.name, job) for path in _workflows()
+               for job, block in _jobs(path).items()
+               if not re.search(r"(?m)^    timeout-minutes: [1-9]\d*\s*$", block)]
+    assert not missing, "jobs without a time limit: %s" % missing
+
+
 def test_the_workflow_floor_is_read_and_a_job_asks_for_more_itself():
     """A token minted at the top of a file is one every job holds,
     including the ones that only read. The floor here is `contents:
