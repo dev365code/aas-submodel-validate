@@ -131,10 +131,19 @@ LIMIT_OF_THIS_READER = (
 
 
 def _is_an_interpreter_limit(exc) -> bool:
-    """Whether this failure is ours rather than the document's."""
+    """Whether this failure is ours rather than the document's.
+
+    A bare `ValueError` is one of ours: the integer-digit limit. Its two
+    subclasses that reach here are not. `JSONDecodeError` is bad syntax,
+    and `UnicodeDecodeError` -- raised a step earlier, decoding the
+    bytes -- is a file that is not UTF-8, which JSON exchanged between
+    systems has to be (RFC 8259, 8.1). Counting the second as ours told
+    its author that nothing was wrong with what they sent.
+    """
     if isinstance(exc, (RecursionError, MemoryError)):
         return True
-    return isinstance(exc, ValueError) and not isinstance(exc, json.JSONDecodeError)
+    return isinstance(exc, ValueError) and not isinstance(
+        exc, (json.JSONDecodeError, UnicodeError))
 
 
 #: What to do about an operating system saying no, by what it said.

@@ -1730,6 +1730,23 @@ def test_a_genuine_syntax_error_still_says_so(tmp_path):
     assert "fix the syntax" in (said.fix or "").lower(), said.fix
 
 
+def test_bytes_that_do_not_decode_are_the_files_defect_and_not_ours(tmp_path):
+    """JSON exchanged between systems is UTF-8 (RFC 8259, 8.1), so bytes
+    that do not decode are something wrong with the file. They were
+    reported as this interpreter's limit instead -- "Nothing is wrong
+    with what you sent" -- because `UnicodeDecodeError` is a
+    `ValueError`, and the classifier set aside only the decode error
+    `json` raises, not the one raised a step earlier by decoding the
+    bytes. Measured on the reader as it was: a `.json` file with one
+    0xFF byte in a string printed exactly that."""
+    path = tmp_path / "probe.json"
+    path.write_bytes(b'{"submodels": [], "note": "\xff"}')
+    said = by_id(runner.run(path))["X3"]
+    assert "is not JSON" in said.violation.message, said.violation.message
+    assert "UnicodeDecodeError" in (said.violation.detail or ""), said.violation.detail
+    assert "not judged" not in (said.fix or ""), said.fix
+
+
 def test_the_limits_are_told_apart_by_type_and_not_by_message():
     """Every way this interpreter refuses a well-formed document,
     including the one that cannot be reached on the Python running this.
@@ -1749,6 +1766,10 @@ def test_the_limits_are_told_apart_by_type_and_not_by_message():
     # prose and not ours to pattern-match.
     assert not _is_an_interpreter_limit(
         json.JSONDecodeError("Expecting value", "{ not json", 2))
+    # And the other decode error, raised before `json` sees a character:
+    # bytes that are not UTF-8 are the file's too.
+    assert not _is_an_interpreter_limit(
+        UnicodeDecodeError("utf-8", b"\xff", 0, 1, "invalid start byte"))
 
 
 def test_a_path_under_a_directory_we_cannot_enter_is_refused_not_crashed(tmp_path):
