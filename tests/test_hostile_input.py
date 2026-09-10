@@ -753,6 +753,56 @@ def test_a_payload_whose_relationships_ran_this_reader_out_of_memory_is_still_re
     assert report.judged and not report.complete
 
 
+def test_a_remembered_answer_does_not_keep_what_reading_it_held(tmp_path):
+    """Remembering a failure kept the exception, its traceback, and every
+    frame the traceback passed through -- the loader's own among them,
+    holding the bytes of the part it had just read. A payload with no
+    relationships part of its own is the common case, and its bytes stayed
+    alive through every rule after it: measured, a 24 MiB payload held 48
+    MiB when the metamodel channel started, where the tree before held 24.
+    What is remembered is what the failure said."""
+    import gc
+
+    payload = env_json()[:-1] + b" " * (8 * 1024 * 1024) + b"}"
+    path = build_aasx(tmp_path / "p.aasx", payload=payload)
+    tracemalloc.start()
+    try:
+        loaded = loader.load(path)
+        gc.collect()
+        held, _ = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert loaded.submodels
+    assert held < 4 * 1024 * 1024, "%.1f MiB still held after loading" % (held / 2 ** 20)
+
+
+def test_an_index_that_ran_out_of_memory_half_built_is_not_answered_from(tmp_path):
+    """Resolving a relationship's target builds the archive's lookup
+    indexes, in place, and running out of memory halfway left one half
+    built -- which the File rule then asked, and was told that a part the
+    archive holds is missing. Built whole or not at all, the rule asks
+    again and gets the truth. And the stop came after the relationships
+    part was parsed to its end, so it is not told the rest was not read."""
+    path = build_aasx(tmp_path / "hd.aasx", payload=json.dumps(hd_env()).encode(),
+                      files=[("aasx/files/Manual.pdf", b"%PDF-1.4")],
+                      suppl_targets=["aasx/files/OTHER.pdf"])
+    assert "HD-D7" not in by_id(runner.run(path))
+    real = container.ascii_folded
+    calls = []
+
+    def folded(value):
+        calls.append(value)
+        if len(calls) == 6:
+            raise MemoryError("simulated")
+        return real(value)
+
+    with mock.patch.object(container, "ascii_folded", folded):
+        report = runner.run(path)
+    findings = by_id(report)
+    assert "HD-D7" not in findings, findings["HD-D7"].violation.message
+    assert findings["X5"].fix == loader.limit_remedy("memory", building=True)
+
+
 def test_a_parts_relationships_are_read_once_whoever_asks(tmp_path):
     """The loader reads a payload's own relationships where a failure can
     be loaded as an error, and X4 reads them again to walk what they

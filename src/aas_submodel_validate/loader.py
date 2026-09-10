@@ -598,11 +598,13 @@ def _ran_out(exc, subject=None) -> LoadError:
 
     X5's because the question is X5's -- whether the input fits in what
     this reader will take in -- and with the sentence a document it stops
-    short on gets anywhere else: that it stopped before the end, and why,
-    and nothing about the rest. One place, for the four places a package
-    is read from."""
+    short on gets anywhere else: that it stopped, where, and why, and
+    nothing about the rest. One place, for the four places a package is
+    read from. Where is the stop's own to say -- a relationships part
+    parsed to its end and stopped while its targets were resolved was read,
+    and told otherwise."""
     return LoadError("bounds", str(exc), subject=subject,
-                     fix=limit_remedy("memory", building=False))
+                     fix=limit_remedy("memory", building=exc.building))
 
 
 def _load_aasx(path: Path) -> Loaded:

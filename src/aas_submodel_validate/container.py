@@ -598,7 +598,35 @@ class OutOfMemory(ContainerError):
     part is parsed. Each of those let `MemoryError` out as a traceback
     and exit 1, the code for a verdict with findings, about a package
     nobody had finished reading.
+
+    `building` says where: past the end of what it was reading -- a
+    relationships part parsed whole, its targets being resolved -- or
+    before it. The two are told different things, because "the rest was
+    not read" is false of the first.
     """
+
+    def __init__(self, message: str, *, building: bool = False):
+        super().__init__(message)
+        self.building = building
+
+
+class _Refusal:
+    """What a remembered failure said: its class, its message, and where a
+    memory stop happened -- and nothing it held."""
+
+    __slots__ = ("kind", "message", "building")
+
+    def __init__(self, kind, message: str, building: bool):
+        self.kind, self.message, self.building = kind, message, building
+
+    @classmethod
+    def of(cls, exc):
+        return cls(type(exc), str(exc), getattr(exc, "building", False))
+
+    def again(self):
+        if self.kind is OutOfMemory:
+            return OutOfMemory(self.message, building=self.building)
+        return self.kind(self.message)
 
 
 def _rels_name(source: str) -> str:
@@ -741,11 +769,16 @@ class AasxPackage:
             # value to different entries on different runs. Measured: a
             # kill on this index landed on 12 of 20 seeds and survived
             # the other 8. Write order is the only order the archive has.
-            self._canonical = {}
+            #
+            # And built whole before it is kept. Built in place, an index
+            # that ran out of memory halfway was kept half built, and a part
+            # the archive holds was then reported missing from it.
+            index = {}
             for name in self._zip.namelist():
                 key = canonical_part_name(name)
                 if key is not None:
-                    self._canonical.setdefault(key, name)
+                    index.setdefault(key, name)
+            self._canonical = index
         found = self._canonical.get(canonical)
         if found is not None:
             return found
@@ -765,11 +798,12 @@ class AasxPackage:
         # archive is already outside the standard -- and archive order is
         # the only order it has, as above.
         if self._folded is None:
-            self._folded = {}
+            index = {}
             for name in self._zip.namelist():
                 key = canonical_part_name(name)
                 if key is not None:
-                    self._folded.setdefault(ascii_folded(key), name)
+                    index.setdefault(ascii_folded(key), name)
+            self._folded = index
         return self._folded.get(ascii_folded(canonical))
 
     def read(self, name: str) -> bytes:
@@ -862,6 +896,12 @@ class AasxPackage:
         the way the parser will, looking for a DTD, parsing, resolving the
         targets -- is a stop, not a verdict on the part, so it is raised as
         one, wherever in that it happened.
+
+        A failure is remembered as what it said, and raised new each time it
+        is asked for. Remembered as itself it kept its traceback, and every
+        frame the traceback ran through: the loader's own, holding the part
+        it had just read. A payload with no relationships part of its own --
+        the common case -- kept its bytes alive through every rule after it.
         """
         if source not in self._relationships:
             try:
@@ -869,13 +909,14 @@ class AasxPackage:
             except MemoryError as exc:
                 stopped = OutOfMemory("%s: this reader ran out of memory reading %s"
                                       % (self.path, _rels_name(source)))
-                stopped.__cause__ = exc
-                self._relationships[source] = stopped
+                self._relationships[source] = _Refusal.of(stopped)
+                raise stopped from exc
             except ContainerError as exc:
-                self._relationships[source] = exc
+                self._relationships[source] = _Refusal.of(exc)
+                raise
         answer = self._relationships[source]
-        if isinstance(answer, ContainerError):
-            raise answer
+        if isinstance(answer, _Refusal):
+            raise answer.again()
         return list(answer)
 
     def _relationships_of(self, source: str) -> List[Tuple[str, str, bool]]:
@@ -925,6 +966,16 @@ class AasxPackage:
             if ran_out_of_memory(exc):
                 raise MemoryError(str(exc)) from exc        # a stop; see `relationships`
             raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc)) from exc
+        try:
+            return self._resolved(root, source)
+        except MemoryError as exc:
+            # Past the end of the part: it was parsed whole, and what did not
+            # happen is the building of what it names.
+            raise OutOfMemory("%s: this reader ran out of memory resolving what %s names"
+                              % (self.path, rels), building=True) from exc
+
+    def _resolved(self, root, source: str) -> List[Tuple[str, str, bool]]:
+        """The targets of a parsed relationships part, resolved from `source`."""
         # OPC resolves a target that begins with "/" against the package
         # root and any other target against the source part's own directory
         # (ECMA-376 Part 2). Treating every target as root-relative rejected

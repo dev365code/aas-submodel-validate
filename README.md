@@ -113,9 +113,13 @@ answer the exit code gives, reached once and printed as well as
 returned. Then how many of each severity, the file, and how many of its
 submodels were judged. Under `-W` the findings are identical and the
 verdict is not, which is the case the word is there for.
-`(not a full verdict: some of it was not judged)` is appended when
-something was refused, would not parse or could not be built — a
-different thing from a file that was read and failed.
+`(not a full verdict: some of it was not judged)` is appended whenever
+something in the input did not come out to be judged — a path that
+could not be opened, an archive or a chain of relationships that could
+not be followed, a part refused or stopped short on, a document that
+would not parse or could not be built — and the `X` findings above it
+say which. That is a different thing from a document that was judged
+and failed.
 
 
 ## What it catches
