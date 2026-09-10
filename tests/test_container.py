@@ -42,6 +42,19 @@ def test_a_missing_package_rels_names_the_missing_link(tmp_path):
         _ = package.origin
 
 
+def test_missing_relationships_of_a_part_name_that_part(tmp_path):
+    """The package's own relationships were the only set any test
+    removed, so the refusal was only ever read saying "the chain from
+    the package root goes nowhere" -- which it would also have said,
+    wrongly, for every part. A reader sent to the package root looks at
+    `_rels/.rels`, which is fine, instead of the part whose set is
+    missing."""
+    packed = build_aasx(tmp_path / "x.aasx", origin_rels=False)
+    with AasxPackage(packed) as package, pytest.raises(
+            ContainerError, match="the chain from 'aasx/aasx-origin' goes nowhere"):
+        _ = package.spec_parts
+
+
 def test_a_missing_origin_relationship_names_the_relationship(tmp_path):
     packed = build_aasx(tmp_path / "x.aasx", origin_rel=False)
     with AasxPackage(packed) as package, pytest.raises(ContainerError, match="aasx-origin"):
