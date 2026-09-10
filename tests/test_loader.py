@@ -183,7 +183,8 @@ def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path
     bare = tmp_path / "bare.json"
     bare.write_bytes(raw)
     (bare_error,) = load(bare).errors
-    expected = getattr(loader, remedy) if remedy.isupper() else loader.limit_remedy(remedy)
+    expected = (getattr(loader, remedy) if remedy.isupper()
+                else loader.limit_remedy(remedy, building=False))
     assert bare_error.fix == expected, bare_error.fix
 
     packed = build_aasx(tmp_path / "packed.aasx", payload=raw)
@@ -204,11 +205,11 @@ def _collection_chain(depth):
     return {"id": "urn:test:deep", "modelType": "Submodel", "submodelElements": [element]}
 
 
-def _stopped(error, reason):
+def _stopped(error, reason, *, building):
     from aas_submodel_validate import loader
 
     assert error.message == "this reader could not build the document", error.message
-    assert error.fix == loader.limit_remedy(reason), error.fix
+    assert error.fix == loader.limit_remedy(reason, building=building), error.fix
 
 
 @pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
@@ -223,7 +224,7 @@ def test_a_document_that_runs_out_of_stack_is_not_told_it_is_json(tmp_path, zipp
     path = tmp_path / ("p.aasx" if zipped else "bare.json")
     build_aasx(path, payload=raw) if zipped else path.write_bytes(raw)
     (error,) = [e for e in load(path).errors if e.stage == "payload"]
-    _stopped(error, "nesting")
+    _stopped(error, "nesting", building=False)
     assert "Nothing is wrong" not in error.fix and "is JSON" not in error.fix
 
 
@@ -240,7 +241,10 @@ def test_what_the_reader_did_not_reach_is_not_declared_sound(tmp_path):
     for name, text in (("after", after), ("before", before)):
         (tmp_path / (name + ".json")).write_text(text, "utf-8")
     (stopped,) = load(tmp_path / "after.json").errors
-    _stopped(stopped, "nesting")
+    # Read to the end -- `json.loads` took the whole text -- and stopped
+    # while building: saying "what comes after was not read" would be
+    # false here, where saying the document is JSON is true.
+    _stopped(stopped, "nesting", building=True)
     (reported,) = load(tmp_path / "before.json").errors
     assert reported.message == "the document could not be read as an AAS environment"
     assert "bogus" in reported.detail and reported.fix is None
@@ -253,7 +257,7 @@ def test_a_bare_submodel_too_deep_to_build_is_told_the_reader_stopped(tmp_path):
     path = tmp_path / "submodel.json"
     path.write_text(json.dumps(_collection_chain(350)), "utf-8")
     (error,) = load(path).errors
-    _stopped(error, "nesting")
+    _stopped(error, "nesting", building=True)
 
 
 @pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
@@ -261,14 +265,31 @@ def test_a_file_cut_short_in_a_character_is_told_it_looks_cut_short(tmp_path, zi
     """Bytes that end halfway through a character are a copy or download
     that stopped early, not a file saved in the wrong encoding -- telling
     its author to save it as UTF-8 sends them to change a setting that was
-    never wrong."""
+    never wrong.
+
+    Inside a package the remedy is not to send it again: an archive cut
+    short fails as an archive before any part is read, and a part that is
+    read has matched the archive's own checksum -- these are the bytes the
+    packaging tool wrote, and resending brings the same ones."""
     from aas_submodel_validate import loader
 
     raw = '{"submodels": [], "note": "\u00e4"}'.encode("utf-8")[:-3]
     path = tmp_path / ("p.aasx" if zipped else "bare.json")
     build_aasx(path, payload=raw) if zipped else path.write_bytes(raw)
     (error,) = [e for e in load(path).errors if e.stage == "payload"]
-    assert error.fix == loader.CUT_SHORT, error.fix
+    assert error.fix == (loader.CUT_SHORT_IN_A_PACKAGE if zipped else loader.CUT_SHORT), error.fix
+
+
+def test_a_byte_order_mark_does_not_move_where_decoding_is_said_to_stop(tmp_path):
+    """The UTF-8 remedy points the reader at the line that says where
+    decoding stopped, and that line counted from after the byte order mark
+    `utf-8-sig` had taken off -- three bytes short of the byte in the
+    file."""
+    raw = b"\xef\xbb\xbf" + b'{"submodels": [], "x": "\xff"}'
+    path = tmp_path / "bom.json"
+    path.write_bytes(raw)
+    (error,) = load(path).errors
+    assert "position %d:" % raw.index(b"\xff") in error.detail, error.detail
 
 
 @pytest.mark.parametrize("value", ["abc", "\u00e9"], ids=["bad-base64", "not-ascii"])

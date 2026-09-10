@@ -10,6 +10,7 @@ the caller's mistake rather than the file's, and a different exit code.
 """
 from __future__ import annotations
 
+import codecs
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -119,8 +120,8 @@ class LoadError:
 #: Told apart by type. `json.JSONDecodeError` is itself a `ValueError`
 #: and is the one failure here that really is about the document, so the
 #: test is "a ValueError that is not a decode error" -- the message is
-#: upstream prose and not ours to pattern-match. The digit limit does not
-#: exist before 3.11, which is why this is a classifier with no version
+#: upstream prose and not ours to pattern-match. The digit limit arrived in 3.11 and
+#: the 3.9.14 and 3.10.7 security releases, not before, which is why this is a classifier with no version
 #: in it rather than a fixture that can only run on some of them.
 #:
 #: What the reader is told says only what is known: that this reader
@@ -132,16 +133,26 @@ class LoadError:
 _STOPPED_BECAUSE = {
     "nesting": "it nests deeper than this interpreter's stack will follow",
     "number": "it carries a number longer than this interpreter will convert",
-    "memory": "building it needed more memory than this reader had",
+    "memory": "it needed more memory than this reader had",
 }
 
 
-def limit_remedy(reason: str) -> str:
-    """The remedy for a document this reader stopped short of the end of."""
-    return ("This reader stopped before the end of the document: %s. What "
-            "comes after that point was not read, and nothing here is a "
-            "verdict on the document -- it was refused, not judged."
-            % _STOPPED_BECAUSE[reason])
+def limit_remedy(reason: str, *, building: bool) -> str:
+    """The remedy for a document this reader stopped short on.
+
+    Two shapes, because there are two places to stop. Reading, the reader
+    has not seen the rest of the document. Building, it has read all of it
+    -- `json.loads` took the whole text -- and stopped turning it into the
+    metamodel; "what comes after was not read" is false there, and what
+    was not done is the checking."""
+    if building:
+        return ("This reader read the document to the end and stopped "
+                "building it: %s. The rest was not built or checked, and "
+                "nothing here is a verdict on the document -- it was refused, "
+                "not judged." % _STOPPED_BECAUSE[reason])
+    return ("This reader stopped before the end of the document: %s. The "
+            "rest was not read, and nothing here is a verdict on the "
+            "document -- it was refused, not judged." % _STOPPED_BECAUSE[reason])
 
 
 #: For bytes that end halfway through a character: a copy or a download
@@ -150,6 +161,16 @@ CUT_SHORT = (
     "The bytes end in the middle of a character, the way a copy or "
     "download that stopped early leaves a file. Send the whole file "
     "again; what arrived was not judged.")
+
+#: The same bytes inside a package mean something else. An archive cut
+#: short fails as an archive before any part is read, and a part that is
+#: read has matched the archive's own checksum -- so these are the bytes the
+#: packaging tool wrote, and sending the package again brings the same ones.
+CUT_SHORT_IN_A_PACKAGE = (
+    "This part ends in the middle of a character, and it matched the "
+    "archive's own checksum: these are the bytes the packaging tool "
+    "wrote, so sending the package again brings the same ones. Rebuild "
+    "the package from a complete document; what arrived was not judged.")
 
 
 #: For bytes that do not decode. Not the standing advice X3 gives -- "fix
@@ -180,7 +201,22 @@ def _is_an_interpreter_limit(exc) -> bool:
         exc, (json.JSONDecodeError, UnicodeError))
 
 
-def _failure(exc, *, decoding: bool):
+def _cut_short(exc) -> bool:
+    """Whether the bytes stop halfway through a character: the undecodable
+    stretch reaches the end of the input and is the start of a character
+    that has not finished. Asked of the bytes with the codec's own
+    incremental decoder, not of the codec's message -- the reason string is
+    upstream prose, which this module does not pattern-match."""
+    if exc.end != len(exc.object):
+        return False
+    try:
+        codecs.getincrementaldecoder("utf-8")().decode(exc.object[exc.start:], final=False)
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _failure(exc, *, decoding: bool, packaged: bool = False):
     """(message, remedy) for a JSON document that could not be read, or None
     where the failure is the document's and the rule's standing advice holds.
 
@@ -190,20 +226,24 @@ def _failure(exc, *, decoding: bool):
     running out of stack or memory is this interpreter's at either step,
     but a `ValueError` is the digit limit, and a `UnicodeDecodeError` is
     about the bytes, only while the bytes are being decoded. Raised while
-    building the environment, the same types are the document's -- a Blob
-    value that is not base64 raises one of each.
+    building the environment they are the document's: a Blob value that is
+    not base64 raises a `ValueError`, or a `UnicodeEncodeError` where it is
+    not ASCII.
     """
     if isinstance(exc, RecursionError):
-        return "this reader could not build the document", limit_remedy("nesting")
+        return ("this reader could not build the document",
+                limit_remedy("nesting", building=not decoding))
     if isinstance(exc, MemoryError):
-        return "this reader could not build the document", limit_remedy("memory")
+        return ("this reader could not build the document",
+                limit_remedy("memory", building=not decoding))
     if not decoding:
         return None
     if _is_an_interpreter_limit(exc):
-        return "this reader could not build the document", limit_remedy("number")
+        return "this reader could not build the document", limit_remedy("number", building=False)
     if isinstance(exc, UnicodeDecodeError):
-        cut = exc.reason == "unexpected end of data" and exc.end == len(exc.object)
-        return "the file is not JSON", CUT_SHORT if cut else NOT_UTF8
+        if _cut_short(exc):
+            return "the file is not JSON", CUT_SHORT_IN_A_PACKAGE if packaged else CUT_SHORT
+        return "the file is not JSON", NOT_UTF8
     return None
 
 
@@ -276,7 +316,15 @@ class Loaded:
 
 
 def _decode(raw: bytes) -> str:
-    return raw.decode("utf-8-sig")
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        # `utf-8-sig` counts from after the byte order mark it removed, and
+        # the reader is told the position to look at in the file.
+        if raw.startswith(codecs.BOM_UTF8) and len(exc.object) == len(raw) - 3:
+            raise UnicodeDecodeError(exc.encoding, raw, exc.start + 3, exc.end + 3,
+                                     exc.reason) from None
+        raise
 
 
 def _read_bounded(loaded: Loaded, path: Path):
@@ -357,7 +405,8 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
         # Asked the way `_load_json` asks it of a bare file (`_failure`), so
         # the same failure gets the same answer zipped or not. JSON only:
         # XML declares its own encoding and has its own reader.
-        answered = _failure(exc, decoding=decoding) if form.endswith("json") else None
+        answered = (_failure(exc, decoding=decoding, packaged=part is not None)
+                    if form.endswith("json") else None)
         message, fix = answered or ("the document could not be read as an AAS environment", None)
         loaded.errors.append(LoadError(
             "payload", message, subject=part or loaded.path,

@@ -659,19 +659,35 @@ SHIPPED_REMEDIES = {
         "it was refused, not judged.",
     "loader/stopped/nesting":
         "This reader stopped before the end of the document: it nests "
-        "deeper than this interpreter's stack will follow. What comes "
-        "after that point was not read, and nothing here is a verdict "
-        "on the document -- it was refused, not judged.",
+        "deeper than this interpreter's stack will follow. The rest "
+        "was not read, and nothing here is a verdict on the document -- "
+        "it was refused, not judged.",
     "loader/stopped/number":
         "This reader stopped before the end of the document: it carries "
-        "a number longer than this interpreter will convert. What comes "
-        "after that point was not read, and nothing here is a verdict "
-        "on the document -- it was refused, not judged.",
+        "a number longer than this interpreter will convert. The rest "
+        "was not read, and nothing here is a verdict on the document -- "
+        "it was refused, not judged.",
     "loader/stopped/memory":
-        "This reader stopped before the end of the document: building "
-        "it needed more memory than this reader had. What comes after "
-        "that point was not read, and nothing here is a verdict on the "
+        "This reader stopped before the end of the document: it needed "
+        "more memory than this reader had. The rest was not read, "
+        "and nothing here is a verdict on the document -- it was refused, "
+        "not judged.",
+    "loader/stopped-building/nesting":
+        "This reader read the document to the end and stopped building "
+        "it: it nests deeper than this interpreter's stack will follow. "
+        "The rest was not built or checked, and nothing here is a verdict "
+        "on the document -- it was refused, not judged.",
+    "loader/stopped-building/memory":
+        "This reader read the document to the end and stopped building "
+        "it: it needed more memory than this reader had. The rest was "
+        "not built or checked, and nothing here is a verdict on the "
         "document -- it was refused, not judged.",
+    "loader/cut-short-in-a-package":
+        "This part ends in the middle of a character, and it matched the "
+        "archive's own checksum: these are the bytes the packaging tool "
+        "wrote, so sending the package again brings the same ones. "
+        "Rebuild the package from a complete document; what arrived was "
+        "not judged.",
     "loader/cut-short":
         "The bytes end in the middle of a character, the way a copy or "
         "download that stopped early leaves a file. Send the whole file "
@@ -734,8 +750,11 @@ def test_every_sentence_a_violation_carries_is_the_one_that_was_decided():
     built["loader/directory-bound"] = loader.directory_bound_remedy()
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY
     for reason in ("nesting", "number", "memory"):
-        built["loader/stopped/%s" % reason] = loader.limit_remedy(reason)
+        built["loader/stopped/%s" % reason] = loader.limit_remedy(reason, building=False)
+    for reason in ("nesting", "memory"):
+        built["loader/stopped-building/%s" % reason] = loader.limit_remedy(reason, building=True)
     built["loader/cut-short"] = loader.CUT_SHORT
+    built["loader/cut-short-in-a-package"] = loader.CUT_SHORT_IN_A_PACKAGE
     built["loader/not-utf8"] = loader.NOT_UTF8
     for card, row in _one_row_per_cardinality().items():
         built["generated/%s..%s" % (card[0], "n" if card[1] is None else card[1])] = row["fix"]

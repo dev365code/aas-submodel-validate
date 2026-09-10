@@ -168,7 +168,7 @@ differ.
 | `message` | string | What is wrong. |
 | `subject` | string or null | Where: an idShort path, an identifier, or a part name. `null` where the finding is about the document as a whole. |
 | `detail` | string or null | Context — usually the value that was seen. |
-| `fix` | string | One imperative sentence: what to change so this stops being reported. Every finding carries one. |
+| `fix` | string | What to do about it — usually one imperative sentence: what to change so this stops being reported. Where this reader refused a document rather than judged it (past one of its bounds, past what this interpreter can build, or bytes that are cut short or not UTF-8), it says why and that nothing was judged, and asks for a change only where one is known. Every finding carries one. |
 | `title` | string | The rule's standing description, the same for every finding it produces. |
 | `spec` | string | Where the requirement lives, and always present. It is prose, not a key: a template and section for most rules; a provision of the regulation for the rules that read one, built from the row being reported rather than fixed per rule; the OPC or AASX standard for the rules about the container; the metamodel standard and its schemas for the ones about what a document must be, and the metamodel constraints for the relayed `meta` channel; a pointer to this project's own documented bounds for the limits it puts on what it will read; and, for the lints and for the rule about two templates sharing an identifier, a pointer to `docs/divergences.md` for the reading being applied. |
 

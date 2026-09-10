@@ -1748,8 +1748,9 @@ def test_a_document_this_interpreter_cannot_build_is_not_bad_syntax(tmp_path):
     assert "RecursionError" in whole, whole
     assert "is not JSON" not in said.violation.message, said.violation.message
     assert "fix the syntax" not in (said.fix or "").lower(), said.fix
-    # The shape X5 uses for the same situation one layer over: nothing is
-    # wrong with what you sent.
+    # Refused rather than judged, the shape X5 uses one layer over -- and
+    # nothing more, since nothing more is known about a document this
+    # reader did not read to the end.
     assert "not judged" in (said.fix or ""), said.fix
     assert not report.judged
 
@@ -1813,18 +1814,22 @@ def test_the_limits_are_told_apart_by_type_and_not_by_message():
 @pytest.mark.parametrize("raised, decoding, reason", [
     (RecursionError("too deep"), True, "nesting"),
     (RecursionError("too deep"), False, "nesting"),
+    (MemoryError(), True, "memory"),
     (MemoryError(), False, "memory"),
     (ValueError("Exceeds the limit (4300 digits) for integer string conversion"), True, "number"),
-], ids=["nesting-decoding", "nesting-building", "memory", "a-number-too-long"])
+], ids=["nesting-decoding", "nesting-building", "memory-decoding", "memory-building",
+        "a-number-too-long"])
 def test_every_reason_this_reader_stops_is_said_and_nothing_more(raised, decoding, reason):
     """Each reason the reader can stop short gets its own clause, and the
     sentence says only what is known: that it stopped, and why. The digit
-    limit exists from CPython 3.9.14 and 3.11 on, so the one interpreter
+    limit exists from CPython 3.11, 3.10.7 and 3.9.14 on, so the one interpreter
     that runs this suite locally cannot produce it end to end -- it is
     asked of the classifier, which has no version in it."""
     message, remedy = loader._failure(raised, decoding=decoding)
     assert message == "this reader could not build the document"
-    assert remedy == loader.limit_remedy(reason)
+    assert remedy == loader.limit_remedy(reason, building=not decoding)
+    # Read to the end only when the stop was in building.
+    assert ("stopped building" in remedy) is (not decoding), remedy
     assert "Nothing is wrong" not in remedy and "is JSON" not in remedy
     assert "not judged" in remedy
 
@@ -1838,6 +1843,17 @@ def test_what_is_the_documents_gets_the_standing_advice(raised, decoding):
     """The same types, raised by the document rather than by this
     interpreter, are not the reader's to explain away."""
     assert loader._failure(raised, decoding=decoding) is None
+
+
+def test_being_cut_short_is_read_from_the_bytes_and_not_from_the_message():
+    """Whether the bytes stop halfway through a character is a question
+    about the bytes. The first version asked the codec's own prose for it
+    ("unexpected end of data"), which this module otherwise refuses to
+    pattern-match; worded any other way, the same bytes still end
+    halfway."""
+    raw = b'{"note": "\xc3'
+    exc = UnicodeDecodeError("utf-8", raw, len(raw) - 1, len(raw), "worded some other way")
+    assert loader._failure(exc, decoding=True) == ("the file is not JSON", loader.CUT_SHORT)
 
 
 def test_bytes_that_stop_halfway_through_a_character_are_told_apart_from_the_wrong_encoding():

@@ -80,8 +80,10 @@ def x2_chain_resolves(ctx):
           "AAS XML).")
 def x3_payload_parses(ctx):
     """The standing advice is for a document that would not parse, and
-    this stage carries one more thing: a document this reader refused to
-    read, whose syntax is perfect. That one brings its own remedy."""
+    this stage carries more than that: a document this reader stopped
+    short on, bytes cut short or not UTF-8, a DTD it refuses. Whether the
+    syntax of a document it stopped short on is sound is not known, so
+    those bring their own remedy rather than this one."""
     for error in ctx.loaded.errors:
         if error.stage == "payload":
             yield Violation(error.message, subject=error.subject,

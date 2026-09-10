@@ -11,19 +11,22 @@ the **`verdict`** mark. Two changes in that release moved a verdict --
 that one and the two-category `BAT-R8` rows -- and the entry marked only
 the second.
 
-**When this reader stops before the end of a JSON document, it says so
-and nothing more.** A document nested deeper than this interpreter's
-stack follows, or carrying a number longer than it converts, was told
-"This document is JSON ... Nothing is wrong with what you sent" -- which
+**When this reader stops short on a JSON document, it says so and
+nothing more.** A document nested deeper than this interpreter's stack
+follows, or carrying a number longer than it converts, was told "This
+document is JSON ... Nothing is wrong with what you sent" -- which
 nobody knows about a document read only part of the way, and which was
 false of malformed input that ran out of stack before its syntax error.
-It is now told where the reader stopped and why, and that what comes
-after was not read or judged. The same failure gets the same answer in a
-bare file, a bare Submodel and the payload of a package, where it was
-told to fix the syntax its parser rejects. Bytes that are not UTF-8 are
-told to save the file as UTF-8 rather than that nothing was wrong, and a
-file that ends halfway through a character is told it looks cut short.
-No exit code moves.
+It is now told that the reader stopped and why, whether before the end
+of the text or after reading it, while building the document, and that
+the rest was not read or not checked. Where it was told to fix the
+syntax its parser rejects -- a bare Submodel, the payload of a package,
+a document too deep to build -- it now gets that same answer. Bytes that
+are not UTF-8 are told to save the file as UTF-8, where a bare file was
+told nothing was wrong and a package's payload to fix its syntax; bytes
+that end halfway through a character are told the file looks cut short,
+or, inside a package, that the package needs rebuilding from a complete
+document. No exit code moves.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
