@@ -50,6 +50,17 @@ conversion catches all three now, and a relationships part, which is
 handed to the parser as bytes and so met them a step later, reports that
 it does not parse.
 
+**An environment read beside a broken part is a verdict, not "could not
+run".** `verdict` "Judged" was "a submodel this tool has a table for came
+out", so an environment holding a shell and no such submodel, beside a
+relationships part that would not parse, was called `nothing judged` and
+left by 2 -- the code a gate reads as "could not run" -- though the walk
+had seen it and the metamodel channel had verified its shell. An
+environment that reached the rules is judged now: such a file leaves by 1
+(or by 0), with `(not a full verdict: some of it was not judged)` still
+marking what was refused beside it. Measured outside the corpus: the
+shape above moves from 2 to 1; no corpus input moves.
+
 **A correction to 0.1.4 first.** Its paragraph on a `File` value that
 differs from the archive entry only in ASCII case should have carried
 the **`verdict`** mark. Two changes in that release moved a verdict --

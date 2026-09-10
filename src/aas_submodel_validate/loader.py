@@ -333,19 +333,27 @@ class Loaded:
 
     @property
     def nothing_was_judged(self) -> bool:
-        """Something broke on the way in, and no submodel came out of it.
+        """Something broke on the way in, and nothing the rules read came
+        out of it.
 
         Not the same question as `errors`, which an archive with one bad
         part and two good ones also answers yes to: that run read
         something, walked it, and its findings are real. This one is
         whether the rules were handed anything at all.
 
+        An environment counts, not only a submodel this tool has a table
+        for. The walk sees every environment, and the metamodel channel
+        verifies it -- so a shell-only environment beside a broken part had
+        been read and verified, and calling it `nothing judged` sent a
+        verdict out under the code a gate reads as "could not run". A
+        submodel came out, or an environment did, and either is judged.
+
         SMT-D1 has asked it since day one -- it stays silent rather than
         pile "no submodel this tool knows" on top of the X rules -- and
         spelled it out inline. Two readers of one question, so it lives
         here and both ask it.
         """
-        return bool(self.errors) and not self.submodels
+        return bool(self.errors) and not self.submodels and not self.environments
 
 
 def _decode(raw: bytes) -> str:

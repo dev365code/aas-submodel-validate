@@ -1690,6 +1690,37 @@ def test_an_input_nothing_was_learned_about_leaves_by_the_could_not_run_code(
     assert runner.run(path).as_dict()["summary"]["judged"] is False
 
 
+def test_an_environment_read_beside_a_broken_part_is_still_a_verdict(tmp_path):
+    """Judged is about what reached the rules, and an environment reaches
+    them whether or not it holds a submodel this tool has a table for: the
+    walk sees it, and the metamodel channel verifies it. An environment
+    with a shell and no submodels, beside a relationships part that would
+    not parse, was called `nothing judged` and left by 2 -- the code a gate
+    is told means "could not run" -- while the metamodel channel had
+    verified the shell and found its idShort. Read is what was incomplete;
+    judged it was."""
+    shell_env = json.dumps({"assetAdministrationShells": [{
+        "modelType": "AssetAdministrationShell", "id": "urn:shell",
+        "idShort": "bad idShort!",
+        "assetInformation": {"assetKind": "Instance", "globalAssetId": "urn:asset"}}]})
+    path = tmp_path / "shell.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", shell_env.encode())
+        archive.writestr("aasx/_rels/env.json.rels",
+                         b'<?xml version="1.0"?><Relationships xmlns="%s"><oops></Relationships>'
+                         % RELS_NS.encode())
+    report = runner.run(path)
+    assert report.judged and not report.complete
+    ids = by_id(report)
+    assert "SMT-D1" in ids, "the environment that reached the rules drew no verdict"
+    assert any(f.id == "META" for f in report.findings), "the metamodel channel did not run"
+    assert main([str(path), "-q"]) == 1
+
+
 def test_a_part_that_went_unread_beside_one_that_did_not_is_still_a_verdict(tmp_path):
     """The other side of the same line, and the reason the rule is about
     what was judged rather than about what was read.
