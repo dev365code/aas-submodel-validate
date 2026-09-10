@@ -646,9 +646,17 @@ def test_near_miss_wording_is_deterministic(tmp_path):
              "import sys; sys.path.insert(0, %r);"
              "from aas_submodel_validate import runner;"
              "r = runner.run(%r);"
-             "print([f.violation.detail for f in r.findings if f.id=='HDL2'])"
+             "import json;"
+             "print(json.dumps([[f.violation.message, f.violation.detail]"
+             " for f in r.findings if f.id=='HDL2']))"
              % (SRC, str(path))],
             capture_output=True, text=True, env={"PYTHONHASHSEED": seed, "PATH": ""})
+        # The same answer five times is only worth something if it is an
+        # answer. A child that died, or a rule that crashed the same way
+        # under every seed, printed the same thing five times and passed.
+        assert out.returncode == 0, out.stderr
+        said = json.loads(out.stdout)
+        assert said and not [m for m, _ in said if m == runner.COULD_NOT_RUN], said
         seen.add(out.stdout)
     assert len(seen) == 1, "near-miss wording varied with PYTHONHASHSEED: %s" % seen
 
