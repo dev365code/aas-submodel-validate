@@ -153,6 +153,32 @@ def test_an_entry_whose_name_holds_a_space_stays_reachable(tmp_path):
         % reached)
 
 
+@pytest.mark.parametrize("outside", [
+    {"suppl_external": ["http://example.com/manual.pdf"]},     # TargetMode="External"
+    {"suppl_verbatim": ["http://example.com/manual.pdf"]},     # a scheme, no mode
+], ids=["declared", "undeclared"])
+def test_a_target_outside_the_package_does_not_hide_the_ones_after_it(tmp_path, outside):
+    """A target outside the package is passed back as written, and the
+    relationships after it are still read.
+
+    Measured before this was written: with that step turned into the end of
+    the loop, the whole suite still passed. Every archive the builder wrote
+    put the package's own parts first, so stopping at the first outside
+    target lost nothing a test could see. A supplier's file has no such
+    order, and then every part declared after that target goes unread --
+    X4 asks the archive about none of them, so one that is missing is never
+    reported.
+    """
+    holds = "aasx/files/manual.pdf"
+    path = build_aasx(tmp_path / "order.aasx", payload=env_json(),
+                      files=[(holds, b"%PDF-1.4 ")], outside_first=True, **outside)
+    with AasxPackage(path) as package:
+        reached = [name for _type, name, _external
+                   in package.relationships("aasx/env.json")]
+    assert reached == ["http://example.com/manual.pdf", holds], (
+        "the part declared after an outside target was not read: %s" % reached)
+
+
 def test_both_spellings_of_a_relationship_reach_the_same_parts(tmp_path):
     """Absolute and relative are two ways of writing one package, so they
     have to produce one answer."""

@@ -50,7 +50,7 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
                origin_rel: bool = True, origin_rels: bool = True,
                spec_rel: bool = True, bom: bool = False,
                files=(), suppl_targets=None, relative_targets: bool = False,
-               suppl_external=(), suppl_verbatim=()):
+               suppl_external=(), suppl_verbatim=(), outside_first: bool = False):
     """Write an .aasx; every keyword exists so a test can break one link.
 
     `files` are (name, data) parts to store; `suppl_targets` declares the
@@ -74,6 +74,12 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
     `relative_targets` writes each Target without a leading slash, which
     OPC resolves against the directory of the part whose relationships
     they are. Conformant, and the shape this builder could not make.
+
+    `outside_first` writes the targets outside the package -- both kinds
+    above -- ahead of the package's own. OPC gives relationships no
+    order, and every archive this builder wrote put its own parts first,
+    so a reader that stopped at the first outside target lost nothing any
+    test could see.
     """
     marker = b"\xef\xbb\xbf" if bom else b""
     suppl = [name for name, _ in files] if suppl_targets is None else suppl_targets
@@ -99,9 +105,10 @@ def build_aasx(path, payload: bytes = b"{}", payload_name: str = "aasx/env.json"
             archive.writestr(name, data)
         if suppl or suppl_external or suppl_verbatim:
             directory, _, base = payload_name.rpartition("/")
-            pairs = [(SUPPL_REL, target(name, directory)) for name in suppl]
-            pairs += [(SUPPL_REL, uri, "External") for uri in suppl_external]
-            pairs += [(SUPPL_REL, uri) for uri in suppl_verbatim]
+            inside = [(SUPPL_REL, target(name, directory)) for name in suppl]
+            outside = [(SUPPL_REL, uri, "External") for uri in suppl_external]
+            outside += [(SUPPL_REL, uri) for uri in suppl_verbatim]
+            pairs = outside + inside if outside_first else inside + outside
             archive.writestr("%s/_rels/%s.rels" % (directory, base),
                              marker + rels(pairs))
     return path
