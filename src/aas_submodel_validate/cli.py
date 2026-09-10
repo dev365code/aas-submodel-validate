@@ -205,7 +205,7 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     # a screen reading `ok` above a process leaving by 2 would be the
     # same lie one layer over. Which of the two it was stays legible: a
     # refused input still says `(not a full verdict: some of it was not
-    # read)`, which is how this report has always told them apart.
+    # judged)`, which is how this report has always told them apart.
     expected = report.submodels_seen - report.submodels_specified
     # `judged < seen` alone read `0 < 0` as satisfied, so the flag failed
     # a file with one unjudged submodel and passed one with none at all:
@@ -240,13 +240,15 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         # The refusal's own sentence where there is one. A path that was
         # never opened now carries a finding, which is the machine
         # contract; the person who typed a wrong filename is owed "no
-        # such file" and not a general statement that nothing was read,
-        # and the two audiences are why one line goes to each stream.
+        # such file" and not a general statement that nothing was judged,
+        # and the two audiences are why one line goes to each stream. That
+        # statement said "could be read", and of a document read to the end
+        # and stopped while building it was false; what is known is that
+        # nothing was judged.
         refusal = next((finding.violation.message for finding in report.findings
                         if finding.id == "X6"), None)
         print("smtv: %s"
-              % (refusal or "nothing in %s could be read, so nothing was judged"
-                 % path), file=sys.stderr)
+              % (refusal or "nothing in %s was judged" % path), file=sys.stderr)
         return EXIT_ERROR
     if short:
         # The report has carried this number since day one; a caller

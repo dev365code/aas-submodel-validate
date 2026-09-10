@@ -953,3 +953,15 @@ def test_the_drift_figures_are_the_ones_the_tool_measures():
             "leaves the same %d saying nothing at all" % mute):
         assert phrase in FLOWED, (
             "the page does not say %r; the tool measured %s" % (phrase, figures))
+
+
+def test_the_summary_the_page_quotes_is_the_one_printed(tmp_path):
+    """The page quotes the summary's clause for an incomplete run twice,
+    typed by hand, and went on saying "was not read" of a run the tool no
+    longer describes that way. Taken from what the tool prints, so a change
+    to the line is a change to the page or a red test."""
+    path = tmp_path / "refused.json"
+    path.write_text('{"submodels": [', "utf-8")
+    printed = re.search(r"\(not a full verdict: [^)]*\)", render(runner.run(path))).group(0)
+    quoted = re.findall(r"`(\(not a full verdict: [^)]*\))`", FLOWED)
+    assert len(quoted) == 2 and set(quoted) == {printed}, (quoted, printed)

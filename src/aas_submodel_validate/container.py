@@ -23,6 +23,7 @@ import zlib
 from pathlib import Path
 from typing import List, Tuple
 from xml.etree import ElementTree
+from xml.parsers import expat
 
 #: The OPC relationship vocabulary AASX uses, exactly as the official
 #: IDTA example files spell it.
@@ -570,6 +571,22 @@ class UnreadablePart(ContainerError):
     """
 
 
+#: How the parser underneath ElementTree says it ran out of memory: as a
+#: parse error with its own code, not as `MemoryError`. Asked by that code,
+#: a relationships part it could not finish for want of memory was told it
+#: does not parse, and a payload was told to fix its syntax.
+_EXPAT_NO_MEMORY = expat.errors.codes[expat.errors.XML_ERROR_NO_MEMORY]
+
+
+def ran_out_of_memory(exc) -> bool:
+    """Whether `exc` is this reader running out of memory, in either of the
+    two ways it is told: Python's `MemoryError`, or the XML parser's own
+    out-of-memory error, which arrives as a `ParseError`."""
+    return isinstance(exc, MemoryError) or (
+        isinstance(exc, ElementTree.ParseError)
+        and getattr(exc, "code", None) == _EXPAT_NO_MEMORY)
+
+
 class OutOfMemory(ContainerError):
     """This reader ran out of memory before it had finished reading.
 
@@ -590,6 +607,12 @@ def _rels_name(source: str) -> str:
         return "_rels/.rels"
     directory, base = posixpath.split(source)
     return posixpath.join(directory, "_rels", base + ".rels")
+
+
+#: The same, for the loader: a refusal of a part's own relationships part is
+#: about that part, and filed under its name -- not under the payload's,
+#: which was read and judged beside it.
+relationships_part_name = _rels_name
 
 
 def _directory_bytes(path):
@@ -633,13 +656,17 @@ class AasxPackage:
                 "the %d byte limit" % (self.path, declared, MAX_DIRECTORY_BYTES))
         try:
             self._zip = zipfile.ZipFile(self.path)
+            # Part of indexing, and as costly as the rest of it: one entry
+            # per name the archive declares.
+            self._names = frozenset(self._zip.namelist())
         except MemoryError as exc:
             raise OutOfMemory("%s: this reader ran out of memory indexing the archive"
                               % self.path) from exc
         except UNREADABLE as exc:
             raise ContainerError("cannot open %s as a ZIP container: %s: %s"
                                  % (self.path, type(exc).__name__, exc)) from exc
-        self._names = frozenset(self._zip.namelist())
+        #: What `relationships` answered for each source, failures included.
+        self._relationships = {}
         #: Distinct bytes handed out so far, for MAX_TOTAL_PART_BYTES.
         #: One package object is one validation, so this is that run's
         #: total -- and each part counts once however often it is read.
@@ -820,6 +847,38 @@ class AasxPackage:
 
     # -- the OPC chain -------------------------------------------------------
     def relationships(self, source: str = "") -> List[Tuple[str, str, bool]]:
+        """What `source`'s relationships part declares -- asked once.
+
+        The loader asks first, where a failure can be loaded as an error,
+        and X4 asks again to walk what a part declares, skipping a part it
+        cannot read because the loader has reported it. Asked twice, the two
+        answers could differ: a second parse that ran out of memory where the
+        first had not was skipped as reported when nothing had reported it,
+        the X4 finding vanished, and the run left by 0 calling itself
+        complete. Remembered, failures included, the second answer is the
+        first -- and whatever reading it costs is paid once.
+
+        Running out of memory anywhere past the read -- decoding the part
+        the way the parser will, looking for a DTD, parsing, resolving the
+        targets -- is a stop, not a verdict on the part, so it is raised as
+        one, wherever in that it happened.
+        """
+        if source not in self._relationships:
+            try:
+                self._relationships[source] = self._relationships_of(source)
+            except MemoryError as exc:
+                stopped = OutOfMemory("%s: this reader ran out of memory reading %s"
+                                      % (self.path, _rels_name(source)))
+                stopped.__cause__ = exc
+                self._relationships[source] = stopped
+            except ContainerError as exc:
+                self._relationships[source] = exc
+        answer = self._relationships[source]
+        if isinstance(answer, ContainerError):
+            raise answer
+        return list(answer)
+
+    def _relationships_of(self, source: str) -> List[Tuple[str, str, bool]]:
         """(type, target, external) triples of `source`'s relationships part.
 
         A target that reads as a part name comes back without its
@@ -862,10 +921,9 @@ class AasxPackage:
                                  % (self.path, rels))
         try:
             root = ElementTree.fromstring(raw)
-        except MemoryError as exc:
-            raise OutOfMemory("%s: this reader ran out of memory parsing %s"
-                              % (self.path, rels)) from exc
         except ElementTree.ParseError as exc:
+            if ran_out_of_memory(exc):
+                raise MemoryError(str(exc)) from exc        # a stop; see `relationships`
             raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc)) from exc
         # OPC resolves a target that begins with "/" against the package
         # root and any other target against the source part's own directory

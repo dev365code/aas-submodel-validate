@@ -226,7 +226,11 @@ def render(report: Report, *, show_meta: bool = False,
     # the second is reachable with something unread, because every load
     # error has a rule to report it -- but that is a fact about the rules,
     # not about the summary, and the summary is what promises to say so.
-    incomplete = "" if report.complete else " (not a full verdict: some of it was not read)"
+    # "was not judged" and not "was not read": a document read to the end
+    # and stopped while building was read, and said so in its remedy while
+    # this line said it was not. Not judged is what every incomplete run
+    # knows about itself.
+    incomplete = "" if report.complete else " (not a full verdict: some of it was not judged)"
     # How much of the file a template answered for, said in both forms.
     # A submodel this tool has no table for is not a defect, so it is a
     # number rather than a finding -- but a report that omits the number

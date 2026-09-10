@@ -26,6 +26,7 @@ from builders import (
     CONTENT_TYPES,
     ORIGIN_REL,
     SPEC_REL,
+    SUPPL_REL,
     build_aasx,
     corrupt_part,
     env_json,
@@ -627,33 +628,82 @@ def test_a_read_that_runs_out_of_memory_could_not_run(tmp_path):
 
 #: Where reading a package can run this reader out of memory, and how to
 #: get there without spending the memory: the archive's index, built when
-#: the package is opened; a part's bytes, as they are decompressed; and a
-#: relationships part, as it is parsed. Each walked out of the loader and
-#: the CLI as a traceback, and the process left by 1 -- the code for a
-#: verdict with findings, about a package nobody had finished reading. The
-#: bare file above has left by 2 since that was measured.
-def _opening_runs_out():
-    return mock.patch.object(zipfile, "ZipFile", side_effect=MemoryError("simulated"))
+#: the package is opened, and the names it declares; a part's bytes, as
+#: they are decompressed; and a relationships part, as it is decoded the way
+#: the parser will read it and as it is parsed -- where the parser
+#: underneath ElementTree says so in its own way, as a parse error with an
+#: out-of-memory code. Each walked out of the loader and the CLI as a
+#: traceback, and the process left by 1 -- the code for a verdict with
+#: findings, about a package nobody had finished reading -- or, for the
+#: parser's own error, was told the part does not parse. The bare file
+#: above has left by 2 since that was measured.
+#:
+#: Each is made to fail one call below the line that guards it, where a
+#: test that faked the guarded line itself had left the line after it --
+#: the names index, one statement on -- unguarded and unnoticed.
+def _a_package(tmp_path):
+    return build_aasx(tmp_path / "p.aasx", payload=env_json("urn:x"))
 
 
-def _a_part_runs_out():
+def _a_package_whose_chain_is_utf16(tmp_path):
+    """Its relationships part written UTF-16, which is read by converting it
+    -- the conversion is where the memory goes."""
+    path = tmp_path / "utf16.aasx"
+    declared = rels([(ORIGIN_REL, "/aasx/aasx-origin")]).decode("utf-8")
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", declared.replace("utf-8", "utf-16").encode("utf-16"))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", env_json("urn:x"))
+    return path
+
+
+def _indexing_runs_out(tmp_path):
+    return _a_package(tmp_path), mock.patch.object(
+        zipfile.ZipFile, "_RealGetContents", side_effect=MemoryError("simulated"))
+
+
+def _naming_runs_out(tmp_path):
+    return _a_package(tmp_path), mock.patch.object(
+        zipfile.ZipFile, "namelist", side_effect=MemoryError("simulated"))
+
+
+def _a_part_runs_out(tmp_path):
     real = zipfile.ZipExtFile.read
 
     def read(self, *args, **kwargs):
         if self.name == "aasx/env.json":
             raise MemoryError("simulated")
         return real(self, *args, **kwargs)
-    return mock.patch.object(zipfile.ZipExtFile, "read", read)
+    return _a_package(tmp_path), mock.patch.object(zipfile.ZipExtFile, "read", read)
 
 
-def _a_relationships_part_runs_out():
-    return mock.patch.object(ElementTree, "fromstring", side_effect=MemoryError("simulated"))
+def _decoding_a_relationships_part_runs_out(tmp_path):
+    converting = mock.Mock()
+    converting.sub.side_effect = MemoryError("simulated")
+    return (_a_package_whose_chain_is_utf16(tmp_path),
+            mock.patch.object(container, "_DECLARED_ENCODING", converting))
+
+
+def _parsing_a_relationships_part_runs_out(tmp_path):
+    return _a_package(tmp_path), mock.patch.object(
+        ElementTree, "fromstring", side_effect=MemoryError("simulated"))
+
+
+def _the_parser_runs_out(tmp_path):
+    ran_out = ElementTree.ParseError("out of memory: line 1, column 0")
+    ran_out.code = 1        # expat's XML_ERROR_NO_MEMORY
+    return _a_package(tmp_path), mock.patch.object(ElementTree, "fromstring", side_effect=ran_out)
 
 
 MEMORY_RUNS_OUT = {
-    "opening-the-archive": _opening_runs_out,
+    "indexing-the-archive": _indexing_runs_out,
+    "listing-its-names": _naming_runs_out,
     "reading-a-part": _a_part_runs_out,
-    "parsing-a-relationships-part": _a_relationships_part_runs_out,
+    "decoding-a-relationships-part": _decoding_a_relationships_part_runs_out,
+    "parsing-a-relationships-part": _parsing_a_relationships_part_runs_out,
+    "the-parser-saying-it-ran-out": _the_parser_runs_out,
 }
 
 
@@ -663,13 +713,19 @@ def test_a_package_that_runs_this_reader_out_of_memory_is_refused(tmp_path, wher
     in what this reader will take in -- and told what the reader knows:
     that it stopped before the end, and why. Not X1 or X2, whose remedies
     repair an archive or a chain that nobody has seen broken."""
-    path = build_aasx(tmp_path / "p.aasx", payload=env_json("urn:x"))
-    with MEMORY_RUNS_OUT[where]():
+    path, running_out = MEMORY_RUNS_OUT[where](tmp_path)
+    assert runner.run(path).judged, "the package does not read without the fault"
+    with running_out:
         report = runner.run(path)
     findings = by_id(report)
     assert set(findings) == {"X5"}, sorted(findings)
     assert findings["X5"].fix == loader.limit_remedy("memory", building=False)
     assert "ran out of memory" in findings["X5"].violation.message
+    # Filed under what was being read: the package, the part, or -- for the
+    # package's own chain -- nothing narrower than the package.
+    filed_under = {"indexing-the-archive": str(path), "listing-its-names": str(path),
+                   "reading-a-part": "aasx/env.json"}.get(where)
+    assert findings["X5"].violation.subject == filed_under
     assert not report.judged
 
 
@@ -693,9 +749,156 @@ def test_a_payload_whose_relationships_ran_this_reader_out_of_memory_is_still_re
         report = runner.run(path)
     (stopped,) = [f for f in report.findings if f.id == "X5"]
     assert stopped.fix == loader.limit_remedy("memory", building=False)
-    assert stopped.violation.subject == "aasx/env.json"
-    assert "aasx/_rels/env.json.rels" in stopped.violation.message
+    assert stopped.violation.subject == "aasx/_rels/env.json.rels"
     assert report.judged and not report.complete
+
+
+def test_a_parts_relationships_are_read_once_whoever_asks(tmp_path):
+    """The loader reads a payload's own relationships where a failure can
+    be loaded as an error, and X4 reads them again to walk what they
+    declare -- skipping a part it cannot read, on the reasoning that the
+    loader has reported it. Asked twice, the two answers could differ: a
+    second parse that ran out of memory where the first had not was skipped
+    as reported, and nothing had reported it. The X4 finding vanished and
+    the run left by 0 calling itself complete. Asked once, the second
+    answer is the first."""
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json("urn:x"),
+                      suppl_targets=["aasx/files/missing.pdf"])
+    real = ElementTree.fromstring
+
+    def a_second_read_runs_out():
+        parses = []
+
+        def fromstring(text, *args, **kwargs):
+            if b"aas-suppl" in text:
+                parses.append(text)
+                if len(parses) > 1:
+                    raise MemoryError("simulated")
+            return real(text, *args, **kwargs)
+        return parses, mock.patch.object(ElementTree, "fromstring", fromstring)
+
+    parses, running_out = a_second_read_runs_out()
+    with running_out:
+        report = runner.run(path)
+    assert len(parses) == 1, "read %d times" % len(parses)
+    assert "X4" in by_id(report), sorted(by_id(report))
+    assert report.complete
+    # The shape the defect had: a warning a build fails on under -W, gone,
+    # and the run leaving by 0.
+    parses, running_out = a_second_read_runs_out()
+    with running_out:
+        assert main([str(path), "-W", "-q"]) == 1
+
+
+_PAYLOAD_RELS = "aasx/_rels/env.json.rels"
+
+
+def _its_relationships_declare_a_dtd(tmp_path, monkeypatch):
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json())
+    with zipfile.ZipFile(path, "a") as archive:
+        archive.writestr(_PAYLOAD_RELS, _rels_with_dtd())
+    return path, contextlib.nullcontext()
+
+
+def _its_relationships_are_too_large(tmp_path, monkeypatch):
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 4096)
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json())
+    padded = rels([(SUPPL_REL, "/aasx/files/a.pdf")]).replace(
+        b"<Relationships", b"<!--" + b" " * 5000 + b"--><Relationships", 1)
+    with zipfile.ZipFile(path, "a") as archive:
+        archive.writestr(_PAYLOAD_RELS, padded)
+    return path, contextlib.nullcontext()
+
+
+def _its_relationships_run_out(tmp_path, monkeypatch):
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json(),
+                      suppl_targets=["aasx/files/a.pdf"])
+    real = ElementTree.fromstring
+
+    def fromstring(text, *args, **kwargs):
+        if b"aas-suppl" in text:
+            raise MemoryError("simulated")
+        return real(text, *args, **kwargs)
+    return path, mock.patch.object(ElementTree, "fromstring", fromstring)
+
+
+def _its_relationships_cannot_be_read(tmp_path, monkeypatch):
+    path = build_aasx(tmp_path / "p.aasx", payload=env_json(),
+                      suppl_targets=["aasx/files/a.pdf"])
+    corrupt_part(path, _PAYLOAD_RELS, "stream")
+    return path, contextlib.nullcontext()
+
+
+@pytest.mark.parametrize("refused", [_its_relationships_declare_a_dtd,
+                                     _its_relationships_are_too_large,
+                                     _its_relationships_run_out,
+                                     _its_relationships_cannot_be_read],
+                         ids=["dtd", "too-large", "out-of-memory", "unreadable"])
+def test_a_refusal_of_a_payloads_relationships_is_filed_under_that_part(
+        tmp_path, monkeypatch, refused):
+    """A payload's own relationships part refused -- for a DTD, for its
+    size, for memory, for bytes the archive cannot yield -- was filed under
+    the payload's name. The payload was read and judged, so one report said
+    "judged 1 of 1" and, beside it, that the document was refused and not
+    judged, or that the reader stopped before its end. Filed under the part
+    that was refused, the two agree."""
+    path, fault = refused(tmp_path, monkeypatch)
+    with fault:
+        report = runner.run(path)
+    assert report.submodels_judged == 1, "the payload was not judged"
+    refusals = [f for f in report.findings if f.id in {"X1", "X2", "X5"}]
+    assert [f.violation.subject for f in refusals] == [_PAYLOAD_RELS], [
+        (f.id, f.violation.subject) for f in refusals]
+    for finding in report.findings:
+        said = finding.fix or ""
+        if "not judged" in said or "stopped before the end" in said:
+            assert finding.violation.subject != "aasx/env.json", (finding.id, said)
+
+
+def _security_note() -> str:
+    return " ".join((pathlib.Path(__file__).resolve().parents[1]
+                     / "SECURITY.md").read_text("utf-8").split())
+
+
+#: The sentence the tests below hold the code to. It said the run leaves by
+#: the could-not-run code, full stop, and that is false wherever something
+#: beside the refusal was read and judged: that run has a verdict about what
+#: it read, and leaves by it.
+_WHERE_NOTHING_COULD_BE_JUDGED = (
+    "What it refuses to read, it does not judge, and the report says so; "
+    "where nothing could be judged, the run leaves by the could-not-run exit "
+    "code rather than reporting a verdict it does not have.")
+
+
+def test_the_security_note_says_when_the_could_not_run_code_applies(tmp_path, capsys):
+    """The other half of that sentence. A package with two payloads, one of
+    which runs this reader out of memory: the other is read and judged, so
+    the run leaves by the code for its verdict and not by 2 -- and the
+    report says the verdict is not a full one."""
+    assert _WHERE_NOTHING_COULD_BE_JUDGED in _security_note()
+    path = tmp_path / "two.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels",
+                         rels([(SPEC_REL, "/aasx/a.json"), (SPEC_REL, "/aasx/b.json")]))
+        archive.writestr("aasx/a.json", env_json())
+        archive.writestr("aasx/b.json", env_json())
+    real = zipfile.ZipExtFile.read
+
+    def read(self, *args, **kwargs):
+        if self.name == "aasx/b.json":
+            raise MemoryError("simulated")
+        return real(self, *args, **kwargs)
+
+    with mock.patch.object(zipfile.ZipExtFile, "read", read):
+        report = runner.run(path)
+        code = main([str(path)])
+    assert report.judged and not report.complete
+    assert [f.violation.subject for f in report.findings if f.id == "X5"] == ["aasx/b.json"]
+    assert code == 1
+    assert "not a full verdict" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("where", sorted(MEMORY_RUNS_OUT))
@@ -706,14 +909,11 @@ def test_the_security_note_holds_where_a_package_runs_this_reader_out_of_memory(
     neither: a traceback, nothing on stdout, exit 1. The sentences are read
     off the page, so the page cannot change without this noticing, and
     neither can what the run does."""
-    text = " ".join((pathlib.Path(__file__).resolve().parents[1]
-                     / "SECURITY.md").read_text("utf-8").split())
+    text = _security_note()
     assert "parsing failures become findings, not crashes" in text
-    assert ("What it refuses to read, it does not judge, the report says so, "
-            "and the run leaves by the could-not-run exit code rather than "
-            "reporting a verdict it does not have.") in text
-    path = build_aasx(tmp_path / "p.aasx", payload=env_json("urn:x"))
-    with MEMORY_RUNS_OUT[where]():
+    assert _WHERE_NOTHING_COULD_BE_JUDGED in text
+    path, running_out = MEMORY_RUNS_OUT[where](tmp_path)
+    with running_out:
         code = main([str(path), "-f", "json"])
     document = json.loads(capsys.readouterr().out)
     assert document["findings"], "the report did not say so"

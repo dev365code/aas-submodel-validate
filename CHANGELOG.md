@@ -3,7 +3,8 @@
 ## 0.1.5 — unreleased
 
 126 rules, 86 generated from the vendored template files. No rule is
-added or removed so far.
+added or removed so far. Paragraphs that move a verdict are marked
+**`verdict`**.
 
 **A correction to 0.1.4 first.** Its paragraph on a `File` value that
 differs from the archive entry only in ASCII case should have carried
@@ -22,7 +23,8 @@ of the text or after reading it, while building the document, and that
 the rest was not read or not checked. Where it was told to fix the
 syntax its parser rejects -- a bare Submodel, the payload of a package,
 a document too deep to build -- it now gets that same answer. Bytes that
-are not UTF-8 are told to save the file as UTF-8, where a bare file was
+are not UTF-8 are told to save the file as UTF-8 -- inside a package, to
+rebuild it from the document saved that way -- where a bare file was
 told nothing was wrong and a package's payload to fix its syntax; bytes
 that end halfway through a character are told the file looks cut short,
 or, inside a package, that the package needs rebuilding from a complete
@@ -31,8 +33,8 @@ document. No exit code moves.
 **XML gets the same answer.** A document nested deeper than this
 interpreter's stack follows was told to fix the syntax its parser rejects
 when it was XML, bare or packaged: the answer above was given to JSON
-only. XML is built as it is read, so it is now told that the reader
-stopped before the end, and why. No exit code moves.
+only. XML is built as the parser streams it, so it is now told that the
+reader stopped before the end, and why. No exit code moves.
 
 **A refusal no longer vouches for what it refused.** Five said that
 nothing was wrong with what was sent, or with its syntax, or that a
@@ -44,13 +46,52 @@ nothing at all. Each now gives its reason and then says that
 nothing here is a verdict on the document. No exit code moves.
 
 **A package that runs this reader out of memory is refused rather than
-crashing it.** Indexing the archive, decompressing a part and parsing a
-relationships part each let the error out as a traceback, and the
-process left by 1, the code for a verdict with findings. Each is now an
-`X5` finding saying that the reader stopped and why. The run leaves by
-2, the code a bare file that ran out of memory already left by -- or by
-1 where the stop was in a payload's own relationships part and the
-payload beside it was read and judged.
+crashing it.** `verdict` Indexing the archive, decompressing a part, and
+decoding or parsing a relationships part each let the error out as a
+traceback, and the process left by 1, the code for a verdict with
+findings; so did an XML document, bare or packaged, that ran out while
+its encoding was converted. The XML parser's own out-of-memory error,
+which arrives as a parse error, was told that the part does not parse,
+or to fix the syntax. Each is now a finding saying that the reader
+stopped and why -- `X5` for the package, `X3` for the document. Where
+nothing could be judged the run leaves by 2, the code a bare file that
+ran out of memory while being read already left by; where something
+beside the stop was read and judged, it leaves by the code for that
+verdict.
+
+**`--allow-unmatched` forgives that no template matched, and nothing
+else.** `verdict` It forgave a crash of the rule that asks the question
+along with it: the crash became a note, and the run printed `ok` and
+left by 0 with the question never answered. The crash now stays a
+finding and the run leaves by 1. No input this project knows of makes
+that rule crash; this was measured with the rule made to raise.
+
+**A refusal of a payload's own relationships part is filed under that
+part.** It was filed under the payload's name, and the payload beside it
+was read and judged: one report said `judged 1 of 1` and, next to it,
+that the same document was refused and not judged. The `subject` of
+those findings -- `X1`, `X2` and `X5` -- names the relationships part
+now. No exit code moves.
+
+**`X4` is asked of every part whose relationships were read.** A package
+over its total refused the rule's second reading of them too, and `X4`
+said nothing about parts that had been read and judged. It now has the
+answer the loader had, and a supplementary file such a part declares and
+the archive lacks is reported. No exit code moves: the refusal beside it
+already decides the run.
+
+**The summary says what was not judged, not what was not read.** An
+incomplete run's summary ended `(not a full verdict: some of it was not
+read)`, and when nothing was judged stderr said `nothing in <file> could
+be read` -- false of a document read to the end and stopped while it was
+built, which its own remedy said. They now say `(not a full verdict:
+some of it was not judged)` and `nothing in <file> was judged`. A script
+matching the old text needs the new one. No exit code moves.
+
+**SECURITY.md said every refusal leaves by the could-not-run code.** It
+does where nothing could be judged. Where something beside the refusal
+was read and judged, the run leaves by the code for that verdict, and
+the report says the verdict is not a full one; the page now says which.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's

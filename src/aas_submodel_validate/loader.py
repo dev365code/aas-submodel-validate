@@ -29,6 +29,7 @@ from .container import (
     RefusedContent,
     UnreadablePart,
     declares_doctype,
+    ran_out_of_memory,
     xml_as_utf8,
 )
 
@@ -185,11 +186,27 @@ CUT_SHORT_IN_A_PACKAGE = (
 #: 0.1.0 already recorded that sentence as wrong for an encoding problem,
 #: one format over. Not the limit sentence either: something *is* wrong
 #: with what was sent.
+#:
+#: And no more than that. It ended "and nothing else has to change", of a
+#: document decoded as far as its first bad byte: one with a syntax error
+#: further on was told so, and learned otherwise only after saving it
+#: again. It also pointed at "the line above", which on the screen is the
+#: clause and not the position. A package's part is not fixed by saving
+#: the file, as the cut-short pair below says too.
 NOT_UTF8 = (
     "JSON exchanged between systems is UTF-8 (RFC 8259, 8.1), and "
-    "these bytes are not -- the line above says where decoding "
-    "stopped. Save the file as UTF-8; an editor's UTF-16 or ANSI "
-    "setting is the usual cause, and nothing else has to change.")
+    "these bytes are not: decoding stopped at the position this "
+    "finding names. Save the file as UTF-8 -- an editor's UTF-16 or "
+    "ANSI setting is the usual cause. Nothing after that position was "
+    "decoded, and nothing in the document was judged.")
+
+NOT_UTF8_IN_A_PACKAGE = (
+    "JSON exchanged between systems is UTF-8 (RFC 8259, 8.1), and "
+    "this part is not: decoding stopped at the position this finding "
+    "names. Save the document as UTF-8 and rebuild the package from "
+    "it -- an editor's UTF-16 or ANSI setting is the usual cause. "
+    "Nothing after that position was decoded, and nothing in the "
+    "document was judged.")
 
 
 def _is_an_interpreter_limit(exc) -> bool:
@@ -230,7 +247,7 @@ def _out_of_room(exc, *, building: bool):
     if isinstance(exc, RecursionError):
         return ("this reader could not build the document",
                 limit_remedy("nesting", building=building))
-    if isinstance(exc, MemoryError):
+    if ran_out_of_memory(exc):
         return ("this reader could not build the document",
                 limit_remedy("memory", building=building))
     return None
@@ -260,7 +277,7 @@ def _failure(exc, *, decoding: bool, packaged: bool = False):
     if isinstance(exc, UnicodeDecodeError):
         if _cut_short(exc):
             return "the file is not JSON", CUT_SHORT_IN_A_PACKAGE if packaged else CUT_SHORT
-        return "the file is not JSON", NOT_UTF8
+        return "the file is not JSON", NOT_UTF8_IN_A_PACKAGE if packaged else NOT_UTF8
     return None
 
 
@@ -386,6 +403,16 @@ def _read_bounded(loaded: Loaded, path: Path):
     return raw
 
 
+def _payload_error(loaded: Loaded, part: Optional[str], exc, answered) -> None:
+    """An environment document that did not come out, with the answer
+    `_failure` or `_out_of_room` gave, or the standing one where they gave
+    none."""
+    message, fix = answered or ("the document could not be read as an AAS environment", None)
+    loaded.errors.append(LoadError(
+        "payload", message, subject=part or loaded.path,
+        detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
+
+
 def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form: str,
                        document=None) -> None:
     """One environment document (JSON or XML) into loaded.submodels.
@@ -401,8 +428,18 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
         # byte of it. The refusal matched bytes, and a byte pattern finds
         # `<!DOCTYPE` in UTF-8 and nowhere else -- so the same declaration
         # written UTF-16 came back not as a refusal but as a clean read.
-        raw = xml_as_utf8(raw)
-        if declares_doctype(raw):
+        #
+        # And it is a copy of the whole document where it converts one, so
+        # it can run out of memory where the parse below would have: a
+        # UTF-16 document that did left by a traceback. Asked only that --
+        # anything else this raises is a defect of ours, not the file's.
+        try:
+            raw = xml_as_utf8(raw)
+            refused = declares_doctype(raw)
+        except MemoryError as exc:
+            _payload_error(loaded, part, exc, _out_of_room(exc, building=False))
+            return
+        if refused:
             loaded.errors.append(LoadError(
                 "payload", "the XML declares a DOCTYPE, which is refused",
                 subject=part or loaded.path,
@@ -432,10 +469,7 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
             answered = _failure(exc, decoding=decoding, packaged=part is not None)
         else:
             answered = _out_of_room(exc, building=False)
-        message, fix = answered or ("the document could not be read as an AAS environment", None)
-        loaded.errors.append(LoadError(
-            "payload", message, subject=part or loaded.path,
-            detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
+        _payload_error(loaded, part, exc, answered)
         return
     loaded.environments.append(environment)
     loaded.submodels.extend(environment.submodels or [])
@@ -633,23 +667,28 @@ def _load_aasx(path: Path) -> Loaded:
         # declared supplementary parts) and a rule cannot report a
         # container defect -- it can only skip. An archive that could not
         # yield those bytes used to come back with no findings at all.
+        #
+        # Filed under the relationships part, which is what was refused.
+        # Under the payload's name, the report judged a document and said
+        # beside it that the same document was refused and not judged.
+        rels = container.relationships_part_name(part)
         try:
             package.relationships(part)
         except PartTooLarge as exc:
-            loaded.errors.append(LoadError("bounds", str(exc), subject=part))
+            loaded.errors.append(LoadError("bounds", str(exc), subject=rels))
         except OutOfMemory as exc:
-            loaded.errors.append(_ran_out(exc, subject=part))
+            loaded.errors.append(_ran_out(exc, subject=rels))
         except UnreadablePart as exc:
-            loaded.errors.append(LoadError("zip", str(exc), subject=part))
+            loaded.errors.append(LoadError("zip", str(exc), subject=rels))
         except NoRelationships:
             pass        # this part declares none, which is not a defect
         except RefusedContent as exc:
-            loaded.errors.append(LoadError("chain", str(exc), subject=part, fix=RELATIONSHIP_DOCTYPE_REMEDY))
+            loaded.errors.append(LoadError("chain", str(exc), subject=rels, fix=RELATIONSHIP_DOCTYPE_REMEDY))
         except ContainerError as exc:
             # Would not parse. Quiet here until now for sharing an
             # exception type with "declares none" above, which left a
             # container this reader would not read coming back `ok`.
-            loaded.errors.append(LoadError("chain", str(exc), subject=part))
+            loaded.errors.append(LoadError("chain", str(exc), subject=rels))
         form = "environment-json" if part.lower().endswith(".json") else "environment-xml"
         _parse_environment(loaded, raw, part=part, form=form)
     return loaded

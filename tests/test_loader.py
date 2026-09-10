@@ -8,8 +8,11 @@ rather than the file's.
 """
 from __future__ import annotations
 
+import codecs
 import json
 import zipfile
+from unittest import mock
+from xml.etree import ElementTree
 
 import pytest
 from aas_core3 import jsonization, xmlization
@@ -189,7 +192,12 @@ def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path
 
     packed = build_aasx(tmp_path / "packed.aasx", payload=raw)
     (part_error,) = [e for e in load(packed).errors if e.stage == "payload"]
-    assert (part_error.message, part_error.fix) == (bare_error.message, bare_error.fix)
+    assert part_error.message == bare_error.message
+    # The same answer, except where the remedy is different work: bytes
+    # that are not UTF-8 inside a package are fixed by saving the document
+    # and rebuilding the package, not by saving "the file".
+    packaged = getattr(loader, remedy + "_IN_A_PACKAGE", None) if remedy.isupper() else None
+    assert part_error.fix == (packaged or bare_error.fix), part_error.fix
     assert part_error.subject == "aasx/env.json"
 
 
@@ -332,17 +340,51 @@ def test_the_deepest_xml_this_reader_builds_is_read_and_one_more_level_is_not(tm
     _stopped(stopped, "nesting", building=False)
 
 
-@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
-def test_xml_that_runs_this_reader_out_of_memory_is_told_the_reader_stopped(
-        tmp_path, monkeypatch, zipped):
-    """The interpreter's other limit, reached the same way: XML is built as
-    it is read, so running out of memory is a stop before the end, and what
-    the document holds past that point is not known."""
+def _parse_runs_out(monkeypatch):
     def out_of_memory(text):
         raise MemoryError()
-
-    path = _xml_at(tmp_path, "probe", _collection_chain_xml(3), zipped)
     monkeypatch.setattr(xmlization, "environment_from_str", out_of_memory)
+
+
+def _the_parser_says_it_ran_out(monkeypatch):
+    """How the parser underneath says it: a parse error with expat's
+    out-of-memory code, which aas-core3.0 passes through untouched (its
+    reader catches no parse error)."""
+    def out_of_memory(text):
+        error = ElementTree.ParseError("out of memory: line 1, column 0")
+        error.code = 1
+        raise error
+    monkeypatch.setattr(xmlization, "environment_from_str", out_of_memory)
+
+
+def _decoding_runs_out(monkeypatch):
+    """Before the parser: the document converted to UTF-8 the way the
+    parser will read it, which for UTF-16 is a copy of the whole of it."""
+    converting = mock.Mock()
+    converting.sub.side_effect = MemoryError()
+    monkeypatch.setattr(container, "_DECLARED_ENCODING", converting)
+
+
+@pytest.mark.parametrize("running_out", [_parse_runs_out, _the_parser_says_it_ran_out,
+                                         _decoding_runs_out],
+                         ids=["parsing", "the-parser-saying-so", "decoding"])
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_xml_that_runs_this_reader_out_of_memory_is_told_the_reader_stopped(
+        tmp_path, monkeypatch, zipped, running_out):
+    """The interpreter's other limit, reached the same way: XML is built as
+    the parser streams it, so running out of memory is a stop before the
+    end, and what the document holds past that point is not known. Three
+    places it can happen, and the decoding one sat before the guard: a
+    UTF-16 document that ran out there left by a traceback."""
+    text = _collection_chain_xml(3).replace(
+        "<environment", '<?xml version="1.0" encoding="UTF-16"?><environment', 1)
+    path = tmp_path / ("probe.aasx" if zipped else "probe.xml")
+    if zipped:
+        build_aasx(path, payload=text.encode("utf-16"), payload_name="aasx/env.xml")
+    else:
+        path.write_bytes(text.encode("utf-16"))
+    assert not load(path).errors, "the document does not read without the fault"
+    running_out(monkeypatch)
     (error,) = [e for e in load(path).errors if e.stage == "payload"]
     _stopped(error, "memory", building=False)
 
@@ -368,15 +410,49 @@ def test_a_file_cut_short_in_a_character_is_told_it_looks_cut_short(tmp_path, zi
 
 
 def test_a_byte_order_mark_does_not_move_where_decoding_is_said_to_stop(tmp_path):
-    """The UTF-8 remedy points the reader at the line that says where
-    decoding stopped, and that line counted from after the byte order mark
+    """The UTF-8 remedy points the reader at the position the finding
+    names, and that position counted from after the byte order mark
     `utf-8-sig` had taken off -- three bytes short of the byte in the
-    file."""
-    raw = b"\xef\xbb\xbf" + b'{"submodels": [], "x": "\xff"}'
+    file. The bad byte sits well inside the document: next to its end, a
+    different defect changed the message too and this passed for that."""
+    raw = b"\xef\xbb\xbf" + b'{"submodels": [], "x": "\xff", "padding": "%s"}' % (b"y" * 40)
     path = tmp_path / "bom.json"
     path.write_bytes(raw)
     (error,) = load(path).errors
     assert "position %d:" % raw.index(b"\xff") in error.detail, error.detail
+
+
+@pytest.mark.parametrize("tail, cut", [
+    (b"\xc3", True),
+    (b"\xe4\xb8", True),
+    (b"\xff", False),
+    (b"\xb0", False),
+    (b"\xed\xa4", False),
+], ids=["one-of-two", "two-of-three", "starts-nothing", "a-continuation-alone",
+        "a-surrogate"])
+@pytest.mark.parametrize("bom", [b"", codecs.BOM_UTF8], ids=["no-mark", "byte-order-mark"])
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_whether_the_bytes_were_cut_short_is_read_from_the_last_ones(
+        tmp_path, tail, cut, bom, zipped):
+    """Bytes that end inside a character were cut short. Bytes that end on
+    one no character can finish from -- a byte no character starts with, a
+    continuation byte with nothing before it, the start of a surrogate,
+    which UTF-8 never encodes -- are in the wrong encoding. Only the first
+    kind was measured, and the half of the question asked of the bytes
+    could be deleted with the suite green. With a byte order mark in front
+    the decoder counts from after it, and the question has to be asked of
+    the bytes the file holds, zipped or not."""
+    from aas_submodel_validate import loader
+
+    raw = bom + b'{"submodels": [], "note": "' + tail
+    path = tmp_path / ("p.aasx" if zipped else "probe.json")
+    build_aasx(path, payload=raw) if zipped else path.write_bytes(raw)
+    (error,) = [e for e in load(path).errors if e.stage == "payload"]
+    if zipped:
+        expected = loader.CUT_SHORT_IN_A_PACKAGE if cut else loader.NOT_UTF8_IN_A_PACKAGE
+    else:
+        expected = loader.CUT_SHORT if cut else loader.NOT_UTF8
+    assert error.fix == expected, error.fix
 
 
 @pytest.mark.parametrize("value", ["abc", "\u00e9"], ids=["bad-base64", "not-ascii"])

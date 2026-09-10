@@ -1048,6 +1048,10 @@ def _jobs(path):
     """Each job in a workflow, as name -> its block."""
     text = path.read_text(encoding="utf-8")
     body = re.split(r"(?m)^jobs:[ \t]*(?:#.*)?\n", text, maxsplit=1)[1]
+    # The jobs end where the next key at the left margin begins. Read on
+    # past it, a key's own children were jobs: `env:` gave one named
+    # `permissions`.
+    body = re.split(r"(?m)^(?=[^\s#])", body, maxsplit=1)[0]
     # GitHub's job id: a letter or `_` first, then letters, digits, `-`
     # and `_`; quoted or not, and a comment may follow. Lower case first
     # letter only, which is all this repository wrote, let a job named
@@ -1058,10 +1062,22 @@ def _jobs(path):
     # (`lint: {runs-on: ...}`) puts them where a line-by-line reader does
     # not see them -- so such a job is kept, as its one line, and anything
     # asked of its block fails rather than being answered by the job above.
-    starts = [(m.start(), m.group(1))
-              for m in re.finditer(
-                  r"""(?m)^  ["']?([A-Za-z_][\w-]*)["']?:[ \t]*"""
-                  r"""(?:&[\w-]+[ \t]*)?(?:[*{].*)?(?:#.*)?$""", body)]
+    #
+    # And a line directly under `jobs:` that is none of those is a failure,
+    # not a line of the job above it. Only a job id belongs there, and YAML
+    # has spellings of one this does not read -- `test :`, `? test`, an
+    # anchor with a dot in it -- each of which folded into the job above
+    # and borrowed its settings, a token grant included.
+    job_line = re.compile(r"""  ["']?([A-Za-z_][\w-]*)["']?:[ \t]*"""
+                          r"""(?:&[\w-]+[ \t]*)?(?:[*{].*)?(?:#.*)?$""")
+    starts, offset = [], 0
+    for line in body.splitlines(keepends=True):
+        if re.match(r"  [^\s#]", line):
+            named = job_line.match(line.rstrip("\n"))
+            assert named, ("%s: a line directly under jobs: that is not a job id "
+                           "this reads: %r" % (path.name, line))
+            starts.append((offset, named.group(1)))
+        offset += len(line)
     jobs = {}
     for index, (offset, name) in enumerate(starts):
         end = starts[index + 1][0] if index + 1 < len(starts) else len(body)
@@ -1071,6 +1087,53 @@ def _jobs(path):
 
 def _release_jobs():
     return _jobs(ROOT / ".github" / "workflows" / "release.yml")
+
+
+_BODY = "    runs-on: ubuntu-latest\n    timeout-minutes: 5\n"
+
+
+@pytest.mark.parametrize("lines, names", [
+    (["  test:\n" + _BODY, "  lint:\n" + _BODY], ["test", "lint"]),
+    (['  "test":\n' + _BODY, "  'lint':  # quoted\n" + _BODY], ["test", "lint"]),
+    (["  Test_1-a:\n" + _BODY], ["Test_1-a"]),
+    (["  test: &base\n" + _BODY, "  alt: *base\n"], ["test", "alt"]),
+    (["  lint: {runs-on: ubuntu-latest}\n"], ["lint"]),
+    (["  # a comment\n", "\n", "  test:\n" + _BODY], ["test"]),
+], ids=["plain", "quoted", "any-first-letter", "anchor-and-alias", "flow", "comments"])
+def test_jobs_are_read_the_way_github_names_them(tmp_path, lines, names):
+    """What `_jobs` answers, shape by shape. The time-limit and token tests
+    ask their questions through it, and it had no test of its own: every
+    piece of its pattern could be reverted with the whole suite green,
+    because the workflows in this repository hold none of these shapes."""
+    workflow = tmp_path / "w.yml"
+    workflow.write_text("on: push\njobs:\n" + "".join(lines), "utf-8")
+    assert list(_jobs(workflow)) == names
+
+
+@pytest.mark.parametrize("line", ["  test :\n", "  ? test\n", "  test: &a.b\n"],
+                         ids=["space-before-colon", "explicit-key", "anchor-with-a-dot"])
+def test_a_job_line_this_does_not_read_fails_rather_than_joining_the_job_above(tmp_path, line):
+    """Valid YAML that names a job, and that the pattern did not match: the
+    line folded into the job above it and borrowed its settings. A job
+    appended as `sneak :` with a token grant passed the test that exists to
+    say which job may mint one. Directly under `jobs:` only a job id
+    belongs, so a line there that is not one this reads is a failure."""
+    workflow = tmp_path / "w.yml"
+    workflow.write_text("on: push\njobs:\n  test:\n" + _BODY + line + _BODY, "utf-8")
+    with pytest.raises(AssertionError):
+        _jobs(workflow)
+
+
+def test_the_jobs_end_where_the_next_top_level_key_begins(tmp_path):
+    """A key after `jobs:` at the left margin is not part of the last job,
+    and what is under it is not a job: measured, `env:` here gave a job
+    named `permissions`, minting a token."""
+    workflow = tmp_path / "w.yml"
+    workflow.write_text("on: push\njobs:\n  test:\n" + _BODY
+                        + "env:\n  permissions:\n    id-token: write\n", "utf-8")
+    jobs = _jobs(workflow)
+    assert list(jobs) == ["test"], list(jobs)
+    assert "id-token" not in jobs["test"]
 
 
 def _granted(block):

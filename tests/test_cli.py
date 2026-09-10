@@ -40,3 +40,25 @@ def test_json_output_is_json(tmp_path, capsys):
     report = json.loads(capsys.readouterr().out)
     assert report["ok"] is False
     assert report["findings"][0]["fix"]
+
+
+def test_a_screen_does_not_say_what_its_own_remedy_contradicts(tmp_path, capsys):
+    """A Submodel nested deeper than this interpreter builds is read to the
+    end -- `json.loads` takes all of it -- and its remedy says so. The same
+    screen said, on stderr, that nothing in the file could be read, and in
+    its summary that some of it was not read. What is known is that nothing
+    was judged, and that is what both say now."""
+    element = {"idShort": "leaf", "modelType": "Property", "valueType": "xs:string",
+               "value": "x"}
+    for level in range(400):
+        element = {"idShort": "c%d" % level, "modelType": "SubmodelElementCollection",
+                   "value": [element]}
+    path = tmp_path / "deep.json"
+    path.write_text(json.dumps({"id": "urn:deep", "modelType": "Submodel",
+                                "submodelElements": [element]}), "utf-8")
+    assert main([str(path)]) == 2
+    out, err = capsys.readouterr()
+    assert "read the document to the end" in out
+    assert "not read" not in out and "could be read" not in err, (out, err)
+    assert "(not a full verdict: some of it was not judged)" in out
+    assert "nothing in %s was judged" % path in err

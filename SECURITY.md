@@ -20,6 +20,6 @@ archive declares rather than on what its entries hold — an archive of
 800,000 empty entries weighed 69 MiB on disk and 523 MiB in memory, and
 was otherwise perfectly conformant. What the bound does not cover: the
 memory a parse then costs, which is a multiple of the bytes read. What it
-refuses to read, it does not judge, the report says so, and the run
-leaves by the could-not-run exit code rather than reporting a verdict it
-does not have. Validation performs no network access.
+refuses to read, it does not judge, and the report says so; where
+nothing could be judged, the run leaves by the could-not-run exit code
+rather than reporting a verdict it does not have. Validation performs no network access.

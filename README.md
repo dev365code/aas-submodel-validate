@@ -113,9 +113,9 @@ answer the exit code gives, reached once and printed as well as
 returned. Then how many of each severity, the file, and how many of its
 submodels were judged. Under `-W` the findings are identical and the
 verdict is not, which is the case the word is there for.
-`(not a full verdict: some of it was not read)` is appended when
-something was refused or would not parse — a different thing from a
-file that was read and failed.
+`(not a full verdict: some of it was not judged)` is appended when
+something was refused, would not parse or could not be built — a
+different thing from a file that was read and failed.
 
 
 ## What it catches
@@ -219,7 +219,7 @@ when the input held none. A submodel that declares itself a template is
 a specification and not an instance, so it is set aside rather than
 judged: the summary says how many were, a note names them, and
 `--require-all-judged` does not ask for what cannot be given. An input that was refused carries no judged clause at
-all — it says `(not a full verdict: some of it was not read)`, because
+all — it says `(not a full verdict: some of it was not judged)`, because
 nothing was judged and a coverage figure about it would be an
 invention. An environment carries submodels this tool has no business
 judging, so an unjudged one is a number and not a finding;

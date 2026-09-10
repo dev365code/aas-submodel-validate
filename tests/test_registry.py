@@ -694,9 +694,17 @@ SHIPPED_REMEDIES = {
         "again; what arrived was not judged.",
     "loader/not-utf8":
         "JSON exchanged between systems is UTF-8 (RFC 8259, 8.1), and "
-        "these bytes are not -- the line above says where decoding "
-        "stopped. Save the file as UTF-8; an editor's UTF-16 or ANSI "
-        "setting is the usual cause, and nothing else has to change.",
+        "these bytes are not: decoding stopped at the position this "
+        "finding names. Save the file as UTF-8 -- an editor's UTF-16 or "
+        "ANSI setting is the usual cause. Nothing after that position was "
+        "decoded, and nothing in the document was judged.",
+    "loader/not-utf8-in-a-package":
+        "JSON exchanged between systems is UTF-8 (RFC 8259, 8.1), and "
+        "this part is not: decoding stopped at the position this finding "
+        "names. Save the document as UTF-8 and rebuild the package from "
+        "it -- an editor's UTF-16 or ANSI setting is the usual cause. "
+        "Nothing after that position was decoded, and nothing in the "
+        "document was judged.",
     "loader/relationship-doctype":
         "Remove the DTD from the named relationships part and write "
         "out whatever it declared: a nested-entity DTD is a "
@@ -704,6 +712,16 @@ SHIPPED_REMEDIES = {
         "refuses the declaration rather than bound what it expands "
         "to. Nothing here is a verdict on the document -- it was "
         "refused, not judged.",
+    "loader/path/no-such-file":
+        "Check the path. Nothing was opened, so nothing here is a "
+        "statement about a document.",
+    "loader/path/not-a-file":
+        "Point this at a file rather than at a directory. Nothing was "
+        "opened, so nothing here is a statement about a document.",
+    "loader/path/unknown-extension":
+        "Name the file .aasx for a package, .json or .xml for an AAS "
+        "environment or a bare Submodel. The extension is how the format "
+        "is chosen here; the contents were not looked at.",
     "loader/access/PermissionError":
         "Check that this file and every directory above it are "
         "readable by the account running this. Nothing here is a "
@@ -769,6 +787,20 @@ def _sentences_violations_carry() -> dict:
     for refusal in (PermissionError(13, "Permission denied"), MemoryError(),
                     OSError(40, "Too many levels of symbolic links")):
         built["loader/access/%s" % type(refusal).__name__] = loader._access_remedy(refusal)
+    # And the three `load` writes inline, which X6 carries: built by asking
+    # `load` itself, since they are not constants anywhere to import.
+    import tempfile
+    from pathlib import Path
+    with tempfile.TemporaryDirectory() as scratch:
+        unknown = Path(scratch) / "document.txt"
+        unknown.write_text("{}", "utf-8")
+        for tag, path in (("no-such-file", Path(scratch) / "absent.json"),
+                          ("not-a-file", Path(scratch)),
+                          ("unknown-extension", unknown)):
+            try:
+                loader.load(path)
+            except loader.UnreadablePath as refusal:
+                built["loader/path/%s" % tag] = refusal.fix
     for reason in ("nesting", "number", "memory"):
         built["loader/stopped/%s" % reason] = loader.limit_remedy(reason, building=False)
     for reason in ("nesting", "memory"):
@@ -776,6 +808,7 @@ def _sentences_violations_carry() -> dict:
     built["loader/cut-short"] = loader.CUT_SHORT
     built["loader/cut-short-in-a-package"] = loader.CUT_SHORT_IN_A_PACKAGE
     built["loader/not-utf8"] = loader.NOT_UTF8
+    built["loader/not-utf8-in-a-package"] = loader.NOT_UTF8_IN_A_PACKAGE
     for card, row in _one_row_per_cardinality().items():
         built["generated/%s..%s" % (card[0], "n" if card[1] is None else card[1])] = row["fix"]
     return built
@@ -793,12 +826,15 @@ def test_no_sentence_vouches_for_what_this_reader_did_not_read():
     intact" -- of documents this reader had declined to read to the end,
     and the last was measured false: a relationships part that names
     nothing at all, behind a DTD, was told that it names the parts it
-    should. Asked of every sentence this project ships, built by the code
+    should. A sixth, "nothing else has to change", told a file whose
+    decoding stopped at its thirtieth byte that saving it as UTF-8 was all
+    it needed -- and it had a syntax error further on. Asked of every
+    sentence this project ships, built by the code
     that ships it rather than read off the census, so a sixth has to get
     past this to ship."""
     standing = [rule.fix for rule in all_rules()]
     for sentence in standing + list(_sentences_violations_carry().values()):
-        for vouching in ("nothing is wrong", "is intact"):
+        for vouching in ("nothing is wrong", "is intact", "nothing else has to change"):
             assert vouching not in sentence.lower(), sentence
 
 
