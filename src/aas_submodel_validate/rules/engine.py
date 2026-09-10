@@ -616,9 +616,13 @@ def _near_miss(candidates, match_values):
             if "://" in seen and "://" in expected and seen != expected:
                 seen_head, _, seen_tail = seen.rstrip("/").rpartition("/")
                 exp_head, _, exp_tail = expected.rstrip("/").rpartition("/")
+                # Counted as far as the bound. `edit_distance` stops at
+                # `cap` and answers `cap + 1`, and at its default of 6 a
+                # bound of 7 or more -- a last segment of 28 characters --
+                # was met by any pair at all (docs/divergences.md #43).
+                bound = max(3, len(exp_tail) // 4)
                 if (seen_head and seen_head == exp_head
-                        and edit_distance(seen_tail, exp_tail)
-                        <= max(3, len(exp_tail) // 4)):
+                        and edit_distance(seen_tail, exp_tail, cap=bound) <= bound):
                     return (seen, expected)
     return None
 

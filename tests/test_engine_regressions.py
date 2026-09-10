@@ -341,6 +341,24 @@ NEAR_ENOUGH = [
     ("Subtitle", "Title", False,
      "likewise, and short enough that the bound is its floor rather than "
      "a quarter of the length"),
+    # Past 28 characters the bound is 7 or more, and `edit_distance` used
+    # to stop counting at 6 and answer 7 -- so these two pairs, which
+    # share nothing a typo could explain, were near misses
+    # (docs/divergences.md #43).
+    ("zyxwvutsrqponmlkjihgfedcbaZY", "ab" * 14, False,
+     "28 characters with no letter in common: the bound is 7 and a "
+     "distance that stopped counting at 6 answered 7 for anything"),
+    ("ab" * 11 + "a" + "zyxwvutsr", "ab" * 16, False,
+     "32 characters, nine edits apart against a bound of eight: one past "
+     "the bound, which a capped distance could not see"),
+    # And the other side, which a repair that stopped reporting long
+    # segments altogether would break.
+    ("ab" * 13 + "aX", "ab" * 14, True,
+     "one substitution in 28 characters is the typo the lint is for"),
+    ("ab" * 10 + "a" + "zyxwvut", "ab" * 14, True,
+     "seven edits in 28 characters sits exactly on the bound of seven"),
+    ("zyxwvutsrqponmlkjihgfedcbaZ", "ab" * 13 + "a", False,
+     "27 characters, no letter in common, bound 6: refused before and after"),
 ]
 
 
@@ -368,46 +386,6 @@ def test_the_near_miss_bound_holds_at_both_edges(seen, expected, near, why):
     assert bool(got) is near, why
     if near:
         assert got == (NS + seen, NS + expected)
-
-
-def test_the_near_miss_bound_cannot_be_widened_past_what_it_can_measure():
-    """The bound is `max(3, len(expected) // 4)` and `edit_distance`
-    stops counting at `cap` and answers `cap + 1`. Where the bound
-    reaches that answer the comparison is `7 <= 7` for every input, and
-    the lint stops being a bound at all -- two segments with nothing in
-    common come back as a near miss.
-
-    Measured: the longest last segment in all three vendored templates
-    is 24 characters, giving a bound of 6, so nothing published reaches
-    it. Twenty-eight characters would. This is pinned rather than
-    repaired because repairing it changes what a published diagnostic
-    says, and no template has asked yet -- but it is pinned, because the
-    distance is four characters and a new template is one file.
-    Recorded as docs/divergences.md #43.
-    """
-    from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
-    from aas_submodel_validate.semantics import edit_distance
-
-    longest = max(
-        len(value.rstrip("/").rpartition("/")[2])
-        for tables in (hd_tables, td_tables, dbp_tables)
-        for row in tables.ROWS
-        for value in row["match"]
-        if "://" in value)
-    assert longest == 24, (
-        "the longest published last segment moved to %d; the bound there "
-        "is %d and `edit_distance` answers at most %d, so check whether "
-        "the lint still bounds anything" % (longest, max(3, longest // 4),
-                                            edit_distance("a" * 40, "b" * 40)))
-    assert max(3, longest // 4) < edit_distance("a" * 40, "b" * 40), (
-        "the bound has reached what edit_distance can answer: every "
-        "candidate sharing a namespace is now a near miss")
-
-    #: And what it looks like on the other side of that line.
-    unrelated = engine._near_miss({NS + "a" * 28}, [NS + "b" * 28])
-    assert unrelated is not None, (
-        "the vacuous case stopped being vacuous, which is good news and "
-        "means the paragraph above is stale")
 
 
 def test_one_element_draws_one_near_miss(tmp_path):
