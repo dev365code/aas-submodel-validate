@@ -303,13 +303,16 @@ def _as_utf8(raw: bytes, encoding: str) -> bytes:
     """
     try:
         text = raw.decode(encoding)
-    except (UnicodeError, LookupError):
+    except (UnicodeError, LookupError, ValueError):
         # `LookupError` because `codecs.lookup` accepts a dozen names
         # that are not text encodings -- `base64`, `rot13`, `zlib_codec`
-        # -- and `bytes.decode` refuses them. Undecodable here, and the
-        # parser will refuse it too; refusing here instead would invent a
-        # verdict. `UnicodeError` rather than its decode child because
-        # `punycode` raises the parent.
+        # -- and `bytes.decode` refuses them. `ValueError` because a name
+        # with a NUL in it (`latin\x001`) raises that from the lookup, and
+        # it reached this decode uncaught: a traceback on a file nobody
+        # read. Undecodable here, and the parser will refuse it too;
+        # refusing here would invent a verdict. `UnicodeError` (a
+        # `ValueError` subclass, named for the record) is a decode child;
+        # `punycode` raises the base `UnicodeError`.
         return raw
     converted = _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
     if len(converted) > MAX_PART_BYTES:
@@ -356,6 +359,7 @@ def declares_doctype(raw: bytes) -> bool:
             return False                    # the root element: prolog over
     return False
 
+_RELATIONSHIPS = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationships"
 _RELATIONSHIP = "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
 
 
@@ -695,13 +699,28 @@ class AasxPackage:
             self._zip = zipfile.ZipFile(self.path)
             # Part of indexing, and as costly as the rest of it: one entry
             # per name the archive declares.
-            self._names = frozenset(self._zip.namelist())
+            names = self._zip.namelist()
+            self._names = frozenset(names)
         except MemoryError as exc:
             raise OutOfMemory("%s: this reader ran out of memory indexing the archive"
                               % self.path) from exc
         except UNREADABLE as exc:
             raise ContainerError("cannot open %s as a ZIP container: %s: %s"
                                  % (self.path, type(exc).__name__, exc)) from exc
+        # A part name identifies one part (ECMA-376 Part 2). An archive
+        # holding two members of the identical name is malformed, and which
+        # bytes a reader gets is which entry its ZIP library returns -- this
+        # one the last, silently, so a defective member ahead of a clean one
+        # was never read and the container passed complete. Refused here,
+        # where every reader downstream is built on `_names` having deduped
+        # them.
+        if len(names) != len(self._names):
+            from collections import Counter
+            twice = sorted(n for n, count in Counter(names).items() if count > 1)
+            raise ContainerError(
+                "%s names %d part%s more than once: %s"
+                % (self.path, len(twice), "" if len(twice) == 1 else "s",
+                   ", ".join(twice)))
         #: What `relationships` answered for each source, failures included.
         self._relationships = {}
         #: Distinct bytes handed out so far, for MAX_TOTAL_PART_BYTES.
@@ -958,10 +977,17 @@ class AasxPackage:
         break a correct package.
         """
         rels = _rels_name(source)
-        if rels not in self._names:
+        # Found the way every other part is -- by OPC's name equivalence
+        # (ECMA-376 6.2.2.3 case folding, the path normalisation `part`
+        # applies), not by exact spelling. Looked for exactly, a
+        # relationships part an archive stored as `_rels/Env.json.rels` was
+        # absent, the chain "went nowhere", and X4 passed over a payload
+        # whose suppl files it never read.
+        held = self.part(rels)
+        if held is None:
             raise NoRelationships("%s has no %s, so the chain from %r goes nowhere"
                                  % (self.path, rels, source or "the package root"))
-        raw = xml_as_utf8(self.read(rels))
+        raw = xml_as_utf8(self.read(held))
         # A relationships part has no legitimate use for a DTD, and a
         # nested-entity DTD is a decompression-free way to exhaust memory
         # (billion laughs; the parser expands it before any handler runs).
@@ -971,10 +997,27 @@ class AasxPackage:
                                  % (self.path, rels))
         try:
             root = ElementTree.fromstring(raw)
-        except ElementTree.ParseError as exc:
-            if ran_out_of_memory(exc):
+        except (ElementTree.ParseError, LookupError, ValueError) as exc:
+            # `ParseError` for malformed XML. `LookupError`/`ValueError`
+            # because the parser reads the encoding declaration from the
+            # bytes and raises for a name it cannot honour -- a codec no
+            # reader has, or one with a NUL in it -- which `_as_utf8` handed
+            # on rather than convert, so the parser meets them here; unread,
+            # they left as a traceback. A part that does not parse is a
+            # defect in the archive, as it is for the payload one layer over.
+            if isinstance(exc, ElementTree.ParseError) and ran_out_of_memory(exc):
                 raise MemoryError(str(exc)) from exc        # a stop; see `relationships`
             raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc)) from exc
+        # It has to be a relationships part. Another root element, no
+        # namespace, or the wrong one parses and holds no `Relationship`
+        # this reader recognises -- and that came back as "declares none",
+        # so a payload's suppl files went unread and the archive passed
+        # complete. A part in the relationships slot that is not one is a
+        # defect in the archive.
+        if root.tag != _RELATIONSHIPS:
+            raise ContainerError(
+                "%s: %s is not an OPC relationships part (its root is %s)"
+                % (self.path, rels, root.tag))
         try:
             return self._resolved(root, source)
         except MemoryError as exc:

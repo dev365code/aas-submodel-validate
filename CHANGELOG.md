@@ -22,6 +22,34 @@ packaged, and the same is true of any XML whose UTF-8 form is over the
 bound. Present in 0.1.3 and 0.1.4; the payload path was already refused,
 by a message about encoding rather than size.
 
+**A relationships part stored under an equivalent name is read, not passed
+over.** `verdict` OPC makes part names equivalent under ASCII case
+folding and path normalisation, and this reader applies that when it
+resolves a `File` value or a supplementary target -- but it looked for a
+payload's own relationships part by its exact spelling. An archive that
+stored it as `_rels/Env.json.rels` was told the part had none, so `X4`
+never saw the supplementary files it declared and a broken container came
+back complete at exit 0. It is found the same way every other part is
+now. A part in the relationships slot whose root is not OPC's
+`Relationships` -- another element, no namespace, the wrong one -- was
+read as declaring nothing for the same reason; it is a container defect.
+
+**An archive that names one part twice is refused.** `verdict` A ZIP may
+hold two members of the identical name, and which one a reader gets is
+which its ZIP library returns -- this one the last, silently, so a
+defective member ahead of a clean one went unread and the container
+passed complete while a consumer's tool might extract the other. A part
+name identifies one part (ECMA-376 Part 2); an archive naming one twice
+is refused as `X1`.
+
+**An encoding declaration this reader cannot honour is a finding, not a
+crash.** A name with a NUL in it, a codec no reader has, or a name that
+is not a text encoding left the process by a traceback and exit 1 -- a
+defect in this reader dressed as a verdict, on a file it never read. The
+conversion catches all three now, and a relationships part, which is
+handed to the parser as bytes and so met them a step later, reports that
+it does not parse.
+
 **A correction to 0.1.4 first.** Its paragraph on a `File` value that
 differs from the archive entry only in ASCII case should have carried
 the **`verdict`** mark. Two changes in that release moved a verdict --

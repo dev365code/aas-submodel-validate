@@ -810,6 +810,146 @@ def test_an_index_that_ran_out_of_memory_half_built_is_not_answered_from(tmp_pat
 _STRADDLE_CAP = 40000
 
 
+#: Encoding declarations this reader cannot act on: a name with a NUL in
+#: it (the codec lookup raises `ValueError`), a codec no reader has and a
+#: name that is not a text encoding (`LookupError`). `_as_utf8` caught only
+#: the second kind, so the first crashed it; and a relationships part is
+#: handed to the parser as bytes, which reads the declaration and raises
+#: the same family a step later, where nothing caught it.
+_UNHONOURABLE = ["latin\x001", "no-such-codec", "base64"]
+
+
+@pytest.mark.parametrize("declared", _UNHONOURABLE,
+                         ids=["nul-in-the-name", "unknown-codec", "not-a-text-codec"])
+def test_a_relationships_part_the_reader_cannot_decode_is_a_finding_not_a_crash(
+        tmp_path, declared):
+    """The chain's own relationships part, handed to the parser as bytes so
+    the declaration is read. Each such name left the process by a traceback
+    and exit 1 -- a defect in this reader on a file it never read. It is a
+    container defect now, and the run does not crash."""
+    rels_part = ('<?xml version="1.0" encoding="%s"?><Relationships xmlns="%s">'
+                 '<Relationship Type="%s" Target="/aasx/aasx-origin" Id="R0"/>'
+                 '</Relationships>' % (declared, RELS_NS, ORIGIN_REL)).encode("ascii")
+    path = tmp_path / "p.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels_part)
+        archive.writestr("aasx/aasx-origin", b"")
+    code = main([str(path), "-f", "json"])          # must not raise
+    report = runner.run(path)
+    assert not report.complete and not report.judged
+    assert code == 2, code
+
+
+@pytest.mark.parametrize("declared", _UNHONOURABLE,
+                         ids=["nul-in-the-name", "unknown-codec", "not-a-text-codec"])
+@pytest.mark.parametrize("where", ["bare", "payload"])
+def test_a_document_the_reader_cannot_decode_does_not_crash(tmp_path, declared, where):
+    """A bare document and a payload, where a NUL in the name reached the
+    same decode and crashed. It does not crash now; whether it then reads
+    (the parser, fed a decoded string, ignores a declaration it cannot use)
+    or is refused is the parser's to decide -- the point here is the process
+    does not leave by a traceback."""
+    doc = ('<?xml version="1.0" encoding="%s"?>'
+           '<environment xmlns="https://admin-shell.io/aas/3/0"/>' % declared).encode("ascii")
+    if where == "bare":
+        path = tmp_path / "probe.xml"
+        path.write_bytes(doc)
+    else:
+        path = build_aasx(tmp_path / "p.aasx", payload=doc, payload_name="aasx/env.xml")
+    code = main([str(path), "-f", "json"])          # must not raise
+    assert code in (0, 1, 2), code
+
+
+@pytest.mark.parametrize("order", ["defective-first", "defective-last"])
+def test_an_archive_naming_one_part_twice_is_refused(tmp_path, order):
+    """A ZIP holding two members of the identical name is malformed OPC --
+    a part name identifies one part -- and which bytes a reader gets is
+    which entry its ZIP library hands back. This reader kept the last and
+    said nothing: two `aasx/env.json` entries, the defective one first,
+    were read as the clean one and the container passed complete at exit 0,
+    while a consumer's tool might extract the other. It is refused."""
+    good = json.dumps(hd_env()).encode()
+    bad = b'{"broken"'
+    first, second = (bad, good) if order == "defective-first" else (good, bad)
+    path = tmp_path / "p.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", first)
+        archive.writestr("aasx/env.json", second)      # the same name, twice
+    report = runner.run(path)
+    ids = by_id(report)
+    assert not report.complete, "an archive naming one part twice passed as complete"
+    assert "X1" in ids, sorted(ids)
+
+
+def _package_with_rels(tmp_path, rels_name: str, rels_body: bytes,
+                       suppl_present=("aasx/files/manual.pdf",)):
+    """A conformant Handover package plus a hand-written relationships part
+    for the payload, stored under `rels_name`, declaring a missing suppl
+    file -- so a reader that reads the part draws X4, and one that passes
+    over it draws nothing."""
+    path = tmp_path / "p.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([(ORIGIN_REL, "/aasx/aasx-origin")]))
+        archive.writestr("aasx/aasx-origin", b"")
+        archive.writestr("aasx/_rels/aasx-origin.rels", rels([(SPEC_REL, "/aasx/env.json")]))
+        archive.writestr("aasx/env.json", json.dumps(hd_env()).encode())
+        for name in suppl_present:
+            archive.writestr(name, b"%PDF-1.4")
+        archive.writestr(rels_name, rels_body)
+    return path
+
+
+_DECLARES_A_MISSING_SUPPL = (
+    '<Relationship Type="%s" Target="/aasx/files/missing.pdf" Id="R1"/>' % SUPPL_REL)
+
+
+@pytest.mark.parametrize("rels_name", [
+    "aasx/_rels/Env.json.rels",
+    "aasx/_rels/env.json.rels".replace("_rels", "_rels/./"),
+], ids=["case-twin", "dot-segment"])
+def test_a_relationships_part_under_an_equivalent_name_is_still_read(tmp_path, rels_name):
+    """A payload's relationships part stored under a name equivalent to the
+    one OPC computes -- the same folding (ECMA-376 6.2.2.3) and path
+    normalisation the File rule and target resolution already apply -- was
+    looked for by its exact spelling only, found absent, and passed over as
+    "declares none". The suppl file it declared and the archive lacks drew
+    no X4, and the container came back complete at exit 0."""
+    body = ('<?xml version="1.0"?><Relationships xmlns="%s">%s</Relationships>'
+            % (RELS_NS, _DECLARES_A_MISSING_SUPPL)).encode("utf-8")
+    path = _package_with_rels(tmp_path, rels_name, body)
+    report = runner.run(path)
+    ids = by_id(report)
+    assert "X4" in ids, "the equivalent-named relationships part was not read: %s" % sorted(ids)
+    assert ids["X4"].violation.subject == "aasx/files/missing.pdf"
+
+
+@pytest.mark.parametrize("body", [
+    '<?xml version="1.0"?><NotRelationships xmlns="%s">%s</NotRelationships>',
+    '<?xml version="1.0"?><Relationships>%s%s</Relationships>',
+    '<?xml version="1.0"?><Relationships xmlns="urn:wrong">%s%s</Relationships>',
+], ids=["wrong-root", "no-namespace", "namespace-typo"])
+def test_a_relationships_part_that_is_not_one_is_a_container_defect(tmp_path, body):
+    """A part in the relationships slot whose root is not OPC's
+    `Relationships` -- another element, no namespace, the wrong namespace --
+    parsed, and `root.iter` found no relationships in it, so it came back as
+    "declares none": a missing suppl file drew no X4 and the run was
+    complete at exit 0. It is a defect in the archive, reported, not an
+    empty declaration."""
+    filled = (body % (RELS_NS, _DECLARES_A_MISSING_SUPPL)) if body.count("%s") == 2 \
+        else body % _DECLARES_A_MISSING_SUPPL
+    path = _package_with_rels(tmp_path, "aasx/_rels/env.json.rels", filled.encode("utf-8"))
+    report = runner.run(path)
+    ids = by_id(report)
+    assert not report.complete, "a relationships part that is not one passed as complete"
+    assert ids, "no finding at all"
+
+
 def _utf16_across_the_cap(inner: str) -> bytes:
     """A UTF-16 XML document under `_STRADDLE_CAP` bytes as it is stored and
     over it once converted to UTF-8: read, then abandoned by the conversion,
