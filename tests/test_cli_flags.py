@@ -221,6 +221,37 @@ def test_the_options_a_report_publishes_are_the_flags_it_was_given(tmp_path, cap
     assert published(["--profile", "02004"]) == expected(profile="02004")
 
 
+@pytest.mark.allow_crash
+def test_allow_unmatched_does_not_forgive_a_presence_rule_that_could_not_run(
+        tmp_path, monkeypatch, capsys):
+    """`--allow-unmatched` forgives one verdict: that no template matched.
+    A presence rule that could not run has not given it. Every finding of
+    that rule was moved to the notes, the crash with them, so a run whose
+    matching question was never answered printed `ok` and left by 0.
+    Measured with the rule made to raise: exit 0, and the crash only as
+    a note."""
+    import dataclasses
+
+    from aas_submodel_validate import registry, runner
+    from aas_submodel_validate.rules import detect
+
+    rule = registry._registry[detect.RULE_ID]
+
+    def explode(ctx):
+        raise RuntimeError("injected by %s" % __name__)
+
+    monkeypatch.setitem(registry._registry, detect.RULE_ID,
+                        dataclasses.replace(rule, fn=explode))
+    path = tmp_path / "hd.json"
+    path.write_text(json.dumps(hd_env()), "utf-8")
+    assert main([str(path), "--allow-unmatched"]) != 0
+    capsys.readouterr()
+    report = runner.run(str(path), allow_unmatched=True)
+    assert [f.id for f in report.findings
+            if f.violation.message == runner.COULD_NOT_RUN] == [detect.RULE_ID]
+    assert not [note for note in report.notes if runner.COULD_NOT_RUN in note]
+
+
 def test_allow_unmatched_forgives_only_the_presence_rule(tmp_path, capsys):
     """The flag partitions findings on one rule id, and every fixture for
     it had only that finding to move -- so the partition could sweep

@@ -274,8 +274,15 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     report.not_asked = rules.engine.rows_not_reached(ctx)
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
-        unmatched = [f for f in report.findings if f.id == detect.RULE_ID]
-        report.findings = [f for f in report.findings if f.id != detect.RULE_ID]
+        # The verdict that no template matched, and only that. A presence
+        # rule that could not run has not given it: moved with the rest,
+        # its crash became a note and the run printed `ok` with the
+        # matching question never answered.
+        def forgiven(finding):
+            return (finding.id == detect.RULE_ID
+                    and finding.violation.message != COULD_NOT_RUN)
+        unmatched = [f for f in report.findings if forgiven(f)]
+        report.findings = [f for f in report.findings if not forgiven(f)]
         for finding in unmatched:
             report.notes.append("%s (allowed): %s -- %s"
                                 % (detect.RULE_ID, finding.violation.message,
