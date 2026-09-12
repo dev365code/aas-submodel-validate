@@ -570,9 +570,11 @@ def load(path) -> Loaded:
         return loaded
     raise UnreadablePath(
         "cannot tell what %s is: expected .aasx, .json or .xml" % path,
-        fix="Name the file .aasx for a package, .json or .xml for an AAS "
-            "environment or a bare Submodel. The extension is how the "
-            "format is chosen here; the contents were not looked at.")
+        fix="Name the file .aasx for a package, .json for an AAS environment "
+            "or a bare Submodel, or .xml for an AAS environment. The "
+            "extension is how the format is chosen here; the contents were "
+            "not looked at. A bare Submodel is read from .json; given as "
+            ".xml it is read as an environment, which it is not.")
 
 
 def _load_json(path: Path) -> Loaded:

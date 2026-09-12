@@ -725,9 +725,11 @@ SHIPPED_REMEDIES = {
         "Point this at a file rather than at a directory. Nothing was "
         "opened, so nothing here is a statement about a document.",
     "loader/path/unknown-extension":
-        "Name the file .aasx for a package, .json or .xml for an AAS "
-        "environment or a bare Submodel. The extension is how the format "
-        "is chosen here; the contents were not looked at.",
+        "Name the file .aasx for a package, .json for an AAS environment "
+        "or a bare Submodel, or .xml for an AAS environment. The "
+        "extension is how the format is chosen here; the contents were "
+        "not looked at. A bare Submodel is read from .json; given as "
+        ".xml it is read as an environment, which it is not.",
     "loader/access/PermissionError":
         "Check that this file and every directory above it are "
         "readable by the account running this. Nothing here is a "

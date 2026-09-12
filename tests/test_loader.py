@@ -568,6 +568,24 @@ def test_a_file_this_reader_cannot_identify_is_the_callers_mistake(tmp_path):
         load(path)
 
 
+def test_the_extension_remedy_does_not_promise_xml_for_a_bare_submodel(tmp_path):
+    """The remedy for an extension this reader cannot place said `.json or
+    .xml for an AAS environment or a bare Submodel` -- but a bare Submodel
+    is read from `.json` only, and one given as `.xml` is read as an
+    environment, fails, and is told to fix a syntax that is not wrong. The
+    remedy promised a route the reader does not have. It names `.json` for
+    a bare Submodel and `.xml` for an environment now."""
+    path = tmp_path / "notes.txt"
+    path.write_bytes(env_json())
+    with pytest.raises(UnreadablePath, match="cannot tell what") as exc_info:
+        load(path)
+    fix = exc_info.value.fix
+    assert "a bare Submodel" in fix
+    # A bare Submodel sits with .json and before .xml: it is the .json route,
+    # not the .xml one.
+    assert fix.index(".json") < fix.index("a bare Submodel") < fix.index(".xml"), fix
+
+
 @pytest.mark.parametrize("suffix", (".xml", ".json"))
 def test_a_document_over_the_bound_is_not_parsed_anyway(tmp_path, monkeypatch, suffix):
     """`_read_bounded` answers None when it refused, and each caller has

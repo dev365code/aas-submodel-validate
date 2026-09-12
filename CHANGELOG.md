@@ -57,6 +57,13 @@ conversion catches all three now, and a relationships part, which is
 handed to the parser as bytes and so met them a step later, reports that
 it does not parse.
 
+**The remedy for an unplaceable extension no longer offers `.xml` for a
+bare Submodel.** It said a file could be named `.json` or `.xml` for an
+AAS environment or a bare Submodel -- but a bare Submodel is read from
+`.json` only, and one given as `.xml` is read as an environment, fails,
+and is told to fix a syntax that is not wrong. The remedy names `.json`
+for a bare Submodel and `.xml` for an environment now.
+
 **A rule that runs out of memory is not called a defect in the
 validator.** A rule that raises is reported as `could not run` with the
 advice that it is a bug in this tool to report -- true of a rule that

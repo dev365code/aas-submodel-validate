@@ -678,6 +678,17 @@ TABLE = [
      "size bound was told it is a defect in this tool to report -- the same "
      "advice a rule with a real bug gets, on a file that is large but legal"),
 
+    ("loader/a-bare-submodel-is-not-offered-as-xml",
+     "src/aas_submodel_validate/loader.py",
+     '            "or a bare Submodel, or .xml for an AAS environment. The "',
+     '            "or .xml for an AAS environment or a bare Submodel. The "',
+     ["tests/test_loader.py::"
+      "test_the_extension_remedy_does_not_promise_xml_for_a_bare_submodel"],
+     "the remedy for an unplaceable extension offered .xml for a bare "
+     "Submodel, which this reader reads from .json only -- a bare Submodel "
+     "given as .xml is read as an environment, fails, and is told to fix a "
+     "syntax that is not wrong"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose
