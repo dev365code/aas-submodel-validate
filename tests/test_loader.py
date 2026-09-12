@@ -60,6 +60,22 @@ def test_an_environment_xml_file(tmp_path):
     assert [s.id for s in loaded.submodels] == ["urn:test:submodel"]
 
 
+def test_a_bare_submodel_xml_file(tmp_path):
+    """A single Submodel arrives as .xml the way it does as .json: read
+    symmetrically, via `xmlization.submodel_from_str`. The reader tells a
+    bare Submodel from an environment by the XML root element -- `submodel`
+    rather than `environment` -- as `_load_json` tells them by `modelType`."""
+    document = json.loads(env_json())["submodels"][0]
+    submodel = jsonization.submodel_from_jsonable(document)
+    path = tmp_path / "submodel.xml"
+    path.write_text(xmlization.to_str(submodel), "utf-8")
+    loaded = load(path)
+    assert loaded.form == "submodel-xml"
+    assert len(loaded.submodels) == 1
+    assert loaded.environments == []
+    assert loaded.errors == []
+
+
 def test_an_aasx_with_json_payload(tmp_path):
     packed = build_aasx(tmp_path / "p.aasx", payload=env_json())
     loaded = load(packed)
@@ -390,6 +406,33 @@ def test_xml_that_runs_this_reader_out_of_memory_is_told_the_reader_stopped(
 
 
 @pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_xml_that_runs_out_of_memory_being_decoded_is_told_the_reader_stopped(
+        tmp_path, monkeypatch, zipped):
+    """The UTF-8 conversion hands an already-UTF-8 document back untouched,
+    so the decode to `str` beside it -- not the conversion -- is where a
+    document near the bound makes its copy. That step is guarded the same
+    way as every other: running out there is a stop before the end, not a
+    traceback out of a reader that turns what breaks on the way in into
+    data. Bare and packaged, since each has its own decode call site."""
+    from aas_submodel_validate import loader
+
+    text = xmlization.to_str(jsonization.environment_from_jsonable(
+        json.loads(env_json())))
+    path = tmp_path / ("probe.aasx" if zipped else "probe.xml")
+    if zipped:
+        build_aasx(path, payload=text.encode("utf-8"), payload_name="aasx/env.xml")
+    else:
+        path.write_text(text, "utf-8")
+    assert not load(path).errors, "the document does not read without the fault"
+
+    def out_of_memory(raw):
+        raise MemoryError()
+    monkeypatch.setattr(loader, "_decode", out_of_memory)
+    (error,) = [e for e in load(path).errors if e.stage == "payload"]
+    _stopped(error, "memory", building=False)
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
 def test_a_file_cut_short_in_a_character_is_told_it_looks_cut_short(tmp_path, zipped):
     """Bytes that end halfway through a character are a copy or download
     that stopped early, not a file saved in the wrong encoding -- telling
@@ -566,24 +609,6 @@ def test_a_file_this_reader_cannot_identify_is_the_callers_mistake(tmp_path):
     path.write_bytes(env_json())
     with pytest.raises(UnreadablePath, match="cannot tell what"):
         load(path)
-
-
-def test_the_extension_remedy_does_not_promise_xml_for_a_bare_submodel(tmp_path):
-    """The remedy for an extension this reader cannot place said `.json or
-    .xml for an AAS environment or a bare Submodel` -- but a bare Submodel
-    is read from `.json` only, and one given as `.xml` is read as an
-    environment, fails, and is told to fix a syntax that is not wrong. The
-    remedy promised a route the reader does not have. It names `.json` for
-    a bare Submodel and `.xml` for an environment now."""
-    path = tmp_path / "notes.txt"
-    path.write_bytes(env_json())
-    with pytest.raises(UnreadablePath, match="cannot tell what") as exc_info:
-        load(path)
-    fix = exc_info.value.fix
-    assert "a bare Submodel" in fix
-    # A bare Submodel sits with .json and before .xml: it is the .json route,
-    # not the .xml one.
-    assert fix.index(".json") < fix.index("a bare Submodel") < fix.index(".xml"), fix
 
 
 @pytest.mark.parametrize("suffix", (".xml", ".json"))

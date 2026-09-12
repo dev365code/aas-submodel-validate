@@ -347,8 +347,8 @@ TABLE = [
 
     ("loader/a-packaged-part-is-answered-like-the-bare-file",
      "src/aas_submodel_validate/loader.py",
-     "            answered = _failure(exc, decoding=decoding, packaged=part is not None)\n",
-     "            answered = None\n",
+     "        answered = _failure(exc, decoding=decoding, packaged=part is not None)\n",
+     "        answered = None\n",
      ["tests/test_loader.py::"
       "test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is"],
      "the same bytes zipped or not get the same answer: a payload this "
@@ -381,7 +381,7 @@ TABLE = [
 
     ("loader/decoding-ends-where-building-begins",
      "src/aas_submodel_validate/loader.py",
-     "            decoding = False\n",
+     "        decoding = False\n",
      "",
      ["tests/test_loader.py::"
       "test_what_building_raises_is_the_documents_whatever_its_type"],
@@ -391,8 +391,10 @@ TABLE = [
 
     ("loader/xml-is-asked-about-this-interpreters-limits",
      "src/aas_submodel_validate/loader.py",
-     "            answered = _out_of_room(exc, building=False)\n",
-     "            answered = None\n",
+     "    except Exception as exc:\n"
+     "        _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
+     "    except Exception as exc:\n"
+     "        _payload_error(loaded, part, exc, None)\n",
      ["tests/test_loader.py::"
       "test_xml_too_deep_to_follow_is_told_the_reader_stopped",
       "tests/test_loader.py::"
@@ -501,14 +503,39 @@ TABLE = [
 
     ("loader/decoding-xml-that-runs-out-is-a-stop",
      "src/aas_submodel_validate/loader.py",
-     "        except MemoryError as exc:\n"
-     "            _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
-     "        except ZeroDivisionError as exc:\n"
-     "            _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
+     "    except MemoryError as exc:\n"
+     "        _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
+     "    except ZeroDivisionError as exc:\n"
+     "        _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
      ["tests/test_loader.py::"
       "test_xml_that_runs_this_reader_out_of_memory_is_told_the_reader_stopped"],
      "converting a UTF-16 document to UTF-8 sat before the guarded parse, "
      "and running out of memory there left as a traceback, bare or packaged"),
+
+    ("loader/a-bare-xml-that-runs-out-decoding-is-a-stop",
+     "src/aas_submodel_validate/loader.py",
+     "    except Exception as exc:\n"
+     "        _payload_error(loaded, None, exc, _out_of_room(exc, building=False))\n",
+     "    except UnicodeDecodeError as exc:\n"
+     "        _payload_error(loaded, None, exc, _out_of_room(exc, building=False))\n",
+     ["tests/test_loader.py::"
+      "test_xml_that_runs_out_of_memory_being_decoded_is_told_the_reader_stopped"],
+     "converting to UTF-8 hands the common case back untouched, so the "
+     "decode to text beside it is where a bare .xml near the bound runs out "
+     "-- narrow that guard to the encoding error alone and running out of "
+     "memory there leaves as a traceback"),
+
+    ("loader/a-packaged-xml-that-runs-out-decoding-is-a-stop",
+     "src/aas_submodel_validate/loader.py",
+     "        except Exception as exc:\n"
+     "            _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
+     "        except UnicodeDecodeError as exc:\n"
+     "            _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
+     ["tests/test_loader.py::"
+      "test_xml_that_runs_out_of_memory_being_decoded_is_told_the_reader_stopped"],
+     "the same decode guards a packaged XML part -- narrow it to the "
+     "encoding error alone and a part near the bound that runs out of memory "
+     "being decoded leaves as a traceback, not a recorded stop"),
 
     ("loader/a-payloads-relationships-are-filed-under-that-part",
      "src/aas_submodel_validate/loader.py",
@@ -678,16 +705,15 @@ TABLE = [
      "size bound was told it is a defect in this tool to report -- the same "
      "advice a rule with a real bug gets, on a file that is large but legal"),
 
-    ("loader/a-bare-submodel-is-not-offered-as-xml",
+    ("loader/a-bare-submodel-is-read-from-xml",
      "src/aas_submodel_validate/loader.py",
-     '            "or a bare Submodel, or .xml for an AAS environment. The "',
-     '            "or .xml for an AAS environment or a bare Submodel. The "',
-     ["tests/test_loader.py::"
-      "test_the_extension_remedy_does_not_promise_xml_for_a_bare_submodel"],
-     "the remedy for an unplaceable extension offered .xml for a bare "
-     "Submodel, which this reader reads from .json only -- a bare Submodel "
-     "given as .xml is read as an environment, fails, and is told to fix a "
-     "syntax that is not wrong"),
+     '                return isinstance(tag, str) and tag.rsplit("}", 1)[-1] == "submodel"',
+     '                return isinstance(tag, str) and tag.rsplit("}", 1)[-1] == "environment"',
+     ["tests/test_loader.py::test_a_bare_submodel_xml_file"],
+     "the reader tells a bare Submodel from an environment by the XML root "
+     "element; misread the root and a bare Submodel given as .xml is built "
+     "as an environment, which it is not, and never read as the Submodel it "
+     "is"),
 
 ]
 

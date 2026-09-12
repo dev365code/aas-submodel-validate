@@ -15,6 +15,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
+from xml.etree import ElementTree
 
 from aas_core3 import jsonization, types, xmlization
 
@@ -421,6 +422,61 @@ def _payload_error(loaded: Loaded, part: Optional[str], exc, answered) -> None:
         detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
 
 
+def _xml_as_utf8_or_recorded(loaded: Loaded, raw: bytes, part: Optional[str]):
+    """The XML in UTF-8, or None with the reason it cannot go on recorded.
+
+    Decoded the way the parser will read it, before the guard reads a byte
+    of it. The refusal matched bytes, and a byte pattern finds `<!DOCTYPE`
+    in UTF-8 and nowhere else -- so the same declaration written UTF-16
+    came back not as a refusal but as a clean read.
+
+    And it is a copy of the whole document where it converts one, so it can
+    run out of memory where the parse would have: a UTF-16 document that
+    did left by a traceback. Asked only that -- anything else this raises
+    is a defect of ours, not the file's.
+    """
+    try:
+        raw = xml_as_utf8(raw)
+    except MemoryError as exc:
+        _payload_error(loaded, part, exc, _out_of_room(exc, building=False))
+        return None
+    except PartTooLarge as exc:
+        # The document's UTF-8 form is over the bound. Its bytes on disk
+        # were under it -- UTF-16 is narrower than UTF-8 for the CJK it
+        # holds -- so `_read_bounded` and the container's own read let it
+        # by, and the size shows only once it is converted the way the
+        # parser reads it. Recorded as `_read_bounded` records a bound,
+        # with no fix of its own, so X5 gives the per-form remedy.
+        loaded.errors.append(LoadError("bounds", str(exc), subject=part or loaded.path))
+        return None
+    if declares_doctype(raw):
+        loaded.errors.append(LoadError(
+            "payload", "the XML declares a DOCTYPE, which is refused",
+            subject=part or loaded.path, fix=PAYLOAD_DOCTYPE_REMEDY))
+        return None
+    return raw
+
+
+def _build_environment(loaded: Loaded, text: str, part: Optional[str]) -> None:
+    """One XML environment document into loaded, or the failure to build it.
+
+    XML is asked only about this interpreter's limits. It is read and built
+    in one pass -- aas-core3.0 builds each element as the parser reaches it
+    -- so a stop is a stop before the end, and a syntax error past that
+    point is never seen: 350 collections, one inside the next, were told to
+    fix the syntax their parser rejects. No encoding branch: XML declares
+    its own encoding, and a failure to decode it is the document's, as any
+    other failure to parse is.
+    """
+    try:
+        environment = xmlization.environment_from_str(text)
+    except Exception as exc:
+        _payload_error(loaded, part, exc, _out_of_room(exc, building=False))
+        return
+    loaded.environments.append(environment)
+    loaded.submodels.extend(environment.submodels or [])
+
+
 def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form: str,
                        document=None) -> None:
     """One environment document (JSON or XML) into loaded.submodels.
@@ -432,61 +488,26 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
     trees are several times the bytes they came from.
     """
     if not form.endswith("json"):
-        # Decoded the way the parser will read it, before the guard reads a
-        # byte of it. The refusal matched bytes, and a byte pattern finds
-        # `<!DOCTYPE` in UTF-8 and nowhere else -- so the same declaration
-        # written UTF-16 came back not as a refusal but as a clean read.
-        #
-        # And it is a copy of the whole document where it converts one, so
-        # it can run out of memory where the parse below would have: a
-        # UTF-16 document that did left by a traceback. Asked only that --
-        # anything else this raises is a defect of ours, not the file's.
+        utf8 = _xml_as_utf8_or_recorded(loaded, raw, part)
+        if utf8 is None:
+            return
         try:
-            raw = xml_as_utf8(raw)
-            refused = declares_doctype(raw)
-        except MemoryError as exc:
+            text = _decode(utf8)
+        except Exception as exc:
             _payload_error(loaded, part, exc, _out_of_room(exc, building=False))
             return
-        except PartTooLarge as exc:
-            # The document's UTF-8 form is over the bound. Its bytes on disk
-            # were under it -- UTF-16 is narrower than UTF-8 for the CJK it
-            # holds -- so `_read_bounded` and the container's own read let it
-            # by, and the size shows only once it is converted the way the
-            # parser reads it. Recorded as `_read_bounded` records a bound,
-            # with no fix of its own, so X5 gives the per-form remedy.
-            loaded.errors.append(LoadError(
-                "bounds", str(exc), subject=part or loaded.path))
-            return
-        if refused:
-            loaded.errors.append(LoadError(
-                "payload", "the XML declares a DOCTYPE, which is refused",
-                subject=part or loaded.path,
-                fix=PAYLOAD_DOCTYPE_REMEDY))
-            return
+        _build_environment(loaded, text, part)
+        return
     decoding = True
     try:
-        if form.endswith("json"):
-            if document is None:
-                document = json.loads(_decode(raw))
-            decoding = False
-            environment = jsonization.environment_from_jsonable(document)
-        else:
-            environment = xmlization.environment_from_str(_decode(raw))
+        if document is None:
+            document = json.loads(_decode(raw))
+        decoding = False
+        environment = jsonization.environment_from_jsonable(document)
     except Exception as exc:
         # Asked the way `_load_json` asks it of a bare file (`_failure`), so
         # the same failure gets the same answer zipped or not.
-        #
-        # XML is asked only about this interpreter's limits. It is read and
-        # built in one pass -- aas-core3.0 builds each element as the parser
-        # reaches it -- so a stop is a stop before the end, and a syntax
-        # error past that point is never seen: 350 collections, one inside
-        # the next, were told to fix the syntax their parser rejects. No
-        # encoding branch: XML declares its own encoding, and a failure to
-        # decode it is the document's, as any other failure to parse is.
-        if form.endswith("json"):
-            answered = _failure(exc, decoding=decoding, packaged=part is not None)
-        else:
-            answered = _out_of_room(exc, building=False)
+        answered = _failure(exc, decoding=decoding, packaged=part is not None)
         _payload_error(loaded, part, exc, answered)
         return
     loaded.environments.append(environment)
@@ -563,18 +584,12 @@ def load(path) -> Loaded:
     if suffix == ".json":
         return _load_json(path)
     if suffix == ".xml":
-        loaded = Loaded(path=str(path), form="environment-xml")
-        raw = _read_bounded(loaded, path)
-        if raw is not None:
-            _parse_environment(loaded, raw, part=None, form="environment-xml")
-        return loaded
+        return _load_xml(path)
     raise UnreadablePath(
         "cannot tell what %s is: expected .aasx, .json or .xml" % path,
-        fix="Name the file .aasx for a package, .json for an AAS environment "
-            "or a bare Submodel, or .xml for an AAS environment. The "
-            "extension is how the format is chosen here; the contents were "
-            "not looked at. A bare Submodel is read from .json; given as "
-            ".xml it is read as an environment, which it is not.")
+        fix="Name the file .aasx for a package, .json or .xml for an AAS "
+            "environment or a bare Submodel. The extension is how the "
+            "format is chosen here; the contents were not looked at.")
 
 
 def _load_json(path: Path) -> Loaded:
@@ -610,6 +625,71 @@ def _load_json(path: Path) -> Loaded:
 
     _parse_environment(loaded, raw, part=None, form="environment-json",
                        document=document)
+    return loaded
+
+
+#: How much of the document to feed the peek below before it has read the
+#: root element's start tag: enough for that tag and its attributes, and
+#: not the whole document, whose bytes it would otherwise copy to find one
+#: name.
+_PEEK_STEP = 65536
+
+
+def _root_is_submodel(text: str) -> bool:
+    """Whether the XML root element is a bare `submodel` rather than an
+    `environment` -- read only as far as the root's start tag, the way
+    `_load_json` reads `modelType` before it builds anything.
+
+    Anything it cannot parse this far is answered False, so the document
+    goes to the environment reader and meets the same failure there. The
+    DOCTYPE was refused before this, so there are no entities to expand.
+    """
+    parser = ElementTree.XMLPullParser(events=("start",))
+    try:
+        for i in range(0, len(text), _PEEK_STEP):
+            parser.feed(text[i:i + _PEEK_STEP])
+            # A malformed token is buffered by `feed` and raised here, at
+            # `read_events`, not where it was fed -- so both are guarded.
+            for _event, element in parser.read_events():
+                tag = element.tag
+                return isinstance(tag, str) and tag.rsplit("}", 1)[-1] == "submodel"
+    except Exception:
+        return False
+    return False
+
+
+def _load_xml(path: Path) -> Loaded:
+    """A bare .xml file: an AAS environment, or a single Submodel read the
+    way `_load_json` reads one from .json.
+
+    The two are told apart by the XML root element -- `submodel` rather
+    than `environment` -- as `_load_json` tells them apart by `modelType`,
+    and each is then read by its own aas-core3 reader.
+    """
+    loaded = Loaded(path=str(path), form="environment-xml")
+    raw = _read_bounded(loaded, path)
+    if raw is None:
+        return loaded
+    raw = _xml_as_utf8_or_recorded(loaded, raw, part=None)
+    if raw is None:
+        return loaded
+    try:
+        text = _decode(raw)
+    except Exception as exc:
+        _payload_error(loaded, None, exc, _out_of_room(exc, building=False))
+        return loaded
+    if _root_is_submodel(text):
+        loaded.form = "submodel-xml"
+        try:
+            loaded.submodels.append(xmlization.submodel_from_str(text))
+        except Exception as exc:
+            message, fix = (_out_of_room(exc, building=False)
+                            or ("the document could not be read as a Submodel", None))
+            loaded.errors.append(LoadError(
+                "payload", message, subject=loaded.path,
+                detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
+        return loaded
+    _build_environment(loaded, text, part=None)
     return loaded
 
 
