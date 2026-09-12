@@ -328,7 +328,7 @@ speak to your file:
   not an error, and it is not coverage either.
 
 Reads `.aasx` (OPC containers, XML or JSON payload), AAS environment
-`.json`/`.xml`, and bare Submodel `.json`. Exit codes: 0 nothing at error
+`.json`/`.xml`, and bare Submodel `.json`/`.xml`. Exit codes: 0 nothing at error
 severity, 1 at least one error, 2 could not run — which covers a path
 that cannot be read and an input this reader refused, since nothing about
 either was judged. Warnings do not fail a build unless you ask with
