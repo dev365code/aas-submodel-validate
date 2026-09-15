@@ -7,6 +7,7 @@
 | `aas_submodel_validate/data/smt/02004/2.0.1/template.json` | IDTA 02004-2-0-1 *Handover Documentation* template | no |
 | `aas_submodel_validate/data/smt/02003/2.0.1/template.json` | IDTA 02003 2.0.1 *Technical Data* template | no |
 | `aas_submodel_validate/data/smt/02035-2/1.0/template.json` | IDTA 02035-2 1.0 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
+| `aas_submodel_validate/data/smt/02006/3.0/template.json` | IDTA 02006-3-0 *Digital Nameplate* template | no |
 | `tests/corpus/idta/02004/example.json` | official 02004 2.0 example (environment JSON) | no |
 | `aas_submodel_validate/data/example/idta-02004-2.0.aasx` | official 02004 2.0 example (AASX) — ships in the wheel, and `smtv --example` judges it | no |
 | `tests/corpus/idta/02003/sample-2.0.json` | official 02003 2.0 sample (environment JSON) | no |

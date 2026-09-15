@@ -274,13 +274,14 @@ def test_a_template_submodel_is_not_an_instance_and_is_not_judged(tmp_path):
 
 def test_the_vendored_templates_pass_the_tool_that_reads_them(tmp_path):
     """The strongest form of the same test, and the one a stranger runs
-    first: point it at the published template. Every rule in this
-    project is generated from these three files."""
+    first: point it at the published templates it vendors. Each has to
+    read cleanly through the tool, whether or not a rule pack is
+    generated from it yet."""
     from aas_submodel_validate.cli import EXIT_OK, main
 
     vendored = sorted((ROOT / "src" / "aas_submodel_validate" / "data"
                        / "smt").rglob("template.json"))
-    assert len(vendored) == 3, vendored
+    assert len(vendored) == 4, vendored
     for template in vendored:
         assert main(["-q", "--allow-unmatched", str(template)]) == EXIT_OK, (
             "%s is the template this project reads its rules out of, and "
