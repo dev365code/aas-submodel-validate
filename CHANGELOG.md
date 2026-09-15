@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — unreleased
+## 0.2.0 — 2026-09-16
 
 Who should take this release: anyone running an offline gate on AASX
 containers or AAS documents from suppliers, who reads the exit code or
