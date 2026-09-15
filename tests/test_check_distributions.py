@@ -280,8 +280,8 @@ def test_the_run_itself_examines_an_sdist_named_the_older_way(tmp_path,
     # unpacked sdist has none. Pinned rather than skipped: `tracked` is
     # what decides, so it is told the answer and the selection is what
     # gets measured. Written first without this, it failed in exactly
-    # the place `MANIFEST.in` promises the suite runs -- which is the
-    # third time in a day a test here has assumed a checkout.
+    # the place `MANIFEST.in` promises the suite runs -- not the first
+    # test here to have assumed a checkout.
     monkeypatch.setattr(gate, "tracked", lambda: {"pyproject.toml"})
 
     stray = tmp_path / "note.md"
