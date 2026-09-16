@@ -362,10 +362,10 @@ REMEDIES = {
         "template's definition asks for.",
     "BAT-R2":
         "Run --profile with the document number of the template you "
-        "mean. This tool has a table for neither side of this "
-        "collision, so the profile settles which template the file "
-        "claims to be and no more -- nothing here judges it against "
-        "either one.",
+        "mean. Where this tool has a table for one side of the collision "
+        "the submodel is judged against it and the profile only records "
+        "which template you meant; where it has a table for neither, the "
+        "profile settles the claim and nothing here judges it.",
     "BAT-R8":
         "Provide the element, or record that this battery is outside "
         "the provision read as requiring it. The template will not ask "

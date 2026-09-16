@@ -1,5 +1,5 @@
 """Every generated 02023 Carbon Footprint rule fires, and the golden
-fixture fires none.
+fixture fires only the shared-identifier caveat.
 
 Same contract as the 02004/02003/02006 suites: a required row is proved
 live by removing it, a bounded optional by injecting past its maximum,
@@ -33,8 +33,13 @@ def _ids(tmp_path, env: dict):
     return by_id(runner.run(path))
 
 
-def test_the_golden_environment_is_clean(tmp_path):
-    assert set(_ids(tmp_path, pcf_env())) == set()
+def test_the_golden_environment_fires_only_the_shared_identifier_caveat(tmp_path):
+    """The golden file satisfies 02023's table, so no PCF row fires. What
+    does fire is BAT-R2: the CarbonFootprint identifier is claimed by both
+    02023 and 02035-3, and that caveat rides on the identifier, not on
+    anything wrong with the file (docs/divergences.md #36). A truly empty
+    verdict would mean the collision had gone unnamed."""
+    assert set(_ids(tmp_path, pcf_env())) == {"BAT-R2"}
 
 
 def test_the_golden_environment_is_metamodel_clean_too(tmp_path):

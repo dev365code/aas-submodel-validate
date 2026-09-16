@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.4.0 — unreleased
+
+Who should take this release: anyone validating IDTA 02023 Carbon
+Footprint submodels offline. It adds a fifth template pack, so a Carbon
+Footprint submodel this tool could only report as unmatched (`SMT-D1`)
+is now judged against the template's own rows.
+
+171 rules, 129 generated from the vendored official template files, up
+from 157: the thirteen generated rows of IDTA 02023 1.0 and one
+hand-written rule over them. No rule is removed.
+This is a minor release because it adds a template rather than changing
+how the existing four are read.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
+**A Carbon Footprint submodel is now judged, not set aside.** `verdict`
+A submodel wearing `https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0`
+drew `SMT-D1` and exited 1 unless `--allow-unmatched` was given. It is
+read now against the thirteen rows generated from the published template:
+the product carbon footprint's calculation method, CO2-equivalent,
+reference impact unit and life-cycle phases, its publication date and
+address, at every nesting level. The product- or sector-specific
+carbon-footprint section is named by a note (`PCF-D1`) but not yet judged
+against its rows -- it repeats a sub-structure the generator cannot label
+uniquely, and judging it waits on that (see docs/divergences.md).
+
+**The identifier IDTA 02023 shares with the battery passport is named,
+not silently resolved.** `caveat` A Carbon Footprint submodel wears an
+identifier that both IDTA 02023 and IDTA 02035-3 claim. This tool has
+02023's table, so the submodel is judged against it -- and `BAT-R2` names
+02035-3 as the other template that claims the same identifier, a caveat
+the verdict may not stand without. `--profile 02035-3` records that the
+author meant the battery passport's part 3 without hiding the 02023
+judgement; it does not silence the note, because there is a real verdict
+behind it.
+
 ## 0.3.0 — 2026-09-17
 
 Who should take this release: anyone validating IDTA 02006 Digital

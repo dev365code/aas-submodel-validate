@@ -155,12 +155,15 @@ def _one(report, rule_id):
 
 # -- BAT-R2: an identifier two published templates claim ----------------------
 
-def test_a_shared_identifier_with_no_table_is_named_not_dismissed(tmp_path):
-    """Both templates that claim it, by document number, in the finding.
+def test_a_shared_identifier_partly_tabled_is_named_not_dismissed(tmp_path):
+    """This tool has a table for one of the two templates that claim this
+    identifier, so the submodel is judged against that one -- and BAT-R2
+    still names both, by document number, so the judged-against side does
+    not stand in the report as if it were the only claimant.
 
-    Without this the report says only that nothing matched a template
-    this tool knows -- which is the one thing that is not true about
-    this input."""
+    Without this the report would judge the file against 02023 and say
+    nothing of 02035-3, which declares the very same identifier -- the one
+    thing about this input a reader most needs told."""
     report = _run(tmp_path, _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT)))
     finding = _one(report, "BAT-R2")
     said = finding.violation.message + " " + (finding.violation.detail or "")
@@ -169,11 +172,13 @@ def test_a_shared_identifier_with_no_table_is_named_not_dismissed(tmp_path):
     assert CARBON_FOOTPRINT in said
 
 
-def test_choosing_a_profile_settles_the_shared_identifier(tmp_path):
-    """`--profile` is the instruction that makes the ambiguity go away.
-    It does not make a table appear: the report still says nothing was
-    judged by it, and saying otherwise would be the tool inventing a
-    verdict.
+def test_choosing_a_profile_declares_the_shared_identifier(tmp_path):
+    """`--profile` says which template the file claims to be. For this
+    collision one side has a table, so the file is judged against it with
+    or without the flag -- and the flag cannot hide that verdict. What it
+    changes is BAT-R2's sentence: from naming both claimants as an open
+    question to recording which one the author declared, the
+    judged-against side still named beside it.
 
     Through the command line, not the library. The first version of this
     called `runner.run(profile=...)` and passed while the parser was
@@ -187,7 +192,10 @@ def test_choosing_a_profile_settles_the_shared_identifier(tmp_path):
     assert main([str(path), "--profile", "02035-3"]) in (0, 1)
     report = _run(tmp_path, _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT)),
                   profile="02035-3")
-    assert "BAT-R2" not in _ids(report)
+    finding = _one(report, "BAT-R2")            # a verdict stands; not silenced
+    said = finding.violation.message + " " + (finding.violation.detail or "")
+    assert "declared IDTA 02035-3" in said      # the flag was recorded
+    assert "IDTA 02023" in said                 # judged against, still named
 
 
 def test_the_remedy_names_a_value_the_parser_accepts(tmp_path):
@@ -205,6 +213,20 @@ def test_the_remedy_names_a_value_the_parser_accepts(tmp_path):
     from aas_submodel_validate.cli import main
     for key in settles_only():
         assert main([str(path), "--profile", key]) in (0, 1), key
+
+
+def test_a_valid_carbon_footprint_is_clean_yet_the_collision_is_named(tmp_path):
+    """The golden 02023 file satisfies 02023's table -- no PCF finding --
+    and BAT-R2 still names 02035-3, because the identifier is claimed by
+    both whether or not the file is otherwise conformant. A clean verdict
+    is no licence to drop the caveat: the reader still needs to know the
+    file could have meant the battery passport instead."""
+    from builders import pcf_env
+    report = _run(tmp_path, pcf_env())
+    assert not [i for i in _ids(report) if i.startswith("PCF-")], sorted(_ids(report))
+    finding = _one(report, "BAT-R2")
+    said = finding.violation.message + " " + (finding.violation.detail or "")
+    assert "IDTA 02023" in said and "IDTA 02035-3" in said
 
 
 def test_the_pair_this_tool_has_tables_for_is_not_this_rules_business(tmp_path):
@@ -559,11 +581,12 @@ def test_the_divergence_row_counts_the_index_it_cites():
     were wrong.
 
     It said the index holds ten template editions and that this
-    repository vendors three of them. The index holds twelve, and one of
-    the three vendored templates is among them -- 02004 is indexed at a
-    different edition than the one vendored here, and 02003 is not
-    indexed at all. An evidence ledger whose numbers do not survive
-    being counted is worth less than no ledger.
+    repository vendors three of them. The index holds twelve, and two of
+    the five vendored templates are among them -- 02035-2 and 02023, one
+    side each of the two collisions; 02004 is indexed at a different
+    edition than the one vendored here, and 02003 and 02006 are not
+    indexed at all. An evidence ledger whose numbers do not survive being
+    counted is worth less than no ledger.
     """
     import hashlib
     import json

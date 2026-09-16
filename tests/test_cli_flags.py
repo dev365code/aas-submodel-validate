@@ -124,9 +124,11 @@ def test_the_profiles_on_offer_say_which_kind_each_one_is(capsys):
 def test_a_profile_that_only_settles_a_collision_is_not_reported_as_idle(tmp_path,
                                                                         capsys):
     """The runner tells a caller when `--profile` named a template no
-    submodel answered to, so the flag chose nothing. A key that settles a
-    collision chose nothing by design -- it silenced a finding instead --
-    and saying it was idle contradicts the finding it just removed."""
+    submodel answered to, so the flag chose nothing. A settle-only key is
+    never that: here it names the side of a partial collision this tool
+    has no table for, and the flag is consequential -- it turns BAT-R2's
+    sentence into the author's declaration. Reporting it as idle would
+    contradict the finding it just rewrote."""
     env = {"assetAdministrationShells": [], "conceptDescriptions": [],
            "submodels": [{
                "modelType": "Submodel", "id": "urn:x", "idShort": "CarbonFootprint",
@@ -139,8 +141,12 @@ def test_a_profile_that_only_settles_a_collision_is_not_reported_as_idle(tmp_pat
     path.write_text(json.dumps(env))
     assert main([str(path), "--profile", "02035-3"]) in (0, 1)
     printed = capsys.readouterr().out
-    assert "BAT-R2" not in printed, "the flag did not settle the collision"
-    assert "chose nothing" not in printed
+    assert "chose nothing" not in printed, "a settle-only key is not idle"
+    # Not idle because it changed the finding: BAT-R2 now records the
+    # declaration rather than posing both claimants as an open question.
+    # A partial collision has a table on one side, so there is a verdict
+    # the flag cannot silence -- only annotate.
+    assert "declared IDTA 02035-3" in printed
 
 
 def test_a_run_with_a_note_does_not_call_itself_ok(tmp_path, capsys):

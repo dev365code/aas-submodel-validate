@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 116 rows is how one of them
+extracted, not hand-written: hand-copying 129 rows is how one of them
 silently goes stale. That number is pinned in `tests/test_readme_front.py`
 along with the rest, because it said sixty-four for as long as there were
 two tables and went on saying it through a third -- this sentence was an
