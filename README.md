@@ -347,8 +347,8 @@ even that.
 157 rules, 147 of them across four IDTA templates — 116 generated from the vendored
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), 31 hand-written where a
-template file cannot speak. Of the nine that belong to no template,
-five are about the input itself — how it is packaged, whether it parses,
+template file cannot speak. Of the ten that belong to no template,
+six are about the input itself — how it is packaged, whether it parses,
 and how much of it this reader will take in — and two are about whether
 a template this tool knows applies, and which one. The last two read the
 battery
@@ -370,8 +370,9 @@ holding only the other parts draws `SMT-D1` and exits 1 — "nothing here
 matched a template I have", which is true and is not a defect in the
 file. `--allow-unmatched` is for that. X1, X2 and X4 are about the AASX/OPC
 package the submodel arrives in; X3 says a document would not parse,
-packaged or bare; and X5 is this reader's own bound on how much it will
-take in, whichever way it arrives. One, SMT-D1, asks whether
+packaged or bare; X5 is this reader's own bound on how much it will
+take in, whichever way it arrives; and X6 is whether the path names
+something this reader can open at all. One, SMT-D1, asks whether
 the input brought a submodel this tool knows at all; and one, SMT-D2,
 says which template answered wherever two published templates share one
 submodel identifier and something had to choose.

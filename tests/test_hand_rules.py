@@ -1776,3 +1776,13 @@ def test_a_urn_uri_of_the_product_passes(tmp_path):
     env = copy.deepcopy(dn_env())
     _set_uri_of_the_product(env, "urn:example:product:1234")
     assert "DN-D1" not in _findings(tmp_path, env)
+
+
+def test_a_whitespace_wrapped_uri_is_left_to_the_metamodel(tmp_path):
+    """A valid absolute URI wrapped in whitespace is malformed as an
+    xs:anyURI and the relayed metamodel channel says so; DN-D1 strips
+    before testing the scheme, so it does not pile a second finding on the
+    same defect."""
+    env = copy.deepcopy(dn_env())
+    _set_uri_of_the_product(env, " https://example.com/a ")
+    assert "DN-D1" not in _findings(tmp_path, env)

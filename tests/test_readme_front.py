@@ -125,8 +125,8 @@ def test_the_rule_counts_are_the_registrys():
     # paragraph, so it no longer describes the split at all -- it says
     # what the five have in common, which is that they are about the
     # input rather than about a template.
-    assert "five are about the input itself" in FLOWED
-    assert "about the container" not in FLOWED.split("Of the nine")[1][:400], (
+    assert "six are about the input itself" in FLOWED
+    assert "about the container" not in FLOWED.split("Of the ten")[1][:400], (
         "the summary describes the five as container rules again; two of "
         "them fire on a document with no container, which the paragraph "
         "below derives from a run")

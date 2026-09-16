@@ -30,9 +30,9 @@ and types it `xs:anyURI`, which admits a relative reference and the
 empty string -- both of which the metamodel passes. `DN-D1` reports a
 value carrying no scheme; any scheme is accepted (`urn:` as readily as
 `https:`), because the requirement is a global identifier, not a
-web-resolvable one. Length and the allowed-character set are IEC
-61406-1's, a paid standard whose text this project does not hold, so
-the check stops at the absolute-URI floor the template's own definition
+web-resolvable one. The finer constraints IEC 61406-1 places on an identification link
+are a paid standard's, whose text this project does not hold, so the
+check stops at the absolute-URI floor the template's own definition
 and RFC 3986 establish (`docs/divergences.md` #47).
 
 **A near-miss in a Nameplate identifier is not diagnosed the way an
