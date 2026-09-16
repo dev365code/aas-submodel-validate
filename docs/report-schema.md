@@ -4,6 +4,9 @@
 and what the version number at the top of it promises.
 
 One run writes nothing there: `-q`, which asks for the exit code alone.
+In the next minor release a command-line usage error -- an unknown option
+or a missing argument -- will exit 64 (EX_USAGE) instead of 2; exit 2 will
+then mean only that the run could not judge the input.
 Exit 2 sometimes does and sometimes does not — an input this reader
 refused comes back with a report saying what was refused and what to do
 about it, while a path that could not be read at all has no report to

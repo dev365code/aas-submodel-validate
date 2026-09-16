@@ -51,6 +51,12 @@ The size bounds are unchanged: one document at 64 MiB, a container's
 parts at 64 MiB each and 256 MiB together, and a container's directory
 of names at 16 MiB.
 
+**Coming in the next minor release.** `notice` A command-line usage error
+-- an unknown option or a missing argument -- will exit 64 (EX_USAGE)
+instead of 2. Exit 2 will then mean only that the run could not judge the
+input (a path that could not be read, or an input refused), never a
+mistake in how the tool was called; today argparse conflates the two at 2.
+
 ## 0.2.0 — 2026-09-16
 
 Who should take this release: anyone running an offline gate on AASX
