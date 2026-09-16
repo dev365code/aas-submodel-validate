@@ -82,6 +82,9 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02006/3.0/template.json":
         "published/Digital nameplate/3/0/"
         "IDTA 02006-3-0_Template_Digital Nameplate.json",
+    "src/aas_submodel_validate/data/smt/02002/1.0/template.json":
+        "published/Contact Information/1/0/"
+        "IDTA 02002-1-0_Template_ContactInformation.json",
 }
 
 

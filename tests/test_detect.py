@@ -281,7 +281,7 @@ def test_the_vendored_templates_pass_the_tool_that_reads_them(tmp_path):
 
     vendored = sorted((ROOT / "src" / "aas_submodel_validate" / "data"
                        / "smt").rglob("template.json"))
-    assert len(vendored) == 4, vendored
+    assert len(vendored) == 5, vendored
     for template in vendored:
         assert main(["-q", "--allow-unmatched", str(template)]) == EXIT_OK, (
             "%s is the template this project reads its rules out of, and "
