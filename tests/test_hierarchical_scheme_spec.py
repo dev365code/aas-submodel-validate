@@ -69,3 +69,33 @@ def test_a_self_containing_entity_is_marked_recurses():
                             "qualifiers": [{"type": "SMT/Cardinality",
                                             "value": "ZeroToMany"}]}]}
     assert _row(node).get("recurses") == "urn:x:Node"
+
+
+def test_shared_identifier_list_rows_are_never_marked_recurses():
+    """The #1 guard for the recursion detector: a `SubmodelElementList`
+    and its item share one identifier (docs/divergences.md #39) -- 02004
+    has five such pairs (Language/LanguageCode, DigitalFiles/DigitalFile,
+    and three ReferenceElement lists), 02035-2 two -- but that is a list
+    with one item kind, not self-containment. If the detector marked them
+    `recurses` it would rewrite their rows and break the byte-frozen packs.
+    They carry no marker today and must carry none once the detector lands.
+    """
+    from aas_submodel_validate.rules import dbp_tables, hd_tables  # noqa: E402
+
+    def rows_sharing_parent_sid(tables):
+        found = []
+
+        def walk(rows, parent):
+            for row in rows:
+                if parent is not None and row["sid"] and row["sid"] == parent["sid"]:
+                    found.append(row)
+                walk(row["children"], row)
+        walk(tables.TREE, None)
+        return found
+
+    shared = rows_sharing_parent_sid(hd_tables) + rows_sharing_parent_sid(dbp_tables)
+    assert len(shared) == 7, "the #39 shared-identifier rows moved: %d" % len(shared)
+    for row in shared:
+        assert not row.get("recurses"), (
+            "%s shares its parent's identifier (a list and its item, #39); it "
+            "is not a recursion point and must not be marked" % row["label"])
