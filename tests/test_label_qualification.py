@@ -17,6 +17,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+import pytest  # noqa: E402
+
 import extract_smt_rules as g  # noqa: E402
 
 TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02023/1.0/template.json"
@@ -66,3 +68,25 @@ def test_by_label_keeps_both_repeats_and_drops_the_bare_label():
     assert "PcfCalculationMethod (ProductCarbonFootprints)" in by_label
     assert "PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprints)" in by_label
     assert "PcfCalculationMethod" not in by_label       # bare label -> KeyError
+
+
+@pytest.mark.xfail(strict=True, reason="label-qualification scheme unit "
+                   "(minimal ancestor suffix + recursion collapse) is next; "
+                   "today the generator qualifies by scope-root")
+def test_repeated_labels_are_qualified_by_minimal_ancestor_suffix():
+    """FAILING FIRST -- the executable spec the label-qualification scheme
+    unit turns green.
+
+    The decided scheme qualifies a repeated label by the shortest ancestor
+    suffix that makes its collision group unique: the immediate parent
+    where that distinguishes it, one ancestor further where it does not.
+    In 02023 the two `PcfCalculationMethods` differ at the immediate parent
+    (`ProductCarbonFootprint` vs `ProductOrSectorSpecificCarbonFootprint`),
+    so k=1; the two `PcfCalculationMethod` share that parent, so k=2. Today
+    the generator qualifies by scope-root instead
+    (`PcfCalculationMethods (ProductCarbonFootprints)`), so these
+    assertions are red until the scheme lands."""
+    text = g.generate(_pack(frozenset()))  # 02023 with both scopes present
+    assert "PcfCalculationMethods (ProductCarbonFootprint)" in text
+    assert "PcfCalculationMethods (ProductOrSectorSpecificCarbonFootprint)" in text
+    assert "PcfCalculationMethod (ProductCarbonFootprint/PcfCalculationMethods)" in text
