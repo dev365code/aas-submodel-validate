@@ -222,6 +222,27 @@ def build_corpus(into: Path):
         written.write_text(json.dumps(environment), encoding="utf-8")
         cases.append(("a %s list declaring it holds File" % label, written))
 
+    # A Digital Nameplate submodel. Nothing here carried one, so the
+    # corpus could not see IDTA 02006 land: a version with no table for
+    # it refuses it as unmatched (SMT-D1) and one with the table judges
+    # it. A valid one, and one whose URIOfTheProduct is a relative
+    # reference -- which DN-D1 reports and the metamodel passes.
+    from builders import dn_env  # noqa: E402
+
+    nameplate = into / "nameplate-valid.json"
+    nameplate.write_text(json.dumps(dn_env()), encoding="utf-8")
+    cases.append(("a valid Digital Nameplate submodel", nameplate))
+
+    relative = dn_env()
+    for _submodel in relative["submodels"]:
+        for _element in _submodel.get("submodelElements", []):
+            if _element.get("idShort") == "URIOfTheProduct":
+                _element["value"] = "Model-1234/Serial-5678"
+    relative_uri = into / "nameplate-relative-uri.json"
+    relative_uri.write_text(json.dumps(relative), encoding="utf-8")
+    cases.append(("a Digital Nameplate whose URIOfTheProduct is relative",
+                  relative_uri))
+
     # A battery passport that states its own category. `BAT-R8` withheld
     # eight rows because their obligation turns on a category and nothing
     # read one; the template makes the category mandatory and names its
