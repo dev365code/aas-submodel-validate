@@ -3,13 +3,15 @@
 ## 0.4.0 — unreleased
 
 Who should take this release: anyone validating IDTA 02023 Carbon
-Footprint submodels offline, and anyone whose submodel wears an
-identifier a second published template also claims -- 02023 shares its
-submodel identifier with the battery passport's part 3 (IDTA 02035-3),
-and this release is where such a shared identifier is judged and named
-rather than set aside. It adds a fifth template pack, so a Carbon
-Footprint submodel this tool could only report as unmatched (`SMT-D1`) is
-now judged against the template's own rows.
+Footprint submodels offline; anyone whose submodel wears an identifier a
+second published template also claims (02023 shares its submodel
+identifier with the battery passport's part 3, IDTA 02035-3, and this is
+where such a shared identifier is judged and named rather than set
+aside); and anyone whose template states its element cardinalities with
+the older `Multiplicity` qualifier, which this release begins to read. It
+adds a fifth template pack, so a Carbon Footprint submodel this tool
+could only report as unmatched (`SMT-D1`) is now judged against the
+template's own rows.
 
 183 rules, 142 generated from the vendored official template files, up
 from 157: the twenty-six generated rows of IDTA 02023 1.0. No rule is
@@ -30,7 +32,8 @@ method, CO2-equivalent, reference impact unit, life-cycle phases,
 publication date and address -- and the product-or-sector-specific
 section, at every nesting level. That second section repeats a named
 sub-structure the first carries; the generator tells the two apart by
-qualifying a repeated label with its scope-root (see docs/divergences.md).
+qualifying a repeated label by the enclosing scope that distinguishes the
+copies (docs/divergences.md #48).
 The one part left unjudged is the open-content ArbitraryContent
 placeholder inside PcfInformation, which stands for content the template
 does not define.
