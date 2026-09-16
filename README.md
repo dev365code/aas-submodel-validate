@@ -267,7 +267,7 @@ metamodel channel, so that listing is one line longer than the count.
 ```mermaid
 timeline
     title Where aas-submodel-validate is going
-    Shipped : Four IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate
+    Shipped : Five IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint
             : 171 rules, 129 of them generated from the vendored official template files
             : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
@@ -383,7 +383,7 @@ submodel identifier and something had to choose.
 | IDTA 02003 Technical Data 2.0.1 | 26 | dates that are dates, files that exist in the container, references that resolve |
 | IDTA 02035-2 Digital Battery Passport part 2 1.0 | 22 | 02004's, minus the three whose elements this template drops |
 | IDTA 02006-3-0 Digital Nameplate 3.0 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value |
-| IDTA 02023 Carbon Footprint 1.0 | 13 | the product carbon footprint's calculation method, CO2-equivalent, reference impact unit and life-cycle phases, its publication date and address; the sector-specific section is named but not yet judged |
+| IDTA 02023 Carbon Footprint 1.0 | 13 | the product- or sector-specific carbon-footprint section is named but not yet judged |
 
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and

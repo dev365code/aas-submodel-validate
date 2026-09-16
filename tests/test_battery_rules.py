@@ -8,9 +8,10 @@ answering `0173-1#01-AHF578#003`), and `SMT-D2` owns it: the choice rides
 on the `Selection` the walk reads, so a verdict cannot move without the
 sentence that explains it. A second collision is published -- IDTA 02023
 and IDTA 02035-3 share one CarbonFootprint identifier -- and this project
-has a table for neither side of it. Today such a submodel is reported as
-nothing this tool knows, which is false: it knows exactly what it is,
-twice over. `BAT-R2` says that, and `--profile` silences it.
+has a table for 02023, not for 02035-3. Such a submodel is judged against
+02023, and `BAT-R2` names 02035-3 as the other claimant -- a caveat
+`--profile` records but cannot silence, because a verdict stands behind
+it.
 
 `BAT-R8` is the product. Nine template elements are `ZeroToOne` -- the
 template is content for them to be absent -- while the Battery Pass long
@@ -170,6 +171,11 @@ def test_a_shared_identifier_partly_tabled_is_named_not_dismissed(tmp_path):
     assert "IDTA 02023" in said
     assert "IDTA 02035-3" in said
     assert CARBON_FOOTPRINT in said
+    # The partial-branch verdict, not the none-tabled dismissal it
+    # replaced: those three strings appear in that message too, so
+    # without these two lines the test cannot tell the branches apart.
+    assert "judged against" in said
+    assert "not judged against a template" not in said
 
 
 def test_choosing_a_profile_declares_the_shared_identifier(tmp_path):
@@ -237,6 +243,43 @@ def test_the_pair_this_tool_has_tables_for_is_not_this_rules_business(tmp_path):
     the one with no table behind it."""
     from builders import hd_env
     assert "BAT-R2" not in _ids(_run(tmp_path, hd_env()))
+
+
+def test_a_declared_partial_claimant_is_named_as_it_is_spelled(tmp_path, monkeypatch):
+    """The declared side of a partial collision is named by its own name,
+    not by re-adding an "IDTA " that the key spelling stripped. Every
+    shipped claimant is spelled `IDTA NNNNN`, so the two happen to match;
+    a claimant from another series would be misnamed by the
+    reconstruction. A synthetic collision gives the fix a red test and
+    keeps a future non-IDTA claimant from shipping misattributed."""
+    from aas_submodel_validate.rules import battery, battery_tables
+    ident = "urn:test:partial-collision"
+    monkeypatch.setitem(battery_tables.SHARED_SUBMODEL_IDS, ident,
+                        ("IDTA 02004", "VDI 2770 Blatt 1"))
+    monkeypatch.setitem(battery._KEYS_OF, ident, ("02004", "VDI 2770 Blatt 1"))
+    report = _run(tmp_path, _env(_submodel("X", ident)), profile="VDI 2770 Blatt 1")
+    detail = _one(report, "BAT-R2").violation.detail
+    assert "VDI 2770 Blatt 1" in detail
+    assert "IDTA VDI 2770 Blatt 1" not in detail       # not the reconstruction
+
+
+def test_a_collision_with_a_table_for_neither_side_names_both_and_is_silenceable(
+        tmp_path, monkeypatch):
+    """When this tool has a table for neither claimant there is no verdict
+    to explain, so BAT-R2 names both and `--profile` may silence it -- the
+    original reading, kept live here now that both shipped collisions have
+    a table on at least one side."""
+    from aas_submodel_validate.rules import battery, battery_tables
+    ident = "urn:test:no-table-collision"
+    monkeypatch.setitem(battery_tables.SHARED_SUBMODEL_IDS, ident,
+                        ("IDTA 90001", "IDTA 90002"))
+    monkeypatch.setitem(battery._KEYS_OF, ident, ("90001", "90002"))
+    env = _env(_submodel("X", ident))
+    finding = _one(_run(tmp_path, env), "BAT-R2")
+    said = finding.violation.message + " " + (finding.violation.detail or "")
+    assert "IDTA 90001" in said and "IDTA 90002" in said
+    assert "not judged against a template" in said     # the none-tabled sentence
+    assert "BAT-R2" not in _ids(_run(tmp_path, env, profile="90001"))  # silenced
 
 
 # -- BAT-R8: conformant to the template, non-conformant to the regulation -----

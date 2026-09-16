@@ -243,6 +243,14 @@ def build_corpus(into: Path):
     cases.append(("a Digital Nameplate whose URIOfTheProduct is relative",
                   relative_uri))
 
+    # A Carbon Footprint submodel. It wears an identifier 02023 and 02035-3
+    # both claim, so it draws BAT-R2's caveat as well as 02023's rows -- the
+    # movement this pack introduced, which no earlier corpus input can show.
+    from builders import pcf_env  # noqa: E402
+    carbon = into / "carbon-footprint-valid.json"
+    carbon.write_text(json.dumps(pcf_env()), encoding="utf-8")
+    cases.append(("a valid Carbon Footprint submodel", carbon))
+
     # A battery passport that states its own category. `BAT-R8` withheld
     # eight rows because their obligation turns on a category and nothing
     # read one; the template makes the category mandatory and names its

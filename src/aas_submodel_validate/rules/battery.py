@@ -6,10 +6,12 @@ Two questions, and the second is the one no other tool asks.
 identifier claimed by two templates. This project has generated tables
 for both sides of the first (02004 and 02035-2) and `SMT-D2` owns it: the
 choice rides on the `Selection` the walk reads, so the verdict cannot
-move without the sentence that explains it. It has a table for neither
-side of the second, and there the report used to say only that nothing
-matched a template it knows -- the one thing that is not true about such
-a file. `BAT-R2` says what it is, twice over, and `--profile` settles it.
+move without the sentence that explains it. `BAT-R2` takes the second
+and reads it by how many claimants have a table: where one side has a
+table (02023, not 02035-3) the file is judged against it and `BAT-R2`
+names the other claimant as a caveat `--profile` records but cannot
+silence; where neither side has a table it names both and `--profile`
+settles which was meant, because a profile cannot conjure a table.
 Reporting the first collision here as well would be two rules answering
 one question, and the second would be the one with no table behind it.
 
@@ -416,7 +418,8 @@ def bat_r2_shared_identifier_without_a_table(ctx):
                 # not hide the judgement.
                 judged = [c for c in claimants if c not in tableless]
                 if declared:
-                    meant = "IDTA " + str(forced)
+                    meant = next(c for k, c in zip(_KEYS_OF[identifier], claimants)
+                                 if k == forced)
                     detail = ("%s; the author declared %s, and this tool judged "
                               "the submodel against %s -- it has no table for %s"
                               % (identifier, meant, " and ".join(judged),
