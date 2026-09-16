@@ -60,21 +60,22 @@ part 2, 02006 Digital Nameplate, and 02023 Carbon Footprint. A submodel
 of any other template is reported as not matched (`SMT-D1`), not judged;
 `--allow-unmatched` turns that from an error into a note.
 
-Not every template the generator *can* read is given a table. It reads a
-row's obligation from the element's `SMT/Cardinality` qualifier, and an
-element carrying none is read as `0..*` (`docs/divergences.md` #20) -- the
-right reading for the four 02003 rows that omit it, whose element tables
-in the specification bound them that way. But a template that carries no
-cardinality qualifier on *any* element would generate a table every row
-of which is optional: a table that obliges nothing and passes every file.
-Judging against it would be theatre.
-
-Two published templates the generator can otherwise read are in exactly
-that state, measured from the versions at the pin this project vendors
-from (`admin-shell-io/submodel-templates`): **IDTA 02002 Contact
-Information 1.0.1**, none of whose 36 elements carries a cardinality
-qualifier, and **IDTA 02007 Software Nameplate 1.0.1**, none of whose 73
-do. Until an edition states cardinalities -- or a reading is found that
-recovers the obligation from the specification's element tables without
-inventing one -- neither is given a table, and a submodel of either is
-left to `SMT-D1`.
+Not every template the generator can read structurally is given a table.
+It reads a row's cardinality from the element's `SMT/Cardinality`
+qualifier, and an element carrying none is read as `0..*`
+(`docs/divergences.md` #20). Two published templates the generator can
+otherwise read state their cardinalities with the older `Multiplicity`
+qualifier instead -- the same vocabulary (`One`, `ZeroToOne`,
+`OneToMany`, `ZeroToMany`), a different spelling -- which this generator
+does not read: **IDTA 02002 Contact Information 1.0.1** (all 36 of its
+elements carry `Multiplicity`, 5 of them mandatory) and **IDTA 02007
+Software Nameplate 1.0.1** (all 73, 14 mandatory), measured from the
+published templates at the upstream pin (neither is vendored here). Read
+as if they carried no cardinality, every row would default to `0..*`, and
+the generated table could not enforce the presence those `Multiplicity`
+qualifiers require -- it would still check the kind and value type of an
+element that was there, but never that a mandatory one was present. So
+neither is given a table, and a submodel of either is left to `SMT-D1`.
+Teaching the generator to read `Multiplicity` would make both judgeable
+(`docs/divergences.md` #50); that is a separate change, not this
+statement.

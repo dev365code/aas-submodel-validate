@@ -3,9 +3,13 @@
 ## 0.4.0 — unreleased
 
 Who should take this release: anyone validating IDTA 02023 Carbon
-Footprint submodels offline. It adds a fifth template pack, so a Carbon
-Footprint submodel this tool could only report as unmatched (`SMT-D1`)
-is now judged against the template's own rows.
+Footprint submodels offline, and anyone whose submodel wears an
+identifier a second published template also claims -- 02023 shares its
+submodel identifier with the battery passport's part 3 (IDTA 02035-3),
+and this release is where such a shared identifier is judged and named
+rather than set aside. It adds a fifth template pack, so a Carbon
+Footprint submodel this tool could only report as unmatched (`SMT-D1`) is
+now judged against the template's own rows.
 
 183 rules, 142 generated from the vendored official template files, up
 from 157: the twenty-six generated rows of IDTA 02023 1.0. No rule is
@@ -33,13 +37,27 @@ does not define.
 
 **The identifier IDTA 02023 shares with the battery passport is named,
 not silently resolved.** `caveat` A Carbon Footprint submodel wears an
-identifier that both IDTA 02023 and IDTA 02035-3 claim. This tool has
-02023's table, so the submodel is judged against it -- and `BAT-R2` names
-02035-3 as the other template that claims the same identifier, a caveat
-the verdict may not stand without. `--profile 02035-3` records that the
+identifier that both IDTA 02023 and IDTA 02035-3 claim. `BAT-R2` reads a
+shared identifier by how many of its claimants this tool has a table for:
+neither (it names both and `--profile` settles which was meant), both
+(that is 02004/02035-2, and `SMT-D2` owns it), or -- as here -- one. This
+tool has 02023's table, so the submodel is judged against it, and `BAT-R2`
+names 02035-3 as the other template that claims the same identifier, a
+caveat the verdict may not stand without. `--profile 02035-3` records that the
 author meant the battery passport's part 3 without hiding the 02023
 judgement; it does not silence the note, because there is a real verdict
 behind it.
+
+**Two templates it can read but does not yet judge are recorded as
+such.** `note` A template whose elements state their cardinality only
+with the older `Multiplicity` qualifier -- which this generator does not
+read; it reads `SMT/Cardinality` -- would have every row default to 0..*,
+so the table could not enforce the presence the template requires. IDTA
+02002 Contact Information 1.0.1 (36 elements on `Multiplicity`, 5
+mandatory) and IDTA 02007 Software Nameplate 1.0.1 (73, 14 mandatory) are
+in that state; neither is given a table, a submodel of either is left to
+`SMT-D1`, and docs/scope.md records which templates are covered and which
+are not, and why (docs/divergences.md #50).
 
 ## 0.3.0 — 2026-09-17
 
