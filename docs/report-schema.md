@@ -14,7 +14,7 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
 ```json
 {
   "schemaVersion": 1,
-  "toolVersion": "0.2.0",
+  "toolVersion": "0.3.0",
   "provenance": {
     "inputSha256": "9f2c\u2026",
     "engine": null,
