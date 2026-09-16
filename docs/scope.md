@@ -51,3 +51,30 @@ finding.
 **Deferred, not rejected**: IIFU composition — detecting an iiRDS
 Information for Use submodel and handing its iiRDS payload to
 iirds-validate, so the two standards' validators compose.
+
+## Which templates it covers, and which it does not
+
+Five official templates are given rule tables: IDTA 02004 Handover
+Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
+part 2, 02006 Digital Nameplate, and 02023 Carbon Footprint. A submodel
+of any other template is reported as not matched (`SMT-D1`), not judged;
+`--allow-unmatched` turns that from an error into a note.
+
+Not every template the generator *can* read is given a table. It reads a
+row's obligation from the element's `SMT/Cardinality` qualifier, and an
+element carrying none is read as `0..*` (`docs/divergences.md` #20) -- the
+right reading for the four 02003 rows that omit it, whose element tables
+in the specification bound them that way. But a template that carries no
+cardinality qualifier on *any* element would generate a table every row
+of which is optional: a table that obliges nothing and passes every file.
+Judging against it would be theatre.
+
+Two published templates the generator can otherwise read are in exactly
+that state, measured from the versions at the pin this project vendors
+from (`admin-shell-io/submodel-templates`): **IDTA 02002 Contact
+Information 1.0.1**, none of whose 36 elements carries a cardinality
+qualifier, and **IDTA 02007 Software Nameplate 1.0.1**, none of whose 73
+do. Until an edition states cardinalities -- or a reading is found that
+recovers the obligation from the specification's element tables without
+inventing one -- neither is given a table, and a submodel of either is
+left to `SMT-D1`.
