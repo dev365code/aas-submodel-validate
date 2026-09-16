@@ -2,7 +2,12 @@
 0 clean, 1 findings at error severity, 2 could not run -- which covers a
 path that cannot be read and an input this reader refused, because
 nothing about either was judged. A report may still be printed on 2,
-saying what was refused and what to do about it."""
+saying what was refused and what to do about it.
+
+In the next minor release a command-line usage error -- an unknown option
+or a missing argument -- will exit 64 (EX_USAGE) instead of 2; exit 2 will
+then mean only that the run could not judge the input, never a mistake in
+how the tool was called."""
 from __future__ import annotations
 
 import argparse

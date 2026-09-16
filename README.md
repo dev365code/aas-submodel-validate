@@ -428,7 +428,10 @@ suite and fail the build when they go stale.
 document with a `schemaVersion`, described field by field in
 [docs/report-schema.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/report-schema.md).
 Keys are added without moving the version; nothing is renamed or removed
-under one. Exit codes are 0, 1 and 2 and mean what the page above says.
+under one. Exit codes are 0, 1 and 2 and mean what the page above says. In
+the next minor release a command-line usage error -- an unknown option or
+a missing argument -- will exit 64 (EX_USAGE) instead of 2, leaving 2 to
+mean only that the run could not judge the input.
 There is no importable Python API yet — the supported way to call this
 from another program is the command and the JSON:
 
