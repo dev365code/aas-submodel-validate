@@ -41,10 +41,13 @@ def test_a_repeated_substructure_gets_unique_labels_by_scope_root():
 
 
 def test_a_non_colliding_label_is_not_qualified():
-    """Only a colliding label is touched. The core pack (the repeat
-    skipped) has no collision, so no scope-root qualifier appears -- the
-    same guarantee that keeps the four other packs byte-identical."""
-    text = g.generate(_pack(g.PCF_SKIP))
+    """Only a colliding label is touched. With the product-or-sector
+    section skipped there is no repeat, so no scope-root qualifier appears
+    -- the same guarantee that keeps the four packs without a repeat
+    byte-identical (the `--check` gate proves that half)."""
+    no_repeat = frozenset(("https://admin-shell.io/idta/CarbonFootprint/"
+                           "ProductOrSectorSpecificCarbonFootprints/1/0",))
+    text = g.generate(_pack(no_repeat))
     assert "(ProductCarbonFootprints)" not in text
     assert "(ProductOrSectorSpecificCarbonFootprints)" not in text
     # and the bare labels are still there, unqualified

@@ -18,7 +18,7 @@ from aas_submodel_validate import loader, runner
 from aas_submodel_validate.rules import engine, hd_tables
 from aas_submodel_validate.rules import handover as handover_rules
 from aas_submodel_validate.rules import handover as rules_handover
-from builders import _smc, _sml, build_aasx, dn_env, hd_env, pcf_env
+from builders import build_aasx, dn_env, hd_env
 from verdicts import by_id
 
 
@@ -1787,31 +1787,3 @@ def test_a_whitespace_wrapped_uri_is_left_to_the_metamodel(tmp_path):
     _set_uri_of_the_product(env, " https://example.com/a ")
     assert "DN-D1" not in _findings(tmp_path, env)
 
-
-# -- PCF-D1: the unjudged Carbon Footprint section is noted, not passed -------
-#
-# The 02023 pack judges only the core ProductCarbonFootprints section. A
-# file that also carries ProductOrSectorSpecificCarbonFootprints must not
-# come back clean as if that section had been judged -- PCF-D1 says so, at
-# info, without faulting the file.
-
-_PSCF = "https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificCarbonFootprints/1/0"
-
-
-def _with_pscf(env):
-    item = _smc("https://admin-shell.io/idta/CarbonFootprint/"
-                "ProductOrSectorSpecificCarbonFootprint/1/0", [])
-    env["submodels"][0]["submodelElements"].append(
-        _sml("ProductOrSectorSpecificCarbonFootprints", _PSCF,
-             "SubmodelElementCollection", [item]))
-    return env
-
-
-def test_the_unjudged_carbon_footprint_section_is_noted_not_passed(tmp_path):
-    env = _with_pscf(copy.deepcopy(pcf_env()))
-    finding = _findings(tmp_path, env)["PCF-D1"]
-    assert str(finding.severity) == "info"
-
-
-def test_a_carbon_footprint_without_that_section_is_silent(tmp_path):
-    assert "PCF-D1" not in _findings(tmp_path, pcf_env())

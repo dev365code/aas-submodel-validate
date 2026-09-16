@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 129 rows is how one of them
+extracted, not hand-written: hand-copying 142 rows is how one of them
 silently goes stale. That number is pinned in `tests/test_readme_front.py`
 along with the rest, because it said sixty-four for as long as there were
 two tables and went on saying it through a third -- this sentence was an
@@ -143,16 +143,14 @@ ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
 #: 02023's ProductOrSectorSpecificCarbonFootprints repeats the named
 #: PcfCalculationMethods sub-structure that ProductCarbonFootprints
 #: already carries (same semanticId, different scope). The generator
-#: keys rows by label within one flat namespace and the walk matches per
-#: scope, so two identically-labelled rows cannot both be emitted yet.
-#: Until a repeated-sub-structure reading is designed (docs/divergences.md),
-#: the optional product-or-sector-specific section is left unjudged and the
-#: core ProductCarbonFootprints section is generated. Its open-content
-#: ArbitraryContent placeholder sits inside this subtree and is dropped
-#: with it.
+#: qualifies a label repeated across scopes by its scope-root
+#: (`_qualify_repeats`), so both sections are judged. What is left out is
+#: the open-content placeholder inside PcfInformation: an `ArbitraryContent`
+#: property wearing the SMT/General/Arbitrary marker, which stands for
+#: content the template does not define -- the same treatment 02006 gives
+#: its Arbitrary* elements (docs/divergences.md).
 PCF_SKIP = frozenset((
-    "https://admin-shell.io/idta/CarbonFootprint/"
-    "ProductOrSectorSpecificCarbonFootprints/1/0",
+    "https://admin-shell.io/SMT/General/Arbitrary",
 ))
 
 PCF_ITEM_NAMES = {

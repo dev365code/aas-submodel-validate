@@ -7,9 +7,9 @@ Footprint submodels offline. It adds a fifth template pack, so a Carbon
 Footprint submodel this tool could only report as unmatched (`SMT-D1`)
 is now judged against the template's own rows.
 
-171 rules, 129 generated from the vendored official template files, up
-from 157: the thirteen generated rows of IDTA 02023 1.0 and one
-hand-written rule over them. No rule is removed.
+183 rules, 142 generated from the vendored official template files, up
+from 157: the twenty-six generated rows of IDTA 02023 1.0. No rule is
+removed.
 This is a minor release because it adds a template rather than changing
 how the existing four are read.
 
@@ -20,13 +20,16 @@ directory of names at 16 MiB.
 **A Carbon Footprint submodel is now judged, not set aside.** `verdict`
 A submodel wearing `https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0`
 drew `SMT-D1` and exited 1 unless `--allow-unmatched` was given. It is
-read now against the thirteen rows generated from the published template:
-the product carbon footprint's calculation method, CO2-equivalent,
-reference impact unit and life-cycle phases, its publication date and
-address, at every nesting level. The product- or sector-specific
-carbon-footprint section is named by a note (`PCF-D1`) but not yet judged
-against its rows -- it repeats a sub-structure the generator cannot label
-uniquely, and judging it waits on that (see docs/divergences.md).
+read now against the twenty-six rows generated from the published
+template: both the core product-carbon-footprint section -- calculation
+method, CO2-equivalent, reference impact unit, life-cycle phases,
+publication date and address -- and the product-or-sector-specific
+section, at every nesting level. That second section repeats a named
+sub-structure the first carries; the generator tells the two apart by
+qualifying a repeated label with its scope-root (see docs/divergences.md).
+The one part left unjudged is the open-content ArbitraryContent
+placeholder inside PcfInformation, which stands for content the template
+does not define.
 
 **The identifier IDTA 02023 shares with the battery passport is named,
 not silently resolved.** `caveat` A Carbon Footprint submodel wears an

@@ -6,9 +6,11 @@ live by removing it, a bounded optional by injecting past its maximum,
 and an unbounded (0..*) row by putting an element of the wrong kind under
 its identifier -- the other half of what the row says.
 
-Only the core ProductCarbonFootprints section is generated; the
-ProductOrSectorSpecificCarbonFootprints section this pack leaves unjudged
-is PCF-D1's business, tested in test_hand_rules.
+Both the core ProductCarbonFootprints section and the
+product-or-sector-specific section are generated; where the second
+repeats the first's PcfCalculationMethods sub-structure the rows are told
+apart by scope-root. The only part left unjudged is the open-content
+ArbitraryContent placeholder.
 """
 from __future__ import annotations
 

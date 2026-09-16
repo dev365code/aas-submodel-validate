@@ -190,7 +190,7 @@ SHOULD_RULES = {
     "HD-D5", "HD-D6", "HD-D9", "HD-D10", "HDL2", "HDL4", "HDL5",
     "TD-D3", "TDL1", "X4",
 }
-MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "PCF-D1", "SMT-D2", "TDL2"}
+MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 
 #: The generated rules are not listed one by one: a row's rule reports
 #: what the vendored template states about that element -- how many, what
@@ -236,7 +236,7 @@ def test_every_generated_rule_stops_a_build():
     assert {rule.id for rule in generated} == {
         row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables, pcf_tables)
         for row in tables.ROWS}
-    assert len(generated) == 129
+    assert len(generated) == 142
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -285,7 +285,6 @@ NAMESPACES = {
     r"DN-E\d+": "IDTA 02006, generated from the template's rows",
     r"DN-D\d+": "IDTA 02006, what the template file cannot say",
     r"PCF-E\d+": "IDTA 02023, generated from the template's rows",
-    r"PCF-D\d+": "IDTA 02023, sections this version leaves unjudged",
 }
 
 
@@ -349,12 +348,6 @@ def test_every_declared_namespace_has_at_least_one_rule():
 #: that has stopped shipping is a thing to notice, not a thing to delete
 #: quietly, and HDL1's says the opposite of what it now ships.
 REMEDIES = {
-    "PCF-D1":
-        "This tool version judges the core ProductCarbonFootprints "
-        "section only. ProductOrSectorSpecificCarbonFootprints repeats "
-        "a sub-structure the generator cannot yet place in two scopes, "
-        "so it is left unjudged -- nothing here is a verdict on that "
-        "section. Judge it by hand until a later version reads it.",
     "DN-D1":
         "Give URIOfTheProduct an absolute URI -- one with a scheme, e.g. "
         "https://example.com/model-1234/serial-5678. A relative reference "

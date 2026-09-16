@@ -70,9 +70,9 @@ FLOWED = " ".join(README.split())
 def test_the_rule_counts_are_the_registrys():
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS))
-    assert len(all_rules()) == 171
+    assert len(all_rules()) == 183
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS),
-            len(dn_tables.ROWS), len(pcf_tables.ROWS)) == (38, 26, 22, 30, 13)
+            len(dn_tables.ROWS), len(pcf_tables.ROWS)) == (38, 26, 22, 30, 26)
     # Every place the page says it, not "somewhere on the page". The
     # count appears six times -- the badge, the gallery, the roadmap,
     # the table's heading and the sentence that says which numbers are
@@ -116,7 +116,7 @@ def test_the_rule_counts_are_the_registrys():
                 break
     template_rules = (families["HD"] + families["TD"] + families["DBP"]
                       + families["DN"] + families["PCF"])
-    assert template_rules == 161, families
+    assert template_rules == 173, families
     assert "%d of them across five IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2
