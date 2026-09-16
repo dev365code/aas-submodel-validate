@@ -1,12 +1,11 @@
 """What this project covers, and what it deliberately does not.
 
-Five templates are given rule tables. Two published templates the
-generator can read structurally are not: they state their cardinalities
-with the older `Multiplicity` qualifier, and the generator reads only
-`SMT/Cardinality` (docs/divergences.md #20, #50). Read as no cardinality,
-every row would default to 0..*, and the table could not enforce the
-presence those templates require. docs/scope.md names the two; these
-tests hold the tool and the prose to each other.
+Five templates are given rule tables. The generator reads a cardinality
+in any of three spellings -- `SMT/Cardinality`, the older `Multiplicity`,
+or a bare `Cardinality` (docs/divergences.md #20, #50) -- so a template
+written in the older spelling is judgeable once vendored. Two such
+templates, IDTA 02002 and 02007, are not yet vendored; docs/scope.md
+names them. These tests hold the tool and the prose to each other.
 """
 from __future__ import annotations
 
@@ -46,13 +45,12 @@ def test_the_covered_and_uncovered_identifiers_are_what_the_docs_say():
     assert SOFTWARE_NAMEPLATE not in claimed
 
 
-def test_the_generator_reads_smt_cardinality_and_not_multiplicity():
-    """The reason 02002/02007 are not tabled: their cardinality is stated
-    with `Multiplicity`, and the generator reads only `SMT/Cardinality`.
-    An element carrying `Multiplicity: One` (mandatory) but no
-    `SMT/Cardinality` is still read as 0..* -- so a table built from such a
-    template could not require the element the template makes mandatory.
-    The difference is the spelling, not the concept (#20, #50)."""
+def test_the_generator_reads_all_three_cardinality_spellings():
+    """The generator reads a cardinality in any of three spellings -- the
+    current `SMT/Cardinality`, the older `Multiplicity` (02002/02007 use
+    it), or a bare `Cardinality` -- the first present winning, and an
+    element carrying none of them is 0..* (#20, #50). So a template written
+    in the older spelling is judged, not passed as all-optional."""
     def card_of(qualifiers):
         element = {"idShort": "X", "modelType": "Property",
                    "valueType": "xs:string", "qualifiers": qualifiers,
@@ -63,20 +61,22 @@ def test_the_generator_reads_smt_cardinality_and_not_multiplicity():
                 "skip_sids": frozenset()}
         return g._rows(element, "", None, [0], pack)["card"]
 
-    assert card_of([{"type": "Multiplicity", "value": "One"}]) == (0, None), \
-        "Multiplicity was read; the generator should ignore it"
+    assert card_of([{"type": "Multiplicity", "value": "One"}]) == (1, 1)
+    assert card_of([{"type": "Cardinality", "value": "ZeroToOne"}]) == (0, 1)
     assert card_of([{"type": "SMT/Cardinality", "value": "One"}]) == (1, 1)
-    assert card_of([]) == (0, None)   # #20: no qualifier at all -> 0..*
+    # SMT/Cardinality wins when more than one spelling is present.
+    assert card_of([{"type": "Multiplicity", "value": "ZeroToOne"},
+                    {"type": "SMT/Cardinality", "value": "One"}]) == (1, 1)
+    assert card_of([]) == (0, None)   # none of the three -> 0..*
 
 
 def test_a_zero_to_many_row_still_obliges_kind_not_only_absence():
-    """The boundary of "not tabled": a 0..* row imposes no presence or
-    count obligation, but it is not obligation-free -- a present element of
-    the wrong modelType still fails its kind check. So an all-0..* table is
-    not "passes every file"; it is "cannot require anything be present".
-    This is why the reason 02002/02007 are set aside is the missing
-    presence obligation, stated precisely rather than as "obliges
-    nothing"."""
+    """A 0..* row obliges kind, not presence -- the boundary of #20's
+    reading. An element carrying no cardinality qualifier (in any of the
+    three spellings) still fails its kind check when present as the wrong
+    modelType, but its absence is never faulted. A guard on that boundary;
+    not a statement about 02002/02007, whose Multiplicity the generator now
+    reads."""
     row = g._rows({"idShort": "X", "modelType": "Property", "valueType": "xs:string",
                    "semanticId": {"type": "ExternalReference",
                                   "keys": [{"type": "GlobalReference",

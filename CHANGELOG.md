@@ -48,16 +48,14 @@ author meant the battery passport's part 3 without hiding the 02023
 judgement; it does not silence the note, because there is a real verdict
 behind it.
 
-**Two templates it can read but does not yet judge are recorded as
-such.** `note` A template whose elements state their cardinality only
-with the older `Multiplicity` qualifier -- which this generator does not
-read; it reads `SMT/Cardinality` -- would have every row default to 0..*,
-so the table could not enforce the presence the template requires. IDTA
-02002 Contact Information 1.0.1 (36 elements on `Multiplicity`, 5
-mandatory) and IDTA 02007 Software Nameplate 1.0.1 (73, 14 mandatory) are
-in that state; neither is given a table, a submodel of either is left to
-`SMT-D1`, and docs/scope.md records which templates are covered and which
-are not, and why (docs/divergences.md #50).
+**The generator now reads the older `Multiplicity` cardinality spelling.**
+`note` It read only `SMT/Cardinality`; it now also reads `Multiplicity`
+and a bare `Cardinality` -- the same vocabulary, so a template stating its
+obligations in the older spelling is judged rather than passed as all
+optional. No vendored template uses it, so no existing verdict moves. IDTA
+02002 Contact Information and 02007 Software Nameplate are written that way
+and become judgeable once vendored; until then a submodel of either draws
+`SMT-D1` (docs/scope.md, docs/divergences.md #50).
 
 ## 0.3.0 — 2026-09-17
 

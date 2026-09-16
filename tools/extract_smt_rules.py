@@ -239,6 +239,12 @@ PACKS = (
 
 CARDINALITY = {"One": (1, 1), "ZeroToOne": (0, 1),
                "OneToMany": (1, None), "ZeroToMany": (0, None)}
+#: The qualifier types this generator reads a cardinality from, in order
+#: of precedence. `SMT/Cardinality` is the current SMT spelling; older
+#: templates (02002, 02007) state the identical vocabulary as
+#: `Multiplicity`; `Cardinality` is a third seen spelling. The battery
+#: index's own extractor lists the same three.
+_CARDINALITY_TYPES = ("SMT/Cardinality", "Multiplicity", "Cardinality")
 
 _ALLOWED = re.compile(r"^(.*)\[(\\d\{\d(?:,\d)?\})\]$")
 
@@ -314,9 +320,18 @@ def _rows(element, parent_label, parent_id, counter, pack):
     counter[0] += 1
     row_id = "%s%02d" % (pack["prefix"], counter[0])
     qualifiers = {q.get("type"): q.get("value") for q in element.get("qualifiers", [])}
-    # Absent means 0..*: see the module docstring. A dict comprehension
-    # keeps the template's own order, which is the order examples join in.
-    card = CARDINALITY.get(qualifiers.get("SMT/Cardinality"), (0, None))
+    # Absent means 0..*: see the module docstring. Read in one of three
+    # spellings -- SMT/Cardinality, or the older Multiplicity, or a bare
+    # Cardinality -- the same set the battery index's extractor already
+    # treats as cardinality (data/battery-passport/tools/extract_idta_smt.py),
+    # so a template that states its obligations only in the older spelling
+    # is read rather than defaulted to 0..* (docs/divergences.md #50). The
+    # first spelling present wins; absent all three is 0..*.
+    card = (0, None)
+    for _card_type in _CARDINALITY_TYPES:
+        if _card_type in qualifiers:
+            card = CARDINALITY.get(qualifiers[_card_type], (0, None))
+            break
     examples = [value for key, value in qualifiers.items()
                 if key in pack["example_types"]]
     example = " | ".join(examples) if examples else None
