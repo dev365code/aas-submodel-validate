@@ -140,6 +140,28 @@ ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
 #: 02006's open-content placeholders -- a manufacturer's arbitrary
 #: additions under AssetSpecificProperties and GuidelineSpecificProperties,
 #: three of them, distinct from 02003's single ARBITRARY.
+#: 02023's ProductOrSectorSpecificCarbonFootprints repeats the named
+#: PcfCalculationMethods sub-structure that ProductCarbonFootprints
+#: already carries (same semanticId, different scope). The generator
+#: keys rows by label within one flat namespace and the walk matches per
+#: scope, so two identically-labelled rows cannot both be emitted yet.
+#: Until a repeated-sub-structure reading is designed (docs/divergences.md),
+#: the optional product-or-sector-specific section is left unjudged and the
+#: core ProductCarbonFootprints section is generated. Its open-content
+#: ArbitraryContent placeholder sits inside this subtree and is dropped
+#: with it.
+PCF_SKIP = frozenset((
+    "https://admin-shell.io/idta/CarbonFootprint/"
+    "ProductOrSectorSpecificCarbonFootprints/1/0",
+))
+
+PCF_ITEM_NAMES = {
+    "ProductCarbonFootprints": "ProductCarbonFootprint",
+    "PcfCalculationMethods": "PcfCalculationMethod",
+    "LifeCyclePhases": "LifeCyclePhase",
+    "ProductOrSectorSpecificCarbonFootprints": "ProductOrSectorSpecificCarbonFootprint",
+}
+
 DN_ARBITRARY = frozenset((
     "https://admin-shell.io/SMT/General/ArbitraryProp",
     "https://admin-shell.io/SMT/General/ArbitraryMLP",
@@ -204,6 +226,16 @@ PACKS = (
         "item_names": DN_ITEM_NAMES,
         "example_types": (),
         "skip_sids": DN_ARBITRARY,
+    },
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02023/1.0/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/pcf_tables.py",
+        "prefix": "PCF-E",
+        "source": "IDTA 02023 _Template_CarbonFootprint.json",
+        "citation": "IDTA 02023 1.0 template",
+        "item_names": PCF_ITEM_NAMES,
+        "example_types": (),
+        "skip_sids": PCF_SKIP,
     },
 )
 

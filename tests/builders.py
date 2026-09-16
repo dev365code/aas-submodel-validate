@@ -688,3 +688,45 @@ def tracked_files(root):
                     "working copy rather than being one, which is what an "
                     "sdist unpacked in a checkout looks like")
     return names
+
+
+def pcf_env() -> dict:
+    """The golden fixture for IDTA 02023 Carbon Footprint (core section),
+    written by hand like the others. It carries the whole
+    ProductCarbonFootprints section -- required and optional rows -- so each
+    generated row has a scope to strip from or a bound to exceed. It does
+    *not* carry the ProductOrSectorSpecificCarbonFootprints section this
+    pack leaves unjudged, so it is clean; a fixture that adds it exercises
+    PCF-D1. The submodel id is deliberately not the template's identifier."""
+    C = "https://admin-shell.io/idta/CarbonFootprint/"
+    footprint = _smc(C + "ProductCarbonFootprint/1/0", [
+        _sml("PcfCalculationMethods", C + "PcfCalculationMethods/1/0",
+             "Property", [_prop(None, "0173-1#02-ABG854#003", "EN 15804")],
+             value_type="xs:string"),
+        _prop("PcfCO2eq", "0173-1#02-ABG855#003", "1.5", "xs:decimal"),
+        _prop("ReferenceImpactUnitForCalculation",
+              "0173-1#02-ABG856#003", "kg"),
+        _prop("QuantityOfMeasureForCalculation",
+              "0173-1#02-ABG857#003", "1.0", "xs:double"),
+        _sml("LifeCyclePhases", C + "LifeCyclePhases/1/0",
+             "Property", [_prop(None, "0173-1#02-ABG858#003", "A3 - production")],
+             value_type="xs:string"),
+        {"idShort": "ExplanatoryStatement", "modelType": "File",
+         "semanticId": _sid(C + "ExplanatoryStatement/1/0"),
+         "contentType": "application/pdf", "value": "/aasx/files/pcf.pdf"},
+        _smc("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
+             "/AddressInformation", [], id_short="GoodsHandoverAddress"),
+        _prop("PublicationDate", C + "PublicationDate/1/0",
+              "2024-01-01T00:00:00Z", "xs:dateTime"),
+        _prop("ExpirationDate", C + "ExpirationDate/1/0",
+              "2030-01-01T00:00:00Z", "xs:dateTime"),
+    ])
+    return {"submodels": [{
+        "id": "urn:example:carbonfootprint", "idShort": "CarbonFootprint",
+        "modelType": "Submodel",
+        "semanticId": _sid(C + "CarbonFootprint/1/0"),
+        "submodelElements": [
+            _sml("ProductCarbonFootprints", C + "ProductCarbonFootprints/1/0",
+                 "SubmodelElementCollection", [footprint]),
+        ],
+    }]}

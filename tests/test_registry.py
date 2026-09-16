@@ -15,6 +15,7 @@ from aas_submodel_validate.rules import (
     engine,
     handover,
     hd_tables,
+    pcf_tables,
     profiles,
     td_tables,
 )
@@ -189,7 +190,7 @@ SHOULD_RULES = {
     "HD-D5", "HD-D6", "HD-D9", "HD-D10", "HDL2", "HDL4", "HDL5",
     "TD-D3", "TDL1", "X4",
 }
-MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
+MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "PCF-D1", "SMT-D2", "TDL2"}
 
 #: The generated rules are not listed one by one: a row's rule reports
 #: what the vendored template states about that element -- how many, what
@@ -221,7 +222,7 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #: truncated repr of 87 Rule objects names nothing. Widening the pattern
 #: without moving that assertion would have made the case it was widened
 #: for worse.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN)-E\d+$")
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -233,9 +234,9 @@ def test_every_generated_rule_stops_a_build():
     # that appears or disappears is named rather than counted. Then the
     # count, which is the number this project quotes in its README.
     assert {rule.id for rule in generated} == {
-        row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables)
+        row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables, pcf_tables)
         for row in tables.ROWS}
-    assert len(generated) == 116
+    assert len(generated) == 129
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -283,6 +284,8 @@ NAMESPACES = {
     r"DBP2L\d+": "IDTA 02035-2, informational lints",
     r"DN-E\d+": "IDTA 02006, generated from the template's rows",
     r"DN-D\d+": "IDTA 02006, what the template file cannot say",
+    r"PCF-E\d+": "IDTA 02023, generated from the template's rows",
+    r"PCF-D\d+": "IDTA 02023, sections this version leaves unjudged",
 }
 
 
@@ -346,6 +349,12 @@ def test_every_declared_namespace_has_at_least_one_rule():
 #: that has stopped shipping is a thing to notice, not a thing to delete
 #: quietly, and HDL1's says the opposite of what it now ships.
 REMEDIES = {
+    "PCF-D1":
+        "This tool version judges the core ProductCarbonFootprints "
+        "section only. ProductOrSectorSpecificCarbonFootprints repeats "
+        "a sub-structure the generator cannot yet place in two scopes, "
+        "so it is left unjudged -- nothing here is a verdict on that "
+        "section. Judge it by hand until a later version reads it.",
     "DN-D1":
         "Give URIOfTheProduct an absolute URI -- one with a scheme, e.g. "
         "https://example.com/model-1234/serial-5678. A relative reference "
@@ -474,7 +483,9 @@ REMEDIES = {
         "0173-1#01-AHF578#003 for Handover Documentation (IDTA "
         "02004); 0173-1#01-AHX837#002 for Technical Data (IDTA "
         "02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate "
-        "for Digital Nameplate (IDTA 02006). If it means a template "
+        "for Digital Nameplate (IDTA 02006); "
+        "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 "
+        "for Carbon Footprint (IDTA 02023). If it means a template "
         "this tool has no table for, "
         "leave the identifier alone -- it is doing its job, and this "
         "finding only says nothing here judged the submodel against a "
@@ -902,14 +913,14 @@ NON_CONTAINER_FORMS = ("environment-json", "environment-xml", "submodel-json")
 def _one_row_per_cardinality():
     """One generated row per cardinality the tables use.
 
-    The 116 generated remedies are written by `tools/extract_smt_rules.py`
+    The 129 generated remedies are written by `tools/extract_smt_rules.py`
     from four sentence shapes, and none of them was held by anything: the
     byte-compare gate holds table-against-generator, not
     sentence-against-decision, so editing the generator's wording and
     regenerating passed every gate. Four rows pin the four shapes; the
     generator cannot change one without changing all of its kind."""
     seen = {}
-    for tables in (hd_tables, td_tables, dbp_tables, dn_tables):
+    for tables in (hd_tables, td_tables, dbp_tables, dn_tables, pcf_tables):
         for row in tables.ROWS:
             seen.setdefault(row["card"], row)
     return seen
