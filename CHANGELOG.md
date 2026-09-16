@@ -7,8 +7,9 @@ Nameplate submodels offline. It adds a fourth template pack, so a
 Nameplate submodel this tool could only report as unmatched (`SMT-D1`)
 is now judged against the template's own rows.
 
-156 rules, 116 generated from the vendored official template files, up
-from 126 with the thirty rows of IDTA 02006-3-0. No rule is removed.
+157 rules, 116 generated from the vendored official template files, up
+from 126: the thirty generated rows of IDTA 02006-3-0 and one
+hand-written rule over them. No rule is removed.
 This is a minor release because it adds a template rather than changing
 how the existing three are read.
 
@@ -22,6 +23,17 @@ nesting level, including the two `SubmodelElementList` groups (`Markings`
 and `GuidelineSpecificProperties`). A conformant nameplate comes back at
 exit 0; one short of a mandatory element, or carrying the wrong kind of
 element under an identifier, draws the row that names it.
+
+**`URIOfTheProduct` is checked for being an absolute URI.** `verdict`
+The template defines it as a unique global identification using a URI
+and types it `xs:anyURI`, which admits a relative reference and the
+empty string -- both of which the metamodel passes. `DN-D1` reports a
+value carrying no scheme; any scheme is accepted (`urn:` as readily as
+`https:`), because the requirement is a global identifier, not a
+web-resolvable one. Length and the allowed-character set are IEC
+61406-1's, a paid standard whose text this project does not hold, so
+the check stops at the absolute-URI floor the template's own definition
+and RFC 3986 establish (`docs/divergences.md` #47).
 
 **A near-miss in a Nameplate identifier is not diagnosed the way an
 ECLASS one is.** IDTA 02006 identifies its submodel by a URI, not an

@@ -715,6 +715,17 @@ TABLE = [
      "as an environment, which it is not, and never read as the Submodel it "
      "is"),
 
+    ("dn/uri-of-the-product-must-be-absolute-not-just-present",
+     "src/aas_submodel_validate/rules/dn.py",
+     "        if not _SCHEME.match(value):",
+     "        if not value:",
+     ["tests/test_hand_rules.py::"
+      "test_a_relative_uri_of_the_product_is_not_a_global_identification"],
+     "DN-D1 checks only that URIOfTheProduct is non-empty, not that it is "
+     "absolute -- a relative reference like 'Model-1234/Serial' passes the "
+     "metamodel and this rule both, and is not the unique global "
+     "identification the template's definition asks for"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

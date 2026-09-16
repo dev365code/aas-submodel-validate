@@ -32,7 +32,7 @@ meets its first `JSONDecodeError` on the case it most needs to handle.
     "errors": 1,
     "warnings": 0,
     "info": 0,
-    "rulesChecked": 156,
+    "rulesChecked": 157,
     "complete": true,
     "judged": true,
     "submodelsSeen": 1,

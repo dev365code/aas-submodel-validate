@@ -181,6 +181,7 @@ MUST_RULES = {
     "DBP2-D2", "DBP2-D3", "DBP2-D4", "DBP2-D7",
     "HD-D2", "HD-D3", "HD-D4", "HD-D7", "HD-D8",
     "SMT-D1", "TD-D1", "TD-D2", "X1", "X2", "X3", "X5", "X6",
+    "DN-D1",
 }
 SHOULD_RULES = {
     "BAT-R2", "BAT-R8",
@@ -281,6 +282,7 @@ NAMESPACES = {
     r"DBP2-D\d+": "IDTA 02035-2, 02004's hand rules over 02035-2's table",
     r"DBP2L\d+": "IDTA 02035-2, informational lints",
     r"DN-E\d+": "IDTA 02006, generated from the template's rows",
+    r"DN-D\d+": "IDTA 02006, what the template file cannot say",
 }
 
 
@@ -344,6 +346,11 @@ def test_every_declared_namespace_has_at_least_one_rule():
 #: that has stopped shipping is a thing to notice, not a thing to delete
 #: quietly, and HDL1's says the opposite of what it now ships.
 REMEDIES = {
+    "DN-D1":
+        "Give URIOfTheProduct an absolute URI -- one with a scheme, e.g. "
+        "https://example.com/model-1234/serial-5678. A relative reference "
+        "or an empty value is not the unique global identification the "
+        "template's definition asks for.",
     "BAT-R2":
         "Run --profile with the document number of the template you "
         "mean. This tool has a table for neither side of this "

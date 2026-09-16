@@ -10,9 +10,12 @@ asked once for every template in `rules/detect.py`.
 """
 from __future__ import annotations
 
+import re
+
+from ..model import Violation
 from ..registry import rule
 from . import dn_tables
-from .engine import analyze, matched_submodels
+from .engine import analyze, instances_of, matched_submodels
 
 #: The template's own identity -- one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = dn_tables.TEMPLATE_SEMANTIC_ID
@@ -38,3 +41,43 @@ for _row in dn_tables.ROWS:
                % (_row["label"], _row["sid"] or "by structure"),
          spec="%s, SMT/Cardinality qualifier" % dn_tables.TEMPLATE_CITATION,
          fix=_row["fix"])(_row_check(_row["id"]))
+
+
+# -- the hand rule: what the template file cannot express --------------------
+#
+# RFC 3986 §3.1: scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ). A
+# value carrying one is an absolute URI (§4.3); one without is a relative
+# reference (§4.2), which is not a global identification.
+_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:")
+
+
+@rule("DN-D1", kind="template", prio="MUST",
+      title="URIOfTheProduct is an absolute URI",
+      spec="IDTA 02006-3-0 (URIOfTheProduct: 'unique global identification "
+           "... using a URI'); RFC 3986 §4.3 (absolute-URI)",
+      fix="Give URIOfTheProduct an absolute URI -- one with a scheme, e.g. "
+          "https://example.com/model-1234/serial-5678. A relative reference "
+          "or an empty value is not the unique global identification the "
+          "template's definition asks for.")
+def dn_d1_uri_of_the_product_is_absolute(ctx):
+    """The generated row checks the declared valueType (xs:anyURI); this
+    checks that the value is absolute. `xs:anyURI` admits a relative
+    reference and an empty string, and the relayed metamodel channel
+    passes both -- but the template's own definition is a "unique global
+    identification", which a relative reference is not. A missing value is
+    the generated row's finding (docs/divergences.md #40), not this one's,
+    so an absent value is left to it.
+
+    What is deliberately *not* checked here is length and the allowed
+    character set: IEC 61406-1 specifies those for an identification link
+    and it is a paid standard, so this stops at the absolute-URI floor the
+    template's public definition and RFC 3986 establish (docs/divergences.md
+    #47).
+    """
+    for subject, element in instances_of(ctx, "URIOfTheProduct", dn_tables):
+        value = getattr(element, "value", None)
+        if value is None:
+            continue  # absence is the generated row's finding, not this one's
+        if not _SCHEME.match(value):
+            yield Violation("URIOfTheProduct is not an absolute URI",
+                            subject=subject, detail="%r" % value)

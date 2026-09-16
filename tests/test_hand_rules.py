@@ -18,7 +18,7 @@ from aas_submodel_validate import loader, runner
 from aas_submodel_validate.rules import engine, hd_tables
 from aas_submodel_validate.rules import handover as handover_rules
 from aas_submodel_validate.rules import handover as rules_handover
-from builders import build_aasx, hd_env
+from builders import build_aasx, dn_env, hd_env
 from verdicts import by_id
 
 
@@ -1740,3 +1740,39 @@ def test_two_identifier_pairs_are_the_same_pair_however_they_are_padded(
     documents.append(twin)
     assert "HDL4" in _findings(tmp_path, env), (
         "%r padding hid a duplicate identifier pair" % pad)
+
+
+# -- DN-D1: URIOfTheProduct is an absolute URI -------------------------------
+#
+# The generated row checks the declared valueType; the metamodel channel
+# checks anyURI syntax. Neither refuses a relative reference or an empty
+# string, and the template's definition ("unique global identification
+# ... using a URI") is not satisfied by either.
+
+def _set_uri_of_the_product(env, value):
+    for submodel in env["submodels"]:
+        for element in submodel.get("submodelElements", []):
+            if element.get("idShort") == "URIOfTheProduct":
+                element["value"] = value
+                return
+    raise KeyError("URIOfTheProduct")
+
+
+def test_a_relative_uri_of_the_product_is_not_a_global_identification(tmp_path):
+    env = copy.deepcopy(dn_env())
+    _set_uri_of_the_product(env, "Model-1234/Serial-5678")
+    assert "DN-D1" in _findings(tmp_path, env)
+
+
+def test_an_empty_uri_of_the_product_fails(tmp_path):
+    env = copy.deepcopy(dn_env())
+    _set_uri_of_the_product(env, "")
+    assert "DN-D1" in _findings(tmp_path, env)
+
+
+def test_a_urn_uri_of_the_product_passes(tmp_path):
+    """Any scheme makes it absolute; the rule is about being global, not
+    about being resolvable over the web, so a urn is accepted."""
+    env = copy.deepcopy(dn_env())
+    _set_uri_of_the_product(env, "urn:example:product:1234")
+    assert "DN-D1" not in _findings(tmp_path, env)
