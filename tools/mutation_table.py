@@ -717,7 +717,7 @@ TABLE = [
 
     ("dn/uri-of-the-product-must-be-absolute-not-just-present",
      "src/aas_submodel_validate/rules/dn.py",
-     "        if not _SCHEME.match(value):",
+     "        if not _SCHEME.match(value.strip()):",
      "        if not value:",
      ["tests/test_hand_rules.py::"
       "test_a_relative_uri_of_the_product_is_not_a_global_identification"],
