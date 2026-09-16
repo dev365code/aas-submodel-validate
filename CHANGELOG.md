@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.3.0 — unreleased
+
+Who should take this release: anyone validating IDTA 02006 Digital
+Nameplate submodels offline. It adds a fourth template pack, so a
+Nameplate submodel this tool could only report as unmatched (`SMT-D1`)
+is now judged against the template's own rows.
+
+156 rules, 116 generated from the vendored official template files, up
+from 126 with the thirty rows of IDTA 02006-3-0. No rule is removed.
+This is a minor release because it adds a template rather than changing
+how the existing three are read.
+
+**A Digital Nameplate submodel is now judged, not set aside.** `verdict`
+A submodel wearing `https://admin-shell.io/idta/nameplate/3/0/Nameplate`
+drew `SMT-D1` -- "no submodel declares a semanticId this tool has a
+template table for" -- and exited 1 unless `--allow-unmatched` was given.
+It is read now against the thirty rows generated from the published
+template: cardinality, element kind, value type and semanticId at every
+nesting level, including the two `SubmodelElementList` groups (`Markings`
+and `GuidelineSpecificProperties`). A conformant nameplate comes back at
+exit 0; one short of a mandatory element, or carrying the wrong kind of
+element under an identifier, draws the row that names it.
+
+**A near-miss in a Nameplate identifier is not diagnosed the way an
+ECLASS one is.** IDTA 02006 identifies its submodel by a URI, not an
+ECLASS IRDI with a `#`-delimited version suffix, so the near-miss hint
+that catches a version drift (`#002` for `#003`) does not apply to it; a
+wrong Nameplate identifier is reported among the values seen, without
+that specific diagnosis. This is written up in `docs/divergences.md`.
+
+The size bounds are unchanged: one document at 64 MiB, a container's
+parts at 64 MiB each and 256 MiB together, and a container's directory
+of names at 16 MiB.
+
 ## 0.2.0 — 2026-09-16
 
 Who should take this release: anyone running an offline gate on AASX

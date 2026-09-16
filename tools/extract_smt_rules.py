@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 86 rows is how one of them
+extracted, not hand-written: hand-copying 116 rows is how one of them
 silently goes stale. That number is pinned in `tests/test_readme_front.py`
 along with the rest, because it said sixty-four for as long as there were
 two tables and went on saying it through a third -- this sentence was an
@@ -128,8 +128,23 @@ DBP_ITEM_NAMES = {
     "DigitalFiles": "DigitalFile",
 }
 
+#: 02006's two list items (Markings, GuidelineSpecificProperties).
+DN_ITEM_NAMES = {
+    "Markings": "Marking",
+    "GuidelineSpecificProperties": "GuidelineSpecificProperty",
+}
+
 #: The open-content placeholders of 02003 §3.5 -- see the module docstring.
 ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
+
+#: 02006's open-content placeholders -- a manufacturer's arbitrary
+#: additions under AssetSpecificProperties and GuidelineSpecificProperties,
+#: three of them, distinct from 02003's single ARBITRARY.
+DN_ARBITRARY = frozenset((
+    "https://admin-shell.io/SMT/General/ArbitraryProp",
+    "https://admin-shell.io/SMT/General/ArbitraryMLP",
+    "https://admin-shell.io/SMT/General/ArbitraryFile",
+))
 
 #: One entry per vendored template. `source` names the file in the header
 #: of the generated module, so a reader lands on the right upstream
@@ -179,6 +194,16 @@ PACKS = (
         "item_names": DBP_ITEM_NAMES,
         "example_types": ("ExampleValue",),
         "skip_sids": frozenset(),
+    },
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02006/3.0/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/dn_tables.py",
+        "prefix": "DN-E",
+        "source": "IDTA 02006-3-0_Template_Digital Nameplate.json",
+        "citation": "IDTA 02006-3-0 template",
+        "item_names": DN_ITEM_NAMES,
+        "example_types": (),
+        "skip_sids": DN_ARBITRARY,
     },
 )
 

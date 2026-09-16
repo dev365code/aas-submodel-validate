@@ -20,7 +20,7 @@ from aas_submodel_validate import (
 )
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.report import render
-from aas_submodel_validate.rules import battery_tables, dbp_tables, hd_tables, td_tables
+from aas_submodel_validate.rules import battery_tables, dbp_tables, dn_tables, hd_tables, td_tables
 from builders import build_aasx, env_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,9 +61,11 @@ FLOWED = " ".join(README.split())
 
 
 def test_the_rule_counts_are_the_registrys():
-    generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
-    assert len(all_rules()) == 126
-    assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS)) == (38, 26, 22)
+    generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
+                 + len(dn_tables.ROWS))
+    assert len(all_rules()) == 156
+    assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS),
+            len(dn_tables.ROWS)) == (38, 26, 22, 30)
     # Every place the page says it, not "somewhere on the page". The
     # count appears six times -- the badge, the gallery, the roadmap,
     # the table's heading and the sentence that says which numbers are
@@ -75,7 +77,7 @@ def test_the_rule_counts_are_the_registrys():
     # the count of occurrences underneath.
     total = len(all_rules())
     for where in ("[![templates](https://img.shields.io/badge/"
-                  "IDTA_templates-3_\u00b7_%d_rules" % total,
+                  "IDTA_templates-4_\u00b7_%d_rules" % total,
                   "Five of the %d," % total,
                   ": %d rules, %d of them generated" % (total, generated),
                   "%d rules, " % total,
@@ -101,13 +103,14 @@ def test_the_rule_counts_are_the_registrys():
     # a rule moving between those groups moves the sentence.
     families = {}
     for rule in all_rules():
-        for family in ("HD", "TD", "DBP", "X", "SMT", "BAT"):
+        for family in ("HD", "TD", "DBP", "DN", "X", "SMT", "BAT"):
             if rule.id.startswith(family):
                 families[family] = families.get(family, 0) + 1
                 break
-    template_rules = families["HD"] + families["TD"] + families["DBP"]
-    assert template_rules == 116, families
-    assert "%d of them across three IDTA templates" % template_rules in FLOWED
+    template_rules = (families["HD"] + families["TD"] + families["DBP"]
+                      + families["DN"])
+    assert template_rules == 146, families
+    assert "%d of them across four IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2
     # Counts, not a description. The sentence beneath this one said
@@ -332,7 +335,8 @@ def test_the_generator_counts_the_rows_it_warns_about():
     stale, and was one: it said sixty-four from when two tables existed and
     went on saying it through a third. The warning is worth keeping and the
     number belongs where the others are."""
-    generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
+    generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
+                 + len(dn_tables.ROWS))
     source = (ROOT / "tools" / "extract_smt_rules.py").read_text("utf-8")
     assert "hand-copying %d rows" % generated in source
 
@@ -369,7 +373,8 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
         "else, and this file is the other half of that gate" % heading)
     if not draft:
         return                                        # history, not a draft
-    generated = len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
+    generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
+                 + len(dn_tables.ROWS))
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
     # The bounds are on this page too, and were the only prose numbers on

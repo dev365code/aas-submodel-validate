@@ -11,6 +11,7 @@ from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.rules import container as container_rules
 from aas_submodel_validate.rules import (
     dbp_tables,
+    dn_tables,
     engine,
     handover,
     hd_tables,
@@ -219,7 +220,7 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #: truncated repr of 87 Rule objects names nothing. Widening the pattern
 #: without moving that assertion would have made the case it was widened
 #: for worse.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2)-E\d+$")
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -231,9 +232,9 @@ def test_every_generated_rule_stops_a_build():
     # that appears or disappears is named rather than counted. Then the
     # count, which is the number this project quotes in its README.
     assert {rule.id for rule in generated} == {
-        row["id"] for tables in (hd_tables, td_tables, dbp_tables)
+        row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables)
         for row in tables.ROWS}
-    assert len(generated) == 86
+    assert len(generated) == 116
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -279,6 +280,7 @@ NAMESPACES = {
     r"DBP2-E\d+": "IDTA 02035-2, generated from the template's rows",
     r"DBP2-D\d+": "IDTA 02035-2, 02004's hand rules over 02035-2's table",
     r"DBP2L\d+": "IDTA 02035-2, informational lints",
+    r"DN-E\d+": "IDTA 02006, generated from the template's rows",
 }
 
 
@@ -464,7 +466,9 @@ REMEDIES = {
         "table for, give it that template's semanticId: "
         "0173-1#01-AHF578#003 for Handover Documentation (IDTA "
         "02004); 0173-1#01-AHX837#002 for Technical Data (IDTA "
-        "02003). If it means a template this tool has no table for, "
+        "02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate "
+        "for Digital Nameplate (IDTA 02006). If it means a template "
+        "this tool has no table for, "
         "leave the identifier alone -- it is doing its job, and this "
         "finding only says nothing here judged the submodel against a "
         "template.",
@@ -891,14 +895,14 @@ NON_CONTAINER_FORMS = ("environment-json", "environment-xml", "submodel-json")
 def _one_row_per_cardinality():
     """One generated row per cardinality the tables use.
 
-    The 86 generated remedies are written by `tools/extract_smt_rules.py`
+    The 116 generated remedies are written by `tools/extract_smt_rules.py`
     from four sentence shapes, and none of them was held by anything: the
     byte-compare gate holds table-against-generator, not
     sentence-against-decision, so editing the generator's wording and
     regenerating passed every gate. Four rows pin the four shapes; the
     generator cannot change one without changing all of its kind."""
     seen = {}
-    for tables in (hd_tables, td_tables, dbp_tables):
+    for tables in (hd_tables, td_tables, dbp_tables, dn_tables):
         for row in tables.ROWS:
             seen.setdefault(row["card"], row)
     return seen

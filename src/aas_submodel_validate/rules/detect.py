@@ -16,7 +16,7 @@ from __future__ import annotations
 from ..model import Violation
 from ..registry import rule
 from ..semantics import key_values, submodel_declares
-from . import battery_tables, hd_tables, td_tables
+from . import battery_tables, dn_tables, hd_tables, td_tables
 
 #: The rule id. Referenced by the runner, which can demote this one
 #: finding to a note, so the string lives here rather than in two places.
@@ -38,13 +38,17 @@ class Pack:
 
     @property
     def stem(self) -> str:
-        """The identifier without its ECLASS version suffix."""
+        """The identifier without its ECLASS version suffix, or "" when it
+        carries none -- a URI-style identifier (IDTA 02006's Nameplate) has
+        no `#` to partition on. `_nearest_miss` reads the empty string as
+        "this pack takes no version-suffix hint"."""
         return self.semantic_id.rpartition("#")[0]
 
 
 PACKS = (
     Pack("Handover Documentation (IDTA 02004)", hd_tables, "handoverdocumentation"),
     Pack("Technical Data (IDTA 02003)", td_tables, "technicaldata"),
+    Pack("Digital Nameplate (IDTA 02006)", dn_tables, "nameplate"),
 )
 
 
@@ -145,7 +149,13 @@ def _nearest_miss(submodels) -> str:
         for value in key_values(submodel.semantic_id):
             seen.append(value)
             for pack in PACKS:
-                if value.startswith(pack.stem) and value != pack.semantic_id:
+                # Only an ECLASS-style identifier has a version suffix to
+                # differ in. A pack whose identifier is a URI has an empty
+                # stem, and `"".startswith` matches every value -- which
+                # made every unknown submodel "differ only in the ECLASS
+                # version suffix" from the first URI-style pack that landed.
+                if pack.stem and value.startswith(pack.stem) \
+                        and value != pack.semantic_id:
                     return ("found %s, which differs from the %s template's %s "
                             "only in the ECLASS version suffix"
                             % (value, pack.name, pack.semantic_id))

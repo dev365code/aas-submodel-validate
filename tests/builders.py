@@ -480,6 +480,74 @@ def td_env() -> dict:
     }]}
 
 
+def dn_env() -> dict:
+    """The golden fixture for IDTA 02006 Digital Nameplate, written by hand
+    (like hd_env/td_env) so it is evidence about instances, not an echo of
+    the generated table. It carries every element -- required and optional
+    -- so each row has a scope to strip from or a bound to exceed. The
+    submodel id is deliberately not the template's identifier."""
+    marking = _smc("0112/2///61360_7#AAS009#001", [
+        _prop("MarkingName", "0112/2///61987#ABA231#009", "CE"),
+        _prop("DesignationOfCertificateOrApproval",
+              "0112/2///61987#ABH783#003", "0123"),
+        _prop("IssueDate", "0112/2///61987#ABO097#001", "2020-01-01", "xs:date"),
+        _prop("ExpiryDate", "0112/2///61987#ABH830#002", "2030-01-01", "xs:date"),
+        {"idShort": "MarkingFile", "modelType": "File",
+         "semanticId": _sid("0112/2///61987#ABO100#002"),
+         "contentType": "image/png", "value": "/aasx/files/ce.png"},
+        _prop("MarkingAdditionalText", "0112/2///61987#ABB146#007", "0123"),
+    ])
+    guideline = _smc("0173-1#01-AHD205#004", [
+        _prop("GuidelineForConformityDeclaration",
+              "0173-1#02-AAO856#002", "2014/35/EU"),
+    ])
+    asset_specific = _smc("0173-1#02-ABI218#003/0173-1#01-AGZ672#004", [
+        _sml("GuidelineSpecificProperties",
+             "0173-1#02-ABI219#003/0173-1#01-AHD205#004",
+             "SubmodelElementCollection", [guideline]),
+    ], id_short="AssetSpecificProperties")
+    return {"submodels": [{
+        "id": "urn:example:nameplate", "idShort": "Nameplate",
+        "modelType": "Submodel",
+        "semanticId": _sid("https://admin-shell.io/idta/nameplate/3/0/Nameplate"),
+        "submodelElements": [
+            _prop("URIOfTheProduct", "0112/2///61987#ABN590#002",
+                  "https://example.com/products/A-1000", "xs:anyURI"),
+            _mlp("ManufacturerName", "0112/2///61987#ABA565#009",
+                 "Example Company Ltd."),
+            _mlp("ManufacturerProductDesignation",
+                 "0112/2///61987#ABA567#009", "Switchgear Type A"),
+            _smc("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
+                 "/AddressInformation", [], id_short="AddressInformation"),
+            _mlp("ManufacturerProductRoot", "0112/2///61360_7#AAS011#001",
+                 "Switchgear"),
+            _mlp("ManufacturerProductFamily", "0112/2///61987#ABP464#002",
+                 "Type A series"),
+            _prop("ManufacturerProductType", "0112/2///61987#ABA300#008", "A-1000"),
+            _prop("OrderCodeOfManufacturer", "0112/2///61987#ABA950#008", "A-1000-24V"),
+            _prop("ProductArticleNumberOfManufacturer",
+                  "0112/2///61987#ABA581#007", "A-1000"),
+            _prop("SerialNumber", "0112/2///61987#ABA951#009", "SN-000123"),
+            _prop("YearOfConstruction", "0112/2///61987#ABP000#002", "2020"),
+            _prop("DateOfManufacture", "0112/2///61987#ABB757#007",
+                  "2020-02-06", "xs:date"),
+            _prop("HardwareVersion", "0112/2///61987#ABA926#008", "1.0"),
+            _prop("FirmwareVersion", "0112/2///61987#ABA302#006", "1.2"),
+            _prop("SoftwareVersion", "0112/2///61987#ABA601#008", "3.4"),
+            _prop("CountryOfOrigin", "0112/2///61987#ABP462#001", "DE"),
+            _prop("UniqueFacilityIdentifier",
+                  "https://admin-shell.io/idta/nameplate/3/0/UniqueFacilityIdentifier",
+                  "0123456789"),
+            {"idShort": "CompanyLogo", "modelType": "File",
+             "semanticId": _sid("0112/2///61987#ABP463#001"),
+             "contentType": "image/png", "value": "/aasx/files/logo.png"},
+            _sml("Markings", "0112/2///61360_7#AAS006#001",
+                 "SubmodelElementCollection", [marking]),
+            asset_specific,
+        ],
+    }]}
+
+
 # --- mutations, for firing every generated rule -----------------------------
 
 def _element_matches(element: dict, match_values) -> bool:
