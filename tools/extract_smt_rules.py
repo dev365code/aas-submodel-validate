@@ -362,6 +362,32 @@ def _labels(rows, out):
     return out
 
 
+def _qualify_repeats(tree):
+    """Where a label is claimed by rows in more than one scope, qualify
+    each by its scope-root -- the top-level element its scope descends
+    from -- so `BY_LABEL` keeps them apart. A template with no such repeat
+    leaves this a no-op, so its generated table stays byte-for-byte the
+    same. Only the label is touched: it is the row's identity for the walk
+    and for the hand rules that navigate by it, while `fix` keeps the
+    element's own idShort, which is what a reader is told to provide.
+
+    The duplicate-label check downstream still runs: if a scope-root does
+    not tell two same-labelled rows apart (they share one), it aborts
+    there rather than emit a table that hides a row.
+    """
+    labels = _labels(tree, [])
+    clashing = {label for label in labels if labels.count(label) > 1}
+    if not clashing:
+        return
+    def qualify(rows, scope_root):
+        for row in rows:
+            root = scope_root or row["label"]
+            if row["label"] in clashing:
+                row["label"] = "%s (%s)" % (row["label"], root)
+            qualify(row["children"], root)
+    qualify(tree, None)
+
+
 def generate(pack) -> str:
     document = json.loads(pack["template"].read_text("utf-8-sig"))
     submodel = document["submodels"][0]
@@ -382,6 +408,11 @@ def generate(pack) -> str:
     for reference in submodel.get("supplementalSemanticIds", []):
         supplemental |= _values_of(reference)
 
+    # A label repeated across scopes is qualified by its scope-root first,
+    # so a template that reuses a named sub-structure (02023 does) still
+    # gets one BY_LABEL entry per row; a template that does not is left
+    # untouched.
+    _qualify_repeats(tree)
     # The hand rules navigate by label, and BY_LABEL is a dict: two rows
     # sharing a label would make one of them silently unreachable. Fail
     # here, where a person can name the second one, rather than there.
