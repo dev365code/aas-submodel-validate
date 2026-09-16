@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 — unreleased
+## 0.3.0 — 2026-09-17
 
 Who should take this release: anyone validating IDTA 02006 Digital
 Nameplate submodels offline. It adds a fourth template pack, so a
@@ -12,6 +12,11 @@ from 126: the thirty generated rows of IDTA 02006-3-0 and one
 hand-written rule over them. No rule is removed.
 This is a minor release because it adds a template rather than changing
 how the existing three are read.
+
+Measured against 0.2.0, two corpus inputs are judged differently: a
+Nameplate that was refused as unmatched (`SMT-D1`) is now judged, and
+one whose `URIOfTheProduct` is a relative reference moves from `SMT-D1`
+to `DN-D1`.
 
 **A Digital Nameplate submodel is now judged, not set aside.** `verdict`
 A submodel wearing `https://admin-shell.io/idta/nameplate/3/0/Nameplate`
