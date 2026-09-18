@@ -131,12 +131,25 @@ def test_a_middle_segment_typo_is_still_unclaimed_and_that_is_measured(tmp_path)
     misspelling, and seventeen of the eighteen rows this shape silences are
     ECLASS IRDIs whose adjacent codes are different real properties. This
     fails the day that argument stops being true, which is the point."""
-    report = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_MIDDLE))
+    # Positive control first: without it this test also passes when the
+    # whole mechanism is switched off, so it would pin the silence and not
+    # the decision. The same element with a last-character drift IS
+    # reported, which is what makes the absence below meaningful.
+    live = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL))
+    assert live.unmatched, "the mechanism is off; the silence below proves nothing"
+
+    report = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_MIDDLE), "m.json")
     assert not report.unmatched, (
         "a middle-segment typo is claimed now; #23's measurement says no "
         "bound separates it from a legitimate neighbour -- re-read that "
         "before keeping this")
     assert not report.not_asked
+    # And the reason, measured rather than asserted: the comparison itself
+    # says no, so widening a bound is not what would change this.
+    from aas_submodel_validate.rules import contact_tables
+    from aas_submodel_validate.rules.engine import _near_miss
+    row = contact_tables.BY_LABEL["Phone"]
+    assert _near_miss(frozenset({PHONE_MIDDLE}), row["match"]) is None
 
 
 def test_the_specification_path_case_is_unclaimed_too(tmp_path):
@@ -153,10 +166,21 @@ def test_the_specification_path_case_is_unclaimed_too(tmp_path):
     than asserted in prose: the template file is the authority, the
     specification is evidence, and a file following the specification is
     not judged on that subtree."""
+    live = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL))
+    assert live.unmatched, "the mechanism is off; the silence below proves nothing"
+
     report = _run(tmp_path, _drift(contact_env(), "IPCommunication01",
-                                   SPEC_IPCOMMUNICATION))
+                                   SPEC_IPCOMMUNICATION), "s.json")
     assert not report.unmatched
     assert "CI-E22" not in report.not_asked
+    # The measured reason: the two identifiers differ by one whole segment
+    # of nineteen characters, so no bound in the range #23 measured can see
+    # it -- this is not a case a wider bound would reach.
+    from aas_submodel_validate.rules import contact_tables
+    from aas_submodel_validate.rules.engine import _near_miss
+    row = contact_tables.BY_LABEL["IPCommunication__00__"]
+    assert _near_miss(frozenset({SPEC_IPCOMMUNICATION}), row["match"]) is None
+    assert len("ContactInformation/") == 19
 
 
 def test_a_raw_eclass_url_is_normalised_before_any_comparison():
