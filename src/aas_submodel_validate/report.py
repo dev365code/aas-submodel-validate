@@ -264,13 +264,26 @@ def render(report: Report, *, show_meta: bool = False,
         # it; `summary.unmatchedElements` holds the answer, so the line
         # says it. Where no element explains the loss the old wording
         # stands, because inventing one would be a guess (#19).
+        # The element, and only for the rules it actually accounts for.
+        # Welding the whole count to one named element asserted a cause the
+        # JSON denies: an optional container the file legitimately omits
+        # leaves its children unasked too, and those belong to no element.
+        # A reader who fixed the named element and found rules still unasked
+        # had been told something this run does not claim.
         who = "%s element is not one" % (
             "its" if len(report.not_asked) == 1 else "their")
         if report.unmatched:
+            explained = {rule for record in report.unmatched
+                         for rule in record.unasked}
             subjects = sorted({record.subject for record in report.unmatched})
-            who = ("%s is not one" % subjects[0] if len(subjects) == 1 else
-                   "%s and %d more are not ones"
-                   % (subjects[0], len(subjects) - 1))
+            names = (subjects[0] if len(subjects) == 1
+                     else "%s and %d more" % (subjects[0], len(subjects) - 1))
+            if explained >= set(report.not_asked):
+                who = "%s is not one" % names if len(subjects) == 1 else (
+                    "%s are not ones" % names)
+            else:
+                who = ("%s accounts for %d of them and is not one"
+                       % (names, len(explained)))
         unasked = ("; %d rule%s not asked (%s%s): %s the "
                    "template describes, so this run did not look inside it"
                    % (len(report.not_asked),

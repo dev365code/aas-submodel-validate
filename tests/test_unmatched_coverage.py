@@ -90,7 +90,7 @@ def test_the_note_is_machine_readable(tmp_path):
     document = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL)).as_dict()
     assert "unmatchedElements" in document["summary"]
     entry = document["summary"]["unmatchedElements"][0]
-    assert set(entry) >= {"subject", "seen", "rulesNotAsked"}
+    assert set(entry) >= {"subject", "seen", "rulesNotAskedHere"}
     assert entry["seen"] == PHONE_TAIL
 
 
@@ -233,3 +233,70 @@ def test_the_records_own_keys_are_documented_too(tmp_path):
     for key in entry:
         assert "`%s`" % key in row[0], (
             "the record emits %r and the schema does not name it" % key)
+
+
+def test_the_terminal_does_not_charge_the_element_with_more_than_it_explains(tmp_path):
+    """The sentence and the JSON must not give different answers.
+
+    An optional container the file legitimately omits leaves its children
+    unasked too, and those belong to no element. The count in the sentence
+    is the run's total; the element named beside it accounts for only part
+    of that. Welding the two asserted a cause the JSON denies, and a reader
+    who fixed the named element would have found rules still unasked with
+    nothing to look them up by."""
+    from aas_submodel_validate.report import render
+
+    env = copy.deepcopy(contact_env())
+    kids = env["submodels"][0]["submodelElements"][0]["value"]
+    kids[:] = [c for c in kids if c.get("idShort") != "Fax"]   # 0..1: legal
+    for child in kids:
+        if child.get("idShort") == "Phone":
+            child["semanticId"]["keys"][0]["value"] = PHONE_TAIL
+    report = _run(tmp_path, env)
+    explained = {rule for record in report.unmatched for rule in record.unasked}
+    assert explained < set(report.not_asked), (
+        "this fixture no longer exercises the case: the element explains "
+        "everything, so the sentence cannot overclaim")
+    line = [text for text in render(report).splitlines()
+            if "not asked" in text][0]
+    assert "accounts for %d of them" % len(explained) in line, (
+        "the sentence charges the element with the run's whole count: %r" % line)
+
+
+def test_siblings_carrying_one_drift_are_one_loss_not_two(tmp_path):
+    """A version bump hits every item of a list, which is the cause #23 and
+    `tools/scope_silence.py` both name as the realistic one. Each item then
+    resembles the same row, and giving each of them that row's subtree
+    counted one loss as many times as there were items."""
+    from builders import td_env
+
+    env = copy.deepcopy(td_env())
+    for element in env["submodels"][0]["submodelElements"]:
+        if element.get("idShort") == "ProductClassifications":
+            element["value"].append(copy.deepcopy(element["value"][0]))
+            for item in element["value"]:
+                value = item["semanticId"]["keys"][0]["value"]
+                item["semanticId"]["keys"][0]["value"] = value[:-1] + "4"
+    report = _run(tmp_path, env)
+    ids = [rule for record in report.unmatched for rule in record.unasked]
+    assert len(ids) == len(set(ids)), "one loss counted twice: %s" % ids
+    assert set(ids) <= set(report.not_asked)
+    assert sum(r.count for r in report.unmatched) == len(set(ids))
+
+
+def test_a_long_id_short_cannot_grow_the_report(tmp_path):
+    """The record carries file-supplied text -- the idShort chain and the
+    file's own identifier -- and every such field goes through one funnel
+    rather than a list of exceptions somebody has to remember. A 200,000
+    character idShort produced a 200,000 character terminal line."""
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS
+    from aas_submodel_validate.report import render
+
+    env = copy.deepcopy(contact_env())
+    for child in env["submodels"][0]["submodelElements"][0]["value"]:
+        if child.get("idShort") == "Phone":
+            child["idShort"] = "P" * 200000
+            child["semanticId"]["keys"][0]["value"] = PHONE_TAIL
+    report = _run(tmp_path, env)
+    assert len(report.unmatched[0].subject) == MAX_REPORTED_CHARACTERS
+    assert len(render(report)) < 6000

@@ -217,8 +217,19 @@ class UnmatchedElement:
     #: Rule ids that went unasked because this element was not entered.
     unasked: tuple = ()
     #: The row identifier this one resembles, where it does. A suspicion
-    #: about a typo, never a verdict (`rules/engine.py near_identifier`).
+    #: about a typo, never a verdict (`rules/engine.py _near_miss`).
     resembles: Optional[str] = None
+
+    def __post_init__(self):
+        # Through the same funnel as a finding. `subject` is built from the
+        # file's idShort chain and `seen` is the file's own identifier, so
+        # both are file-supplied text, and the policy above says every such
+        # field is bounded in one place rather than in a list of exceptions
+        # somebody has to remember. Without this a 200 KB idShort produced a
+        # 200 KB terminal line from a 2 KB input.
+        object.__setattr__(self, "subject", _bounded(self.subject))
+        object.__setattr__(self, "seen", _bounded(self.seen))
+        object.__setattr__(self, "resembles", _bounded(self.resembles))
 
     @property
     def count(self) -> int:
@@ -226,7 +237,7 @@ class UnmatchedElement:
 
     def as_dict(self) -> dict:
         out = {"subject": self.subject, "seen": self.seen,
-               "rulesNotAsked": list(self.unasked)}
+               "rulesNotAskedHere": list(self.unasked)}
         if self.resembles:
             out["resembles"] = self.resembles
         return out

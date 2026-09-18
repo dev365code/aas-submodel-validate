@@ -224,16 +224,6 @@ def _analyze(ctx, tables) -> Dict:
         #: `lost_candidates` and subtracted the same way.
         "unmatched": [],
     }
-    #: Every identifier the template really declares. An element carrying
-    #: one of these is misplaced, not misspelled, so it is never offered a
-    #: near-identifier suspicion (`near_identifier`).
-    declared = set()
-
-    def _declared(rows):
-        for row in rows:
-            declared.update(row["match"] or ())
-            _declared(row["children"])
-    _declared(tables.TREE)
     for submodel in matched_submodels(ctx, tables):
         root = submodel.id_short or "submodel"
         reference = submodel.semantic_id
@@ -252,7 +242,7 @@ def _analyze(ctx, tables) -> Dict:
         # second item was entered in the first.
         per = {"violations": {}, "instances": {}, "near_misses": [],
                "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
-               "unmatched": [], "declared": frozenset(declared)}
+               "unmatched": []}
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
@@ -658,7 +648,17 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #: drifting `ClassId` in another branch reported twenty-three, all of
     #: them about `DocumentVersions`. `docs/divergences.md` #23 says the
     #: claim is about the scope the near miss was found in.
-    near_misses_here = len(result["near_misses"])
+    #: (subject, seen, row) for each element a near miss fired on, taken
+    #: here rather than re-derived afterwards, which is also what tells
+    #: this scope a near miss fired *in it*: the list is per scope, and the
+    #: claim #23 makes is about the scope the near miss was found in.
+    #: Re-deriving membership afterwards by asking
+    #: which elements *carry* one of the identifiers a near miss named
+    #: caught bystanders: an element whose own identifier matched nothing
+    #: but which carried the drifted one as a supplemental was handed the
+    #: neighbour's loss, and being first alphabetically it was the element
+    #: the terminal named.
+    near_here = []
     for index, element, candidates, _main_empty in indexed:
         if index in claimed or not candidates:
             continue
@@ -667,6 +667,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             near = _near_miss(candidates, row["match"])
             if near:
                 result["near_misses"].append((subject,) + near)
+                near_here.append((subject, near[0], near[1], row))
                 break
 
     # What this scope did not enter, and which element left it unentered.
@@ -702,31 +703,27 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     # typo from a legitimate neighbour without a dictionary this project does
     # not carry (`test_the_rows_a_middle_typo_silences_are_identifiers_
     # nothing_can_separate` keeps that argument loud).
-    if unentered and near_misses_here < len(result["near_misses"]):
-        fresh = result["near_misses"][near_misses_here:]
-        named = {seen for _subject_path, seen, _expected in fresh}
-        for index, element, candidates, _main_empty in indexed:
-            if index in claimed or not candidates or not (candidates & named):
+    if unentered and near_here:
+        # A row's subtree is that row's loss, counted once. Handing every
+        # unplaceable element the whole scope's loss made each answer for
+        # the others (two drifted siblings each got the other's children,
+        # and the per-element counts summed to twice what was lost); and
+        # handing it to each element that resembles the *same* row -- which
+        # is what a version bump on every item of a list produces, the most
+        # likely real cause -- brought the double count straight back. So
+        # the group is keyed by the row and the identifier that drifted, and
+        # the first element of a group speaks for it: those siblings carry
+        # one drift between them, not one each. Counting a loss twice is the
+        # over-attribution #23 records an earlier version making.
+        grouped = {}
+        for subject, seen, expected, row in near_here:
+            if claimed_by.get(row["id"]) or not row["children"]:
                 continue
-            seen = sorted(candidates & named)[0]
-            expected = next((exp for _s, sn, exp in fresh if sn == seen), None)
-            # Only the subtree of the row this identifier was said to
-            # resemble. Handing every unplaceable element the whole scope's
-            # loss makes each of them answer for the others: two drifted
-            # siblings under one collection each got the other's children,
-            # the per-element counts summed to twice the scope's loss, and
-            # the one question this record exists to answer -- which element
-            # left them unasked -- came back wrong for both. That is the
-            # over-attribution #23 records an earlier version making.
-            mine = []
-            for row in rows:
-                if claimed_by.get(row["id"]) or not row["children"]:
-                    continue
-                if expected in (row["match"] or ()):
-                    mine.extend(_descendant_ids(row))
-            if mine:
-                result["unmatched"].append(
-                    (_subject(path, element, index), seen, tuple(mine), expected))
+            grouped.setdefault((row["id"], seen), (row, expected, subject))
+        for (_row_id, seen), (row, expected, subject) in grouped.items():
+            lost = tuple(_descendant_ids(row))
+            if lost:
+                result["unmatched"].append((subject, seen, lost, expected))
         result["lost_candidates"].extend(unentered)
 
 
