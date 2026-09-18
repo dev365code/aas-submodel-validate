@@ -264,12 +264,14 @@ def render(report: Report, *, show_meta: bool = False,
         # it; `summary.unmatchedElements` holds the answer, so the line
         # says it. Where no element explains the loss the old wording
         # stands, because inventing one would be a guess (#19).
-        who = "%s element" % ("its" if len(report.not_asked) == 1 else "their")
+        who = "%s element is not one" % (
+            "its" if len(report.not_asked) == 1 else "their")
         if report.unmatched:
             subjects = sorted({record.subject for record in report.unmatched})
-            who = subjects[0] if len(subjects) == 1 else (
-                "%s and %d more" % (subjects[0], len(subjects) - 1))
-        unasked = ("; %d rule%s not asked (%s%s): %s is not one the "
+            who = ("%s is not one" % subjects[0] if len(subjects) == 1 else
+                   "%s and %d more are not ones"
+                   % (subjects[0], len(subjects) - 1))
+        unasked = ("; %d rule%s not asked (%s%s): %s the "
                    "template describes, so this run did not look inside it"
                    % (len(report.not_asked),
                       "" if len(report.not_asked) == 1 else "s",

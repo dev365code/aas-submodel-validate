@@ -687,11 +687,12 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     # stays: a row left unclaimed because the file legitimately does not
     # carry an optional element is not a loss anyone caused, and blaming a
     # supplier's own element for it is the noise #19 and #23 warn about.
-    # What widens is *what can explain it*. The comparison used to require
-    # the whole head of an identifier to match, so a typo inside any
-    # earlier segment -- and a whole segment added or dropped, which is how
-    # 02002's specification differs from its template (#51) -- explained
-    # nothing and the loss went unreported (#22). Both are recognised now.
+    # What this adds is *who*, not a new reason to claim a loss. The
+    # comparison still requires the whole head of an identifier to match, so
+    # a typo inside an earlier segment -- and a whole segment added or
+    # dropped, which is how 02002's specification differs from its template
+    # (#51) -- explains nothing and stays unreported (#22), deliberately:
+    # #23 measures why no bound can separate those from a real neighbour.
     # Attributed to the element the near-miss lint already named, and to no
     # other: this adds *who* to a loss the reader was already told about, and
     # invents no new reason to claim one. Widening the trigger to structural
@@ -702,17 +703,30 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     # not carry (`test_the_rows_a_middle_typo_silences_are_identifiers_
     # nothing_can_separate` keeps that argument loud).
     if unentered and near_misses_here < len(result["near_misses"]):
-        named = {seen for _subject_path, seen, _expected
-                 in result["near_misses"][near_misses_here:]}
+        fresh = result["near_misses"][near_misses_here:]
+        named = {seen for _subject_path, seen, _expected in fresh}
         for index, element, candidates, _main_empty in indexed:
             if index in claimed or not candidates or not (candidates & named):
                 continue
             seen = sorted(candidates & named)[0]
-            expected = next((exp for _s, sn, exp
-                             in result["near_misses"][near_misses_here:]
-                             if sn == seen), None)
-            result["unmatched"].append(
-                (_subject(path, element, index), seen, tuple(unentered), expected))
+            expected = next((exp for _s, sn, exp in fresh if sn == seen), None)
+            # Only the subtree of the row this identifier was said to
+            # resemble. Handing every unplaceable element the whole scope's
+            # loss makes each of them answer for the others: two drifted
+            # siblings under one collection each got the other's children,
+            # the per-element counts summed to twice the scope's loss, and
+            # the one question this record exists to answer -- which element
+            # left them unasked -- came back wrong for both. That is the
+            # over-attribution #23 records an earlier version making.
+            mine = []
+            for row in rows:
+                if claimed_by.get(row["id"]) or not row["children"]:
+                    continue
+                if expected in (row["match"] or ()):
+                    mine.extend(_descendant_ids(row))
+            if mine:
+                result["unmatched"].append(
+                    (_subject(path, element, index), seen, tuple(mine), expected))
         result["lost_candidates"].extend(unentered)
 
 

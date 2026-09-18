@@ -173,3 +173,63 @@ def test_a_raw_eclass_url_is_normalised_before_any_comparison():
     raw = "https://api.eclass-cdp.com/0173-1-02-ABI000-003"
     assert normalize(raw) == "0173-1#02-ABI000#003"
     assert "://" not in normalize(raw)
+
+
+def test_the_terminal_line_names_the_element_too(tmp_path):
+    """The other half of this change, and it had no gate: the JSON key was
+    pinned six ways while the sentence a person actually reads was pinned
+    by nothing -- deleting the naming block left the suite green. The
+    terminal is where most readers meet this, so it is held here."""
+    from aas_submodel_validate.report import render
+
+    report = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL))
+    text = render(report)
+    record = next(r for r in report.unmatched if r.seen == PHONE_TAIL)
+    assert record.subject in text, (
+        "the terminal says a count but not which element: %r" % text)
+    assert "their element" not in text and "its element" not in text
+
+
+def test_each_record_answers_only_for_the_element_it_names(tmp_path):
+    """Two unplaceable containers in one scope must not each be handed the
+    other's children. The scope's loss is split by the row each identifier
+    was said to resemble, so the per-element counts sum to the scope's loss
+    rather than to a multiple of it -- and the one question this record
+    exists to answer stays answerable when more than one thing drifted."""
+    from builders import td_env
+
+    env = copy.deepcopy(td_env())
+    for element in env["submodels"][0]["submodelElements"]:
+        if element.get("idShort") in ("ProductClassifications",
+                                      "TechnicalPropertyAreas"):
+            value = element["semanticId"]["keys"][0]["value"]
+            element["semanticId"]["keys"][0]["value"] = (
+                value[:-1] + ("8" if value[-1] != "8" else "7"))
+    report = _run(tmp_path, env)
+    assert len(report.unmatched) == 2, [r.subject for r in report.unmatched]
+    lists = [set(record.unasked) for record in report.unmatched]
+    assert not lists[0] & lists[1], (
+        "two elements were handed the same rules: %s" % lists)
+    assert sum(r.count for r in report.unmatched) == len(report.not_asked)
+    for record in report.unmatched:
+        assert set(record.unasked) <= set(report.not_asked)
+
+
+def test_the_records_own_keys_are_documented_too(tmp_path):
+    """The closed-key discipline reaches inside this object as well.
+
+    `summary` is held to an exact key set, so an undeclared key there fails
+    four gates. The keys *inside* each record escaped that: adding one left
+    the suite green, which is the drift the top-level gate exists to stop.
+    """
+    import pathlib as _pathlib
+
+    document = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL)).as_dict()
+    entry = document["summary"]["unmatchedElements"][0]
+    schema = (_pathlib.Path(__file__).resolve().parents[1]
+              / "docs" / "report-schema.md").read_text(encoding="utf-8")
+    row = [line for line in schema.splitlines() if "`unmatchedElements`" in line]
+    assert row, "the schema no longer documents unmatchedElements"
+    for key in entry:
+        assert "`%s`" % key in row[0], (
+            "the record emits %r and the schema does not name it" % key)

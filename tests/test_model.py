@@ -104,6 +104,13 @@ ADDED_SINCE_V1_PROVENANCE = set()
 #: question the counters cannot -- whether `errors: 0` means the file
 #: was asked everything or that a scope was never entered. Promote at
 #: the release that ships it.
+#: `unmatchedElements` joins them the same way, and the reason it is
+#: additive rather than a change to `rulesNotAsked` is worth stating: a
+#: reader of that array keeps reading exactly the ids it read before,
+#: while this answers the question the array cannot -- which element left
+#: them unasked. It carries no severity and moves no exit code, so a
+#: consumer that ignores it is not ignoring a verdict. Promote at the
+#: release that ships it.
 ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified", "rulesNotAsked",
                           "unmatchedElements"}
 #: `meta` joins `strictMeta` rather than replacing it: a 0.1.0 reader
