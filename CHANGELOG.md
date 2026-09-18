@@ -46,7 +46,10 @@ qualifying a repeated label by the enclosing scope that distinguishes the
 copies (docs/divergences.md #48).
 The one part left unjudged is the open-content ArbitraryContent
 placeholder inside PcfInformation, which stands for content the template
-does not define.
+does not define. **A pipeline that is red on such a file goes quiet**: a
+Carbon Footprint submodel that satisfies the template exits 0 where it
+exited 1, and the caveat below is a warning rather than an error, so
+nothing downstream reports that the reason changed.
 
 **The identifier IDTA 02023 shares with the battery passport is named,
 not silently resolved.** `caveat` A Carbon Footprint submodel wears an
