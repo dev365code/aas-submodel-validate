@@ -324,3 +324,35 @@ def test_a_long_id_short_cannot_grow_the_report(tmp_path):
     report = _run(tmp_path, env)
     assert len(report.unmatched[0].subject) == MAX_REPORTED_CHARACTERS
     assert len(render(report)) < 6000
+
+
+def test_an_element_of_the_wrong_kind_is_named_too(tmp_path):
+    """The second trigger, and the one where the element is certain.
+
+    A row matched an element of the wrong kind: the walk reported that
+    (`CI-E09`), did not recurse into it, and the rules beneath it left the
+    run. Nothing had to be guessed -- that element claimed the row, and the
+    finding beside this already prints its subject -- yet this was the one
+    case with no record, so the terminal fell back to "their element is not
+    one the template describes" about an element it could name exactly.
+    """
+    from aas_submodel_validate.report import render
+
+    identifier = ("https://admin-shell.io/zvei/nameplate/1/0/"
+                  "ContactInformations/ContactInformation/Phone")
+    env = copy.deepcopy(contact_env())
+    kids = env["submodels"][0]["submodelElements"][0]["value"]
+    kids[:] = [c for c in kids if c.get("idShort") != "Phone"]
+    kids.append({"idShort": "Phone", "modelType": "Property",
+                 "valueType": "xs:string", "value": "+49 69 1234",
+                 "semanticId": {"type": "ExternalReference",
+                                "keys": [{"type": "GlobalReference",
+                                          "value": identifier}]}})
+    report = _run(tmp_path, env)
+    assert "CI-E09" in {finding.rule.id for finding in report.findings}
+    record = next(r for r in report.unmatched if r.seen == identifier)
+    assert "CI-E10" in record.unasked          # the mandatory TelephoneNumber
+    assert set(record.unasked) <= set(report.not_asked)
+    text = render(report)
+    assert record.subject in text
+    assert "their element" not in text and "its element" not in text

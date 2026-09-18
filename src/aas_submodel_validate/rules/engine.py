@@ -518,7 +518,20 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 # so. Twenty-one rules on the measured case, nine of
                 # them mandatory, behind one `Property` wearing a list's
                 # identifier.
-                result["lost_candidates"].extend(_descendant_ids(row))
+                lost = tuple(_descendant_ids(row))
+                result["lost_candidates"].extend(lost)
+                # And which element did it, which here needs no guessing at
+                # all: this one claimed the row, and the finding just above
+                # already prints its subject. This was the only trigger with
+                # no record, so the terminal fell back to "their element is
+                # not one the template describes" about an element it could
+                # name exactly -- worse evidence than the near miss it did
+                # report for.
+                if lost:
+                    result["unmatched"].append(
+                        (subject, sorted(element_candidate_values(element))[0]
+                         if element_candidate_values(element) else row["sid"],
+                         lost, row["sid"]))
                 continue
             # What a list says it will hold, against what the template
             # says it holds. The metamodel asks whether the items agree
