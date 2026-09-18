@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import atexit
 import json
+import os
 import pathlib
 import platform
 import shutil
@@ -66,13 +67,49 @@ PASSES = 3
 #: number it is made of.
 YARDSTICK_FLOOR_SECONDS = 0.05
 
-#: What is timed. `corpus_pass` is the whole thing a caller experiences.
-#: `rules_layer` is the layer with a cost history: the walk grew per-element
-#: work when it started saying *which* element left rules unasked, and a
-#: layer that has already grown once is the one worth watching separately.
-#: A third will join them if template tables are ever generated at run time
-#: rather than at build time -- that is where the quadratic lives.
-LAYERS = ("corpus_pass", "rules_layer")
+#: What is timed, and each of these exists because the others cannot see
+#: what it sees.
+#:
+#: `cold_start` is one whole invocation in a fresh interpreter -- the only
+#: figure that is the time a person actually waits. Everything else here
+#: imports the package before the clock starts and then repeats a warm
+#: call, so import-time work is measured as zero by construction: an index
+#: built at import that made the command 2.3x slower left every other layer
+#: reading 0.98x.
+#:
+#: `corpus_pass` is every input the project already treats as its corpus,
+#: judged and rendered. Rendering is in because a caller waits for it too,
+#: and `runner.run` alone left the report layer unmeasured.
+#:
+#: `scale` is one wide submodel, and it is here because the corpus cannot
+#: do this job: its largest scope holds fifteen elements, so a change that
+#: is superlinear in siblings barely moves it. A genuine quadratic added to
+#: the walk read 1.0x on the corpus and 1.7x on a real file with three
+#: thousand elements.
+#:
+#: `rules_layer` is the walk over the official example, the layer with a
+#: cost history -- it grew per-element work when it started saying which
+#: element left rules unasked.
+#:
+#: A fifth joins them if template tables are ever generated at run time
+#: rather than at build time -- that is where the generator's quadratic
+#: lives, and nothing here times it today.
+LAYERS = ("cold_start", "corpus_pass", "scale", "rules_layer")
+
+#: A layer whose absolute time collapses has stopped doing its work, and a
+#: ratio cannot tell that from a fast machine. Moving `analyze`'s cache from
+#: per-context to global made the walk 1500x faster and the gate said "far
+#: under budget" and passed. Load noise is tens of percent; this is orders,
+#: so the two separate cleanly.
+COLLAPSED_BELOW = 0.2
+
+#: More passes when the passes disagree. Under load the yardstick and the
+#: layer are disturbed differently even side by side, and the fastest of
+#: three can still be a pass where only one of them got a clean window.
+#: Measured: a loaded machine put an unchanged tree between 0.54x and 1.74x
+#: over twenty-four runs of three passes.
+SPREAD_TOLERANCE = 1.25
+MAX_PASSES = 12
 
 
 #: Far *under* budget is worth saying too. The whole design rests on the
@@ -204,6 +241,42 @@ def _corpus():
     return [path for _label, path in verdict_diff.build_corpus(workspace)]
 
 
+def _wide_submodel(siblings: int = 3000):
+    """One conformant submodel with many siblings in one scope.
+
+    The corpus cannot stand in for this. Its largest scope holds fifteen
+    elements, so anything superlinear in siblings is invisible there: a
+    pairwise comparison added to the walk moved the corpus by 1% and this
+    by 70%. A file of this width is ordinary in a real handover.
+    """
+    import json
+
+    from aas_submodel_validate.rules import dn_tables
+
+    # It has to wear a template this project *has a table for*. A submodel
+    # of an unknown template draws SMT-D1 and the walk never enters it, so
+    # a wide file of one would have timed the refusal and not the walk --
+    # which is what the first version of this did, and a genuine quadratic
+    # in the walk read 1.02x against it.
+    element = {"modelType": "Property",
+               "semanticId": {"type": "ExternalReference",
+                              "keys": [{"type": "GlobalReference",
+                                        "value": "urn:example:filler"}]},
+               "valueType": "xs:string", "value": "x"}
+    elements = []
+    for index in range(siblings):
+        item = json.loads(json.dumps(element))
+        item["idShort"] = "Filler%04d" % index
+        elements.append(item)
+    return {"submodels": [{
+        "modelType": "Submodel", "id": "urn:example:wide", "idShort": "Wide",
+        "kind": "Instance",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
+                                 "value": dn_tables.TEMPLATE_SEMANTIC_ID}]},
+        "submodelElements": elements}]}
+
+
 def _rules_layer_input():
     """The official example, loaded once. Loading is not the rules layer."""
     from tools import verdict_diff
@@ -246,8 +319,8 @@ def _ratio_of(call, rounds: int) -> tuple:
     compared as ratios rather than as two separately-minimised numbers.
     """
     repeats = _repeats_for(call)
-    best = None
-    for _ in range(PASSES):
+    seen = []
+    while len(seen) < MAX_PASSES:
         start = time.perf_counter()
         _work(rounds)
         unit = (time.perf_counter() - start) / rounds * 10_000
@@ -257,22 +330,51 @@ def _ratio_of(call, rounds: int) -> tuple:
             call()
         seconds = (time.perf_counter() - start) / repeats
 
-        if best is None or seconds / unit < best[0]:
-            best = (seconds / unit, seconds, unit)
-    return best
+        seen.append((seconds / unit, seconds, unit))
+        if len(seen) >= PASSES:
+            ratios = [ratio for ratio, _s, _u in seen]
+            if max(ratios) / min(ratios) <= SPREAD_TOLERANCE:
+                break
+    return min(seen)
 
 
 def measure() -> dict:
     """The layers, in seconds, and the yardstick beside them."""
+    import json
+    import subprocess
+
+    from tools import verdict_diff
+
+    from aas_submodel_validate import report as report_module
     from aas_submodel_validate import runner
     from aas_submodel_validate.rules import engine, hd_tables, profiles
 
     corpus = _corpus()
     loaded = _rules_layer_input()
+    wide = pathlib.Path(tempfile.mkdtemp(prefix="time-budget-"))
+    atexit.register(shutil.rmtree, str(wide), True)
+    wide_path = wide / "wide.json"
+    wide_path.write_bytes(json.dumps(_wide_submodel()).encode("utf-8"))
+
+    def cold_start():
+        # A whole invocation in a fresh interpreter, which is the only
+        # figure here that is the time a person waits. Everything else has
+        # imported the package before the clock started.
+        subprocess.run([sys.executable, "-m", "aas_submodel_validate",
+                        str(verdict_diff.EXAMPLE)],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       cwd=str(ROOT),
+                       env=dict(os.environ, PYTHONPATH=str(ROOT / "src")))
+
+    def scale():
+        runner.run(wide_path)
 
     def corpus_pass():
         for path in corpus:
-            runner.run(path)
+            # Rendered too: a caller waits for the report, and timing only
+            # the judgement left that layer unmeasured -- a change that made
+            # rendering six times more expensive moved nothing here.
+            report_module.render(runner.run(path))
 
     def rules_layer():
         # The walk over the official example, and only the table that
@@ -285,8 +387,9 @@ def measure() -> dict:
                        hd_tables)
 
     rounds = _yardstick_rounds()
-    measured = {"corpus_pass": _ratio_of(corpus_pass, rounds),
-                "rules_layer": _ratio_of(rules_layer, rounds)}
+    bodies = {"cold_start": cold_start, "corpus_pass": corpus_pass,
+              "scale": scale, "rules_layer": rules_layer}
+    measured = {layer: _ratio_of(bodies[layer], rounds) for layer in LAYERS}
     return {
         # The unit from the pass each layer's figure came from, so a reader
         # who divides the seconds below by it gets the ratio above it.
@@ -318,6 +421,7 @@ def main(argv=None) -> int:
             # to hide a fifth of its cost.
             "budgets": {layer: float("%.3g" % ratio)
                         for layer, ratio in ratios.items()},
+            "platforms_expected": [key],
             "recorded_on": {
                 "machine": platform.machine(),
                 "python": platform.python_version(),
@@ -333,8 +437,32 @@ def main(argv=None) -> int:
             }}, indent=1))
         return 0
 
-    budgets = budgets_for(load(), key)
+    recorded = load()
+    budgets = budgets_for(recorded, key)
+    about = recorded.get("recorded_on", {}).get(key, {})
     bad = False
+
+    # The corpus is not a constant. `measure()` counts it and the file
+    # records what it was counted at, and nothing compared the two: pruning
+    # a dozen inputs from `verdict_diff` -- an ordinary tidy -- took the
+    # corpus from sixty to forty-five and bought a silent 40% of headroom.
+    if about.get("inputs") not in (None, measured["inputs"]):
+        print("corpus is %d inputs, budget was recorded over %d"
+              % (measured["inputs"], about["inputs"]))
+        bad = True
+
+    # A platform loses its budget by being renamed as easily as by being
+    # deleted, and "no budget recorded" is what both look like. So the file
+    # lists the keys that already have one; a platform nothing has run on
+    # is simply not on the list, and adding it means adding it twice --
+    # once as the claim and once as the figure.
+    expected = set(recorded.get("platforms_expected") or ())
+    gone = sorted(expected - set(recorded.get("budgets", {})))
+    if gone:
+        print("budgets are missing for %s, which this file expects"
+              % ", ".join(gone))
+        bad = True
+
     for layer in LAYERS:
         try:
             verdict = judge(ratios[layer], budgets.get(layer))
@@ -346,13 +474,28 @@ def main(argv=None) -> int:
             print("%-12s %7.3g units, no budget recorded for %s"
                   % (layer, ratios[layer], key))
             continue
+        # A ratio cannot tell "this machine is fast" from "this layer
+        # stopped doing its work". Absolute seconds can: a cache moved from
+        # per-context to global made the walk 1500x faster and the ratio
+        # said only "far under budget", which is a sentence a loaded
+        # machine also produces.
+        floor = (about.get("absolute_seconds", {}).get(layer) or 0) * COLLAPSED_BELOW
+        collapsed = bool(floor) and measured["layers"][layer] < floor
         note = ("over budget" if not verdict.ok else
+                "collapsed -- this layer is no longer doing its work"
+                if collapsed else
                 "close to budget" if verdict.warn else
                 "far under budget -- check the yardstick" if verdict.under
                 else "")
         print(("%-12s %7.3g units, %.2fx of its budget %s"
                % (layer, ratios[layer], verdict.factor, note)).rstrip())
-        bad = bad or not verdict.ok
+        if verdict.warn and verdict.ok and os.environ.get("GITHUB_ACTIONS"):
+            # A warning nobody sees is not a warning. Nothing read `warn`
+            # except this line, so a layer 1.7x its budget passed as two
+            # words in a log.
+            print("::warning title=time budget::%s is %.2fx of its budget"
+                  % (layer, verdict.factor))
+        bad = bad or not verdict.ok or collapsed
     return 1 if bad else 0
 
 

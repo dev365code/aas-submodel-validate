@@ -1,9 +1,14 @@
 {
- "_about": "Budgets are ratios against a yardstick measured in the same run and beside the layer it divides -- dictionary, integer and string work in a loop, never this project's code -- because seconds recorded on one machine cannot gate another, and a yardstick written in C would barely notice which interpreter called it while this project is Python all the way down. The yardstick is measured again in every pass, next to the layer, because measuring it once at the start cancels steady load out and amplifies load that lands on one window and not the other: bursts of background work timed at the old sequence drove the reported ratio between 0.41x and 1.33x on one idle machine with one unchanged tree, and 0.71x to 1.02x after. One entry per operating system, because the ratio does not travel between them either; a platform with no entry passes and says so, since there is no way to write a budget for a machine before a run on it. The seconds below are for a reader -- what is compared is the ratio -- but they are one run's, so dividing them gives the figure above them.",
+ "_about": "Budgets are ratios against a yardstick measured in the same run and beside the layer it divides -- dictionary, integer and string work in a loop, never this project's code -- because seconds recorded on one machine cannot gate another, and a yardstick written in C would barely notice which interpreter called it while this project is Python all the way down. The yardstick is measured again in every pass, next to the layer, because measuring it once at the start cancels steady load out and amplifies load that lands on one window and not the other: at the old sequence, bursts timed onto the yardstick alone drove the reported ratio to 0.41x and onto the layers alone to 1.33x, on one idle machine with one unchanged tree, and a loaded machine turned an unchanged tree red twice in twenty-four runs. Passes continue past the first three while they disagree by more than a quarter, because under load the fastest of three can still be a pass where only one of the two numbers got a clean window. One entry per operating system, because the ratio does not travel between them either; a platform with no entry passes and says so, since there is no way to write a budget for a machine before a run on it -- but `platforms_expected` lists the keys that already have one, because a platform loses its budget by being renamed as easily as by being deleted and both look like silence. Adding a platform means adding it in both places, which is the point: one of them is the claim and the other is the figure. The seconds below are for a reader and are also compared: a layer whose absolute time collapses has stopped doing its work, which no ratio can tell from a fast machine.",
+ "platforms_expected": [
+  "Darwin"
+ ],
  "budgets": {
   "Darwin": {
-   "corpus_pass": 109.0,
-   "rules_layer": 0.411
+   "cold_start": 58.8,
+   "corpus_pass": 111.0,
+   "scale": 84.0,
+   "rules_layer": 0.409
   }
  },
  "recorded_on": {
@@ -12,18 +17,23 @@
    "python": "3.9.6",
    "inputs": 60,
    "yardstick_seconds": {
-    "corpus_pass": 0.002353,
-    "rules_layer": 0.002331
+    "cold_start": 0.002252,
+    "corpus_pass": 0.002304,
+    "scale": 0.002334,
+    "rules_layer": 0.002228
    },
    "absolute_seconds": {
-    "corpus_pass": 0.2569,
-    "rules_layer": 0.0009573
+    "cold_start": 0.1324,
+    "corpus_pass": 0.2566,
+    "scale": 0.1961,
+    "rules_layer": 0.0009117
    },
-   "_from": "one run on an idle machine, chosen as the closest to the mean of twelve. Those twelve read 103-114 on the corpus and 0.393-0.417 on the rules layer -- 11% and 6% peak to peak, which is the number worth quoting; a standard deviation of three samples would have said 'about 5%' and hidden the spread a reader actually meets. Measuring the yardstick once per run instead of once per pass had put the same figures 26% and 31% apart. An ordinary run therefore sits within about 6% of 1.0x and nowhere near the warning line at 1.5x."
+   "_from": "one run on an idle machine, chosen as the closest to the mean of seven. Those seven spanned cold_start 55.3-59.4 (7% peak to peak), corpus_pass 107-115 (7% peak to peak), rules_layer 0.385-0.414 (8% peak to peak), scale 79.7-86.1 (8% peak to peak). Peak-to-peak over a stated number of runs is the figure worth quoting; a standard deviation of three samples reads reassuringly and hides what a reader meets. Under heavy background load an unchanged tree has been measured between 0.54x and 1.74x, so the warning line at 1.5x is inside the noise on a loaded machine and is advisory, while the failure line at 2.0x has not been crossed by an unchanged tree since the yardstick moved beside the layer."
   }
  },
  "thresholds": {
   "warn_at": 1.5,
-  "fail_at": 2.0
+  "fail_at": 2.0,
+  "collapsed_below": 0.2
  }
 }

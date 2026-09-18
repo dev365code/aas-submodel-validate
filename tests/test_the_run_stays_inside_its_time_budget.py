@@ -142,8 +142,9 @@ def test_the_budget_file_records_what_it_was_measured_on():
     """A ratio with no record of the machine, the interpreter and the
     absolute seconds is a number nobody can argue with later."""
     recorded = time_budget.load()
-    assert recorded["thresholds"] == {"warn_at": time_budget.WARN_AT,
-                                      "fail_at": time_budget.FAIL_AT}
+    assert recorded["thresholds"] == {
+        "warn_at": time_budget.WARN_AT, "fail_at": time_budget.FAIL_AT,
+        "collapsed_below": time_budget.COLLAPSED_BELOW}
     assert recorded["budgets"], "no platform has a budget yet"
     for key, budgets in recorded["budgets"].items():
         assert set(budgets) == set(time_budget.LAYERS), key
@@ -176,6 +177,22 @@ def test_a_measurement_covers_every_layer_the_budget_names():
         # each layer divided by the yardstick measured in its own pass
         assert abs(seconds / measured["units"][layer]
                    - measured["ratios"][layer]) < 1e-9, layer
+
+
+def test_the_layers_measure_things_the_others_cannot_see():
+    """Each layer earns its place by seeing what the rest do not.
+
+    `cold_start` is the only one that pays import cost: everything else
+    imports the package before the clock starts and then repeats a warm
+    call, so an index built at import made the command 2.3x slower and left
+    every other layer reading 0.98x. `scale` is the only one wide enough to
+    show a superlinear change: the corpus's largest scope holds fifteen
+    elements, and a genuine quadratic in the walk moved it by 1% while
+    moving a three-thousand-element file by 70%.
+    """
+    assert {"cold_start", "scale"} <= set(time_budget.LAYERS)
+    assert len(time_budget._wide_submodel()["submodels"][0]
+               ["submodelElements"]) >= 1000
 
 
 def test_the_corpus_is_not_left_on_the_disk():
@@ -221,8 +238,77 @@ def test_the_check_fails_when_a_layer_is_over_its_budget(monkeypatch, capsys):
 
 def test_the_corpus_layer_is_the_whole_corpus():
     """Timing a subset and calling it the corpus would let the budget stay
-    green while the part that grew was the part not timed. What the budget
-    was measured over is recorded beside it, so a corpus that shrank is
-    visible without re-running anything."""
+    green while the part that grew was the part not timed."""
     for key, about in time_budget.load()["recorded_on"].items():
         assert about["inputs"] >= 40, key
+
+
+def test_a_corpus_that_shrank_fails_the_command(monkeypatch, capsys):
+    """And the recorded count has to be *compared*, not merely recorded.
+
+    It was not. `measure()` counted the corpus, the file recorded what it
+    was counted at, and nothing put the two side by side -- so pruning a
+    dozen inputs from `verdict_diff`, an ordinary tidy, took the corpus
+    from sixty to forty-five and bought a silent 40% of headroom while
+    every test here stayed green.
+    """
+    recorded = json.loads(json.dumps(time_budget.load()))
+    about = recorded["recorded_on"][time_budget.platform_key()]
+    about["inputs"] = about["inputs"] + 15
+    monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    assert time_budget.main(["--check"]) == 1
+    assert "budget was recorded over" in capsys.readouterr().out
+
+
+def test_a_platform_losing_its_budget_by_rename_fails_the_command(
+        monkeypatch, capsys):
+    """A renamed key and a deleted one both read as "no budget recorded",
+    which is the sentence for a platform nothing has run on. Renaming
+    `Darwin` to `Darwin_arm64` turned the whole gate off and every test
+    here passed."""
+    recorded = json.loads(json.dumps(time_budget.load()))
+    key = time_budget.platform_key()
+    recorded["budgets"][key + "_renamed"] = recorded["budgets"].pop(key)
+    monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    assert time_budget.main(["--check"]) == 1
+    assert "budgets are missing for" in capsys.readouterr().out
+
+
+def test_the_expected_platforms_are_the_ones_with_budgets():
+    """The list is a ledger of what has been recorded, not a wish. A
+    platform nothing has run on is simply not on it."""
+    recorded = time_budget.load()
+    assert sorted(recorded["platforms_expected"]) == sorted(recorded["budgets"])
+
+
+def test_a_layer_that_stopped_working_fails_even_though_it_is_fast(
+        monkeypatch, capsys):
+    """A ratio cannot tell a fast machine from a layer that stopped doing
+    its work. Moving `analyze`'s cache from per-context to global made the
+    walk 1500x faster; the gate said "far under budget" and passed, which
+    is also what a loaded machine says. Absolute seconds separate them:
+    load is tens of percent, a collapse is orders."""
+    recorded = json.loads(json.dumps(time_budget.load()))
+    about = recorded["recorded_on"][time_budget.platform_key()]
+    for layer in time_budget.LAYERS:
+        about["absolute_seconds"][layer] *= 1000
+    monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    assert time_budget.main(["--check"]) == 1
+    assert "collapsed" in capsys.readouterr().out
+
+
+def test_a_warning_is_visible_where_warnings_are_read(monkeypatch, capsys):
+    """Nothing read `warn` except one word in a log line, so a layer at
+    1.7x of its budget passed with nobody told. On a runner it is a
+    workflow annotation now."""
+    recorded = json.loads(json.dumps(time_budget.load()))
+    key = time_budget.platform_key()
+    recorded["budgets"][key] = {
+        layer: budget / (time_budget.WARN_AT + 0.2)
+        for layer, budget in recorded["budgets"][key].items()}
+    about = recorded["recorded_on"][key]
+    about["absolute_seconds"] = dict.fromkeys(time_budget.LAYERS, 0)
+    monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    assert time_budget.main(["--check"]) == 0
+    assert "::warning" in capsys.readouterr().out

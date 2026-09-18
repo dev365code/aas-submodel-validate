@@ -99,10 +99,27 @@ A gate that has never been red is a comment.
 
 ## The time budget
 
-`make check` times two layers -- one pass over the corpus, and the walk
-over the official example -- and compares each against a ratio recorded in
-`docs/time-budget.json`. Half again as expensive is said out loud; twice is
-a failure.
+`make check` times four layers and compares each against a ratio recorded
+in `docs/time-budget.json`. Half again as expensive is said out loud; twice
+is a failure.
+
+Four, because each sees something the others cannot:
+
+- **`cold_start`** runs the command in a fresh interpreter, and is the only
+  figure that is the time a person actually waits. The others import the
+  package before the clock starts and then repeat a warm call, so work done
+  at import measures as zero in them -- an index built at import made the
+  command more than twice as slow and left every other layer unmoved.
+- **`corpus_pass`** judges *and renders* every input the corpus holds.
+- **`scale`** is one wide submodel, because the corpus cannot do this job:
+  its largest scope holds fifteen elements, so anything superlinear in
+  siblings barely moves it. A pairwise comparison added to the walk read
+  1.0x on the corpus and 4.4x here.
+- **`rules_layer`** is the walk alone, the layer with a cost history.
+
+The seconds are compared as well as the ratios, in one direction: a layer
+whose absolute time falls to a fifth of what was recorded has stopped doing
+its work, and no ratio can tell that from a fast machine.
 
 Seconds are not the budget. Every figure is a ratio against a yardstick
 measured in the same pass, immediately beside the layer it divides, so a
