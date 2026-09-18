@@ -123,3 +123,26 @@ def test_02004_entity_is_the_consistency_case_for_statements_descent():
     assert entity["label"] == "EntityForDocumentation"
     assert entity["children"] == ()          # template declares no statements
     assert not entity.get("recurses")        # not self-containing
+
+
+def test_only_entity_and_collection_self_containment_is_marked():
+    """The recursion detector marks an Entity or SubmodelElementCollection
+    that repeats its own semanticId -- the shapes the standard nests -- and
+    nothing else, even a same-kind same-sid pair reached through `value` on
+    another element kind. A real template never nests a RelationshipElement's
+    own identifier through `value` (its children live in annotations, which
+    the generator does not descend), but the arbitrary-template path must not
+    mark one if it did."""
+    pack = {"prefix": "X", "item_names": {}, "example_types": (),
+            "skip_sids": frozenset()}
+    for kind in ("Entity", "SubmodelElementCollection"):
+        container = "statements" if kind == "Entity" else "value"
+        el = {"idShort": "N", "modelType": kind, "semanticId": _sid("urn:x:N"),
+              container: [{"idShort": "N", "modelType": kind,
+                           "semanticId": _sid("urn:x:N")}]}
+        assert g._rows(el, "", None, [0], pack).get("recurses") == "urn:x:N", kind
+    are = {"idShort": "R", "modelType": "AnnotatedRelationshipElement",
+           "semanticId": _sid("urn:x:R"),
+           "value": [{"idShort": "R", "modelType": "AnnotatedRelationshipElement",
+                      "semanticId": _sid("urn:x:R")}]}
+    assert g._rows(are, "", None, [0], pack).get("recurses") is None

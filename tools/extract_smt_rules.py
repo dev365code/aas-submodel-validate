@@ -356,11 +356,12 @@ def _rows(element, parent_label, parent_id, counter, pack):
     # A self-containing element -- an Entity or SubmodelElementCollection
     # whose own child repeats its semanticId (02011's Node holds a Node) --
     # is a recursion point: mark it and leave the repeating child
-    # unexpanded, so the table stays finite and the walk re-applies this
-    # scope's rows at any depth (docs/divergences.md #48). Not a
-    # SubmodelElementList and its item, which share one identifier by
-    # design (#39); direct self-containment only, parent and child of the
-    # same kind, so a list and its item are never mistaken for it.
+    # unexpanded, so the table stays finite (docs/divergences.md #48).
+    # Only these two kinds, the shapes the standard nests: a
+    # SubmodelElementList and its item share one identifier by design (#39)
+    # but are a list with one item kind, not self-containment, and no other
+    # kind reaches a child through `value`/`statements`. Direct
+    # self-containment only; indirect (A in B in A) is out of scope.
     recurses = None
     children = []
     for child in sub_elements:
@@ -368,7 +369,7 @@ def _rows(element, parent_label, parent_id, counter, pack):
             continue
         if (my_sid and _primary_sid(child) == my_sid
                 and child["modelType"] == element["modelType"]
-                and element["modelType"] != "SubmodelElementList"):
+                and element["modelType"] in ("Entity", "SubmodelElementCollection")):
             recurses = my_sid
             continue
         child_row = _rows(child, label, row_id, counter, pack)
@@ -462,7 +463,13 @@ def _qualify_repeats(tree):
         while k < deepest and len({suffix(row, k) for row in rows}) < len(rows):
             k += 1
         for row in rows:
-            row["label"] = "%s (%s)" % (row["label"], suffix(row, k))
+            appendix = suffix(row, k)
+            if appendix:
+                row["label"] = "%s (%s)" % (row["label"], appendix)
+            # A row with no ancestor (top level) has no suffix to qualify
+            # by, so it keeps its bare label rather than becoming `Label ()`.
+            # Two such rows sharing a label stay identical and the backstop
+            # reports them.
 
 def generate(pack) -> str:
     document = json.loads(pack["template"].read_text("utf-8-sig"))

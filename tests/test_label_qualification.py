@@ -95,3 +95,20 @@ def test_by_label_keeps_both_repeats_and_drops_the_bare_label():
     assert ("PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprint/"
             "PcfCalculationMethods)" in by_label)
     assert "PcfCalculationMethod" not in by_label       # bare label -> KeyError
+
+
+def test_a_top_level_repeat_keeps_its_bare_label_not_an_empty_qualifier():
+    """A row with no ancestor cannot take an ancestor suffix. When a
+    top-level label also appears nested, the nested copy is qualified and
+    the top-level one keeps its bare label -- not `Label ()` with an empty
+    parenthetical. Two top-level rows of one label stay identical and the
+    downstream backstop reports them. Unreachable in the five shipped packs;
+    it guards the arbitrary-template path, where a top-level idShort may
+    collide with a nested one."""
+    tree = [{"label": "A", "children": ()},
+            {"label": "B", "children": ({"label": "A", "children": ()},)}]
+    g._qualify_repeats(tree)
+    labels = g._labels(tree, [])
+    assert "A" in labels                 # top-level keeps its bare label
+    assert "A (B)" in labels             # the nested copy is qualified
+    assert "A ()" not in labels          # never an empty parenthetical
