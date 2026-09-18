@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 — 2026-09-17
+## 0.3.0 — 2026-09-18
 
 Who should take this release: anyone validating IDTA 02006 Digital
 Nameplate submodels offline. It adds a fourth template pack, so a
