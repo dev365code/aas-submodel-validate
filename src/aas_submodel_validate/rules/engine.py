@@ -263,18 +263,9 @@ def _analyze(ctx, tables) -> Dict:
         # The same subtraction, per element, and a record whose loss is
         # entirely taken back is not reported at all: that is what keeps a
         # conformant file carrying an extra element silent (#19).
-        # `asked_here` is the set of row ids the walk *visited*, and it
-        # holds a key for every row in an entered scope whether anything
-        # matched it or not. That is the right subtraction for descendants
-        # of a scope never entered, which is what `lost_candidates` carries.
-        # It is the wrong one here: a record names the row the element
-        # resembles, and that row was visited and left unanswered, which is
-        # the whole point. So this subtracts only rows something actually
-        # answered -- elsewhere in this submodel, in another item of a list.
-        answered_here = {rid for rid, entries in per["instances"].items() if entries}
         survived = []
         for subject, seen, unasked, resembles in per["unmatched"]:
-            kept = tuple(r for r in unasked if r not in answered_here)
+            kept = tuple(r for r in unasked if r not in asked_here)
             if kept:
                 survived.append((subject, seen, kept, resembles))
         per["unmatched"] = survived

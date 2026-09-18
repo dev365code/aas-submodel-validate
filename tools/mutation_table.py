@@ -715,6 +715,16 @@ TABLE = [
      "as an environment, which it is not, and never read as the Submodel it "
      "is"),
 
+    ("runner/a-loss-without-the-element-is-half-an-answer",
+     "src/aas_submodel_validate/runner.py",
+     "    report.unmatched = rules.engine.unmatched_elements(ctx)",
+     "    report.unmatched = []",
+     ["tests/test_unmatched_coverage.py::test_a_reported_loss_now_names_the_element_behind_it",
+      "tests/test_unmatched_coverage.py::test_the_note_is_machine_readable"],
+     "the walk knows which element left rules unasked and the report used to "
+     "throw it away, so the reader was told a count and left to find the "
+     "element. Drop this line and the count comes back alone -- which is the "
+     "state this replaced, and it looks like a working report."),
     ("dn/uri-of-the-product-must-be-absolute-not-just-present",
      "src/aas_submodel_validate/rules/dn.py",
      "        if not _SCHEME.match(value.strip()):",

@@ -104,6 +104,24 @@ IDTA 02007 Software Nameplate is written the same way and is still not
 vendored; until its table is added a submodel of it draws `SMT-D1`
 (docs/scope.md, docs/divergences.md #50).
 
+**An element that matched no row is now named, with the rules it kept from
+being asked.** `note` A report said how many rules a run never put and left
+the reader to find the element responsible; the walk knew and threw it
+away. `summary.unmatchedElements` keeps it -- one record per unplaceable
+element, with where it sits, the identifier it carries, the rules it kept
+from being asked and the row that identifier resembles -- and the terminal
+line names the element instead of saying "their element". No flag was
+added and no verdict moves: the template states a minimum rather than a
+whitelist, so an element matching no row is not a defect, and a conformant
+file carrying an extra element of its own still reports nothing
+(docs/divergences.md #19, #23). What this does *not* do is reach the losses
+nothing explains: a typo inside a path segment that is not the last still
+draws no diagnosis, because seventeen of the eighteen rows that shape
+silences are identified by ECLASS codes whose neighbours are different real
+properties, and no bound separates a typo from a neighbour without a
+dictionary this project does not carry. That limit is measured and pinned,
+not left open (#22, #23).
+
 **An Entity's `statements` are read, and a self-containing element is
 marked rather than expanded.** `note` An Entity holds its submodel elements
 in `statements`, not in `value`; the generator and the walk now read them,
