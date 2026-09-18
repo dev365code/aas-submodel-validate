@@ -104,7 +104,8 @@ ADDED_SINCE_V1_PROVENANCE = set()
 #: question the counters cannot -- whether `errors: 0` means the file
 #: was asked everything or that a scope was never entered. Promote at
 #: the release that ships it.
-ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified", "rulesNotAsked"}
+ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified", "rulesNotAsked",
+                          "unmatchedElements"}
 #: `meta` joins `strictMeta` rather than replacing it: a 0.1.0 reader
 #: parses the boolean and keeps working, and the boolean is derived from
 #: the level so the two cannot disagree. Promote at the release that
@@ -164,7 +165,8 @@ def test_the_summary_counts_what_it_says_it_counts():
                                    "judged": True, "submodelsSeen": 0,
                                    "submodelsJudged": 0,
                                    "submodelsSpecified": 0,
-                                   "rulesNotAsked": []}
+                                   "rulesNotAsked": [],
+                                   "unmatchedElements": []}
 
 
 def test_the_report_says_what_was_asked_of_it():

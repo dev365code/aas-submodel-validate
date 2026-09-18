@@ -1,0 +1,175 @@
+"""Which element a loss is attributed to, and which losses stay unclaimed.
+
+`summary.rulesNotAsked` has said *how many* rules a run never put since
+0.1.2. It does not say which element left them unasked, and that is the
+question a reader has as soon as the count is not zero. This adds it --
+`summary.unmatchedElements`, one record per element, with the rules it kept
+from being asked and the row its identifier resembles.
+
+It adds *who*, and no new reason to claim a loss. A loss is still claimed
+only where this reader already reported something that explains it -- the
+near-miss lint fired in that scope, or a row matched an element of the
+wrong kind -- because the template states a minimum rather than a
+whitelist (docs/divergences.md #19) and an element of the supplier's own
+explains no absence.
+
+The half of #23 that stays open, stays open. A typo inside a path segment
+that is not the last draws no near-miss and so hangs off nothing, and
+widening the trigger to structural similarity is measured as unbuildable:
+seventeen of the eighteen rows such a typo silences are ECLASS IRDIs, whose
+adjacent codes are different real properties, so no bound separates a typo
+from a legitimate neighbour without a dictionary this project does not
+carry. The two tests at the end pin that consequence rather than papering
+over it.
+"""
+from __future__ import annotations
+
+import copy
+import json
+
+from aas_submodel_validate import runner
+from builders import contact_env
+
+#: A version-style drift on a container: the last character of an
+#: identifier, which is what a template version bump writes. The near-miss
+#: lint recognises it, so the loss beneath it is reported -- and this is
+#: where naming the element is the addition.
+PHONE_TAIL = ("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
+              "ContactInformation/PhonX")
+
+#: A typo inside a segment that is not the last. Draws no near-miss (#22).
+PHONE_MIDDLE = ("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
+                "ContactInformaton/Phone")
+
+#: The specification's spelling of 02002's `IPCommunication` collection,
+#: which the vendored template does not carry (docs/divergences.md #51).
+SPEC_IPCOMMUNICATION = ("https://admin-shell.io/zvei/nameplate/1/0/"
+                        "ContactInformations/ContactInformation/IPCommunication/")
+
+
+def _run(tmp_path, env, name="env.json"):
+    path = tmp_path / name
+    path.write_bytes(json.dumps(env).encode("utf-8"))
+    return runner.run(path)
+
+
+def _exit(tmp_path, env, name="env.json"):
+    """The verdict as a caller sees it: the exit code lives in the CLI, and
+    it is the CLI's answer this note must not move."""
+    from aas_submodel_validate.cli import main
+    path = tmp_path / name
+    path.write_bytes(json.dumps(env).encode("utf-8"))
+    return main([str(path)])
+
+
+def _drift(env, id_short, value):
+    out = copy.deepcopy(env)
+    for child in out["submodels"][0]["submodelElements"][0]["value"]:
+        if child.get("idShort") == id_short:
+            child["semanticId"]["keys"][0]["value"] = value
+    return out
+
+
+def test_a_reported_loss_now_names_the_element_behind_it(tmp_path):
+    """`Phone` is `0..1`, so a drifted identifier violates no count; the
+    walk never enters it and the mandatory `TelephoneNumber` beneath it is
+    never asked. The near-miss lint already said the identifier was close
+    to the template's. What is added is which element it was, and what its
+    subtree took with it."""
+    report = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL))
+    record = next(r for r in report.unmatched if r.seen == PHONE_TAIL)
+    assert "CI-E10" in record.unasked      # the mandatory TelephoneNumber
+    assert record.count == len(record.unasked)
+    assert record.resembles and record.resembles.endswith("/Phone")
+    assert record.subject, "a record with no subject names no element"
+
+
+def test_the_note_is_machine_readable(tmp_path):
+    """A pipeline that wants to act on this reads it, and no flag was added
+    to the tool to make it a verdict."""
+    document = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL)).as_dict()
+    assert "unmatchedElements" in document["summary"]
+    entry = document["summary"]["unmatchedElements"][0]
+    assert set(entry) >= {"subject", "seen", "rulesNotAsked"}
+    assert entry["seen"] == PHONE_TAIL
+
+
+def test_the_note_does_not_move_the_exit_code(tmp_path):
+    """The template states a minimum, not a whitelist (#19), so an element
+    matching no row is not a defect and must not turn a run red."""
+    from aas_submodel_validate.cli import EXIT_OK
+
+    assert _exit(tmp_path, contact_env(), "clean.json") == EXIT_OK
+    drifted = _drift(contact_env(), "Phone", PHONE_TAIL)
+    assert _run(tmp_path, drifted, "d.json").unmatched
+    assert _exit(tmp_path, drifted, "drifted.json") == EXIT_OK
+
+
+def test_a_conformant_file_with_a_supplier_element_says_nothing(tmp_path):
+    """The case that made guessing wrong before (#19): an extra element of
+    the supplier's own resembles no row, so nothing is attributed to it."""
+    from aas_submodel_validate.cli import EXIT_OK
+
+    env = copy.deepcopy(contact_env())
+    env["submodels"][0]["submodelElements"][0]["value"].append({
+        "idShort": "AcmeInternalCode", "modelType": "Property",
+        "valueType": "xs:string", "value": "X-1",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
+                                 "value": "urn:acme:internal:code"}]}})
+    assert not _run(tmp_path, env).unmatched
+    assert _exit(tmp_path, env, "extension.json") == EXIT_OK
+
+
+def test_a_middle_segment_typo_is_still_unclaimed_and_that_is_measured(tmp_path):
+    """The open half of #23, pinned rather than papered over.
+
+    A typo inside a segment that is not the last changes the identifier's
+    head, so the near-miss comparison does not fire and nothing explains
+    the loss -- and nothing is attributed to it here either, deliberately.
+    Claiming it would mean treating any element one segment off a row as a
+    misspelling, and seventeen of the eighteen rows this shape silences are
+    ECLASS IRDIs whose adjacent codes are different real properties. This
+    fails the day that argument stops being true, which is the point."""
+    report = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_MIDDLE))
+    assert not report.unmatched, (
+        "a middle-segment typo is claimed now; #23's measurement says no "
+        "bound separates it from a legitimate neighbour -- re-read that "
+        "before keeping this")
+    assert not report.not_asked
+
+
+def test_the_specification_path_case_is_unclaimed_too(tmp_path):
+    """docs/divergences.md #51, as a fixture, and honest about the outcome.
+
+    A file built to 02002's published specification carries an
+    `IPCommunication` identifier the vendored template does not, so it
+    matches no row -- and because that collection is `0..*`, nothing is
+    violated and the mandatory `AddressOfAdditionalLink` beneath it simply
+    leaves the run. The identifier differs from the row's by a whole
+    segment, which draws no near-miss, so this run says nothing about it.
+
+    That is the cost of the reading recorded in #51, measured here rather
+    than asserted in prose: the template file is the authority, the
+    specification is evidence, and a file following the specification is
+    not judged on that subtree."""
+    report = _run(tmp_path, _drift(contact_env(), "IPCommunication01",
+                                   SPEC_IPCOMMUNICATION))
+    assert not report.unmatched
+    assert "CI-E22" not in report.not_asked
+
+
+def test_a_raw_eclass_url_is_normalised_before_any_comparison():
+    """Order pin. An ECLASS identifier in `api.eclass-cdp.com` URL form
+    would put a dense code where a comparison expects a word -- two
+    different real properties are one character apart in that form. It
+    never reaches one, and the only reason is that `semantics.normalize`
+    rewrites those URLs to the bare IRDI first, and a bare IRDI is compared
+    by exact version stem rather than by distance. Nothing else pins that
+    ordering, so a refactor that reversed it would reopen the false
+    positive silently."""
+    from aas_submodel_validate.semantics import normalize
+
+    raw = "https://api.eclass-cdp.com/0173-1-02-ABI000-003"
+    assert normalize(raw) == "0173-1#02-ABI000#003"
+    assert "://" not in normalize(raw)

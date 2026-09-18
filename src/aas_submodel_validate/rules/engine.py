@@ -219,7 +219,21 @@ def _analyze(ctx, tables) -> Dict:
         #: against `instances`. Reporting this list directly said
         #: twenty-six rules went unasked when twenty-two of them ran.
         "lost_candidates": [],
+        #: (subject, seen identifier, unasked rule ids, resembles-or-None)
+        #: for each element this walk could not place. Same standing as
+        #: `lost_candidates` and subtracted the same way.
+        "unmatched": [],
     }
+    #: Every identifier the template really declares. An element carrying
+    #: one of these is misplaced, not misspelled, so it is never offered a
+    #: near-identifier suspicion (`near_identifier`).
+    declared = set()
+
+    def _declared(rows):
+        for row in rows:
+            declared.update(row["match"] or ())
+            _declared(row["children"])
+    _declared(tables.TREE)
     for submodel in matched_submodels(ctx, tables):
         root = submodel.id_short or "submodel"
         reference = submodel.semantic_id
@@ -237,7 +251,8 @@ def _analyze(ctx, tables) -> Dict:
         # walks the same rows once per item, and a row missed in the
         # second item was entered in the first.
         per = {"violations": {}, "instances": {}, "near_misses": [],
-               "idshort_drift": [], "reftype_drift": [], "lost_candidates": []}
+               "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
+               "unmatched": [], "declared": frozenset(declared)}
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
@@ -245,11 +260,29 @@ def _analyze(ctx, tables) -> Dict:
         asked_here = set(per["instances"])
         per["lost_candidates"] = [rule_id for rule_id in per["lost_candidates"]
                                   if rule_id not in asked_here]
+        # The same subtraction, per element, and a record whose loss is
+        # entirely taken back is not reported at all: that is what keeps a
+        # conformant file carrying an extra element silent (#19).
+        # `asked_here` is the set of row ids the walk *visited*, and it
+        # holds a key for every row in an entered scope whether anything
+        # matched it or not. That is the right subtraction for descendants
+        # of a scope never entered, which is what `lost_candidates` carries.
+        # It is the wrong one here: a record names the row the element
+        # resembles, and that row was visited and left unanswered, which is
+        # the whole point. So this subtracts only rows something actually
+        # answered -- elsewhere in this submodel, in another item of a list.
+        answered_here = {rid for rid, entries in per["instances"].items() if entries}
+        survived = []
+        for subject, seen, unasked, resembles in per["unmatched"]:
+            kept = tuple(r for r in unasked if r not in answered_here)
+            if kept:
+                survived.append((subject, seen, kept, resembles))
+        per["unmatched"] = survived
         for key in ("violations", "instances"):
             for row_id, entries in per[key].items():
                 result[key].setdefault(row_id, []).extend(entries)
         for key in ("near_misses", "idshort_drift", "reftype_drift",
-                    "lost_candidates"):
+                    "lost_candidates", "unmatched"):
             result[key].extend(per[key])
     return result
 
@@ -262,6 +295,32 @@ def _descendant_ids(row) -> List[str]:
         out.append(child["id"])
         out.extend(_descendant_ids(child))
     return out
+
+
+def unmatched_elements(ctx) -> List:
+    """The elements this run could not place, with what each one cost.
+
+    `rows_not_reached` answers "how many rules went unasked"; this answers
+    "which element left them unasked", which is the question a reader has
+    when the count is not zero. Same standing: a statement about the run,
+    not about the file, and it moves no verdict (`docs/divergences.md`
+    #19, #23).
+
+    Deduplicated by element, keeping the largest loss recorded for it: the
+    same element is walked once per item of a list.
+    """
+    from ..model import UnmatchedElement
+
+    analysed = ctx.__dict__.get("_smt_analysis") or {}
+    best = {}
+    for analysis in analysed.values():
+        for subject, seen, unasked, resembles in analysis.get("unmatched", ()):
+            previous = best.get((subject, seen))
+            if previous is None or len(unasked) > len(previous[0]):
+                best[(subject, seen)] = (unasked, resembles)
+    return [UnmatchedElement(subject=subject, seen=seen,
+                             unasked=unasked, resembles=resembles)
+            for (subject, seen), (unasked, resembles) in sorted(best.items())]
 
 
 def rows_not_reached(ctx) -> List[str]:
@@ -619,10 +678,51 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["near_misses"].append((subject,) + near)
                 break
 
-    if near_misses_here < len(result["near_misses"]):
-        for row in rows:
-            if row["children"] and not claimed_by.get(row["id"]):
-                result["lost_candidates"].extend(_descendant_ids(row))
+    # What this scope did not enter, and which element left it unentered.
+    #
+    # This used to be claimed only where a near miss had already explained
+    # the loss, because the template states a minimum and not a whitelist
+    # (#19) and guessing made a conformant file with one extra property
+    # report rules unasked. The guess is gone rather than widened: what is
+    # recorded is not that the element is wrong but that this run did not
+    # look inside a row, and an element with nothing unasked beneath it
+    # produces no record at all -- so the conformant-plus-extension case
+    # still says nothing, without anyone having to guess about it.
+    unentered = []
+    for row in rows:
+        if row["children"] and not claimed_by.get(row["id"]):
+            unentered.extend(_descendant_ids(row))
+    # A loss is claimed only where something explains it, and that guard
+    # stays: a row left unclaimed because the file legitimately does not
+    # carry an optional element is not a loss anyone caused, and blaming a
+    # supplier's own element for it is the noise #19 and #23 warn about.
+    # What widens is *what can explain it*. The comparison used to require
+    # the whole head of an identifier to match, so a typo inside any
+    # earlier segment -- and a whole segment added or dropped, which is how
+    # 02002's specification differs from its template (#51) -- explained
+    # nothing and the loss went unreported (#22). Both are recognised now.
+    # Attributed to the element the near-miss lint already named, and to no
+    # other: this adds *who* to a loss the reader was already told about, and
+    # invents no new reason to claim one. Widening the trigger to structural
+    # similarity is the half of #23 deliberately not built -- seventeen of the
+    # eighteen rows a middle-segment typo silences are ECLASS IRDIs, whose
+    # adjacent codes are different real properties, so no bound separates a
+    # typo from a legitimate neighbour without a dictionary this project does
+    # not carry (`test_the_rows_a_middle_typo_silences_are_identifiers_
+    # nothing_can_separate` keeps that argument loud).
+    if unentered and near_misses_here < len(result["near_misses"]):
+        named = {seen for _subject_path, seen, _expected
+                 in result["near_misses"][near_misses_here:]}
+        for index, element, candidates, _main_empty in indexed:
+            if index in claimed or not candidates or not (candidates & named):
+                continue
+            seen = sorted(candidates & named)[0]
+            expected = next((exp for _s, sn, exp
+                             in result["near_misses"][near_misses_here:]
+                             if sn == seen), None)
+            result["unmatched"].append(
+                (_subject(path, element, index), seen, tuple(unentered), expected))
+        result["lost_candidates"].extend(unentered)
 
 
 def _near_miss(candidates, match_values):

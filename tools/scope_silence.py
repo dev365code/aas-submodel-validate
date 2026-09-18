@@ -114,7 +114,16 @@ def _judge(directory: str, environment: dict, tag: str):
         payload=json.dumps(environment).encode("utf-8"),
         files=(("aasx/files/manual.pdf", b"%PDF-1.4"),),
     )
-    return {finding.id for finding in runner.run(str(path)).findings}
+    report = runner.run(str(path))
+    spoken = {finding.id for finding in report.findings}
+    # The coverage note is not a finding and carries no severity, but it is
+    # the run speaking: it names the element that matched no row and the
+    # rules that element kept from being put (`summary.unmatchedElements`).
+    # A drift this names is a drift that did not go quiet, and going quiet
+    # is the whole thing this tool counts. Keyed by the identifier seen, so
+    # two elements drifting in one file are two answers rather than one.
+    spoken.update("unmatched:" + record.seen for record in report.unmatched)
+    return spoken
 
 
 def measure(mode: str):

@@ -200,6 +200,38 @@ class Finding:
         }
 
 
+@dataclass(frozen=True)
+class UnmatchedElement:
+    """An element whose semanticId matched no row, and what that cost.
+
+    The template states a minimum rather than a whitelist
+    (`docs/divergences.md` #19), so this is not a finding and carries no
+    severity: an element of the supplier's own is entitled to be here. What
+    is reportable is the consequence for *this run* -- the rules below the
+    row it did not match were never put -- and a record is kept only where
+    that consequence is non-empty, which is what keeps a conformant file
+    carrying an extra element silent.
+    """
+    subject: str
+    seen: str
+    #: Rule ids that went unasked because this element was not entered.
+    unasked: tuple = ()
+    #: The row identifier this one resembles, where it does. A suspicion
+    #: about a typo, never a verdict (`rules/engine.py near_identifier`).
+    resembles: Optional[str] = None
+
+    @property
+    def count(self) -> int:
+        return len(self.unasked)
+
+    def as_dict(self) -> dict:
+        out = {"subject": self.subject, "seen": self.seen,
+               "rulesNotAsked": list(self.unasked)}
+        if self.resembles:
+            out["resembles"] = self.resembles
+        return out
+
+
 @dataclass
 class Report:
     path: str
@@ -252,6 +284,13 @@ class Report:
     #: no row is not by itself a defect -- what is reportable is that
     #: this run did not look inside it.
     not_asked: List[str] = field(default_factory=list)
+    #: The elements this run could not place, one record each, and the
+    #: rules each of them kept from being asked. `not_asked` above is the
+    #: same loss with the elements taken off it: useful for a count, no
+    #: use at all for the reader asking *which* element did it. Same
+    #: standing as `not_asked` -- a statement about the run, not about the
+    #: file, and it moves no verdict.
+    unmatched: List[UnmatchedElement] = field(default_factory=list)
     allow_unmatched: bool = False
     #: The digest of the bytes this run read, or None when there were
     #: none to read. A report that says a file failed and does not say
@@ -336,6 +375,10 @@ class Report:
                 # identifier drifted and a conformant one serialise to the
                 # same bytes.
                 "rulesNotAsked": self.not_asked,
+                # The same loss, per element, for the pipeline that wants
+                # to act on it. A new flag was deliberately not added: a
+                # consumer that wants to fail on this reads it here.
+                "unmatchedElements": [u.as_dict() for u in self.unmatched],
             },
             "notes": self.notes,
             "findings": [f.as_dict() for f in self.findings],

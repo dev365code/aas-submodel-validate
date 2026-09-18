@@ -196,10 +196,11 @@ by semanticId, so an element whose identifier is wrong matches no row —
 and the rules for everything *inside* it are rules about a row that was
 never reached. Measured by `tools/scope_silence.py` across the three templates
 whose fixtures it drifts, over the 86 generated rules, of which the corpus fixtures carry 69: a wrong last
-character — what a version bump writes, `#002` to `#003` — leaves 18 of
-them speaking only through the near-miss lint, and a character wrong
-*inside* a path segment — what a hand-edited file gets — leaves the same
-18 saying nothing at all. That difference is the whole argument for the
+character — what a version bump writes, `#002` to `#003` — leaves 11 of
+them speaking only through the near-miss lint (the other seven are
+containers, where the report also names the element and the rules its
+subtree took with it), and a character wrong *inside* a path segment —
+what a hand-edited file gets — leaves 18 saying nothing at all. That difference is the whole argument for the
 lint, and for what is still missing after it: it catches a version
 drift, which is what it was built for, and catches nothing else. This is written up
 with the measurement in

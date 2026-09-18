@@ -967,7 +967,11 @@ def test_the_drift_figures_are_the_ones_the_tool_measures():
             "carry %d" % (generated, carried),
             "leaves %d of them speaking only through the near-miss lint"
             % lint_only,
-            "leaves the same %d saying nothing at all" % mute):
+            # Not "the same N" any more: the two figures parted when the
+            # report began naming the element behind a loss it had already
+            # reported, which moved seven of the tail cases out of
+            # lint-only without touching the middle ones at all.
+            "leaves %d saying nothing at all" % mute):
         assert phrase in FLOWED, (
             "the page does not say %r; the tool measured %s" % (phrase, figures))
 

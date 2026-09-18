@@ -258,13 +258,24 @@ def render(report: Report, *, show_meta: bool = False,
         # still would not find it, which is worse than jargon they could
         # look up. It was in the sentence a first-time reader was most
         # likely to stop on.
-        unasked = ("; %d rule%s not asked (%s%s): %s element is not one the "
+        # And the element, where the run knows which one it was. "their
+        # element is not one the template describes" told the reader that
+        # something unplaceable had cost them rules and left them to find
+        # it; `summary.unmatchedElements` holds the answer, so the line
+        # says it. Where no element explains the loss the old wording
+        # stands, because inventing one would be a guess (#19).
+        who = "%s element" % ("its" if len(report.not_asked) == 1 else "their")
+        if report.unmatched:
+            subjects = sorted({record.subject for record in report.unmatched})
+            who = subjects[0] if len(subjects) == 1 else (
+                "%s and %d more" % (subjects[0], len(subjects) - 1))
+        unasked = ("; %d rule%s not asked (%s%s): %s is not one the "
                    "template describes, so this run did not look inside it"
                    % (len(report.not_asked),
                       "" if len(report.not_asked) == 1 else "s",
                       ", ".join(named),
                       "" if not rest else ", and %d more -- -f json lists them" % rest,
-                      "its" if len(report.not_asked) == 1 else "their"))
+                      who))
     judged = ""
     specified = ""
     if report.submodels_specified:

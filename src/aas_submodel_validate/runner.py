@@ -297,6 +297,7 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     ctx = Context(loaded, rules.profiles.Selection(profile))
     report.findings = execute(rules_to_run, ctx)
     report.not_asked = rules.engine.rows_not_reached(ctx)
+    report.unmatched = rules.engine.unmatched_elements(ctx)
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
         # The verdict that no template matched, and only that. A presence

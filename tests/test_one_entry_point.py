@@ -140,7 +140,7 @@ def test_a_wrong_identifier_takes_rules_out_of_the_run_by_the_measured_amount():
     import scope_silence
 
     tried, mute, lint_only, _detail, absent = scope_silence.measure("tail")
-    assert (tried, len(mute), len(lint_only)) == (69, 0, 18)
+    assert (tried, len(mute), len(lint_only)) == (69, 0, 11)
     assert len(absent) == 17, "the fixtures now carry a different set of rows"
 
     tried, mute, lint_only, _detail, absent = scope_silence.measure("middle")
