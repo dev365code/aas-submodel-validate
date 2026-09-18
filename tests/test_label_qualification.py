@@ -1,14 +1,15 @@
-"""Scope-root label qualification in the generator.
+"""Minimal-suffix label qualification in the generator.
 
 A published template may repeat a named sub-structure in two scopes --
 02023 carries `PcfCalculationMethods` under both its product and its
 product-or-sector sections, same semanticId, different place. The
 generator keys rows by label in one flat namespace (`BY_LABEL`), so two
-rows wearing one label would make one of them unreachable; it used to
-abort. It now qualifies a colliding label by its scope-root -- the
-top-level element its scope descends from -- so both are kept, and a
-template with no such repeat is left byte-for-byte the same (the
-`--check` gate in `make check` proves that half).
+rows wearing one label would make one of them unreachable; it qualifies a
+colliding label by the shortest ancestor suffix that tells its collision
+group apart -- the immediate parent where that alone distinguishes it,
+one ancestor further where the immediate parents coincide, the full path
+as a last resort. A template with no such repeat is left byte-for-byte
+the same (the `--check` gate in `make check` proves that half).
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-import pytest  # noqa: E402
+import pytest  # noqa: E402,F401  (kept for future xfail markers)
 
 import extract_smt_rules as g  # noqa: E402
 
@@ -31,27 +32,52 @@ def _pack(skip):
             "item_names": g.PCF_ITEM_NAMES, "example_types": (), "skip_sids": skip}
 
 
-def test_a_repeated_substructure_gets_unique_labels_by_scope_root():
+def test_a_repeated_substructure_gets_unique_labels_by_immediate_parent():
     """With the product-or-sector section included, `PcfCalculationMethods`
-    and its item are claimed in two scopes. Generation must succeed and
-    give each colliding label its scope-root, so `BY_LABEL` keeps both."""
+    is claimed in two scopes. Generation must succeed and give each copy a
+    label the other does not wear, so `BY_LABEL` keeps both. Their
+    immediate parents differ (`ProductCarbonFootprint` vs
+    `ProductOrSectorSpecificCarbonFootprint`), so one ancestor -- k=1 -- is
+    enough, and no further ancestor is added."""
     text = g.generate(_pack(frozenset()))  # no skip -> the repeat is present
-    assert "PcfCalculationMethods (ProductCarbonFootprints)" in text
-    assert "PcfCalculationMethods (ProductOrSectorSpecificCarbonFootprints)" in text
-    assert "PcfCalculationMethod (ProductCarbonFootprints)" in text
-    assert "PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprints)" in text
+    assert "PcfCalculationMethods (ProductCarbonFootprint)" in text
+    assert "PcfCalculationMethods (ProductOrSectorSpecificCarbonFootprint)" in text
+    # k=1 only: the scope-root the interim scheme used is not appended.
+    assert "(ProductCarbonFootprints)" not in text
+
+
+def test_repeated_labels_are_qualified_by_minimal_ancestor_suffix():
+    """The scheme, in full: the shortest ancestor suffix that makes a
+    collision group unique -- the immediate parent where that
+    distinguishes it, one ancestor further where it does not.
+
+    In 02023 the two `PcfCalculationMethods` differ at the immediate parent
+    (`ProductCarbonFootprint` vs `ProductOrSectorSpecificCarbonFootprint`),
+    so k=1; the two `PcfCalculationMethod` share that parent
+    (`PcfCalculationMethods`), so k=2 -- the grandparent that tells them
+    apart, written from the top down. The suffix is read off the *raw*
+    ancestor labels, so the shared parent contributes its bare
+    `PcfCalculationMethods`, not its own k=1 qualifier."""
+    text = g.generate(_pack(frozenset()))  # 02023 with both scopes present
+    # k=1 for the outer repeat
+    assert "PcfCalculationMethods (ProductCarbonFootprint)" in text
+    assert "PcfCalculationMethods (ProductOrSectorSpecificCarbonFootprint)" in text
+    # k=2 for the repeat nested under it: same immediate parent -> grandparent
+    assert "PcfCalculationMethod (ProductCarbonFootprint/PcfCalculationMethods)" in text
+    assert ("PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprint/"
+            "PcfCalculationMethods)" in text)
 
 
 def test_a_non_colliding_label_is_not_qualified():
     """Only a colliding label is touched. With the product-or-sector
-    section skipped there is no repeat, so no scope-root qualifier appears
-    -- the same guarantee that keeps the four packs without a repeat
+    section skipped there is no repeat, so no qualifier appears at all --
+    the same guarantee that keeps the four packs without a repeat
     byte-identical (the `--check` gate proves that half)."""
     no_repeat = frozenset(("https://admin-shell.io/idta/CarbonFootprint/"
                            "ProductOrSectorSpecificCarbonFootprints/1/0",))
     text = g.generate(_pack(no_repeat))
-    assert "(ProductCarbonFootprints)" not in text
-    assert "(ProductOrSectorSpecificCarbonFootprints)" not in text
+    assert "(ProductCarbonFootprint)" not in text
+    assert "(ProductOrSectorSpecificCarbonFootprint)" not in text
     # and the bare labels are still there, unqualified
     assert "'PcfCalculationMethods'" in text or '"PcfCalculationMethods"' in text
 
@@ -65,28 +91,7 @@ def test_by_label_keeps_both_repeats_and_drops_the_bare_label():
     namespace = {}
     exec(g.generate(_pack(frozenset())), namespace)
     by_label = namespace["BY_LABEL"]
-    assert "PcfCalculationMethod (ProductCarbonFootprints)" in by_label
-    assert "PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprints)" in by_label
+    assert "PcfCalculationMethod (ProductCarbonFootprint/PcfCalculationMethods)" in by_label
+    assert ("PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprint/"
+            "PcfCalculationMethods)" in by_label)
     assert "PcfCalculationMethod" not in by_label       # bare label -> KeyError
-
-
-@pytest.mark.xfail(strict=True, reason="label-qualification scheme unit "
-                   "(minimal ancestor suffix + recursion collapse) is next; "
-                   "today the generator qualifies by scope-root")
-def test_repeated_labels_are_qualified_by_minimal_ancestor_suffix():
-    """FAILING FIRST -- the executable spec the label-qualification scheme
-    unit turns green.
-
-    The decided scheme qualifies a repeated label by the shortest ancestor
-    suffix that makes its collision group unique: the immediate parent
-    where that distinguishes it, one ancestor further where it does not.
-    In 02023 the two `PcfCalculationMethods` differ at the immediate parent
-    (`ProductCarbonFootprint` vs `ProductOrSectorSpecificCarbonFootprint`),
-    so k=1; the two `PcfCalculationMethod` share that parent, so k=2. Today
-    the generator qualifies by scope-root instead
-    (`PcfCalculationMethods (ProductCarbonFootprints)`), so these
-    assertions are red until the scheme lands."""
-    text = g.generate(_pack(frozenset()))  # 02023 with both scopes present
-    assert "PcfCalculationMethods (ProductCarbonFootprint)" in text
-    assert "PcfCalculationMethods (ProductOrSectorSpecificCarbonFootprint)" in text
-    assert "PcfCalculationMethod (ProductCarbonFootprint/PcfCalculationMethods)" in text

@@ -42,7 +42,7 @@ TREE = (
                 'children': (
                     {
                         'id': 'PCF-E03',
-                        'label': 'PcfCalculationMethods (ProductCarbonFootprints)',
+                        'label': 'PcfCalculationMethods (ProductCarbonFootprint)',
                         'parent': 'PCF-E02',
                         'kind': 'SubmodelElementList',
                         'match': ('https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0',),
@@ -57,7 +57,7 @@ TREE = (
                         'children': (
                             {
                                 'id': 'PCF-E04',
-                                'label': 'PcfCalculationMethod (ProductCarbonFootprints)',
+                                'label': 'PcfCalculationMethod (ProductCarbonFootprint/PcfCalculationMethods)',
                                 'parent': 'PCF-E03',
                                 'kind': 'Property',
                                 'match': ('0173-1#02-ABG854#003',),
@@ -254,7 +254,7 @@ TREE = (
                 'children': (
                     {
                         'id': 'PCF-E16',
-                        'label': 'PcfCalculationMethods (ProductOrSectorSpecificCarbonFootprints)',
+                        'label': 'PcfCalculationMethods (ProductOrSectorSpecificCarbonFootprint)',
                         'parent': 'PCF-E15',
                         'kind': 'SubmodelElementList',
                         'match': ('https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0',),
@@ -269,7 +269,7 @@ TREE = (
                         'children': (
                             {
                                 'id': 'PCF-E17',
-                                'label': 'PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprints)',
+                                'label': 'PcfCalculationMethod (ProductOrSectorSpecificCarbonFootprint/PcfCalculationMethods)',
                                 'parent': 'PCF-E16',
                                 'kind': 'Property',
                                 'match': ('0173-1#02-ABG854#003',),

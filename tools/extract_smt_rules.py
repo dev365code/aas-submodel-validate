@@ -143,8 +143,9 @@ ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
 #: 02023's ProductOrSectorSpecificCarbonFootprints repeats the named
 #: PcfCalculationMethods sub-structure that ProductCarbonFootprints
 #: already carries (same semanticId, different scope). The generator
-#: qualifies a label repeated across scopes by its scope-root
-#: (`_qualify_repeats`), so both sections are judged. What is left out is
+#: qualifies a label repeated across scopes by the shortest ancestor
+#: suffix that distinguishes the copies (`_qualify_repeats`), so both
+#: sections are judged. What is left out is
 #: the open-content placeholder inside PcfInformation: an `ArbitraryContent`
 #: property wearing the SMT/General/Arbitrary marker, which stands for
 #: content the template does not define -- the same treatment 02006 gives
@@ -377,29 +378,64 @@ def _labels(rows, out):
 
 def _qualify_repeats(tree):
     """Where a label is claimed by rows in more than one scope, qualify
-    each by its scope-root -- the top-level element its scope descends
-    from -- so `BY_LABEL` keeps them apart. A template with no such repeat
-    leaves this a no-op, so its generated table stays byte-for-byte the
-    same. Only the label is touched: it is the row's identity for the walk
-    and for the hand rules that navigate by it, while `fix` keeps the
+    each by the shortest ancestor suffix that tells its collision group
+    apart: the immediate parent where that alone distinguishes it, one
+    ancestor further where the immediate parents coincide, the full path
+    from the top as a last resort. A template with no such repeat leaves
+    this a no-op, so its generated table stays byte-for-byte the same.
+    Only the label is touched: it is the row's identity for the walk and
+    for the hand rules that navigate by it, while `fix` keeps the
     element's own idShort, which is what a reader is told to provide.
 
-    The duplicate-label check downstream still runs: if a scope-root does
-    not tell two same-labelled rows apart (they share one), it aborts
-    there rather than emit a table that hides a row.
+    The suffix is read off the *raw* ancestor labels, before any of them
+    is itself qualified, so a repeat nested under a repeat (02023's
+    `PcfCalculationMethod` under a repeated `PcfCalculationMethods`) reads
+    its parent's bare label, not the parent's own qualifier. The tree a
+    recursion point (`recurses`) leaves behind is finite -- its
+    self-similar subtree is not re-expanded -- so the suffix a descendant
+    of one takes does not grow with depth: `Node (EntryNode)` at the
+    entry, `Node (Node)` at the recursion, and so at every level.
+
+    The duplicate-label check downstream still runs: if even the full path
+    does not tell two same-labelled rows apart, it aborts there rather
+    than emit a table that hides a row.
     """
     labels = _labels(tree, [])
     clashing = {label for label in labels if labels.count(label) > 1}
     if not clashing:
         return
-    def qualify(rows, scope_root):
-        for row in rows:
-            root = scope_root or row["label"]
-            if row["label"] in clashing:
-                row["label"] = "%s (%s)" % (row["label"], root)
-            qualify(row["children"], root)
-    qualify(tree, None)
 
+    # Each row's raw ancestor labels, immediate parent first, snapshotted
+    # before any label is qualified so a nested repeat reads bare labels.
+    ancestors = {}
+
+    def record(rows, chain):
+        for row in rows:
+            ancestors[id(row)] = chain
+            record(row["children"], [row["label"]] + chain)
+    record(tree, [])
+
+    # The colliding rows, grouped by their (raw) label.
+    groups = {}
+
+    def collect(rows):
+        for row in rows:
+            if row["label"] in clashing:
+                groups.setdefault(row["label"], []).append(row)
+            collect(row["children"])
+    collect(tree)
+
+    def suffix(row, k):
+        # the k nearest ancestors, written from the top down (path order)
+        return "/".join(reversed(ancestors[id(row)][:k]))
+
+    for rows in groups.values():
+        deepest = max(len(ancestors[id(row)]) for row in rows)
+        k = 1
+        while k < deepest and len({suffix(row, k) for row in rows}) < len(rows):
+            k += 1
+        for row in rows:
+            row["label"] = "%s (%s)" % (row["label"], suffix(row, k))
 
 def generate(pack) -> str:
     document = json.loads(pack["template"].read_text("utf-8-sig"))
@@ -421,10 +457,10 @@ def generate(pack) -> str:
     for reference in submodel.get("supplementalSemanticIds", []):
         supplemental |= _values_of(reference)
 
-    # A label repeated across scopes is qualified by its scope-root first,
-    # so a template that reuses a named sub-structure (02023 does) still
-    # gets one BY_LABEL entry per row; a template that does not is left
-    # untouched.
+    # A label repeated across scopes is qualified by the shortest ancestor
+    # suffix that tells the copies apart, so a template that reuses a named
+    # sub-structure (02023 does) still gets one BY_LABEL entry per row; a
+    # template that does not is left untouched.
     _qualify_repeats(tree)
     # The hand rules navigate by label, and BY_LABEL is a dict: two rows
     # sharing a label would make one of them silently unreachable. Fail

@@ -9,7 +9,7 @@ its identifier -- the other half of what the row says.
 Both the core ProductCarbonFootprints section and the
 product-or-sector-specific section are generated; where the second
 repeats the first's PcfCalculationMethods sub-structure the rows are told
-apart by scope-root. The only part left unjudged is the open-content
+apart by the shortest ancestor suffix that distinguishes the copies. The only part left unjudged is the open-content
 ArbitraryContent placeholder.
 """
 from __future__ import annotations

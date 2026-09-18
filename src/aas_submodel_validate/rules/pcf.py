@@ -12,8 +12,9 @@ Both the core `ProductCarbonFootprints` section and the
 `ProductOrSectorSpecificCarbonFootprints` section are generated. The
 latter repeats the named `PcfCalculationMethods` sub-structure the former
 carries (same semanticId, a second scope); the generator tells the two
-apart by qualifying a repeated label with its scope-root, so each row is
-judged in its own place (docs/divergences.md). The one part left
+apart by qualifying a repeated label with the shortest ancestor suffix
+that distinguishes the copies, so each row is judged in its own place
+(docs/divergences.md #48). The one part left
 unjudged is the open-content `ArbitraryContent` placeholder inside
 `PcfInformation`, which stands for content the template does not define
 -- the same treatment 02006 gives its Arbitrary* elements.
