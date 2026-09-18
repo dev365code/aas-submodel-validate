@@ -771,14 +771,23 @@ def contact_env() -> dict:
     a scope to strip from, a bound to exceed, or an identifier to put the
     wrong kind under.
 
-    Two identifiers are reproduced exactly as the template writes them,
-    because a conformant instance would: `AvailableTime` ends in a slash,
-    and `TypeOfCommunication` carries a space inside it. Both are the
-    template's, not ours (docs/divergences.md). The `IPCommunication__00__`
-    row is instantiated as `IPCommunication01`: the digits in the
-    template's idShort are its placeholder for a numbered instance, and
-    matching is by semanticId regardless. The submodel id is deliberately
-    not the template's identifier.
+    Identifiers are reproduced exactly as the **template** writes them,
+    which is not the same as what the specification writes. `AvailableTime`
+    ends in a slash and the specification agrees, so that one is simply the
+    identifier. `TypeOfCommunication` carries a space inside it, which the
+    specification does not, so mirroring the template is what makes that
+    row matchable at all -- a file built to the specification would not
+    match it (docs/divergences.md #51). This fixture therefore proves the
+    table against the template, not against the specification.
+
+    The `IPCommunication__00__` row is instantiated as `IPCommunication01`:
+    the digits in the template's idShort are its placeholder for a numbered
+    instance, and matching is by semanticId regardless -- no idShort
+    convention is checked here, because the template carries no
+    `AllowedIdShort` qualifier. The submodel id is deliberately not the
+    template's identifier, and its reference *type* mirrors the template's
+    (`ModelReference` to a `Submodel`), so the fixture does not quietly
+    drift where no lint would catch it.
     """
     N = "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
     available = N + "ContactInformation/AvailableTime/"
@@ -831,7 +840,9 @@ def contact_env() -> dict:
         "id": "urn:example:contactinformation",
         "idShort": "ContactInformations",
         "modelType": "Submodel",
-        "semanticId": _sid("https://admin-shell.io/zvei/nameplate/1/0/"
-                           "ContactInformations"),
+        "semanticId": {"type": "ModelReference",
+                       "keys": [{"type": "Submodel",
+                                 "value": "https://admin-shell.io/zvei/"
+                                          "nameplate/1/0/ContactInformations"}]},
         "submodelElements": [contact],
     }]}

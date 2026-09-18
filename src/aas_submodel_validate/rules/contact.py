@@ -10,17 +10,22 @@ Whether a Contact Information submodel is present is *not* here: that
 question belongs to the tool rather than to this template, and it is
 asked once for every template in `rules/detect.py`.
 
-The edition is 1.0.1, not 1.0. The two differ in one place and it
-matters: 1.0 gives `IPCommunication` the submodel's own identifier, so a
-conformant file matches nothing there and the mandatory
-`AddressOfAdditionalLink` beneath it is never asked for. 1.0.1 repairs
-that identifier and introduces one of its own -- `TypeOfCommunication`
-carries a space inside its identifier, so no instance can match that row
-(docs/divergences.md). Both readings are the template's, not ours.
+The edition is 1.0.1 because it is the current release, not because it
+fixes anything here: 1.0 gives `IPCommunication` the submodel's own
+identifier, 1.0.1 gives it `.../ContactInformations/IPCommunication/`, and
+the published specification gives it `.../ContactInformation/IPCommunication/`
+-- three spellings, no two alike. A file built to the specification
+therefore matches no row at either edition, and since that collection is
+`0..*` the mandatory `AddressOfAdditionalLink` beneath it is never asked
+for and nothing says so (docs/divergences.md #51). 1.0.1 also carries a
+space inside `TypeOfCommunication`'s identifier, so that row is dead
+against a specification-conformant file and live against one that mirrors
+the template.
 
-This pack is generated rows only. What that covers is real -- cardinality
-in all four shapes, element kind, `valueType`, and the semanticId at
-every level -- and what it does not cover is worth naming, because
+This pack is generated rows only. What that covers is real -- cardinality,
+element kind, `valueType`, and the semanticId at every level, though a
+`0..*` row can only ever be proved wrong by kind and never by count -- and
+what it does not cover is worth naming, because
 twenty-one of the thirty-six rows are `MultiLanguageProperty`: a required
 MLP carrying no language at all draws nothing structural here (the
 empty-value check is a Property's, docs/divergences.md #40), and neither

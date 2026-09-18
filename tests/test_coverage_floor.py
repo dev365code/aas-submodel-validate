@@ -105,6 +105,10 @@ def test_scope_md_puts_each_template_on_the_side_the_tool_puts_it():
     assert "Multiplicity" in section
     covered, _, not_covered = section.partition("still not vendored")
     assert not_covered, "the not-yet-vendored sentence is gone"
+    # Bound the window at the next heading: without this, the "02002 is not
+    # on the not-covered side" check below forbids the string anywhere in
+    # the rest of the file, and would fire on an unrelated later mention.
+    not_covered = not_covered.partition("## ")[0]
     assert "02002 Contact Information" in covered
     assert "02007 Software Nameplate" in not_covered
     assert "02002" not in not_covered

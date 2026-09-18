@@ -79,7 +79,22 @@ language at all draws nothing structural here (the empty-value check is a
 language tags are relayed from the metamodel rather than judged here, and
 no email address, telephone number, URL, time zone or language code is
 checked for shape. The template states those as strings and this project
-does not invent a format for them.
+does not invent a format for them. Nor is any idShort convention checked:
+the template's `IPCommunication__00__` spells a placeholder for a numbered
+instance, and because the template carries no `AllowedIdShort` qualifier an
+instance may name that element anything at all without comment.
+
+Four of 02002's five mandatory rows sit beneath an *optional* container --
+`TelephoneNumber` under `Phone`, `FaxNumber` under `Fax`, `EmailAddress`
+under `Email`, `AddressOfAdditionalLink` under `IPCommunication`, each of
+those containers `0..1` or `0..*`. So a container whose identifier has
+drifted matches no row, violates no count, is never descended, and takes
+its mandatory child out of the run: the report names the unasked rules only
+where the near-miss lint recognises the drift, and this pack registers no
+near-miss lint and no reference-type lint at all. Nothing here promotes an
+unasked mandatory row to a finding. That is not specific to one edition of
+the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
+#23 record it.
 
 One published template written in the `Multiplicity` spelling is still
 not vendored: **IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14

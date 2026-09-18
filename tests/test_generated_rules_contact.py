@@ -101,3 +101,28 @@ def test_a_second_contact_information_is_counted_not_ignored(tmp_path):
     found = _ids(tmp_path, env)
     assert "CI-E10" in found        # the second one's missing TelephoneNumber
     assert "CI-E01" not in found    # two of them still satisfy 1..*
+
+
+def test_the_golden_fixture_carries_every_row(tmp_path):
+    """The fixture's promise, gated rather than asserted in a docstring.
+
+    `test_every_generated_rule_fires` proves each row *can* fire, but it
+    does not prove the fixture is complete: a 0..1 row's mutation injects
+    two stubs, so `count > 1` fires whether or not the fixture carried that
+    element at all, and the golden test is satisfied by a count of zero. So
+    optional rows could quietly leave the fixture and the suite would say
+    nothing, while the golden claim silently weakened from "a full
+    conformant instance passes" to "a partial one does".
+
+    Every row must have a matched instance on the golden file.
+    """
+    from aas_submodel_validate.loader import load
+    from aas_submodel_validate.rules import engine, profiles
+
+    path = tmp_path / "env.json"
+    path.write_bytes(json.dumps(contact_env()).encode("utf-8"))
+    ctx = runner.Context(load(path), profiles.Selection(None))
+    instances = engine.analyze(ctx, contact_tables)["instances"]
+    missing = [row["id"] for row in contact_tables.ROWS
+               if not instances.get(row["id"])]
+    assert not missing, "the golden fixture no longer carries: %s" % missing

@@ -25,6 +25,14 @@ What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
 directory of names at 16 MiB.
 
+What it writes out is bounded higher. `note` Each text field of a finding
+was cut at 1000 characters and is now cut at 2000. The bound exists to cut
+what a file supplied, never this tool's own words, and `SMT-D1`'s remedy
+names every template there is a table for -- so it grows with each pack,
+403 characters at three and 690 at six, and the bound has to stay clear of
+it. A value a file supplied can therefore appear at twice the length it
+did, which is the cost of not shortening our own sentences.
+
 **A Carbon Footprint submodel is now judged, not set aside.** `verdict`
 A submodel wearing `https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0`
 drew `SMT-D1` and exited 1 unless `--allow-unmatched` was given. It is
@@ -66,13 +74,16 @@ numbers and addresses. **A pipeline that is red on such a file goes
 quiet**: a conformant Contact Information submodel exits 0 where it exited
 1, and nothing downstream says the reason changed.
 
-The edition matters here. Upstream publishes 02002 at 1.0 and again at
-1.0.1, and this reads 1.0.1: at 1.0 the `IPCommunication` collection
-carries the submodel's own identifier, so a conformant file matches
-nothing there and the mandatory address beneath it is never asked for.
-1.0.1 repairs that identifier and leaves one of its own -- a space inside
-`TypeOfCommunication`'s -- which no instance can match
-(docs/divergences.md).
+The edition matters here, and not in the tidy way. Upstream publishes
+02002 at 1.0 and again at 1.0.1, and this reads 1.0.1 because it is the
+current release -- not because it repairs anything. The `IPCommunication`
+collection is spelled three different ways: the submodel's own identifier
+at 1.0, `.../ContactInformations/IPCommunication/` at 1.0.1, and
+`.../ContactInformation/IPCommunication/` in the published specification.
+A submodel built to the specification matches that row at neither edition,
+and because the collection is optional nothing is violated: the mandatory
+address beneath it is never asked for and the run says nothing about it.
+That is recorded, not repaired (docs/divergences.md #51).
 
 This pack is generated rows only: cardinality, element kind, `valueType`
 and the semanticId, at every level. It does not check the shape of an

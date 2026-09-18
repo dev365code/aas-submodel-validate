@@ -267,12 +267,12 @@ metamodel channel, so that listing is one line longer than the count.
 ```mermaid
 timeline
     title Where aas-submodel-validate is going
-    Shipped : Five IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint
+    Shipped : Six IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information
             : 219 rules, 178 of them generated from the vendored official template files
             : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
-    Building : Deeper coverage of the five templates already supported
+    Building : Deeper coverage of the six templates already supported
     Planned : Further IDTA templates, chosen by what people bring
             : The rest of the battery obligation index, once a rule can read a battery's category
             : An evidence bundle a reviewer can file — one command, report plus provenance
@@ -281,7 +281,7 @@ timeline
 
 ## When aas-submodel-validate is not the tool
 
-- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the five it supports.
+- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the six it supports.
 - **You need a file repaired.** There is no `--fix`. A validator that edits your file has to be trusted twice.
 - **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly.
 - **You want a hosted check.** There is none, on purpose.

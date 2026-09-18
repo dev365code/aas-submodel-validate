@@ -162,6 +162,50 @@ def test_the_digest_bound_the_schema_publishes_is_the_one_in_the_code():
     assert int(stated.group(1)) * 1024 * 1024 == container.MAX_TOTAL_PART_BYTES
 
 
+def test_the_field_bound_the_schema_publishes_is_the_one_in_the_code():
+    """The same lesson as the digest bound above, learned again.
+
+    Three numbers in the schema's bound paragraph were true when written
+    and none was derived: the field bound itself, the elision marker's
+    count, and the length of the longest remedy this tool ships. Adding a
+    sixth template pack falsified all three at once -- `SMT-D1`'s remedy
+    names every template there is a table for, so it grew, and the bound
+    had to be raised to stay clear of it. The document went on publishing
+    1000, 199000 and 403 characters with the suite green.
+    """
+    import pathlib
+    import re
+
+    from aas_submodel_validate import rules  # noqa: F401 - importing registers
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS, Violation
+    from aas_submodel_validate.registry import all_rules
+
+    schema = (pathlib.Path(__file__).resolve().parents[1]
+              / "docs" / "report-schema.md").read_text(encoding="utf-8")
+    para = [line for line in schema.splitlines()
+            if "bounded at" in line and "characters" in line]
+    assert para, "the schema no longer states the field bound"
+    line = para[0]
+
+    stated = re.search(r"bounded at ([\d,]+) characters", line)
+    assert stated, "the field bound is not stated with its number"
+    assert int(stated.group(1).replace(",", "")) == MAX_REPORTED_CHARACTERS
+
+    # The marker the document quotes, taken from the code that writes it.
+    # 200000 is the document's own worked example -- the 200 KB File value
+    # it cites -- so the quoted count moves with the bound, as it just did.
+    cut = Violation("m", detail="X" * 200000)
+    marker = cut.detail[cut.detail.index("... ("):]
+    assert marker in line, (
+        "the schema quotes a cut marker the code does not write: %r" % marker)
+
+    longest = max(len(text) for rule in all_rules()
+                  for text in (rule.title, rule.fix, rule.spec) if text)
+    quoted = re.search(r"longest remedy it ships is ([\d,]+) characters", line)
+    assert quoted, "the schema no longer states the longest remedy"
+    assert int(quoted.group(1).replace(",", "")) == longest
+
+
 def test_the_attribution_names_paths_that_exist_where_it_is_read():
     """A notice a reader cannot follow attributes nothing.
 

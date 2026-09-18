@@ -85,7 +85,8 @@ assert META_KIND in KINDS
 #: Chosen above the longest sentence this project writes -- `SMT-D1`'s
 #: remedy, which names every template this tool has a table for and so
 #: grows by roughly a line with each pack added: 403 characters at three
-#: packs, 690 at five. The bound is raised when it does rather than the
+#: packs, 590 at five, 690 at six. The bound is raised when it does
+#: rather than the
 #: sentence shortened, so the bound can only ever cut something a file
 #: supplied. A test asserts that nothing authored comes near it, and it
 #: is that test, not this comment, that catches the next pack.
