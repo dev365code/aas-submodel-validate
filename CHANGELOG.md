@@ -60,6 +60,18 @@ optional. No vendored template uses it, so no existing verdict moves. IDTA
 and become judgeable once vendored; until then a submodel of either draws
 `SMT-D1` (docs/scope.md, docs/divergences.md #50).
 
+**An Entity's `statements` are read, and a self-containing element is
+marked rather than expanded.** `note` An Entity holds its submodel elements
+in `statements`, not in `value`; the generator and the walk now read them,
+so an Entity's rows are generated rather than every instance of one looking
+empty. No vendored template has an Entity carrying statements, so no
+verdict moves. Where an element's own child repeats its semanticId the
+generated table marks that element and leaves the child unexpanded, which
+keeps the table finite. **That marker is recorded in the table only and
+reaches no verdict**: nothing in this release checks a recursive structure
+to any depth, and no template needing it is vendored yet
+(docs/divergences.md #48).
+
 ## 0.3.0 — 2026-09-18
 
 Who should take this release: anyone validating IDTA 02006 Digital

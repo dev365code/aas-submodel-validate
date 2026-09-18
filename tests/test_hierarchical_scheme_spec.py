@@ -14,6 +14,16 @@ Written failing-first and kept as the scheme's regression guards, with
 the #1 guard below: the generator must not mistake a `SubmodelElementList`
 and its item -- which share one identifier by design (#39) -- for
 self-containment.
+
+These tests encode the *one-row* model of a recursion point: the element
+whose own child repeats its semanticId carries the marker, and that child
+is left unexpanded. The design's alternative -- two rows, an entry edge at
+the outer cardinality and a recursion edge at `0..*`, with the marker on
+the inner -- is not settled, because no template that recurses is vendored
+and the two models cannot be told apart without one. When 02011
+Hierarchical Structures is vendored, that model is settled against the real
+file first, the basis recorded in docs/divergences.md #48, and these tests
+rewritten to match whichever model wins.
 """
 from __future__ import annotations
 
