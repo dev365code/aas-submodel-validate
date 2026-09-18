@@ -366,6 +366,21 @@ def _matches_row(candidates, main_empty: bool, kind_name: str, row, in_list: boo
     return in_list and main_empty and kind_name == row["kind"]
 
 
+def _sub_elements(element):
+    """The submodel elements a container holds: a
+    SubmodelElementCollection or List keeps them in `value`, an Entity in
+    `statements` (aas-core3). The generator descends the same two, so the
+    walk and the table agree on what a scope contains. A Property's `value`
+    is its string, not a list of elements, and is excluded here; a kind
+    that carries neither yields nothing."""
+    items = []
+    for attribute in ("value", "statements"):
+        got = getattr(element, attribute, None)
+        if isinstance(got, list):
+            items.extend(got)
+    return items
+
+
 def _scope(rows, elements, path: str, result, in_list: bool,
            citation: str) -> None:
     indexed = [(index, element, element_candidate_values(element),
@@ -552,7 +567,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["reftype_drift"].append(
                     (subject, reference.type.value, row["sid_type"]))
             if row["children"]:
-                _scope(row["children"], getattr(element, "value", None) or [],
+                _scope(row["children"], _sub_elements(element),
                        subject, result,
                        in_list=(row["kind"] == "SubmodelElementList"),
                        citation=citation)
@@ -688,10 +703,7 @@ def child_of(element, label: str, tables):
     # rule beside it names exactly. Absence is what this returns for any
     # child it cannot find, and a child of the wrong kind is one of
     # those; the generated cardinality and kind rules are what speak.
-    value = getattr(element, "value", None)
-    if not isinstance(value, list):
-        return None
-    for child in value:
+    for child in _sub_elements(element):
         if _child_matches(child, row, parent_is_list):
             return child
     return None
@@ -700,10 +712,8 @@ def child_of(element, label: str, tables):
 def children_of(element, label: str, tables):
     row = tables.BY_LABEL[label]
     parent_is_list = type(element).__name__ == "SubmodelElementList"
-    value = getattr(element, "value", None)
-    if not isinstance(value, list):
-        return []
-    return [child for child in value if _child_matches(child, row, parent_is_list)]
+    return [child for child in _sub_elements(element)
+            if _child_matches(child, row, parent_is_list)]
 
 
 def property_value(element, label: str, tables):

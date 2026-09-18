@@ -341,22 +341,46 @@ def _rows(element, parent_label, parent_id, counter, pack):
               " under %s" % parent_label if parent_label else "",
               _primary_sid(element) or "(as the template declares)",
               "; example value: %r" % example if example else ""))
+    # A SubmodelElementCollection or List holds its children in `value`;
+    # an Entity holds them in `statements` (aas-core3). Descend whichever
+    # the element carries -- a kind populates only one -- so an Entity's
+    # rows are generated rather than every instance of it looking empty.
     # A MultiLanguageProperty's `value` is a list of language entries, not
     # of elements; only what declares a modelType is a child here.
-    children = [
-        row for row in (
-            _rows(child, label, row_id, counter, pack)
-            for child in (element.get("value") or [])
-            if isinstance(child, dict) and "modelType" in child)
-        if row is not None
-    ] if isinstance(element.get("value"), list) else []
-    return {
+    my_sid = _primary_sid(element)
+    sub_elements = []
+    for _container in ("value", "statements"):
+        _items = element.get(_container)
+        if isinstance(_items, list):
+            sub_elements.extend(_items)
+    # A self-containing element -- an Entity or SubmodelElementCollection
+    # whose own child repeats its semanticId (02011's Node holds a Node) --
+    # is a recursion point: mark it and leave the repeating child
+    # unexpanded, so the table stays finite and the walk re-applies this
+    # scope's rows at any depth (docs/divergences.md #48). Not a
+    # SubmodelElementList and its item, which share one identifier by
+    # design (#39); direct self-containment only, parent and child of the
+    # same kind, so a list and its item are never mistaken for it.
+    recurses = None
+    children = []
+    for child in sub_elements:
+        if not (isinstance(child, dict) and "modelType" in child):
+            continue
+        if (my_sid and _primary_sid(child) == my_sid
+                and child["modelType"] == element["modelType"]
+                and element["modelType"] != "SubmodelElementList"):
+            recurses = my_sid
+            continue
+        child_row = _rows(child, label, row_id, counter, pack)
+        if child_row is not None:
+            children.append(child_row)
+    row = {
         "id": row_id,
         "label": label,
         "parent": parent_id,
         "kind": element["modelType"],
         "match": _match_set(element),
-        "sid": _primary_sid(element),
+        "sid": my_sid,
         "sid_type": element.get("semanticId", {}).get("type"),
         "card": card,
         "value_type": element.get("valueType"),
@@ -367,6 +391,9 @@ def _rows(element, parent_label, parent_id, counter, pack):
         "fix": fix,
         "children": tuple(children),
     }
+    if recurses is not None:
+        row["recurses"] = recurses
+    return row
 
 
 def _labels(rows, out):

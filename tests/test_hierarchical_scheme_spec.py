@@ -1,9 +1,7 @@
-"""FAILING FIRST -- executable spec for the hierarchical-structures scheme
-unit (02011), turned green by the generator and engine changes next.
+"""Executable spec for the hierarchical-structures scheme (02011).
 
-Two behaviours the generator does not have today, each proved red via
-`_rows` on a synthetic structure and marked xfail(strict) so the tree
-stays green until the code lands:
+Two behaviours the generator gained with the scheme, each proved on a
+synthetic structure via `_rows`:
 
 * descending an Entity's `statements` -- an Entity holds its submodel
   elements there, not in `value` (aas-core3), so without this an Entity's
@@ -12,14 +10,15 @@ stays green until the code lands:
   repeats its own semanticId -- as a recursion point, rather than
   expanding it forever, so the walk can re-apply its rows at any depth.
 
-Removing an xfail is that half of the scheme unit's done-signal.
+Written failing-first and kept as the scheme's regression guards, with
+the #1 guard below: the generator must not mistake a `SubmodelElementList`
+and its item -- which share one identifier by design (#39) -- for
+self-containment.
 """
 from __future__ import annotations
 
 import sys
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -37,9 +36,6 @@ def _row(element):
     return g._rows(element, "", None, [0], pack)
 
 
-@pytest.mark.xfail(strict=True, reason="Entity statements-descent is part of "
-                   "the hierarchical scheme unit; the generator descends "
-                   "`value` only today")
 def test_the_generator_descends_an_entitys_statements():
     """An Entity holds its submodel elements in `statements`, not `value`.
     The generator must descend them, or EntryNode's mandatory Node row is
@@ -53,14 +49,12 @@ def test_the_generator_descends_an_entitys_statements():
     assert any(child["label"] == "Node" for child in _row(entry)["children"])
 
 
-@pytest.mark.xfail(strict=True, reason="recursion marking is part of the "
-                   "hierarchical scheme unit; the generator does not detect "
-                   "self-containment today")
 def test_a_self_containing_entity_is_marked_recurses():
     """A Node (Entity) whose statements hold a Node of the same semanticId
     is a recursion point: its row must carry a `recurses` marker naming the
     repeated identifier, so the walk re-applies the Node rows at any depth
-    rather than the table expanding one level and stopping."""
+    rather than the table expanding one level and stopping. The repeating
+    child is left unexpanded, so the row's children do not carry it."""
     node = {"idShort": "Node", "modelType": "Entity",
             "semanticId": _sid("urn:x:Node"),
             "qualifiers": [{"type": "SMT/Cardinality", "value": "OneToMany"}],
@@ -68,7 +62,10 @@ def test_a_self_containing_entity_is_marked_recurses():
                             "semanticId": _sid("urn:x:Node"),
                             "qualifiers": [{"type": "SMT/Cardinality",
                                             "value": "ZeroToMany"}]}]}
-    assert _row(node).get("recurses") == "urn:x:Node"
+    row = _row(node)
+    assert row.get("recurses") == "urn:x:Node"
+    # the repeating child is not expanded into a row
+    assert all(child["label"] != "Node" for child in row["children"])
 
 
 def test_shared_identifier_list_rows_are_never_marked_recurses():
@@ -99,3 +96,30 @@ def test_shared_identifier_list_rows_are_never_marked_recurses():
         assert not row.get("recurses"), (
             "%s shares its parent's identifier (a list and its item, #39); it "
             "is not a recursion point and must not be marked" % row["label"])
+
+
+def test_02004_entity_is_the_consistency_case_for_statements_descent():
+    """The 02004 guard, and the design's own limit (docs/divergences.md
+    #48): 02004's only Entity (EntityForDocumentation) declares no
+    statements in the template, so statements-descent finds nothing there.
+    02004 proves the change is *consistent* -- its table stays byte-frozen
+    and every corpus verdict is unmoved -- but not that statements-descent
+    is *correct*, which needs a template whose Entity has statements
+    (02011, not yet vendored). This guards the consistency half: the Entity
+    row is present, holds no children, and is not a recursion point."""
+    from aas_submodel_validate.rules import hd_tables  # noqa: E402
+
+    entities = []
+
+    def walk(rows):
+        for row in rows:
+            if row["kind"] == "Entity":
+                entities.append(row)
+            walk(row["children"])
+    walk(hd_tables.TREE)
+
+    assert len(entities) == 1, "02004's Entity count moved: %d" % len(entities)
+    entity = entities[0]
+    assert entity["label"] == "EntityForDocumentation"
+    assert entity["children"] == ()          # template declares no statements
+    assert not entity.get("recurses")        # not self-containing
