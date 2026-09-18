@@ -15,6 +15,7 @@ from aas_submodel_validate.rules import (
     engine,
     handover,
     hd_tables,
+    pcf_tables,
     profiles,
     td_tables,
 )
@@ -221,7 +222,7 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #: truncated repr of 87 Rule objects names nothing. Widening the pattern
 #: without moving that assertion would have made the case it was widened
 #: for worse.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN)-E\d+$")
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -233,9 +234,9 @@ def test_every_generated_rule_stops_a_build():
     # that appears or disappears is named rather than counted. Then the
     # count, which is the number this project quotes in its README.
     assert {rule.id for rule in generated} == {
-        row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables)
+        row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables, pcf_tables)
         for row in tables.ROWS}
-    assert len(generated) == 116
+    assert len(generated) == 142
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -283,6 +284,7 @@ NAMESPACES = {
     r"DBP2L\d+": "IDTA 02035-2, informational lints",
     r"DN-E\d+": "IDTA 02006, generated from the template's rows",
     r"DN-D\d+": "IDTA 02006, what the template file cannot say",
+    r"PCF-E\d+": "IDTA 02023, generated from the template's rows",
 }
 
 
@@ -353,10 +355,10 @@ REMEDIES = {
         "template's definition asks for.",
     "BAT-R2":
         "Run --profile with the document number of the template you "
-        "mean. This tool has a table for neither side of this "
-        "collision, so the profile settles which template the file "
-        "claims to be and no more -- nothing here judges it against "
-        "either one.",
+        "mean. Where this tool has a table for one side of the collision "
+        "the submodel is judged against it and the profile only records "
+        "which template you meant; where it has a table for neither, the "
+        "profile settles the claim and nothing here judges it.",
     "BAT-R8":
         "Provide the element, or record that this battery is outside "
         "the provision read as requiring it. The template will not ask "
@@ -474,7 +476,9 @@ REMEDIES = {
         "0173-1#01-AHF578#003 for Handover Documentation (IDTA "
         "02004); 0173-1#01-AHX837#002 for Technical Data (IDTA "
         "02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate "
-        "for Digital Nameplate (IDTA 02006). If it means a template "
+        "for Digital Nameplate (IDTA 02006); "
+        "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 "
+        "for Carbon Footprint (IDTA 02023). If it means a template "
         "this tool has no table for, "
         "leave the identifier alone -- it is doing its job, and this "
         "finding only says nothing here judged the submodel against a "
@@ -902,14 +906,14 @@ NON_CONTAINER_FORMS = ("environment-json", "environment-xml", "submodel-json")
 def _one_row_per_cardinality():
     """One generated row per cardinality the tables use.
 
-    The 116 generated remedies are written by `tools/extract_smt_rules.py`
+    The 142 generated remedies are written by `tools/extract_smt_rules.py`
     from four sentence shapes, and none of them was held by anything: the
     byte-compare gate holds table-against-generator, not
     sentence-against-decision, so editing the generator's wording and
     regenerating passed every gate. Four rows pin the four shapes; the
     generator cannot change one without changing all of its kind."""
     seen = {}
-    for tables in (hd_tables, td_tables, dbp_tables, dn_tables):
+    for tables in (hd_tables, td_tables, dbp_tables, dn_tables, pcf_tables):
         for row in tables.ROWS:
             seen.setdefault(row["card"], row)
     return seen

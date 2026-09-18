@@ -51,3 +51,23 @@ finding.
 **Deferred, not rejected**: IIFU composition — detecting an iiRDS
 Information for Use submodel and handing its iiRDS payload to
 iirds-validate, so the two standards' validators compose.
+
+## Which templates it covers, and which it does not
+
+Five official templates are given rule tables: IDTA 02004 Handover
+Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
+part 2, 02006 Digital Nameplate, and 02023 Carbon Footprint. A submodel
+of any other template is reported as not matched (`SMT-D1`), not judged;
+`--allow-unmatched` turns that from an error into a note.
+
+The generator reads a row's cardinality from one of three qualifier
+spellings -- the current `SMT/Cardinality`, the older `Multiplicity`, or a
+bare `Cardinality`, the same vocabulary (`One`, `ZeroToOne`, `OneToMany`,
+`ZeroToMany`) in each (`docs/divergences.md` #50) -- and reads an element
+carrying none of them as `0..*` (#20). So a template that states its
+obligations in any of the three is judgeable once its table is vendored.
+Two published templates written in the older `Multiplicity` spelling are
+not yet vendored: **IDTA 02002 Contact Information 1.0.1** (36 elements, 5
+mandatory) and **IDTA 02007 Software Nameplate 1.0.1** (73, 14 mandatory),
+measured from the published templates at the upstream pin. Until their
+tables are added, a submodel of either draws `SMT-D1`.

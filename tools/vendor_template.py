@@ -82,6 +82,9 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02006/3.0/template.json":
         "published/Digital nameplate/3/0/"
         "IDTA 02006-3-0_Template_Digital Nameplate.json",
+    "src/aas_submodel_validate/data/smt/02023/1.0/template.json":
+        "published/Carbon Footprint/1/0/"
+        "IDTA 02023 _Template_CarbonFootprint.json",
 }
 
 

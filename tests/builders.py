@@ -688,3 +688,77 @@ def tracked_files(root):
                     "working copy rather than being one, which is what an "
                     "sdist unpacked in a checkout looks like")
     return names
+
+
+def pcf_env() -> dict:
+    """The golden fixture for IDTA 02023 Carbon Footprint (core section),
+    written by hand like the others. It carries the whole
+    ProductCarbonFootprints section and the ProductOrSectorSpecificCarbon-
+    Footprints section -- required and optional rows of both -- so each
+    generated row has a scope to strip from or a bound to exceed. The only
+    part left out is the open-content ArbitraryContent placeholder, which
+    this pack does not judge. The submodel id is deliberately not the
+    template's identifier."""
+    C = "https://admin-shell.io/idta/CarbonFootprint/"
+    footprint = _smc(C + "ProductCarbonFootprint/1/0", [
+        _sml("PcfCalculationMethods", C + "PcfCalculationMethods/1/0",
+             "Property", [_prop(None, "0173-1#02-ABG854#003", "EN 15804")],
+             value_type="xs:string"),
+        _prop("PcfCO2eq", "0173-1#02-ABG855#003", "1.5", "xs:decimal"),
+        _prop("ReferenceImpactUnitForCalculation",
+              "0173-1#02-ABG856#003", "kg"),
+        _prop("QuantityOfMeasureForCalculation",
+              "0173-1#02-ABG857#003", "1.0", "xs:double"),
+        _sml("LifeCyclePhases", C + "LifeCyclePhases/1/0",
+             "Property", [_prop(None, "0173-1#02-ABG858#003", "A3 - production")],
+             value_type="xs:string"),
+        {"idShort": "ExplanatoryStatement", "modelType": "File",
+         "semanticId": _sid(C + "ExplanatoryStatement/1/0"),
+         "contentType": "application/pdf", "value": "/aasx/files/pcf.pdf"},
+        _smc("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
+             "/AddressInformation", [], id_short="GoodsHandoverAddress"),
+        _prop("PublicationDate", C + "PublicationDate/1/0",
+              "2024-01-01T00:00:00Z", "xs:dateTime"),
+        _prop("ExpirationDate", C + "ExpirationDate/1/0",
+              "2030-01-01T00:00:00Z", "xs:dateTime"),
+    ])
+    # The product-or-sector-specific section: a list item (an unnamed SMC)
+    # carrying the repeated PcfCalculationMethods sub-structure plus the
+    # rule, the optional external API and the (empty, open-content)
+    # information container.
+    pscf_item = _smc(C + "ProductOrSectorSpecificCarbonFootprint/1/0", [
+        _sml("PcfCalculationMethods", C + "PcfCalculationMethods/1/0",
+             "Property", [_prop(None, "0173-1#02-ABG854#003", "EN 15804")],
+             value_type="xs:string"),
+        _smc(C + "ProductOrSectorSpecificRule/1/0", [
+            _prop("PcfRuleOperator",
+                  C + "ProductOrSectorSpecificRule/Operator/1/0", "GHG Protocol"),
+            _prop("PcfRuleName",
+                  C + "ProductOrSectorSpecificRule/Name/1/0", "Product Standard"),
+            _prop("PcfRuleVersion",
+                  C + "ProductOrSectorSpecificRule/Version/1/0", "1.0"),
+            {"idShort": "PcfRuleOnlineReference", "modelType": "File",
+             "semanticId": _sid(C + "ProductOrSectorSpecificRule/OnlineReference/1/0"),
+             "contentType": "application/pdf", "value": "/aasx/files/rule.pdf"},
+        ], id_short="ProductOrSectorSpecificRule"),
+        _smc(C + "ExternalPcfApi/1/0", [
+            _prop("PcfApiEndpoint",
+                  C + "ExternalPcfApi/Endpoint/1/0",
+                  "https://api.example.com/pcf", "xs:anyURI"),
+            _prop("PcfApiQuery",
+                  C + "ExternalPcfApi/Query/1/0", "?id=123"),
+        ], id_short="ExternalPcfApi"),
+        _smc(C + "PcfInformation/1/0", [], id_short="PcfInformation"),
+    ])
+    return {"submodels": [{
+        "id": "urn:example:carbonfootprint", "idShort": "CarbonFootprint",
+        "modelType": "Submodel",
+        "semanticId": _sid(C + "CarbonFootprint/1/0"),
+        "submodelElements": [
+            _sml("ProductCarbonFootprints", C + "ProductCarbonFootprints/1/0",
+                 "SubmodelElementCollection", [footprint]),
+            _sml("ProductOrSectorSpecificCarbonFootprints",
+                 C + "ProductOrSectorSpecificCarbonFootprints/1/0",
+                 "SubmodelElementCollection", [pscf_item]),
+        ],
+    }]}

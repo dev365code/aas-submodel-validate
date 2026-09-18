@@ -8,9 +8,10 @@ answering `0173-1#01-AHF578#003`), and `SMT-D2` owns it: the choice rides
 on the `Selection` the walk reads, so a verdict cannot move without the
 sentence that explains it. A second collision is published -- IDTA 02023
 and IDTA 02035-3 share one CarbonFootprint identifier -- and this project
-has a table for neither side of it. Today such a submodel is reported as
-nothing this tool knows, which is false: it knows exactly what it is,
-twice over. `BAT-R2` says that, and `--profile` silences it.
+has a table for 02023, not for 02035-3. Such a submodel is judged against
+02023, and `BAT-R2` names 02035-3 as the other claimant -- a caveat
+`--profile` records but cannot silence, because a verdict stands behind
+it.
 
 `BAT-R8` is the product. Nine template elements are `ZeroToOne` -- the
 template is content for them to be absent -- while the Battery Pass long
@@ -155,25 +156,35 @@ def _one(report, rule_id):
 
 # -- BAT-R2: an identifier two published templates claim ----------------------
 
-def test_a_shared_identifier_with_no_table_is_named_not_dismissed(tmp_path):
-    """Both templates that claim it, by document number, in the finding.
+def test_a_shared_identifier_partly_tabled_is_named_not_dismissed(tmp_path):
+    """This tool has a table for one of the two templates that claim this
+    identifier, so the submodel is judged against that one -- and BAT-R2
+    still names both, by document number, so the judged-against side does
+    not stand in the report as if it were the only claimant.
 
-    Without this the report says only that nothing matched a template
-    this tool knows -- which is the one thing that is not true about
-    this input."""
+    Without this the report would judge the file against 02023 and say
+    nothing of 02035-3, which declares the very same identifier -- the one
+    thing about this input a reader most needs told."""
     report = _run(tmp_path, _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT)))
     finding = _one(report, "BAT-R2")
     said = finding.violation.message + " " + (finding.violation.detail or "")
     assert "IDTA 02023" in said
     assert "IDTA 02035-3" in said
     assert CARBON_FOOTPRINT in said
+    # The partial-branch verdict, not the none-tabled dismissal it
+    # replaced: those three strings appear in that message too, so
+    # without these two lines the test cannot tell the branches apart.
+    assert "judged against" in said
+    assert "not judged against a template" not in said
 
 
-def test_choosing_a_profile_settles_the_shared_identifier(tmp_path):
-    """`--profile` is the instruction that makes the ambiguity go away.
-    It does not make a table appear: the report still says nothing was
-    judged by it, and saying otherwise would be the tool inventing a
-    verdict.
+def test_choosing_a_profile_declares_the_shared_identifier(tmp_path):
+    """`--profile` says which template the file claims to be. For this
+    collision one side has a table, so the file is judged against it with
+    or without the flag -- and the flag cannot hide that verdict. What it
+    changes is BAT-R2's sentence: from naming both claimants as an open
+    question to recording which one the author declared, the
+    judged-against side still named beside it.
 
     Through the command line, not the library. The first version of this
     called `runner.run(profile=...)` and passed while the parser was
@@ -187,7 +198,10 @@ def test_choosing_a_profile_settles_the_shared_identifier(tmp_path):
     assert main([str(path), "--profile", "02035-3"]) in (0, 1)
     report = _run(tmp_path, _env(_submodel("CarbonFootprint", CARBON_FOOTPRINT)),
                   profile="02035-3")
-    assert "BAT-R2" not in _ids(report)
+    finding = _one(report, "BAT-R2")            # a verdict stands; not silenced
+    said = finding.violation.message + " " + (finding.violation.detail or "")
+    assert "declared IDTA 02035-3" in said      # the flag was recorded
+    assert "IDTA 02023" in said                 # judged against, still named
 
 
 def test_the_remedy_names_a_value_the_parser_accepts(tmp_path):
@@ -207,6 +221,20 @@ def test_the_remedy_names_a_value_the_parser_accepts(tmp_path):
         assert main([str(path), "--profile", key]) in (0, 1), key
 
 
+def test_a_valid_carbon_footprint_is_clean_yet_the_collision_is_named(tmp_path):
+    """The golden 02023 file satisfies 02023's table -- no PCF finding --
+    and BAT-R2 still names 02035-3, because the identifier is claimed by
+    both whether or not the file is otherwise conformant. A clean verdict
+    is no licence to drop the caveat: the reader still needs to know the
+    file could have meant the battery passport instead."""
+    from builders import pcf_env
+    report = _run(tmp_path, pcf_env())
+    assert not [i for i in _ids(report) if i.startswith("PCF-")], sorted(_ids(report))
+    finding = _one(report, "BAT-R2")
+    said = finding.violation.message + " " + (finding.violation.detail or "")
+    assert "IDTA 02023" in said and "IDTA 02035-3" in said
+
+
 def test_the_pair_this_tool_has_tables_for_is_not_this_rules_business(tmp_path):
     """IDTA 02004 and 02035-2 share an identifier too, and `SMT-D2` owns
     that one -- the choice rides on the Selection the walk reads, so the
@@ -215,6 +243,43 @@ def test_the_pair_this_tool_has_tables_for_is_not_this_rules_business(tmp_path):
     the one with no table behind it."""
     from builders import hd_env
     assert "BAT-R2" not in _ids(_run(tmp_path, hd_env()))
+
+
+def test_a_declared_partial_claimant_is_named_as_it_is_spelled(tmp_path, monkeypatch):
+    """The declared side of a partial collision is named by its own name,
+    not by re-adding an "IDTA " that the key spelling stripped. Every
+    shipped claimant is spelled `IDTA NNNNN`, so the two happen to match;
+    a claimant from another series would be misnamed by the
+    reconstruction. A synthetic collision gives the fix a red test and
+    keeps a future non-IDTA claimant from shipping misattributed."""
+    from aas_submodel_validate.rules import battery, battery_tables
+    ident = "urn:test:partial-collision"
+    monkeypatch.setitem(battery_tables.SHARED_SUBMODEL_IDS, ident,
+                        ("IDTA 02004", "VDI 2770 Blatt 1"))
+    monkeypatch.setitem(battery._KEYS_OF, ident, ("02004", "VDI 2770 Blatt 1"))
+    report = _run(tmp_path, _env(_submodel("X", ident)), profile="VDI 2770 Blatt 1")
+    detail = _one(report, "BAT-R2").violation.detail
+    assert "VDI 2770 Blatt 1" in detail
+    assert "IDTA VDI 2770 Blatt 1" not in detail       # not the reconstruction
+
+
+def test_a_collision_with_a_table_for_neither_side_names_both_and_is_silenceable(
+        tmp_path, monkeypatch):
+    """When this tool has a table for neither claimant there is no verdict
+    to explain, so BAT-R2 names both and `--profile` may silence it -- the
+    original reading, kept live here now that both shipped collisions have
+    a table on at least one side."""
+    from aas_submodel_validate.rules import battery, battery_tables
+    ident = "urn:test:no-table-collision"
+    monkeypatch.setitem(battery_tables.SHARED_SUBMODEL_IDS, ident,
+                        ("IDTA 90001", "IDTA 90002"))
+    monkeypatch.setitem(battery._KEYS_OF, ident, ("90001", "90002"))
+    env = _env(_submodel("X", ident))
+    finding = _one(_run(tmp_path, env), "BAT-R2")
+    said = finding.violation.message + " " + (finding.violation.detail or "")
+    assert "IDTA 90001" in said and "IDTA 90002" in said
+    assert "not judged against a template" in said     # the none-tabled sentence
+    assert "BAT-R2" not in _ids(_run(tmp_path, env, profile="90001"))  # silenced
 
 
 # -- BAT-R8: conformant to the template, non-conformant to the regulation -----
@@ -559,11 +624,12 @@ def test_the_divergence_row_counts_the_index_it_cites():
     were wrong.
 
     It said the index holds ten template editions and that this
-    repository vendors three of them. The index holds twelve, and one of
-    the three vendored templates is among them -- 02004 is indexed at a
-    different edition than the one vendored here, and 02003 is not
-    indexed at all. An evidence ledger whose numbers do not survive
-    being counted is worth less than no ledger.
+    repository vendors three of them. The index holds twelve, and two of
+    the five vendored templates are among them -- 02035-2 and 02023, one
+    side each of the two collisions; 02004 is indexed at a different
+    edition than the one vendored here, and 02003 and 02006 are not
+    indexed at all. An evidence ledger whose numbers do not survive being
+    counted is worth less than no ledger.
     """
     import hashlib
     import json

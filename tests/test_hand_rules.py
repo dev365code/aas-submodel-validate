@@ -1786,3 +1786,4 @@ def test_a_whitespace_wrapped_uri_is_left_to_the_metamodel(tmp_path):
     env = copy.deepcopy(dn_env())
     _set_uri_of_the_product(env, " https://example.com/a ")
     assert "DN-D1" not in _findings(tmp_path, env)
+

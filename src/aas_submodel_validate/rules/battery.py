@@ -6,10 +6,12 @@ Two questions, and the second is the one no other tool asks.
 identifier claimed by two templates. This project has generated tables
 for both sides of the first (02004 and 02035-2) and `SMT-D2` owns it: the
 choice rides on the `Selection` the walk reads, so the verdict cannot
-move without the sentence that explains it. It has a table for neither
-side of the second, and there the report used to say only that nothing
-matched a template it knows -- the one thing that is not true about such
-a file. `BAT-R2` says what it is, twice over, and `--profile` settles it.
+move without the sentence that explains it. `BAT-R2` takes the second
+and reads it by how many claimants have a table: where one side has a
+table (02023, not 02035-3) the file is judged against it and `BAT-R2`
+names the other claimant as a caveat `--profile` records but cannot
+silence; where neither side has a table it names both and `--profile`
+settles which was meant, because a profile cannot conjure a table.
 Reporting the first collision here as well would be two rules answering
 one question, and the second would be the one with no table behind it.
 
@@ -376,10 +378,10 @@ def _carries(submodel, row) -> bool:
       spec="IDTA 02023 and IDTA 02035-3 publish one CarbonFootprint "
            "submodel semanticId; docs/divergences.md #36",
       fix="Run --profile with the document number of the template you "
-          "mean. This tool has a table for neither side of this "
-          "collision, so the profile settles which template the file "
-          "claims to be and no more -- nothing here judges it against "
-          "either one.")
+          "mean. Where this tool has a table for one side of the collision "
+          "the submodel is judged against it and the profile only records "
+          "which template you meant; where it has a table for neither, the "
+          "profile settles the claim and nothing here judges it.")
 def bat_r2_shared_identifier_without_a_table(ctx):
     """Silent where `SMT-D2` speaks. That rule owns the collision this
     project has tables for, and owning it means carrying the choice on
@@ -388,20 +390,51 @@ def bat_r2_shared_identifier_without_a_table(ctx):
     a report that calls a known template unknown."""
     forced = getattr(ctx.selection, "forced", None)
     for submodel in instances(ctx.loaded):
+        subject = getattr(submodel, "id_short", None) or "submodel"
         for identifier in sorted(_declared(submodel)):
             claimants = battery_tables.SHARED_SUBMODEL_IDS.get(identifier)
             if claimants is None:
                 continue
-            if any(claimant in _known_to_the_walk() for claimant in claimants):
-                continue          # SMT-D2's collision, and its sentence
-            if forced in _KEYS_OF.get(identifier, ()):
-                continue          # somebody said which one they meant
-            yield Violation(
-                "this submodel's semanticId is claimed by %s, and nothing "
-                "here can tell them apart" % " and ".join(claimants),
-                subject=getattr(submodel, "id_short", None) or "submodel",
-                detail="%s; no table for either, so this submodel was not "
-                       "judged against a template" % identifier)
+            tableless = [c for c in claimants if c not in _known_to_the_walk()]
+            if not tableless:
+                continue          # every claimant has a table -- SMT-D2's collision
+            declared = forced in _KEYS_OF.get(identifier, ())
+            if len(tableless) == len(claimants):
+                # No claimant has a table. There is no verdict to explain, so
+                # `--profile` may silence the note once the author says which.
+                if declared:
+                    continue
+                yield Violation(
+                    "this submodel's semanticId is claimed by %s, and nothing "
+                    "here can tell them apart" % " and ".join(claimants),
+                    subject=subject,
+                    detail="%s; no table for either, so this submodel was not "
+                           "judged against a template" % identifier)
+            else:
+                # A partial collision: one side has a table, so the submodel
+                # *was* judged against it (its pack matched on the identifier).
+                # That verdict may not stand unexplained, so the note is not
+                # silenceable -- `--profile` records the author's claim, it does
+                # not hide the judgement.
+                judged = [c for c in claimants if c not in tableless]
+                if declared:
+                    meant = next(c for k, c in zip(_KEYS_OF[identifier], claimants)
+                                 if k == forced)
+                    detail = ("%s; the author declared %s, and this tool judged "
+                              "the submodel against %s -- it has no table for %s"
+                              % (identifier, meant, " and ".join(judged),
+                                 " and ".join(tableless)))
+                else:
+                    detail = ("%s; judged against %s, but %s also claims this "
+                              "identifier -- if the submodel means one of those, "
+                              "verify it by hand or name it with --profile"
+                              % (identifier, " and ".join(judged),
+                                 " and ".join(tableless)))
+                yield Violation(
+                    "this submodel's semanticId is claimed by %s; it was judged "
+                    "against the one this tool has a table for"
+                    % " and ".join(claimants),
+                    subject=subject, detail=detail)
 
 
 #: A clause reference, and nothing else on the line. A row's citations
@@ -628,6 +661,7 @@ def settles_only() -> tuple:
     cannot select a rule set, because there is none to select.
     """
     return tuple(sorted(
-        key for identifier, keys in _KEYS_OF.items() for key in keys
-        if not any(claimant in _known_to_the_walk()
-                   for claimant in battery_tables.SHARED_SUBMODEL_IDS[identifier])))
+        key
+        for identifier, keys in _KEYS_OF.items()
+        for key, claimant in zip(keys, battery_tables.SHARED_SUBMODEL_IDS[identifier])
+        if claimant not in _known_to_the_walk()))

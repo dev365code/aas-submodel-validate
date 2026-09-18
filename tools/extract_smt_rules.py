@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 116 rows is how one of them
+extracted, not hand-written: hand-copying 142 rows is how one of them
 silently goes stale. That number is pinned in `tests/test_readme_front.py`
 along with the rest, because it said sixty-four for as long as there were
 two tables and went on saying it through a third -- this sentence was an
@@ -140,6 +140,26 @@ ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
 #: 02006's open-content placeholders -- a manufacturer's arbitrary
 #: additions under AssetSpecificProperties and GuidelineSpecificProperties,
 #: three of them, distinct from 02003's single ARBITRARY.
+#: 02023's ProductOrSectorSpecificCarbonFootprints repeats the named
+#: PcfCalculationMethods sub-structure that ProductCarbonFootprints
+#: already carries (same semanticId, different scope). The generator
+#: qualifies a label repeated across scopes by its scope-root
+#: (`_qualify_repeats`), so both sections are judged. What is left out is
+#: the open-content placeholder inside PcfInformation: an `ArbitraryContent`
+#: property wearing the SMT/General/Arbitrary marker, which stands for
+#: content the template does not define -- the same treatment 02006 gives
+#: its Arbitrary* elements (docs/divergences.md).
+PCF_SKIP = frozenset((
+    "https://admin-shell.io/SMT/General/Arbitrary",
+))
+
+PCF_ITEM_NAMES = {
+    "ProductCarbonFootprints": "ProductCarbonFootprint",
+    "PcfCalculationMethods": "PcfCalculationMethod",
+    "LifeCyclePhases": "LifeCyclePhase",
+    "ProductOrSectorSpecificCarbonFootprints": "ProductOrSectorSpecificCarbonFootprint",
+}
+
 DN_ARBITRARY = frozenset((
     "https://admin-shell.io/SMT/General/ArbitraryProp",
     "https://admin-shell.io/SMT/General/ArbitraryMLP",
@@ -205,10 +225,26 @@ PACKS = (
         "example_types": (),
         "skip_sids": DN_ARBITRARY,
     },
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02023/1.0/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/pcf_tables.py",
+        "prefix": "PCF-E",
+        "source": "IDTA 02023 _Template_CarbonFootprint.json",
+        "citation": "IDTA 02023 1.0 template",
+        "item_names": PCF_ITEM_NAMES,
+        "example_types": (),
+        "skip_sids": PCF_SKIP,
+    },
 )
 
 CARDINALITY = {"One": (1, 1), "ZeroToOne": (0, 1),
                "OneToMany": (1, None), "ZeroToMany": (0, None)}
+#: The qualifier types this generator reads a cardinality from, in order
+#: of precedence. `SMT/Cardinality` is the current SMT spelling; older
+#: templates (02002, 02007) state the identical vocabulary as
+#: `Multiplicity`; `Cardinality` is a third seen spelling. The battery
+#: index's own extractor lists the same three.
+_CARDINALITY_TYPES = ("SMT/Cardinality", "Multiplicity", "Cardinality")
 
 _ALLOWED = re.compile(r"^(.*)\[(\\d\{\d(?:,\d)?\})\]$")
 
@@ -284,9 +320,18 @@ def _rows(element, parent_label, parent_id, counter, pack):
     counter[0] += 1
     row_id = "%s%02d" % (pack["prefix"], counter[0])
     qualifiers = {q.get("type"): q.get("value") for q in element.get("qualifiers", [])}
-    # Absent means 0..*: see the module docstring. A dict comprehension
-    # keeps the template's own order, which is the order examples join in.
-    card = CARDINALITY.get(qualifiers.get("SMT/Cardinality"), (0, None))
+    # Absent means 0..*: see the module docstring. Read in one of three
+    # spellings -- SMT/Cardinality, or the older Multiplicity, or a bare
+    # Cardinality -- the same set the battery index's extractor already
+    # treats as cardinality (data/battery-passport/tools/extract_idta_smt.py),
+    # so a template that states its obligations only in the older spelling
+    # is read rather than defaulted to 0..* (docs/divergences.md #50). The
+    # first spelling present wins; absent all three is 0..*.
+    card = (0, None)
+    for _card_type in _CARDINALITY_TYPES:
+        if _card_type in qualifiers:
+            card = CARDINALITY.get(qualifiers[_card_type], (0, None))
+            break
     examples = [value for key, value in qualifiers.items()
                 if key in pack["example_types"]]
     example = " | ".join(examples) if examples else None
@@ -330,6 +375,32 @@ def _labels(rows, out):
     return out
 
 
+def _qualify_repeats(tree):
+    """Where a label is claimed by rows in more than one scope, qualify
+    each by its scope-root -- the top-level element its scope descends
+    from -- so `BY_LABEL` keeps them apart. A template with no such repeat
+    leaves this a no-op, so its generated table stays byte-for-byte the
+    same. Only the label is touched: it is the row's identity for the walk
+    and for the hand rules that navigate by it, while `fix` keeps the
+    element's own idShort, which is what a reader is told to provide.
+
+    The duplicate-label check downstream still runs: if a scope-root does
+    not tell two same-labelled rows apart (they share one), it aborts
+    there rather than emit a table that hides a row.
+    """
+    labels = _labels(tree, [])
+    clashing = {label for label in labels if labels.count(label) > 1}
+    if not clashing:
+        return
+    def qualify(rows, scope_root):
+        for row in rows:
+            root = scope_root or row["label"]
+            if row["label"] in clashing:
+                row["label"] = "%s (%s)" % (row["label"], root)
+            qualify(row["children"], root)
+    qualify(tree, None)
+
+
 def generate(pack) -> str:
     document = json.loads(pack["template"].read_text("utf-8-sig"))
     submodel = document["submodels"][0]
@@ -350,6 +421,11 @@ def generate(pack) -> str:
     for reference in submodel.get("supplementalSemanticIds", []):
         supplemental |= _values_of(reference)
 
+    # A label repeated across scopes is qualified by its scope-root first,
+    # so a template that reuses a named sub-structure (02023 does) still
+    # gets one BY_LABEL entry per row; a template that does not is left
+    # untouched.
+    _qualify_repeats(tree)
     # The hand rules navigate by label, and BY_LABEL is a dict: two rows
     # sharing a label would make one of them silently unreachable. Fail
     # here, where a person can name the second one, rather than there.

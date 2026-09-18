@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.4.0 — unreleased
+
+Who should take this release: anyone validating IDTA 02023 Carbon
+Footprint submodels offline; anyone whose submodel wears an identifier a
+second published template also claims (02023 shares its submodel
+identifier with the battery passport's part 3, IDTA 02035-3, and this is
+where such a shared identifier is judged and named rather than set
+aside); and anyone whose template states its element cardinalities with
+the older `Multiplicity` qualifier, which this release begins to read. It
+adds a fifth template pack, so a Carbon Footprint submodel this tool
+could only report as unmatched (`SMT-D1`) is now judged against the
+template's own rows.
+
+183 rules, 142 generated from the vendored official template files, up
+from 157: the twenty-six generated rows of IDTA 02023 1.0. No rule is
+removed.
+This is a minor release because it adds a template rather than changing
+how the existing four are read.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
+**A Carbon Footprint submodel is now judged, not set aside.** `verdict`
+A submodel wearing `https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0`
+drew `SMT-D1` and exited 1 unless `--allow-unmatched` was given. It is
+read now against the twenty-six rows generated from the published
+template: both the core product-carbon-footprint section -- calculation
+method, CO2-equivalent, reference impact unit, life-cycle phases,
+publication date and address -- and the product-or-sector-specific
+section, at every nesting level. That second section repeats a named
+sub-structure the first carries; the generator tells the two apart by
+qualifying a repeated label by the enclosing scope that distinguishes the
+copies (docs/divergences.md #48).
+The one part left unjudged is the open-content ArbitraryContent
+placeholder inside PcfInformation, which stands for content the template
+does not define.
+
+**The identifier IDTA 02023 shares with the battery passport is named,
+not silently resolved.** `caveat` A Carbon Footprint submodel wears an
+identifier that both IDTA 02023 and IDTA 02035-3 claim. `BAT-R2` reads a
+shared identifier by how many of its claimants this tool has a table for:
+neither (it names both and `--profile` settles which was meant), both
+(that is 02004/02035-2, and `SMT-D2` owns it), or -- as here -- one. This
+tool has 02023's table, so the submodel is judged against it, and `BAT-R2`
+names 02035-3 as the other template that claims the same identifier, a
+caveat the verdict may not stand without. `--profile 02035-3` records that the
+author meant the battery passport's part 3 without hiding the 02023
+judgement; it does not silence the note, because there is a real verdict
+behind it.
+
+**The generator now reads the older `Multiplicity` cardinality spelling.**
+`note` It read only `SMT/Cardinality`; it now also reads `Multiplicity`
+and a bare `Cardinality` -- the same vocabulary, so a template stating its
+obligations in the older spelling is judged rather than passed as all
+optional. No vendored template uses it, so no existing verdict moves. IDTA
+02002 Contact Information and 02007 Software Nameplate are written that way
+and become judgeable once vendored; until then a submodel of either draws
+`SMT-D1` (docs/scope.md, docs/divergences.md #50).
+
 ## 0.3.0 — 2026-09-18
 
 Who should take this release: anyone validating IDTA 02006 Digital
