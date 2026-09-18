@@ -2073,7 +2073,8 @@ def test_a_value_a_file_supplied_cannot_grow_the_report_without_bound():
 
     violation = Violation("m", detail="X" * 200000)
     assert len(violation.detail) == MAX_REPORTED_CHARACTERS
-    assert violation.detail.endswith("(199000 more characters, not shown)")
+    assert violation.detail.endswith(
+        "(%d more characters, not shown)" % (200000 - MAX_REPORTED_CHARACTERS))
 
 
 def test_every_field_is_bounded_and_not_only_the_one_that_was_found():

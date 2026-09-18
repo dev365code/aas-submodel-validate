@@ -251,6 +251,17 @@ def build_corpus(into: Path):
     carbon.write_text(json.dumps(pcf_env()), encoding="utf-8")
     cases.append(("a valid Carbon Footprint submodel", carbon))
 
+    # A Contact Information submodel. Nothing here carried one, so the
+    # corpus could not see IDTA 02002 land: a version with no table for it
+    # refuses it as unmatched (SMT-D1) and exits 1, and one with the table
+    # judges it against thirty-six rows and exits 0. Without this case the
+    # "no verdict moved" gate is answered by a corpus that cannot see the
+    # pack at all -- the same hole 02006 and 02023 left above.
+    from builders import contact_env  # noqa: E402
+    contact = into / "contact-information-valid.json"
+    contact.write_text(json.dumps(contact_env()), encoding="utf-8")
+    cases.append(("a valid Contact Information submodel", contact))
+
     # A battery passport that states its own category. `BAT-R8` withheld
     # eight rows because their obligation turns on a category and nothing
     # read one; the template makes the category mandatory and names its

@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aas-submodel-validate?label=PyPI&color=2f6fb3)](https://pypi.org/project/aas-submodel-validate/)
-[![templates](https://img.shields.io/badge/IDTA_templates-5_·_183_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
+[![templates](https://img.shields.io/badge/IDTA_templates-6_·_219_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
 [![licence](https://img.shields.io/badge/licence-Apache--2.0-5f6a75)](https://github.com/dev365code/aas-submodel-validate/blob/main/LICENSE)
 
 &nbsp;**Apache-2.0**&nbsp;·&nbsp;**Python 3.9–3.13**&nbsp;·&nbsp;**Linux · macOS · Windows**&nbsp;·&nbsp;**zero network, by design**
@@ -76,7 +76,7 @@ If `pip3` is not the spelling on your machine, `python3 -m pip install aas-submo
 error   SMT-D1   no submodel declares a semanticId this tool has a template table for
         saw  semanticId value(s): urn:somecompany:docs
         per  IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2
-        fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate for Digital Nameplate (IDTA 02006); https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 for Carbon Footprint (IDTA 02023). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
+        fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate for Digital Nameplate (IDTA 02006); https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 for Carbon Footprint (IDTA 02023); https://admin-shell.io/zvei/nameplate/1/0/ContactInformations for Contact Information (IDTA 02002). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
 key     saw=what is there now per=the clause fix=what to change
 FAILED -- 1 error(s), 0 warning(s), 0 info -- machine-docs.json; judged 0 of 1 submodel
 ```
@@ -124,7 +124,7 @@ and failed.
 
 ## What it catches
 
-Five of the 183, in the words the tool actually prints:
+Six of the 219, in the words the tool actually prints:
 
 | You ship this | `smtv` says |
 |---|---|
@@ -268,7 +268,7 @@ metamodel channel, so that listing is one line longer than the count.
 timeline
     title Where aas-submodel-validate is going
     Shipped : Five IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint
-            : 183 rules, 142 of them generated from the vendored official template files
+            : 219 rules, 178 of them generated from the vendored official template files
             : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
@@ -344,7 +344,7 @@ even that.
 
 ## What it checks
 
-183 rules, 173 of them across five IDTA templates — 142 generated from the vendored
+219 rules, 209 of them across six IDTA templates — 178 generated from the vendored
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), 31 hand-written where a
 template file cannot speak. Of the ten that belong to no template,
@@ -384,6 +384,7 @@ submodel identifier and something had to choose.
 | IDTA 02035-2 Digital Battery Passport part 2 1.0 | 22 | 02004's, minus the three whose elements this template drops |
 | IDTA 02006-3-0 Digital Nameplate 3.0 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value |
 | IDTA 02023 Carbon Footprint 1.0 | 26 | — (every row is generated; the open-content ArbitraryContent placeholder is left unjudged) |
+| IDTA 02002 Contact Information 1.0.1 | 36 | — (every row is generated; no email, telephone, URL, time-zone or language-code shape is checked) |
 
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and
@@ -416,7 +417,7 @@ a separate `meta` channel (the JSON field is `kind`) — warnings by
 default, folded into one line unless `--show-meta`, `--meta error` to
 promote — and never re-implemented here.
 
-The rule counts (183, 142), the drift figures above and the sample are pinned by the test
+The rule counts (219, 178), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
 ## Using this validator in your product

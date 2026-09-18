@@ -85,6 +85,17 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02023/1.0/template.json":
         "published/Carbon Footprint/1/0/"
         "IDTA 02023 _Template_CarbonFootprint.json",
+    # 02002 is published at 1.0 and again at 1.0.1, and 1.0.1 is the one
+    # this project reads: 1.0 gives `IPCommunication` the submodel's own
+    # identifier, which 1.0.1 repairs (docs/divergences.md). Upstream
+    # publishes the 1.0.1 JSON twice, under this name and under a
+    # "_forAASMetamodelV3.1" one, and the two are byte-identical -- one
+    # sha256 under two names, unlike 02035-2's twin above, whose name
+    # promised a difference it did not keep (#25). There is no choice to
+    # make; this entry records which name the bytes were taken from.
+    "src/aas_submodel_validate/data/smt/02002/1.0.1/template.json":
+        "published/Contact Information/1/0/1/"
+        "IDTA 02002-1-0-1_Template_ContactInformation.json",
 }
 
 

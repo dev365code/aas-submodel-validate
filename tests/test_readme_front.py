@@ -22,6 +22,7 @@ from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.report import render
 from aas_submodel_validate.rules import (
     battery_tables,
+    contact_tables,
     dbp_tables,
     dn_tables,
     hd_tables,
@@ -69,10 +70,12 @@ FLOWED = " ".join(README.split())
 
 def test_the_rule_counts_are_the_registrys():
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
-                 + len(dn_tables.ROWS) + len(pcf_tables.ROWS))
-    assert len(all_rules()) == 183
+                 + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
+                 + len(contact_tables.ROWS))
+    assert len(all_rules()) == 219
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS),
-            len(dn_tables.ROWS), len(pcf_tables.ROWS)) == (38, 26, 22, 30, 26)
+            len(dn_tables.ROWS), len(pcf_tables.ROWS),
+            len(contact_tables.ROWS)) == (38, 26, 22, 30, 26, 36)
     # Every place the page says it, not "somewhere on the page". The
     # count appears six times -- the badge, the gallery, the roadmap,
     # the table's heading and the sentence that says which numbers are
@@ -84,8 +87,8 @@ def test_the_rule_counts_are_the_registrys():
     # the count of occurrences underneath.
     total = len(all_rules())
     for where in ("[![templates](https://img.shields.io/badge/"
-                  "IDTA_templates-5_\u00b7_%d_rules" % total,
-                  "Five of the %d," % total,
+                  "IDTA_templates-6_\u00b7_%d_rules" % total,
+                  "Six of the %d," % total,
                   ": %d rules, %d of them generated" % (total, generated),
                   "%d rules, " % total,
                   "The rule counts (%d, %d)" % (total, generated)):
@@ -110,14 +113,14 @@ def test_the_rule_counts_are_the_registrys():
     # a rule moving between those groups moves the sentence.
     families = {}
     for rule in all_rules():
-        for family in ("HD", "TD", "DBP", "DN", "PCF", "X", "SMT", "BAT"):
+        for family in ("HD", "TD", "DBP", "DN", "PCF", "CI", "X", "SMT", "BAT"):
             if rule.id.startswith(family):
                 families[family] = families.get(family, 0) + 1
                 break
     template_rules = (families["HD"] + families["TD"] + families["DBP"]
-                      + families["DN"] + families["PCF"])
-    assert template_rules == 173, families
-    assert "%d of them across five IDTA templates" % template_rules in FLOWED
+                      + families["DN"] + families["PCF"] + families["CI"])
+    assert template_rules == 209, families
+    assert "%d of them across six IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2
     # Counts, not a description. The sentence beneath this one said
@@ -381,7 +384,8 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
     if not draft:
         return                                        # history, not a draft
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
-                 + len(dn_tables.ROWS) + len(pcf_tables.ROWS))
+                 + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
+                 + len(contact_tables.ROWS))
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
     # The bounds are on this page too, and were the only prose numbers on

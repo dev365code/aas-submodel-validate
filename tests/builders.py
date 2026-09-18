@@ -762,3 +762,76 @@ def pcf_env() -> dict:
                  "SubmodelElementCollection", [pscf_item]),
         ],
     }]}
+
+
+def contact_env() -> dict:
+    """The golden fixture for IDTA 02002 Contact Information 1.0.1, written
+    by hand like the others. One `ContactInformation` carries every row the
+    template declares -- required and optional -- so each generated row has
+    a scope to strip from, a bound to exceed, or an identifier to put the
+    wrong kind under.
+
+    Two identifiers are reproduced exactly as the template writes them,
+    because a conformant instance would: `AvailableTime` ends in a slash,
+    and `TypeOfCommunication` carries a space inside it. Both are the
+    template's, not ours (docs/divergences.md). The `IPCommunication__00__`
+    row is instantiated as `IPCommunication01`: the digits in the
+    template's idShort are its placeholder for a numbered instance, and
+    matching is by semanticId regardless. The submodel id is deliberately
+    not the template's identifier.
+    """
+    N = "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
+    available = N + "ContactInformation/AvailableTime/"
+    contact = _smc(N + "ContactInformation", [
+        _prop("RoleOfContactPerson", "0173-1#02-AAO204#003", "administrativ"),
+        _mlp("NationalCode", "0173-1#02-AAO134#002", "DE"),
+        _prop("Language", N + "ContactInformation/Language", "de"),
+        _prop("TimeZone", N + "ContactInformation/TimeZone", "+01:00"),
+        _mlp("CityTown", "0173-1#02-AAO132#002", "Frankfurt"),
+        _mlp("Company", "0173-1#02-AAW001#001", "ACME GmbH"),
+        _mlp("Department", "0173-1#02-AAO127#003", "Support"),
+        _smc(N + "ContactInformation/Phone", [
+            _mlp("TelephoneNumber", "0173-1#02-AAO136#002", "+49 69 1234"),
+            _prop("TypeOfTelephone", "0173-1#02-AAO137#003", "office"),
+            _mlp("AvailableTime", available, "09:00-17:00"),
+        ], id_short="Phone"),
+        _smc("0173-1#02-AAQ834#005", [
+            _mlp("FaxNumber", "0173-1#02-AAO195#002", "+49 69 1235"),
+            _prop("TypeOfFaxNumber", "0173-1#02-AAO196#003", "office"),
+        ], id_short="Fax"),
+        _smc("0173-1#02-AAQ836#005", [
+            _prop("EmailAddress", "0173-1#02-AAO198#002", "support@example.com"),
+            _mlp("PublicKey", "0173-1#02-AAO200#002", "AAAA"),
+            _prop("TypeOfEmailAddress", "0173-1#02-AAO199#003", "office"),
+            _mlp("TypeOfPublicKey", "0173-1#02-AAO201#002", "PGP"),
+        ], id_short="Email"),
+        _smc(N + "IPCommunication/", [
+            _prop("AddressOfAdditionalLink", "0173-1#02-AAQ326#002",
+                  "https://example.com/chat"),
+            _prop("TypeOfCommunication",
+                  "https://admin-shell.io/zvei/nameplate/1/0/ ContactInformations"
+                  "/ContactInformation/IPCommunication/TypeOfCommunication", "chat"),
+            _mlp("AvailableTime", available, "09:00-17:00"),
+        ], id_short="IPCommunication01"),
+        _mlp("Street", "0173-1#02-AAO128#002", "Musterstrasse 1"),
+        _mlp("Zipcode", "0173-1#02-AAO129#002", "60313"),
+        _mlp("POBox", "0173-1#02-AAO130#002", "PO 1"),
+        _mlp("ZipCodeOfPOBox", "0173-1#02-AAO131#002", "60001"),
+        _mlp("StateCounty", "0173-1#02-AAO133#002", "Hessen"),
+        _mlp("NameOfContact", "0173-1#02-AAO205#002", "Muster"),
+        _mlp("FirstName", "0173-1#02-AAO206#002", "Erika"),
+        _mlp("MiddleNames", "0173-1#02-AAO207#002", "M."),
+        _mlp("Title", "0173-1#02-AAO208#003", "Dr."),
+        _mlp("AcademicTitle", "0173-1#02-AAO209#003", "Dr. rer. nat."),
+        _mlp("FurtherDetailsOfContact", "0173-1#02-AAO210#002", "reception"),
+        _prop("AddressOfAdditionalLink", "0173-1#02-AAQ326#002",
+              "https://example.com/contact"),
+    ], id_short="ContactInformation")
+    return {"submodels": [{
+        "id": "urn:example:contactinformation",
+        "idShort": "ContactInformations",
+        "modelType": "Submodel",
+        "semanticId": _sid("https://admin-shell.io/zvei/nameplate/1/0/"
+                           "ContactInformations"),
+        "submodelElements": [contact],
+    }]}

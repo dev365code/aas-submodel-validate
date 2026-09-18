@@ -236,6 +236,24 @@ PACKS = (
         "example_types": (),
         "skip_sids": PCF_SKIP,
     },
+    # IDTA 02002 Contact Information 1.0.1 -- the edition this project
+    # reads; 1.0 gives `IPCommunication` the submodel's own identifier,
+    # which 1.0.1 repairs (docs/divergences.md). Every one of its
+    # thirty-six elements states its cardinality with the older
+    # `Multiplicity` qualifier and none with `SMT/Cardinality` (#50). It
+    # holds no SubmodelElementList and no open content: repetition rides on
+    # a collection's own cardinality instead, so there are no item names to
+    # supply and nothing to skip.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02002/1.0.1/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/contact_tables.py",
+        "prefix": "CI-E",
+        "source": "IDTA 02002-1-0-1_Template_ContactInformation.json",
+        "citation": "IDTA 02002-1-0-1 template",
+        "item_names": {},
+        "example_types": (),
+        "skip_sids": frozenset(),
+    },
 )
 
 CARDINALITY = {"One": (1, 1), "ZeroToOne": (0, 1),

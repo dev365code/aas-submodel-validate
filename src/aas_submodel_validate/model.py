@@ -82,11 +82,14 @@ assert META_KIND in KINDS
 #: stays and the next rule to interpolate a value reopens it. Every
 #: finding is built through `Violation`, so this is the one funnel.
 #:
-#: Chosen above the longest sentence this project writes -- 403
-#: characters, `SMT-D1`'s remedy -- with room to spare, so the bound can
-#: only ever cut something a file supplied. A test asserts that nothing
-#: authored comes near it.
-MAX_REPORTED_CHARACTERS = 1000
+#: Chosen above the longest sentence this project writes -- `SMT-D1`'s
+#: remedy, which names every template this tool has a table for and so
+#: grows by roughly a line with each pack added: 403 characters at three
+#: packs, 690 at five. The bound is raised when it does rather than the
+#: sentence shortened, so the bound can only ever cut something a file
+#: supplied. A test asserts that nothing authored comes near it, and it
+#: is that test, not this comment, that catches the next pack.
+MAX_REPORTED_CHARACTERS = 2000
 
 #: What the reader sees where the rest was. Not a bare ellipsis: a
 #: reader who cannot tell a short value from a shortened one cannot tell

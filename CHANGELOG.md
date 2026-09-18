@@ -8,15 +8,17 @@ second published template also claims (02023 shares its submodel
 identifier with the battery passport's part 3, IDTA 02035-3, and this is
 where such a shared identifier is judged and named rather than set
 aside); and anyone whose template states its element cardinalities with
-the older `Multiplicity` qualifier, which this release begins to read. It
-adds a fifth template pack, so a Carbon Footprint submodel this tool
-could only report as unmatched (`SMT-D1`) is now judged against the
-template's own rows.
+the older `Multiplicity` qualifier, which this release begins to read --
+including anyone validating IDTA 02002 Contact Information submodels,
+the first template written that way to be judged here. It adds a fifth
+and a sixth template pack, so a Carbon Footprint or a Contact
+Information submodel this tool could only report as unmatched (`SMT-D1`)
+is now judged against the template's own rows.
 
-183 rules, 142 generated from the vendored official template files, up
-from 157: the twenty-six generated rows of IDTA 02023 1.0. No rule is
-removed.
-This is a minor release because it adds a template rather than changing
+219 rules, 178 generated from the vendored official template files, up
+from 157: the twenty-six generated rows of IDTA 02023 1.0 and the
+thirty-six of IDTA 02002 1.0.1. No rule is removed.
+This is a minor release because it adds templates rather than changing
 how the existing four are read.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
@@ -51,14 +53,45 @@ author meant the battery passport's part 3 without hiding the 02023
 judgement; it does not silence the note, because there is a real verdict
 behind it.
 
+**A Contact Information submodel is now judged, not set aside.** `verdict`
+A submodel wearing
+`https://admin-shell.io/zvei/nameplate/1/0/ContactInformations` drew
+`SMT-D1` and exited 1 unless `--allow-unmatched` was given. It is read now
+against the thirty-six rows generated from the published IDTA 02002 1.0.1
+template: the contact collection itself, which the template makes
+mandatory and repeatable, and every element under it -- role, language,
+time zone, the postal address, the person's names, and the phone, fax,
+email and IP-communication sub-collections with their own mandatory
+numbers and addresses. **A pipeline that is red on such a file goes
+quiet**: a conformant Contact Information submodel exits 0 where it exited
+1, and nothing downstream says the reason changed.
+
+The edition matters here. Upstream publishes 02002 at 1.0 and again at
+1.0.1, and this reads 1.0.1: at 1.0 the `IPCommunication` collection
+carries the submodel's own identifier, so a conformant file matches
+nothing there and the mandatory address beneath it is never asked for.
+1.0.1 repairs that identifier and leaves one of its own -- a space inside
+`TypeOfCommunication`'s -- which no instance can match
+(docs/divergences.md).
+
+This pack is generated rows only: cardinality, element kind, `valueType`
+and the semanticId, at every level. It does not check the shape of an
+email address, a telephone number, a URL, a time zone or a language code,
+and a required multi-language property carrying no language at all draws
+nothing structural from it (docs/scope.md, docs/divergences.md #40).
+
 **The generator now reads the older `Multiplicity` cardinality spelling.**
 `note` It read only `SMT/Cardinality`; it now also reads `Multiplicity`
 and a bare `Cardinality` -- the same vocabulary, so a template stating its
 obligations in the older spelling is judged rather than passed as all
-optional. No vendored template uses it, so no existing verdict moves. IDTA
-02002 Contact Information and 02007 Software Nameplate are written that way
-and become judgeable once vendored; until then a submodel of either draws
-`SMT-D1` (docs/scope.md, docs/divergences.md #50).
+optional. No template vendored before this release uses it, so none of
+their verdicts move. IDTA 02002 Contact Information, added here, is the
+first one that does: all thirty-six of its elements state their
+cardinality in `Multiplicity` and none in `SMT/Cardinality`, so without
+this reading its whole table would have been generated as all-optional.
+IDTA 02007 Software Nameplate is written the same way and is still not
+vendored; until its table is added a submodel of it draws `SMT-D1`
+(docs/scope.md, docs/divergences.md #50).
 
 **An Entity's `statements` are read, and a self-containing element is
 marked rather than expanded.** `note` An Entity holds its submodel elements

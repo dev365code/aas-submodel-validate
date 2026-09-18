@@ -54,11 +54,12 @@ iirds-validate, so the two standards' validators compose.
 
 ## Which templates it covers, and which it does not
 
-Five official templates are given rule tables: IDTA 02004 Handover
+Six official templates are given rule tables: IDTA 02004 Handover
 Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
-part 2, 02006 Digital Nameplate, and 02023 Carbon Footprint. A submodel
-of any other template is reported as not matched (`SMT-D1`), not judged;
-`--allow-unmatched` turns that from an error into a note.
+part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, and 02002
+Contact Information. A submodel of any other template is reported as not
+matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
+error into a note.
 
 The generator reads a row's cardinality from one of three qualifier
 spellings -- the current `SMT/Cardinality`, the older `Multiplicity`, or a
@@ -66,8 +67,21 @@ bare `Cardinality`, the same vocabulary (`One`, `ZeroToOne`, `OneToMany`,
 `ZeroToMany`) in each (`docs/divergences.md` #50) -- and reads an element
 carrying none of them as `0..*` (#20). So a template that states its
 obligations in any of the three is judgeable once its table is vendored.
-Two published templates written in the older `Multiplicity` spelling are
-not yet vendored: **IDTA 02002 Contact Information 1.0.1** (36 elements, 5
-mandatory) and **IDTA 02007 Software Nameplate 1.0.1** (73, 14 mandatory),
-measured from the published templates at the upstream pin. Until their
-tables are added, a submodel of either draws `SMT-D1`.
+IDTA 02002 Contact Information 1.0.1 is the first such template vendored
+here: all thirty-six of its elements state their cardinality in
+`Multiplicity` and none in `SMT/Cardinality`.
+
+IDTA 02002's pack is generated rows only, and what that leaves unchecked
+is worth stating because twenty-one of its thirty-six rows are
+`MultiLanguageProperty`: a required multi-language property carrying no
+language at all draws nothing structural here (the empty-value check is a
+`Property`'s -- `docs/divergences.md` #40), duplicate or malformed
+language tags are relayed from the metamodel rather than judged here, and
+no email address, telephone number, URL, time zone or language code is
+checked for shape. The template states those as strings and this project
+does not invent a format for them.
+
+One published template written in the `Multiplicity` spelling is still
+not vendored: **IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14
+mandatory), measured from the published template at the upstream pin.
+Until its table is added, a submodel of it draws `SMT-D1`.
