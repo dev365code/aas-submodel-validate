@@ -2,8 +2,16 @@
 
 Every other gate in this project asks whether the verdict is right. None of
 them asks whether it arrived, and correct-and-unusable is a real state: the
-table generator carries a quadratic today that only build-time inputs keep
-away from a user, and nothing here would notice it moving.
+walk here was quadratic once, correct the whole time, and what noticed was
+a person waiting.
+
+What this does **not** watch is worth saying first. `_qualify_repeats` in
+`tools/extract_smt_rules.py` counts occurrences inside a comprehension over
+the same list, which is quadratic in the row count and sits before its own
+early return. It is measured, it is real, and it is unreachable today
+because the generator runs at build time over small vendored templates --
+so no layer below times it. Generating a table from a caller's file would
+reach it, and that is when this file grows a third layer, not before.
 
 **Seconds cannot be the budget.** A ceiling recorded on a laptop means
 nothing on a runner, and the same runner is slower under load than idle, so
@@ -18,9 +26,11 @@ there is no way to write a budget for a machine before a run on it.
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import pathlib
 import platform
+import shutil
 import sys
 import tempfile
 import time
@@ -65,6 +75,15 @@ YARDSTICK_FLOOR_SECONDS = 0.05
 LAYERS = ("corpus_pass", "rules_layer")
 
 
+#: Far *under* budget is worth saying too. The whole design rests on the
+#: yardstick being a stable unit, so an unexplained drop is as informative
+#: as a rise -- a yardstick that slowed down greens every layer at once,
+#: silently, and that is the failure this band exists to make visible. It
+#: does not fail: being fast is not a defect, and a machine may simply be
+#: faster than the one that recorded the budget.
+UNDER_AT = 0.5
+
+
 class Verdict:
     """What one layer's ratio means."""
 
@@ -72,6 +91,7 @@ class Verdict:
         self.factor = factor
         self.baseline = baseline
         self.warn = factor is not None and factor >= WARN_AT
+        self.under = factor is not None and factor < UNDER_AT
         self.ok = factor is None or factor < FAIL_AT
 
     def __repr__(self):                     # pragma: no cover - diagnostics
@@ -81,9 +101,22 @@ class Verdict:
 
 def judge(measured: float, baseline: Optional[float]) -> Verdict:
     """`measured` and `baseline` are both ratios against the yardstick, so
-    the comparison is a pure number and the machine has cancelled out."""
-    if not baseline:
+    what is compared is a pure number.
+
+    A *missing* baseline is the ordinary state of a platform nothing has
+    run on, and it passes. A baseline that is present but cannot be
+    divided by -- zero, or negative -- is a corrupt record, and the two
+    must not share a branch: written as one `if not baseline`, a budget
+    zeroed by an editing accident reported "no budget recorded for Darwin"
+    and passed, which is the sentence a reader would take as proof the
+    file was untouched.
+    """
+    if baseline is None:
         return Verdict(None, None)
+    if baseline <= 0:
+        raise ValueError(
+            "a budget of %r cannot be compared against; a platform with no "
+            "budget leaves the entry out rather than zeroing it" % baseline)
     return Verdict(measured / baseline, baseline)
 
 
@@ -97,6 +130,29 @@ def load() -> dict:
 
 def budgets_for(recorded: dict, key: str) -> dict:
     return recorded.get("budgets", {}).get(key, {})
+
+
+def _yardstick_rounds() -> int:
+    """How many rounds one yardstick measurement takes, sized by the clock."""
+    rounds = 4096
+    while True:
+        start = time.perf_counter()
+        _work(rounds)
+        spent = time.perf_counter() - start
+        if spent >= YARDSTICK_FLOOR_SECONDS or rounds > 1 << 24:
+            break
+        rounds *= 2
+    return rounds
+
+
+def _work(rounds: int) -> int:
+    counts: dict = {}
+    total = 0
+    for i in range(rounds):
+        key = i & 1023
+        counts[key] = counts.get(key, 0) + i
+        total += len(str(key)) + (i % 7)
+    return total
 
 
 def _yardstick() -> float:
@@ -114,28 +170,11 @@ def _yardstick() -> float:
     together with the regression it exists to catch, leaving the ratio flat
     while the wall clock doubled.
     """
-    def work(rounds: int) -> int:
-        counts: dict = {}
-        total = 0
-        for i in range(rounds):
-            key = i & 1023
-            counts[key] = counts.get(key, 0) + i
-            total += len(str(key)) + (i % 7)
-        return total
-
-    rounds = 4096
-    while True:
-        start = time.perf_counter()
-        work(rounds)
-        spent = time.perf_counter() - start
-        if spent >= YARDSTICK_FLOOR_SECONDS or rounds > 1 << 24:
-            break
-        rounds *= 2
-
+    rounds = _yardstick_rounds()
     runs = []
     for _ in range(PASSES):
         start = time.perf_counter()
-        work(rounds)
+        _work(rounds)
         runs.append((time.perf_counter() - start) / rounds)
     # Per ten thousand rounds rather than per round, so the budgets read in
     # the hundreds instead of the millions. Nothing about the comparison
@@ -146,11 +185,22 @@ def _yardstick() -> float:
 
 def _corpus():
     """Every input `verdict_diff` puts both versions through -- the set this
-    project already treats as its corpus, built once so the timing is the
-    run and not the disk."""
+    project already treats as its corpus.
+
+    Built before the clock starts, so the figure is a pass over inputs that
+    are already there rather than the cost of writing them. Each pass still
+    opens and inflates all sixty from a warm page cache, which is what a
+    caller does too.
+
+    Cleaned up on exit. `verdict_diff` removes its own workspace and this
+    borrowed the `mkdtemp` without the `rmtree`, so every `make check` and
+    every matrix row left about 1.6 MB behind -- measured at 289 MB on the
+    machine that wrote it.
+    """
     from tools import verdict_diff
 
     workspace = pathlib.Path(tempfile.mkdtemp(prefix="time-budget-"))
+    atexit.register(shutil.rmtree, str(workspace), True)
     return [path for _label, path in verdict_diff.build_corpus(workspace)]
 
 
@@ -170,8 +220,7 @@ def _rules_layer_input():
 LAYER_FLOOR_SECONDS = 0.05
 
 
-def _time(call) -> float:
-    """Seconds for one call, taken from the fastest of several passes."""
+def _repeats_for(call) -> int:
     repeats = 1
     while True:
         start = time.perf_counter()
@@ -181,14 +230,36 @@ def _time(call) -> float:
         if spent >= LAYER_FLOOR_SECONDS or repeats > 1 << 14:
             break
         repeats *= 2
+    return repeats
 
-    runs = []
+
+def _ratio_of(call, rounds: int) -> tuple:
+    """The layer's cost in yardstick units, measured *beside* the yardstick.
+
+    Measuring the yardstick once and the layers afterwards does not cancel
+    the machine out -- it cancels *steady* load out and amplifies load that
+    covers one window and not the other. Measured: bursts of background CPU
+    work timed to land on the yardstick alone drove the reported ratio to
+    0.41x, and bursts landing on the layers alone drove it to 1.33x, on one
+    idle machine with one unchanged tree. So each pass times the yardstick
+    and the layer back to back and divides them there, and the passes are
+    compared as ratios rather than as two separately-minimised numbers.
+    """
+    repeats = _repeats_for(call)
+    best = None
     for _ in range(PASSES):
+        start = time.perf_counter()
+        _work(rounds)
+        unit = (time.perf_counter() - start) / rounds * 10_000
+
         start = time.perf_counter()
         for _ in range(repeats):
             call()
-        runs.append((time.perf_counter() - start) / repeats)
-    return min(runs)
+        seconds = (time.perf_counter() - start) / repeats
+
+        if best is None or seconds / unit < best[0]:
+            best = (seconds / unit, seconds, unit)
+    return best
 
 
 def measure() -> dict:
@@ -213,18 +284,18 @@ def measure() -> dict:
         engine.analyze(runner.Context(loaded, profiles.Selection(None)),
                        hd_tables)
 
+    rounds = _yardstick_rounds()
+    measured = {"corpus_pass": _ratio_of(corpus_pass, rounds),
+                "rules_layer": _ratio_of(rules_layer, rounds)}
     return {
-        "yardstick_seconds": _yardstick(),
+        # The unit from the pass each layer's figure came from, so a reader
+        # who divides the seconds below by it gets the ratio above it.
+        "yardstick_seconds": min(unit for _r, _s, unit in measured.values()),
         "inputs": len(corpus),
-        "layers": {"corpus_pass": _time(corpus_pass),
-                   "rules_layer": _time(rules_layer)},
+        "ratios": {layer: ratio for layer, (ratio, _s, _u) in measured.items()},
+        "layers": {layer: seconds for layer, (_r, seconds, _u) in measured.items()},
+        "units": {layer: unit for layer, (_r, _s, unit) in measured.items()},
     }
-
-
-def _ratios(measured: dict) -> dict:
-    unit = measured["yardstick_seconds"]
-    return {layer: seconds / unit
-            for layer, seconds in measured["layers"].items()}
 
 
 def main(argv=None) -> int:
@@ -236,7 +307,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     measured = measure()
-    ratios = _ratios(measured)
+    ratios = measured["ratios"]
     key = platform_key()
 
     if args.record:
@@ -251,7 +322,11 @@ def main(argv=None) -> int:
                 "machine": platform.machine(),
                 "python": platform.python_version(),
                 "inputs": measured["inputs"],
-                "yardstick_seconds": float("%.4g" % measured["yardstick_seconds"]),
+                # The unit beside each layer, not one shared number: each
+                # figure is divided by the yardstick measured in its own
+                # pass, so only the pair reconstructs the ratio.
+                "yardstick_seconds": {layer: float("%.4g" % unit) for layer, unit
+                                      in measured["units"].items()},
                 "absolute_seconds": {layer: float("%.4g" % seconds)
                                      for layer, seconds
                                      in measured["layers"].items()},
@@ -261,15 +336,22 @@ def main(argv=None) -> int:
     budgets = budgets_for(load(), key)
     bad = False
     for layer in LAYERS:
-        verdict = judge(ratios[layer], budgets.get(layer))
+        try:
+            verdict = judge(ratios[layer], budgets.get(layer))
+        except ValueError as exc:
+            print("%-12s %7.3g units, unusable budget: %s" % (layer, ratios[layer], exc))
+            bad = True
+            continue
         if verdict.factor is None:
-            print("%-12s %7.1f units, no budget recorded for %s"
+            print("%-12s %7.3g units, no budget recorded for %s"
                   % (layer, ratios[layer], key))
             continue
-        note = "over budget" if not verdict.ok else (
-            "close to budget" if verdict.warn else "")
-        print("%-12s %7.1f units, %.2fx of its budget %s"
-              % (layer, ratios[layer], verdict.factor, note))
+        note = ("over budget" if not verdict.ok else
+                "close to budget" if verdict.warn else
+                "far under budget -- check the yardstick" if verdict.under
+                else "")
+        print(("%-12s %7.3g units, %.2fx of its budget %s"
+               % (layer, ratios[layer], verdict.factor, note)).rstrip())
         bad = bad or not verdict.ok
     return 1 if bad else 0
 

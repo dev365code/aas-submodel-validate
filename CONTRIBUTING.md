@@ -105,14 +105,26 @@ over the official example -- and compares each against a ratio recorded in
 a failure.
 
 Seconds are not the budget. Every figure is a ratio against a yardstick
-measured in the same process in the same run, so a slow machine does not
-fail and a slow layer does. The ratio does not travel between operating
+measured in the same pass, immediately beside the layer it divides, so a
+slow machine does not fail. The ratio does not travel between operating
 systems either, so each carries its own entry and a platform with no entry
 passes quietly, saying so -- there is no way to write a budget for a
 machine before a run on it.
 
+What this catches and what it does not, plainly: run-to-run spread on an
+idle machine is about 11% on the corpus and 6% on the rules layer, and the
+failure line is at twice the budget. So it catches a layer that doubled,
+not a layer that got a fifth slower. It is a smoke alarm for the kind of
+regression that ships and then has to be apologised for -- the walk here
+was quadratic once, correct the whole time, and what noticed was a person
+waiting -- and it is not a benchmark. Something genuinely slower but under
+the line goes through, and that is the deliberate cost of a gate that does
+not fire on runner noise.
+
 If a change makes a layer genuinely more expensive and that is the right
 trade, run `python tools/time_budget.py --record` on an idle machine,
-several times, and write the figures in with a note saying what they were
-measured on and what the spread was. Recording one hurried run, or the
-fastest of several, is how a budget ends up warning on ordinary work.
+about a dozen times, and write in a run close to the middle with a note
+giving the peak-to-peak spread and how many runs it came from. A standard
+deviation of three samples reads reassuringly and hides what a reader
+actually meets; recording one hurried run, or the fastest of several, is
+how a budget ends up warning on ordinary work.

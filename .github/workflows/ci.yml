@@ -120,7 +120,14 @@ jobs:
       - name: the run stays inside its time budget
         run: python tools/time_budget.py --check
       - name: what this machine measures
-        if: always()
+        # `success() || failure()` and not `always()`: always() is true for a
+        # cancelled job too, and pull requests here cancel their own older
+        # runs. And `continue-on-error`, because `if:` decides whether a step
+        # runs, not whether its failure fails the job -- this one is
+        # non-gating by intent, and it can raise on a tree with no tests
+        # directory, which is a reader `MANIFEST.in` grafts for.
+        if: success() || failure()
+        continue-on-error: true
         run: python tools/time_budget.py --record
       # Also in the lint job, deliberately: this one runs on every OS in
       # the matrix, and end-of-line damage is a property of the checkout,

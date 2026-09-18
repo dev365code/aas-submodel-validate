@@ -2,8 +2,12 @@
 
 Correct and unusable is a state this project can ship: every gate here
 answers "is the verdict right", none of them answers "did it take four
-minutes", and the generator already carries a quadratic that nothing here
-would notice until somebody waited for it.
+minutes". The walk was quadratic once and every gate stayed green.
+
+The generator's own quadratic (`_qualify_repeats`, `tools/extract_smt_rules.py`)
+is **not** covered by what follows, and deliberately: it runs at build time
+over small vendored files, so nothing a caller does reaches it. A third
+layer joins these two when that stops being true.
 
 Seconds cannot be the budget. A ceiling recorded on a laptop means nothing
 on a runner, and the same runner is slower under load than idle, so an
@@ -14,7 +18,10 @@ yardstick measured in the same process in the same run.
 from __future__ import annotations
 
 import json
+import os
+import pathlib
 
+import pytest
 from tools import time_budget
 
 
@@ -43,10 +50,75 @@ def test_a_platform_with_no_recorded_budget_passes_quietly():
     assert verdict.factor is None
 
 
+@pytest.mark.parametrize("baseline", [0, 0.0, -1.0])
+def test_a_budget_that_cannot_be_divided_by_is_not_a_missing_one(baseline):
+    """The accident this separates.
+
+    Written as one `if not baseline`, a budget zeroed by an editing slip
+    took the same branch as a platform with no entry: the gate printed
+    "no budget recorded for Darwin" -- a sentence a reader would take as
+    proof the file was untouched -- and exited 0, with every test here
+    still green. A negative one was worse: it divided, reported -107x, and
+    called that ok.
+
+    A missing entry is the ordinary state of a platform nothing has run
+    on. A zero is a corrupt record, and the two must not agree.
+    """
+    with pytest.raises(ValueError):
+        time_budget.judge(100.0, baseline)
+
+
+def test_an_unusable_budget_fails_the_command(monkeypatch, capsys):
+    """And the corrupt record has to reach the exit code, not just the
+    exception."""
+    recorded = json.loads(json.dumps(time_budget.load()))
+    recorded["budgets"][time_budget.platform_key()] = dict.fromkeys(
+        time_budget.LAYERS, 0)
+    monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    assert time_budget.main(["--check"]) == 1
+    assert "unusable budget" in capsys.readouterr().out
+
+
+def test_far_under_budget_is_said_out_loud_without_failing():
+    """The whole design rests on the yardstick being a stable unit, so an
+    unexplained *drop* is as informative as a rise: a yardstick that got
+    slower greens every layer at once and says nothing. Being fast is not
+    a defect, so it does not fail -- it just stops being silent."""
+    assert time_budget.UNDER_AT < 1.0
+    verdict = time_budget.judge(time_budget.UNDER_AT - 0.01, 1.0)
+    assert verdict.ok and verdict.under
+    assert not time_budget.judge(1.0, 1.0).under
+
+
 def test_the_yardstick_does_not_measure_this_project():
     """A yardstick that called the code it normalises would slow down
     together with the regression it exists to catch, and the ratio would
-    stay flat while the wall clock doubled."""
+    stay flat while the wall clock doubled.
+
+    Asserted on what the yardstick *is*, not on one function being absent
+    from it. Bombing `runner.run` and watching the yardstick survive said
+    nothing about the twenty other modules here: routed through one of
+    them the yardstick reported every layer at 0.12x of its budget,
+    permanently green, and every test in this file passed.
+    """
+    import dis
+    import inspect
+
+    package = "aas_submodel_validate"
+    for function in (time_budget._work, time_budget._yardstick,
+                     time_budget._yardstick_rounds):
+        assert package not in inspect.getsource(function), function.__name__
+        for instruction in dis.get_instructions(function):
+            name = instruction.argval
+            if not isinstance(name, str):
+                continue
+            if instruction.opname.startswith("IMPORT"):
+                assert not name.startswith(package), (function.__name__, name)
+            borrowed = getattr(time_budget, name, None)
+            origin = getattr(borrowed, "__name__", "") if inspect.ismodule(
+                borrowed) else getattr(borrowed, "__module__", "") or ""
+            assert not origin.startswith(package), (function.__name__, name)
+
     from aas_submodel_validate import runner
 
     def explode(*args, **kwargs):          # pragma: no cover - must not run
@@ -75,11 +147,19 @@ def test_the_budget_file_records_what_it_was_measured_on():
     assert recorded["budgets"], "no platform has a budget yet"
     for key, budgets in recorded["budgets"].items():
         assert set(budgets) == set(time_budget.LAYERS), key
+        assert all(budget > 0 for budget in budgets.values()), key
         assert key in recorded["recorded_on"], key
         about = recorded["recorded_on"][key]
         for field in ("machine", "python", "inputs", "yardstick_seconds",
                       "absolute_seconds"):
             assert field in about, (key, field)
+        # and the seconds have to reconstruct the ratio above them. They did
+        # not: the budget was a mean of several runs and the seconds came
+        # from one of them, so a reader who divided got a third number.
+        for layer, budget in budgets.items():
+            seconds = about["absolute_seconds"][layer]
+            unit = about["yardstick_seconds"][layer]
+            assert abs(seconds / unit - budget) / budget < 0.05, (key, layer)
 
 
 def test_a_measurement_covers_every_layer_the_budget_names():
@@ -87,10 +167,36 @@ def test_a_measurement_covers_every_layer_the_budget_names():
     that can never be compared against anything."""
     measured = time_budget.measure()
     assert set(measured["layers"]) == set(time_budget.LAYERS)
+    assert set(measured["ratios"]) == set(time_budget.LAYERS)
     assert measured["yardstick_seconds"] > 0
     assert measured["inputs"] >= 40
     for layer, seconds in measured["layers"].items():
         assert seconds > 0, layer
+        assert measured["ratios"][layer] > 0, layer
+        # each layer divided by the yardstick measured in its own pass
+        assert abs(seconds / measured["units"][layer]
+                   - measured["ratios"][layer]) < 1e-9, layer
+
+
+def test_the_corpus_is_not_left_on_the_disk():
+    """The corpus is written to a temp directory every run, which is every
+    `make check` and every matrix row. This borrowed the `mkdtemp` from
+    `verdict_diff` without its `rmtree` and left about 1.6 MB behind each
+    time -- 289 MB by the time anybody looked."""
+    import glob
+    import subprocess
+    import sys
+    import tempfile
+
+    pattern = os.path.join(tempfile.gettempdir(), "time-budget-*")
+    before = set(glob.glob(pattern))
+    subprocess.run(
+        [sys.executable, "-c",
+         "import sys; sys.path[:0] = ['src', '.']\n"
+         "from tools import time_budget; time_budget._corpus()"],
+        cwd=str(pathlib.Path(__file__).resolve().parents[1]), check=True,
+        capture_output=True)
+    assert set(glob.glob(pattern)) - before == set()
 
 
 def test_the_command_reports_what_it_found(capsys):

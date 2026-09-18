@@ -1,9 +1,9 @@
 {
- "_about": "Budgets are ratios against a yardstick measured in the same run -- dictionary, integer and string work in a loop, never this project's code -- because seconds recorded on one machine cannot gate another, and a yardstick written in C would measure CPython releases rather than this code. One entry per operating system: the ratio does not travel between platforms either, so each carries what was measured on it, and a platform with no entry passes quietly because there is no way to write a budget for a machine before a run on it. The seconds below are for a reader; what is compared is the ratio.",
+ "_about": "Budgets are ratios against a yardstick measured in the same run and beside the layer it divides -- dictionary, integer and string work in a loop, never this project's code -- because seconds recorded on one machine cannot gate another, and a yardstick written in C would barely notice which interpreter called it while this project is Python all the way down. The yardstick is measured again in every pass, next to the layer, because measuring it once at the start cancels steady load out and amplifies load that lands on one window and not the other: bursts of background work timed at the old sequence drove the reported ratio between 0.41x and 1.33x on one idle machine with one unchanged tree, and 0.71x to 1.02x after. One entry per operating system, because the ratio does not travel between them either; a platform with no entry passes and says so, since there is no way to write a budget for a machine before a run on it. The seconds below are for a reader -- what is compared is the ratio -- but they are one run's, so dividing them gives the figure above them.",
  "budgets": {
   "Darwin": {
-   "corpus_pass": 117.0,
-   "rules_layer": 0.436
+   "corpus_pass": 109.0,
+   "rules_layer": 0.411
   }
  },
  "recorded_on": {
@@ -11,12 +11,15 @@
    "machine": "arm64",
    "python": "3.9.6",
    "inputs": 60,
-   "yardstick_seconds": 0.0024,
-   "absolute_seconds": {
-    "corpus_pass": 0.2716,
-    "rules_layer": 0.00102
+   "yardstick_seconds": {
+    "corpus_pass": 0.002353,
+    "rules_layer": 0.002331
    },
-   "_from": "the mean of three consecutive runs on an idle machine, which read 126/110/115 on the corpus and 0.472/0.409/0.426 on the rules layer -- a spread of about 7%, so an ordinary run sits near 1.0x and nowhere near the warning line. Recording the lowest of the three would have put an ordinary run at 1.15x for no reason."
+   "absolute_seconds": {
+    "corpus_pass": 0.2569,
+    "rules_layer": 0.0009573
+   },
+   "_from": "one run on an idle machine, chosen as the closest to the mean of twelve. Those twelve read 103-114 on the corpus and 0.393-0.417 on the rules layer -- 11% and 6% peak to peak, which is the number worth quoting; a standard deviation of three samples would have said 'about 5%' and hidden the spread a reader actually meets. Measuring the yardstick once per run instead of once per pass had put the same figures 26% and 31% apart. An ordinary run therefore sits within about 6% of 1.0x and nowhere near the warning line at 1.5x."
   }
  },
  "thresholds": {
