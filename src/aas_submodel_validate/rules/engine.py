@@ -372,12 +372,20 @@ def _sub_elements(element):
     `statements` (aas-core3). The generator descends the same two, so the
     walk and the table agree on what a scope contains. A Property's `value`
     is its string, not a list of elements, and is excluded here; a kind
-    that carries neither yields nothing."""
+    that carries neither yields nothing.
+
+    A MultiLanguageProperty's `value` *is* a list -- of language strings,
+    not of elements -- so what is gathered is filtered to what carries a
+    `semantic_id`, which is the first thing every caller reads. The
+    generator draws the same line from the other side, taking a child only
+    where a modelType is declared, and without this the two disagreed:
+    navigating an MLP raised `AttributeError` and was reported as the rule
+    failing to run, about a file that is fine."""
     items = []
     for attribute in ("value", "statements"):
         got = getattr(element, attribute, None)
         if isinstance(got, list):
-            items.extend(got)
+            items.extend(x for x in got if hasattr(x, "semantic_id"))
     return items
 
 

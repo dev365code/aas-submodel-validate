@@ -1012,3 +1012,27 @@ def test_every_shared_identifier_item_written_alone_is_told_to_wrap(tables):
         assert engine._shared_identifier_item(row, None) is None, (
             "%s: asked for a kind no element has, '%s' still matched"
             % (name, row["label"]))
+
+
+def test_a_multilanguage_propertys_languages_are_not_child_elements():
+    """A MultiLanguageProperty's `value` is a list of language strings, not
+    of submodel elements. The generator has always guarded that (it takes a
+    child only where `"modelType"` is present); the walk's child accessors
+    did not, so navigating one raised `AttributeError` at the first
+    `semantic_id` -- which `runner` turns into "the rule itself could not
+    run", reported against a file that is fine.
+
+    Not reachable from the generated walk today, because an MLP row has no
+    children and `_scope` never recurses into one. It is reachable the
+    moment a hand rule navigates an MLP, and 21 of IDTA 02002's 36 rows are
+    MultiLanguageProperties.
+    """
+    import aas_core3.types as aas_types
+
+    mlp = aas_types.MultiLanguageProperty(
+        id_short="Company",
+        value=[aas_types.LangStringTextType(language="en", text="ACME")])
+
+    assert engine._sub_elements(mlp) == []     # languages are not children
+    assert engine.child_of(mlp, "Document", hd_tables) is None
+    assert engine.children_of(mlp, "Document", hd_tables) == []
