@@ -112,7 +112,7 @@ def test_no_gate_can_leave_make_check_quietly():
     six passing tests instead of seven. The list of gates is therefore
     named here, where losing one is a diff somebody has to justify."""
     assert _check_targets() == ["lint", "generated", "vendored", "battery-data",
-                                "test", "exercised"]
+                                "test", "exercised", "time-budget"]
 
 
 @pytest.mark.parametrize("target,command", CHECKS, ids=[c for _t, c in CHECKS])

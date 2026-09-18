@@ -1,0 +1,26 @@
+{
+ "_about": "Budgets are ratios against a yardstick measured in the same run -- dictionary, integer and string work in a loop, never this project's code -- because seconds recorded on one machine cannot gate another, and a yardstick written in C would measure CPython releases rather than this code. One entry per operating system: the ratio does not travel between platforms either, so each carries what was measured on it, and a platform with no entry passes quietly because there is no way to write a budget for a machine before a run on it. The seconds below are for a reader; what is compared is the ratio.",
+ "budgets": {
+  "Darwin": {
+   "corpus_pass": 117.0,
+   "rules_layer": 0.436
+  }
+ },
+ "recorded_on": {
+  "Darwin": {
+   "machine": "arm64",
+   "python": "3.9.6",
+   "inputs": 60,
+   "yardstick_seconds": 0.0024,
+   "absolute_seconds": {
+    "corpus_pass": 0.2716,
+    "rules_layer": 0.00102
+   },
+   "_from": "the mean of three consecutive runs on an idle machine, which read 126/110/115 on the corpus and 0.472/0.409/0.426 on the rules layer -- a spread of about 7%, so an ordinary run sits near 1.0x and nowhere near the warning line. Recording the lowest of the three would have put an ordinary run at 1.15x for no reason."
+  }
+ },
+ "thresholds": {
+  "warn_at": 1.5,
+  "fail_at": 2.0
+ }
+}

@@ -96,3 +96,23 @@ Every one was found by corrupting an input. None would have been found
 by reading the code, and all four had been read.
 
 A gate that has never been red is a comment.
+
+## The time budget
+
+`make check` times two layers -- one pass over the corpus, and the walk
+over the official example -- and compares each against a ratio recorded in
+`docs/time-budget.json`. Half again as expensive is said out loud; twice is
+a failure.
+
+Seconds are not the budget. Every figure is a ratio against a yardstick
+measured in the same process in the same run, so a slow machine does not
+fail and a slow layer does. The ratio does not travel between operating
+systems either, so each carries its own entry and a platform with no entry
+passes quietly, saying so -- there is no way to write a budget for a
+machine before a run on it.
+
+If a change makes a layer genuinely more expensive and that is the right
+trade, run `python tools/time_budget.py --record` on an idle machine,
+several times, and write the figures in with a note saying what they were
+measured on and what the spread was. Recording one hurried run, or the
+fastest of several, is how a budget ends up warning on ordinary work.

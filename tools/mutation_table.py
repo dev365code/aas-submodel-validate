@@ -60,6 +60,24 @@ ROOT = Path(__file__).resolve().parent.parent
 #: that is a tool. `why` is a reproduced event, never a description: a row
 #: whose reason has not happened is a row nobody can weigh.
 TABLE = [
+    ("gates/the-time-budget-actually-compares",
+     "tools/time_budget.py",
+     "        self.ok = factor is None or factor < FAIL_AT",
+     "        self.ok = True",
+     ["tests/test_the_run_stays_inside_its_time_budget.py"],
+     "a budget that passes whatever it measures is a clock nobody is "
+     "watching, which is the state every other gate here was already in: "
+     "they all ask whether the verdict is right and none asked whether it "
+     "arrived"),
+
+    ("gates/the-time-budget-reports-what-it-found",
+     "tools/time_budget.py",
+     "    return 1 if bad else 0",
+     "    return 0",
+     ["tests/test_the_run_stays_inside_its_time_budget.py"],
+     "a judgement that the command throws away is a judgement `make check` "
+     "cannot act on; the function being tested is not the thing that runs"),
+
     ("release/signature-covers-only-what-we-built",
      ".github/workflows/release.yml",
      "            dist/aas_submodel_validate-*.whl",
