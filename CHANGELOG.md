@@ -1,43 +1,97 @@
 # Changelog
 
-## 0.4.1 — unreleased
+## 0.4.1 — 2026-09-21
 
-Who should take this release: nobody has to. Nothing a caller sees
-changes -- no rule is added or removed, no verdict moves, no exit code
-moves, and the report is the same document with the same
-`schemaVersion`. It is 219 rules, 178 generated from the vendored
-official template files, across six template packs, exactly as 0.4.0
-was.
+Who should take this release: anyone whose build can be handed a path
+from a variable, because on 0.4.0 a named pipe hangs the job instead of
+failing it; and anyone who reads a finding's `subject` out of the JSON
+report, because one class of subject string gains an index. Everyone
+else can take it or not — no rule is added or removed, no verdict moves,
+and the report is the same document with the same `schemaVersion`. It is
+219 rules, 178 generated from the vendored official template files,
+across six template packs, exactly as 0.4.0 was.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
 directory of names at 16 MiB.
 
-**Two elements under same-named containers are two records again.**
-`note` `summary.unmatchedElements` says which element left rules unasked,
-and it identified an element by the path to it -- which is not an
-identity when two containers in one scope carry the same `idShort`. The
-metamodel forbids that and this reader relays the violation as a warning
-rather than refusing the file, so such a file is judged; two elements
-under two same-named containers then produced the same path and were
-merged into one record, telling the reader that one element did what two
-did. An index is appended now, and only where a sibling shares the name,
-so every other subject is the string it was. No verdict moves: measured
+**If you gate a build on the exit code, read this paragraph.** A path
+that is a named pipe now exits 2. It used to return nothing at all:
+opening a FIFO with no writer waits for one, and five places here open a
+path a caller named, so `smtv pipe.json` sat there until something killed
+it. Every other unreadable path — missing, a directory, a suffix this
+reader chooses no format for, a bare `-` — already came back with exit 2
+and a sentence, and this was the one shape where "could not run" did not
+arrive. A job handed this from an unset variable hung until the runner's
+own timeout rather than failing, which is worse than a red build because
+nothing says what happened. `notice` Devices and sockets are the same
+answer for the same reason, and `provenance.inputSha256` is `null` for
+all of them: `/dev/null` opened perfectly well before this and hashed to
+the sha of zero bytes, which is a provenance claim about nothing.
+`docs/report-schema.md` names the case.
+
+**A finding's `subject` gains an index where a sibling shares its
+`idShort`.** `note` Two elements in one scope can carry the same name —
+the metamodel forbids it, and this reader relays the violation as a
+warning rather than refusing the file, so such a file is judged. Their
+subjects were then the same string, which is not an identity: two
+elements that each left rules unasked were merged into one record of
+`summary.unmatchedElements`, and the reader was told one element did
+what two did. An index is appended now, and only where a sibling shares
+the name, so every other subject is the string it always was.
+
+This reaches more than that one record, and a consumer should know
+which. A finding's `subject` and a cardinality finding's `detail` are
+built from the same path, in the JSON report and in the text output, so
+a report about a file with same-named siblings reads
+`…/ContactInformation/Phone[23]` where it read `…/ContactInformation/Phone`.
+The number is the element's position among **all** the scope's children,
+not an ordinal among the same-named ones, so inserting an unrelated
+sibling renumbers it — if you suppress a known finding by matching its
+subject, match the part before the bracket. No verdict moves: measured
 against 0.4.0 across the corpus, 0 of 60 inputs are judged differently
 (`docs/divergences.md` #53).
 
+**A rule's own text is bounded the way a finding's always was.** `note`
+The 2000-character bound 0.4.0 describes was applied by `Violation` and
+not by `Rule`, and a finding carries its rule's title — and its `fix`
+when the violation has none. Measured: a rule whose text was 200,000
+characters reached the JSON at full length beside a violation cut at
+2,000. Every generated pack builds its rules out of the template's own
+strings, so the length is the template's to choose. Nothing this project
+writes is cut: the longest text any rule carries is 690 characters.
+
+**The generator's cost follows the template's width, not its square.**
+`note` `tools/extract_smt_rules.py` travels in the source distribution,
+so this is visible to anyone generating a table from a template of their
+own. It counted a label list once per label, in two places — the second
+on the path that refuses a template with a duplicated label, which is
+the path a file somebody else wrote takes most. Measured on 32,000
+rows: 9.2s and 9.4s before, 0.0045s and 0.20s after. Every generated
+table is byte-for-byte what it was.
+
+**Fourteen readings this validator and an independently built one answer
+differently are now written down.** `note` `docs/divergences.md` gains
+row 54: fourteen submodel shapes put to both, with what each answered
+recorded side by side and this project's own answer pinned in its test
+suite. Three agree, one is the same defect at a different severity, and
+ten differ — two of them policy this project had published and would not
+change to match. None of the other reader's answers is written in as the
+expected value. The row states exactly what was compared, because it was
+a comparison core driven in isolation and not a product.
+
 **The suite now times what a caller waits for, and fails when it
-doubles.** `note` Four layers are measured -- starting the command,
+doubles.** `note` Four layers are measured — starting the command,
 walking the corpus, a submodel wide enough to show a quadratic, and the
-rule layer alone -- and each is compared against a budget for the
-platform it ran on. The comparison is a ratio rather than a stopwatch: a
-pure-Python yardstick is measured *beside* each layer in the same pass,
-so a loaded machine slows both and the ratio holds. Warn at 1.5x, fail
-at 2.0x. It is a smoke alarm and not a benchmark -- it is aimed at a
-layer that doubled, not at one a fifth slower -- and it is a gate on this
-repository rather than a promise about your machine. `docs/time-budget.json`
-carries the recorded budgets and now travels in the source distribution,
-which is the only part of this a reader downloading the sdist will see.
+rule layer alone — and each is compared against a budget for the
+platform it ran on. A platform with no recorded budget passes and says
+so, which today is every platform but the one the budgets were recorded
+on. The comparison is a ratio rather than a stopwatch: a pure-Python
+yardstick is measured *beside* each layer in the same pass, so a loaded
+machine slows both and the ratio holds. Warn at 1.5x, fail at 2.0x. It
+is a smoke alarm and not a benchmark — aimed at a layer that doubled,
+not one a fifth slower — and it is a gate on this repository rather than
+a promise about your machine.
 
 ## 0.4.0 — 2026-09-20
 
