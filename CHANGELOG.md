@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 — unreleased
+## 0.4.0 — 2026-09-20
 
 Who should take this release: anyone validating IDTA 02023 Carbon
 Footprint submodels offline; anyone whose submodel wears an identifier a
