@@ -861,6 +861,55 @@ TABLE = [
      "arriving `--template` mode is what makes a table not a module, and "
      "a fallback that is only correct while nothing takes it is not "
      "correct."),
+    ("template/a-run-time-rule-goes-through-the-crash-funnel",
+     "src/aas_submodel_validate/runner.py",
+     "        rules_to_run = list(rules_to_run) + tablegen.rules_for(\n"
+     "            supplied[\"table\"], supplied[\"pack\"])",
+     "        tablegen.rules_for(supplied[\"table\"], supplied[\"pack\"])",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_submodel_judged_by_a_supplied_template_counts_as_judged"],
+     "`execute` is the only place here where a rule that raises becomes a "
+     "finding rather than a traceback, and it is handed `rules_to_run`. "
+     "Build the rules and drop them and a template the caller supplied is "
+     "read, accepted and then judged by nobody -- the run reports on the "
+     "packs alone and says nothing about the flag it was given."),
+    ("template/a-supplied-table-takes-the-identifier-over",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    if taken and tables.TEMPLATE_SEMANTIC_ID in taken \\\n"
+     "            and not getattr(tables, \"_supplied\", False):\n"
+     "        return []",
+     "    if False:\n"
+     "        return []",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_supplied_template_answers_instead_of_the_pack_not_as_well"],
+     "two tables for one identifier is one defect reported twice. Measured "
+     "with this removed: handing `--template` the very file 02003's pack "
+     "was generated from gives two errors where the pack alone gives one, "
+     "the same missing element under `TD-E01` and under `TPL-E01`. A build "
+     "counting errors then gets a number that depends on a flag rather "
+     "than on the file."),
+    ("template/a-run-time-id-stays-out-of-the-coverage-record",
+     "tests/conftest.py",
+     "                     and not finding.id.startswith(RUN_TIME_PREFIX))",
+     "                     )",
+     ["tools/rule_coverage.py --check"],
+     "`make exercised` asks whether every rule this project publishes "
+     "fired, against a baseline listing exactly those. An id that exists "
+     "because somebody passed a file is in neither list, so recording it "
+     "fails two of that gate's three comparisons at once. Measured: one "
+     "`--template` run in the suite turned it red with `TPL-E01` on both "
+     "lines."),
+    ("template/a-template-is-refused-rather-than-trusted",
+     "src/aas_submodel_validate/tablegen.py",
+     "    if counter[0] > MAX_TEMPLATE_ROWS:",
+     "    if False:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_template_with_too_many_rows_is_refused"],
+     "a template is not covered by the bound on the document being judged "
+     "-- they are different files, and forty-six megabytes of template "
+     "sits inside the sixty-four this reader advertises. What a generator "
+     "spends is decided by rows, and with this gone a caller's file "
+     "reaches the duplicate-label backstop at any width."),
 
 ]
 

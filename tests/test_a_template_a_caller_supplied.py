@@ -43,6 +43,14 @@ def test_a_submodel_judged_by_a_supplied_template_counts_as_judged(tmp_path):
         "a submodel judged against the supplied template is counted as "
         "unjudged: judged %d of %d" % (report.submodels_judged,
                                        report.submodels_seen))
+    # And it was actually judged. `submodels_judged` is computed from the
+    # identifier the table claims and would say 1 even if the rules built
+    # from that table were never run -- measured: dropping them from
+    # `rules_to_run` left this test green, so the count alone is a claim
+    # about the table and not about the judging.
+    assert any(finding.id.startswith("TPL-") for finding in report.findings), (
+        "nothing the supplied table produced reached the report: %s"
+        % sorted({f.id for f in report.findings}))
 
 
 def test_the_report_says_the_template_was_not_idtas(tmp_path):
@@ -184,6 +192,9 @@ def test_a_supplied_template_answers_instead_of_the_pack_not_as_well(tmp_path):
     report = runner.run(_instance(tmp_path), template=VENDORED)
     ours = [f for f in report.findings if f.severity.name == "ERROR"]
     ids = sorted(f.id for f in ours)
+    # Not vacuously: `all` over nothing is true, and nothing is what a
+    # supplied table produces if its rules are never run.
+    assert ids, "the supplied table produced no errors at all"
     assert all(rule_id.startswith("TPL-") for rule_id in ids), (
         "the pack answered as well as the supplied table: %s" % ids)
 
