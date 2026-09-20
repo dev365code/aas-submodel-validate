@@ -249,13 +249,81 @@ def _steps(path):
 #: nothing. An artifact handed to the next job expires with the run.
 #: What belongs here is a name that sends bytes somewhere a person can
 #: install them from, and adding one is a line rather than a heuristic.
-PUBLISHES = ("pypi-publish", "gh release create", "action-gh-release",
-             "upload-release-asset")
+#: Widened once more, to the second half of the same act: creating a
+#: release was here and attaching bytes to one already created was not,
+#: though a workflow that split those steps across jobs would have had its
+#: publishing half read as publishing nothing.
+PUBLISHES = ("pypi-publish", "gh release create", "gh release upload",
+             "action-gh-release", "upload-release-asset")
 
 
 def _publishes(path):
     return any(marker in path.read_text(encoding="utf-8")
                for marker in PUBLISHES)
+
+
+def _needs(job_source):
+    """What a job waits for, list form or scalar."""
+    found = re.search(r"^\s*needs:\s*(.+)$", job_source, re.M)
+    if not found:
+        return []
+    value = found.group(1).strip()
+    if value.startswith("["):
+        return [n.strip().strip("'\"")
+                for n in value[1:-1].split(",") if n.strip()]
+    return [value.strip("'\"")]
+
+
+def _publishing_jobs(path):
+    """Jobs that send bytes somewhere a person can install them from.
+
+    Not "jobs that upload an artifact": an artifact handed to the next job
+    expires with the run and publishes nothing. Jobs are read through the
+    one parser this file already has -- a second one written beside it is
+    two readings of the same file that agree until they do not.
+    """
+    return {name for name, source in _jobs(path).items()
+            if any(marker in _uncommented(source) for marker in PUBLISHES)}
+
+
+def _uncommented(source):
+    """The job with its comment lines dropped.
+
+    A comment naming a publishing step is not a publishing step, and this
+    file already carries one: `release.yml`'s build job explains why the
+    release is created after the signing, quoting the command. Matched
+    against the raw text, that comment alone would keep the job classified
+    as publishing after the command moved out of it -- so the pin below
+    could never turn green, and a strict xfail that cannot xpass is a
+    failure waiting with no way to satisfy it.
+    """
+    return "\n".join(line for line in source.splitlines()
+                      if not line.lstrip().startswith("#"))
+
+
+def _gate_jobs(path):
+    """Jobs that run the gate in a way that could stop them."""
+    gated = set()
+    for name, source in _jobs(path).items():
+        for line in source.splitlines():
+            command = line.strip().lstrip("-").strip()
+            if command.startswith("run:"):
+                command = command[len("run:"):].strip()
+            if _runs_the_gate(command):
+                gated.add(name)
+    return gated
+
+
+def _gated_upstream(path, name, seen=None):
+    """Whether this job, or anything it waits for, runs the gate."""
+    seen = seen if seen is not None else set()
+    if name in seen:
+        return False
+    seen.add(name)
+    if name in _gate_jobs(path):
+        return True
+    return any(_gated_upstream(path, upstream, seen)
+               for upstream in _needs(_jobs(path).get(name, "")))
 
 
 def _runs_the_gate(command):
@@ -267,6 +335,126 @@ def _runs_the_gate(command):
     The step is the gate; what was done to it is the finding.
     """
     return command.strip().split("||")[0].split("&&")[0].strip() == "make check"
+
+
+#: A workflow whose publishing job is gated only by a sibling it does not
+#: wait for. Every file-level reading calls this protected, because the
+#: file contains `make check` and the file publishes.
+UNGATED_FIXTURE = """\
+name: release
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: make check
+  ship:
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh release create "$GITHUB_REF_NAME" dist/*
+"""
+
+#: The same shape with the one edge that makes it true.
+GATED_FIXTURE = UNGATED_FIXTURE.replace(
+    "  ship:\n    runs-on:", "  ship:\n    needs: check\n    runs-on:")
+
+#: A job that hands bytes to the next job and publishes nothing. It must
+#: not be read as publishing: an artifact expires with the run.
+HANDOFF_FIXTURE = """\
+name: ci
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: python -m build
+      - uses: actions/upload-artifact@v7
+        with:
+          path: dist/
+"""
+
+
+def _written(tmp_path, name, text):
+    path = tmp_path / name
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_attaching_bytes_to_a_release_is_read_as_publishing(tmp_path):
+    """Both halves of the same act count.
+
+    Creating a release was named here and attaching bytes to one already
+    created was not, so a workflow that split those two steps across jobs
+    would have had its publishing half read as publishing nothing at all.
+    """
+    assert "gh release create" in PUBLISHES and "gh release upload" in PUBLISHES
+    ships = _written(tmp_path, "ships.yml", UNGATED_FIXTURE)
+    assert _publishing_jobs(ships) == {"ship"}
+    attaches = _written(tmp_path, "attaches.yml",
+                        UNGATED_FIXTURE.replace("gh release create", "gh release upload"))
+    assert _publishing_jobs(attaches) == {"ship"}
+
+
+def test_handing_an_artifact_to_the_next_job_is_not_publishing(tmp_path):
+    """The other direction, which keeps the predicate from swallowing
+    every workflow that touches `dist/`. An artifact handed on expires
+    with the run; nobody can install from it."""
+    assert _publishing_jobs(
+        _written(tmp_path, "handoff.yml", HANDOFF_FIXTURE)) == set()
+
+
+def test_a_publishing_job_must_be_downstream_of_the_gate(tmp_path):
+    """The hole a file-level reading leaves.
+
+    "Does this workflow run `make check`" and "is the job that sends the
+    bytes stopped by it" are different questions, and the first answers
+    yes for a workflow whose publishing job never waits for the gate. The
+    fixture below is exactly that shape: `make check` is in the file, the
+    file publishes, and the two jobs run side by side.
+    """
+    ungated = _written(tmp_path, "ungated.yml", UNGATED_FIXTURE)
+    assert _gate_jobs(ungated) == {"check"}
+    assert _publishing_jobs(ungated) == {"ship"}
+    assert not _gated_upstream(ungated, "ship"), (
+        "a publishing job that does not wait for the gate is being read as "
+        "gated; the predicate cannot tell the two shapes apart")
+
+    gated = _written(tmp_path, "gated.yml", GATED_FIXTURE)
+    assert _gated_upstream(gated, "ship"), (
+        "adding the one edge that makes it true changed nothing")
+
+
+def test_every_publishing_job_here_is_downstream_of_the_gate():
+    """And the property, on this project's own workflows."""
+    for workflow in _workflows():
+        for job in sorted(_publishing_jobs(workflow)):
+            assert _gated_upstream(workflow, job), (
+                "%s: job %r sends bytes somewhere installable and neither "
+                "runs `make check` nor waits for a job that does"
+                % (workflow.name, job))
+
+
+def _building_jobs(path):
+    """Jobs that produce the artifact, as opposed to sending it."""
+    return {name for name, source in _jobs(path).items()
+            if "python -m build" in _uncommented(source)}
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "measured 2026-09-19: release.yml has one job, `build`, that both makes "
+    "the artifact and creates the release with it. That is the shape the "
+    "job split is for -- it is what forces one job to hold contents:write "
+    "and attestations:write while also running arbitrary build code. This "
+    "turns green when the split lands, and is strict so that it cannot land "
+    "unnoticed."))
+def test_the_job_that_builds_is_not_the_job_that_publishes():
+    for workflow in _workflows():
+        overlap = _building_jobs(workflow) & _publishing_jobs(workflow)
+        assert not overlap, (
+            "%s: %s both builds the artifact and publishes it"
+            % (workflow.name, sorted(overlap)))
 
 
 def test_a_workflow_that_publishes_runs_the_gate_and_is_stopped_by_it():
