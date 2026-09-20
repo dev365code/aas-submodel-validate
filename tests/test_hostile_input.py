@@ -2720,12 +2720,26 @@ def test_a_named_pipe_comes_back_instead_of_waiting_forever(tmp_path):
             [sys.executable, "-m", "aas_submodel_validate", str(pipe), "-q"],
             capture_output=True, text=True, timeout=seconds, cwd=str(root),
             env=dict(os.environ, PYTHONPATH="src"))
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as waited:
         # The sentence, not a raw traceback: the one failure this test
         # exists for arrived as `TimeoutExpired` and said nothing about
         # what it was waiting on. This file already had the idiom.
-        pytest.fail("a named pipe gave no answer within %ds; measured cost "
-                    "when it works is under a fifth of a second" % seconds)
+        #
+        # And whatever the child managed to say before it was killed,
+        # because "it did not come back" is the least useful half of the
+        # answer. This gate went red once, unexplained, and could not be
+        # reproduced in seventy runs since -- thirty of them under six
+        # busy cores, where the worst was 0.32s against this ceiling. If
+        # it happens again the output is what will say where it got to.
+        def _said(stream):
+            if not stream:
+                return "nothing"
+            return repr(stream.decode("utf-8", "replace")
+                        if isinstance(stream, bytes) else stream)[:400]
+        pytest.fail(
+            "a named pipe gave no answer within %ds; measured cost when it "
+            "works is under a third of a second under load.\nstdout: %s\n"
+            "stderr: %s" % (seconds, _said(waited.stdout), _said(waited.stderr)))
     assert done.returncode == 2, (
         "a named pipe left by %r; it is a path this reader cannot read, "
         "which is 2" % done.returncode)
