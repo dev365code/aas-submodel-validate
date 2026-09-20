@@ -798,6 +798,22 @@ TABLE = [
      "unasked when two did. Measured before the fix on a file with two "
      "ContactInformation containers, each holding a drifted Phone: one "
      "record."),
+    ("generator/refusing-a-template-is-not-the-square-of-its-width",
+     "tools/extract_smt_rules.py",
+     "    seen = Counter(labels)\n"
+     "    if len(seen) != len(labels):\n"
+     "        duplicates = sorted(label for label, count in seen.items() if count > 1)",
+     "    if len(set(labels)) != len(labels):\n"
+     "        duplicates = sorted({label for label in labels if labels.count(label) > 1})",
+     ["tests/test_the_generator_scales_with_the_template.py::"
+      "test_refusing_a_template_is_not_the_square_of_its_width"],
+     "the row above made the common path linear and left this one alone, "
+     "which is worse than not having fixed either: the fast path was "
+     "already the one that worked, and the refusal -- the path a caller's "
+     "own template takes most -- stayed quadratic. Measured end to end "
+     "with the old spelling: 4,000 elements refused in 0.11s, 8,000 in "
+     "0.55s, 16,000 in 2.5s, 32,000 in 9.4s, on files of a few megabytes. "
+     "After: 32,000 in 0.20s and 128,000 in 1.2s."),
 
 ]
 

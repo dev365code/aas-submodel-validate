@@ -80,3 +80,63 @@ def test_the_same_holds_when_there_is_work_to_do():
         "%d rows collapsed to %d distinct labels"
         % (len(qualified), len(set(qualified))))
     assert "ScopeA" in qualified[0], qualified[0]
+
+
+def _template(elements):
+    """A template whose every idShort is used twice, which is the shape
+    the duplicate-label backstop exists to refuse."""
+    written = []
+    for index in range(elements // 2):
+        for _ in range(2):
+            written.append({
+                "modelType": "Property", "idShort": "P%d" % index,
+                "valueType": "xs:string",
+                "semanticId": {"type": "GlobalReference",
+                               "keys": [{"type": "GlobalReference",
+                                         "value": "urn:x:%d" % index}]}})
+    return {"submodels": [{
+        "kind": "Template", "idShort": "T",
+        "semanticId": {"type": "GlobalReference",
+                       "keys": [{"type": "GlobalReference",
+                                 "value": "urn:x:top"}]},
+        "submodelElements": written}]}
+
+
+def _pack(tmp_path, elements):
+    import json
+    path = tmp_path / "template.json"
+    path.write_text(json.dumps(_template(elements)), encoding="utf-8")
+    return {"template": path, "output": tmp_path / "x_tables.py", "prefix": "X-E",
+            "source": "a synthetic template", "citation": "none",
+            "skip_sids": frozenset(), "item_names": {}, "example_types": ()}
+
+
+def test_refusing_a_template_is_not_the_square_of_its_width(tmp_path):
+    """The path a bad template takes, which is the one a mode that
+    accepts a caller's file will take most.
+
+    The fix that made `_qualify_repeats` linear left the same shape one
+    function later: the duplicate-label backstop in `generate` asks
+    `labels.count(label)` inside a comprehension over `labels`, and it
+    runs only when there *are* duplicates -- so the common path got fast
+    and the refusal stayed quadratic. Measured end to end before this
+    change: 4,000 elements in 0.11s, 8,000 in 0.55s, 16,000 in 2.5s,
+    32,000 in 9.4s. Every one of those files is a few megabytes, well
+    inside the 64 MiB this reader advertises.
+
+    The commit that fixed the first half said the generator's cost
+    follows the template rather than its square. That was true of the
+    path every vendored template takes and not true here.
+    """
+    pack = _pack(tmp_path, ROWS)
+    start = time.perf_counter()
+    try:
+        generator.generate(pack)
+    except SystemExit as refused:
+        took = time.perf_counter() - start
+        assert "share a label" in str(refused.code), refused.code
+    else:
+        raise AssertionError("a template with every label doubled was accepted")
+    assert took < CEILING_SECONDS, (
+        "refusing %d elements took %.2fs; the refusal reads the labels as "
+        "many times as there are labels" % (ROWS, took))
