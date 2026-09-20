@@ -189,3 +189,27 @@ def test_the_sample_is_a_report_of_the_shape_it_documents(tmp_path):
         shown = [f for f in sample["findings"] if f["severity"] == severity]
         assert sample["summary"][counter] == len(shown), counter
     assert sample["ok"] == (sample["summary"]["errors"] == 0)
+
+
+def test_the_notes_row_names_the_flag_that_writes_most_of_them():
+    """`notes` is described by example, and its examples predate the one
+    flag that fills it.
+
+    A `--template` run writes several here -- whether your template
+    judged anything, which submodel of the file the table came from,
+    which pack stood down and what that removed, whether a `--profile`
+    it overrode decided anything -- and the row named a profile that
+    matched nothing and `--allow-unmatched`. A consumer sizing the field
+    from this page would not expect the flag to speak here at all.
+
+    Asserted rather than left to a reading, because a row described by
+    example goes stale without any sentence in it becoming false, which
+    is the failure no proofreading catches.
+    """
+    row = [line for line in DOC.splitlines()
+           if line.startswith("| `notes` |")]
+    assert len(row) == 1, "expected one `notes` row, found %d" % len(row)
+    for named in ("--template", "provenance.template"):
+        assert named in row[0], (
+            "the notes row does not name %r, and a run given that flag "
+            "writes several notes: %s" % (named, row[0]))

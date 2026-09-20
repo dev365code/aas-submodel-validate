@@ -88,7 +88,7 @@ report needs the second one.
 | `ok` | boolean | No finding at `error` severity. `-W` raises the bar for the exit code without changing `ok`, and so does `summary.judged`: a run that judged nothing exits 2 whatever `ok` says. |
 | `options` | object | What was asked of this run; see below. |
 | `summary` | object | Counts; see below. |
-| `notes` | array of string | Things worth saying once about the run rather than about the file — a `--profile` that named a template nothing here answers to, or an unmatched submodel that `--allow-unmatched` let through. |
+| `notes` | array of string | Things worth saying once about the run rather than about the file — a `--profile` that named a template nothing here answers to, or an unmatched submodel that `--allow-unmatched` let through. A run given `--template` says several here: whether your template judged anything, which submodel of it the table came from where the file held more than one, which pack stood down for it and what that removed, and whether a `--profile` it overrode decided anything. Free text, one string per note; `provenance.template` is where the same run is recorded in fields a consumer can read. |
 | `findings` | array of object | Every finding, in reading order; see below. |
 
 ## `provenance`
