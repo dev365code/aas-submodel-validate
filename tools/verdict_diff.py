@@ -26,6 +26,7 @@ versions of one package cannot share an interpreter.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 import shutil
@@ -262,6 +263,32 @@ def build_corpus(into: Path):
     contact.write_text(json.dumps(contact_env()), encoding="utf-8")
     cases.append(("a valid Contact Information submodel", contact))
 
+    # Two children of one scope carrying the same idShort. The metamodel
+    # forbids it and this reader relays that as a warning rather than
+    # refusing the file, so a file like this is judged -- and what it is
+    # judged to have done is where a finding's subject stops being an
+    # identity. 0.4.1 appends an index there, which is a change to a
+    # string a consumer matches on, and no input here had two siblings
+    # sharing a name, so the corpus could not see it move.
+    twinned = contact_env()
+    _children = twinned["submodels"][0]["submodelElements"][0]["value"]
+    _twin = copy.deepcopy(
+        next(c for c in _children if c.get("idShort") == "Phone"))
+    # Standing in a kind the template does not declare, so a finding names
+    # the *element* and not the scope it sits in. A plain duplicate draws
+    # a cardinality finding whose subject is the parent, and the subject
+    # this release changes is the element's -- measured: a plain duplicate
+    # moved nothing here, which would have made this case a corpus entry
+    # that watches the right file and asks the wrong question.
+    _twin["modelType"] = "Property"
+    _twin["valueType"] = "xs:string"
+    _twin.pop("value", None)
+    _children.append(_twin)
+    twins = into / "contact-information-two-of-one-name.json"
+    twins.write_text(json.dumps(twinned), encoding="utf-8")
+    cases.append(("a Contact Information submodel with two elements of one name",
+                  twins))
+
     # A battery passport that states its own category. `BAT-R8` withheld
     # eight rows because their obligation turns on a category and nothing
     # read one; the template makes the category mandatory and names its
@@ -431,6 +458,12 @@ def build_corpus(into: Path):
 
 # -- running both versions --------------------------------------------------
 
+#: How long one input may take before the comparison calls it silence.
+#: Far above anything the corpus costs -- the whole sixty run in about a
+#: minute -- and far below a wait nobody notices.
+_PATIENCE = 120
+
+
 def _judge(src: Path, target: Path):
     """One version's verdict on one input: ids, severities, exit code --
     and what it did not ask.
@@ -446,11 +479,20 @@ def _judge(src: Path, target: Path):
     the key was added, which is true and buries the one whose verdict
     actually moved. An instrument that reports everything reports
     nothing."""
-    run = subprocess.run(
-        [sys.executable, "-m", "aas_submodel_validate", str(target), "-f", "json"],
-        capture_output=True, text=True,
-        env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
-             "PYTHONIOENCODING": "utf-8"})
+    try:
+        run = subprocess.run(
+            [sys.executable, "-m", "aas_submodel_validate", str(target), "-f", "json"],
+            capture_output=True, text=True, timeout=_PATIENCE,
+            env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
+                 "PYTHONIOENCODING": "utf-8"})
+    except subprocess.TimeoutExpired:
+        # A deadline, because without one this tool stops when the reader
+        # does. One input that never answers takes the whole comparison
+        # with it and says nothing about which input it was -- and there
+        # was such an input: until 0.4.1, a named pipe made the reader
+        # wait for a writer that never came. The corpus is built on disk
+        # and holds no pipe today, which is luck rather than a guarantee.
+        return ((), 0, -1, None, "gave no answer in %ds" % _PATIENCE)
     try:
         report = json.loads(run.stdout)
     except ValueError:
@@ -462,8 +504,15 @@ def _judge(src: Path, target: Path):
         # instrument that cannot compare "said nothing" with "said
         # something" is no instrument for a change of exactly that kind.
         return ((), 0, run.returncode, None, "no report")
+    # The subject too. A finding names an element, and the name is what a
+    # consumer suppressing a known finding matches on -- so a change that
+    # renames one is a change that reaches them. It was left out, and the
+    # release that started appending an index where two siblings share a
+    # name reported "0 of 60 moved" against an instrument with no case
+    # for it. This file's own docstring is about exactly that.
     findings = sorted(
-        (f.get("rule"), f.get("severity")) for f in report.get("findings", []))
+        (f.get("rule"), f.get("severity"), f.get("subject"))
+        for f in report.get("findings", []))
     ours = [f for f in findings if f[0] != "META"]
     relayed = len(findings) - len(ours)
     summary = report.get("summary") or {}
@@ -482,12 +531,18 @@ def _verdict_of(judged):
     return judged[:3] + judged[4:]
 
 
+def _named(finding):
+    """A finding as one string: the rule, and the element if it names one."""
+    rule, _severity, subject = finding
+    return rule if not subject else "%s (%s)" % (rule, subject)
+
+
 def _describe(verdict):
     if len(verdict) > 4:
         return "did not produce a report (exit %d)" % verdict[2]
     ours, relayed, code, not_asked = verdict
     counts = {}
-    for _rule, severity in ours:
+    for _rule, severity, _subject in ours:
         counts[severity] = counts.get(severity, 0) + 1
     parts = ["%d %s" % (counts[k], k) for k in ("error", "warning", "info")
              if k in counts] or ["nothing"]
@@ -547,10 +602,16 @@ def main(argv=None):
             print("      %-14s %s" % ("working tree", _describe(after)))
             gone = sorted(set(before[0]) - set(after[0]))
             new = sorted(set(after[0]) - set(before[0]))
+            # Named with the element, because a finding can be the same
+            # rule at the same severity and still be about a different
+            # element -- which is the whole reason the subject is compared
+            # at all. Without it this prints "no longer drawn: CI-E02"
+            # directly above "newly drawn: CI-E02" and leaves a reader to
+            # guess what moved.
             if gone:
-                print("      no longer drawn: %s" % ", ".join(r for r, _ in gone))
+                print("      no longer drawn: %s" % ", ".join(_named(f) for f in gone))
             if new:
-                print("      newly drawn:     %s" % ", ".join(r for r, _ in new))
+                print("      newly drawn:     %s" % ", ".join(_named(f) for f in new))
             print()
 
         print("%d of %d inputs are judged differently." % (moved, len(corpus)))

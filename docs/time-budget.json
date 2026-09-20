@@ -5,30 +5,30 @@
  ],
  "budgets": {
   "Darwin": {
-   "cold_start": 58.8,
+   "cold_start": 58.7,
    "corpus_pass": 111.0,
-   "scale": 84.0,
-   "rules_layer": 0.409
+   "scale": 81.1,
+   "rules_layer": 0.43
   }
  },
  "recorded_on": {
   "Darwin": {
    "machine": "arm64",
    "python": "3.9.6",
-   "inputs": 60,
+   "inputs": 61,
    "yardstick_seconds": {
-    "cold_start": 0.002252,
-    "corpus_pass": 0.002304,
-    "scale": 0.002334,
-    "rules_layer": 0.002228
+    "cold_start": 0.003406,
+    "corpus_pass": 0.003478,
+    "scale": 0.003312,
+    "rules_layer": 0.003145
    },
    "absolute_seconds": {
-    "cold_start": 0.1324,
-    "corpus_pass": 0.2566,
-    "scale": 0.1961,
-    "rules_layer": 0.0009117
+    "cold_start": 0.1998,
+    "corpus_pass": 0.3874,
+    "scale": 0.2686,
+    "rules_layer": 0.001352
    },
-   "_from": "one run on an idle machine, chosen as the closest to the mean of seven. Those seven spanned cold_start 55.3-59.4 (7% peak to peak), corpus_pass 107-115 (7% peak to peak), rules_layer 0.385-0.414 (8% peak to peak), scale 79.7-86.1 (8% peak to peak). Peak-to-peak over a stated number of runs is the figure worth quoting; a standard deviation of three samples reads reassuringly and hides what a reader meets. Under heavy background load an unchanged tree has been measured between 0.54x and 1.74x, so the warning line at 1.5x is inside the noise on a loaded machine and is advisory, while the failure line at 2.0x has not been crossed by an unchanged tree since the yardstick moved beside the layer."
+   "_from": "one run on an idle machine, chosen as the closest to the mean of five, re-recorded when the corpus grew from sixty inputs to sixty-one -- the gate that compares the recorded count against the measured one is what asked for this, which is what it is for. Those five spanned cold_start 57.2-61.6 (7% peak to peak), corpus_pass 109-116 (6%), scale 79.4-88.3 (11%), rules_layer 0.424-0.455 (7%). Peak-to-peak over a stated number of runs is the figure worth quoting; a standard deviation of three samples reads reassuringly and hides what a reader meets. Under heavy background load an unchanged tree has been measured between 0.54x and 1.74x, so the warning line at 1.5x is inside the noise on a loaded machine and is advisory, while the failure line at 2.0x has not been crossed by an unchanged tree since the yardstick moved beside the layer."
   }
  },
  "thresholds": {
