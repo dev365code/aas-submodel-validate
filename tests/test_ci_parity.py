@@ -15,6 +15,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -532,6 +533,39 @@ def test_the_release_gate_is_not_a_step_that_only_looks_like_one(tmp_path):
     (weakened,) = gates_of(appended)
     assert any(c.rstrip().endswith("|| true") for c in weakened["commands"]), \
         "the reader cannot see `|| true` on the gate command"
+
+
+def test_the_suite_imports_the_way_ci_starts_it():
+    """`make check` says `python3 -m pytest` and CI says `pytest`, and the
+    difference is a directory on `sys.path`.
+
+    `python -m` puts the working directory in front; the console script
+    does not. A test importing `tools.time_budget` therefore passed here
+    and met `ModuleNotFoundError: No module named 'tools'` on all nine
+    matrix rows -- green locally, red everywhere, which is the worst
+    direction for a gate to fail in because the author sees nothing.
+
+    Asked as a collection, not a run: importing every test module is what
+    finds this, and it takes under a second. The two invocations are left
+    as they are -- CI calling the installed console script is part of what
+    CI is for -- so what is pinned is that the suite does not care which
+    one started it.
+    """
+    here = str(ROOT)
+    collecting = (
+        "import sys;"
+        "sys.path[:] = [p for p in sys.path if p not in ('', %r)];"
+        "from pytest import console_main;"
+        "sys.exit(console_main())" % here)
+    done = subprocess.run(
+        [sys.executable, "-c", collecting, "--collect-only", "-q",
+         "-p", "no:cacheprovider", str(ROOT / "tests")],
+        capture_output=True, text=True, cwd=str(ROOT),
+        env=dict(os.environ, PYTHONPATH="src"))
+    assert done.returncode == 0, (
+        "the suite does not import without the working directory on the "
+        "path, which is how CI starts it:\n%s"
+        % (done.stdout + done.stderr)[-3000:])
 
 
 def test_the_linter_runs_the_same_way_on_both_sides():

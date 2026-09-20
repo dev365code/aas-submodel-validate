@@ -38,6 +38,34 @@ def test_the_judgement_has_three_answers_and_they_are_the_thresholds():
     assert not failed.ok
 
 
+def _recorded_here():
+    """The recorded budgets, with an entry for the platform running this.
+
+    Budgets can only be written by a run on the platform they describe,
+    so the file carries whatever machines have recorded -- and every test
+    below that reaches into `budgets[key]` or `recorded_on[key]` to bend
+    one number was reading an entry that exists on the machine this was
+    written on and nowhere else. The whole matrix met `KeyError: 'Linux'`
+    while this one stayed green.
+
+    What those tests are about is the gate's arithmetic, not this
+    machine, so an absent platform is given a copy of a recorded one. The
+    test that asks what happens when a platform has *no* budget builds
+    that case for itself.
+    """
+    recorded = json.loads(json.dumps(time_budget.load()))
+    key = time_budget.platform_key()
+    if key not in recorded["budgets"]:
+        borrowed = sorted(recorded["budgets"])[0]
+        recorded["budgets"][key] = json.loads(
+            json.dumps(recorded["budgets"][borrowed]))
+        recorded["recorded_on"][key] = json.loads(
+            json.dumps(recorded["recorded_on"][borrowed]))
+        recorded["platforms_expected"] = sorted(
+            set(recorded["platforms_expected"]) | {key})
+    return recorded
+
+
 def test_a_platform_with_no_recorded_budget_passes_quietly():
     """The budgets for a platform can only be written by a run on it, so
     until CI has run there is nothing to compare against. Refusing would
@@ -71,7 +99,7 @@ def test_a_budget_that_cannot_be_divided_by_is_not_a_missing_one(baseline):
 def test_an_unusable_budget_fails_the_command(monkeypatch, capsys):
     """And the corrupt record has to reach the exit code, not just the
     exception."""
-    recorded = json.loads(json.dumps(time_budget.load()))
+    recorded = _recorded_here()
     recorded["budgets"][time_budget.platform_key()] = dict.fromkeys(
         time_budget.LAYERS, 0)
     monkeypatch.setattr(time_budget, "load", lambda: recorded)
@@ -228,7 +256,7 @@ def test_the_command_reports_what_it_found(capsys):
 def test_the_check_fails_when_a_layer_is_over_its_budget(monkeypatch, capsys):
     """The judgement has to reach the exit code. Measured against a budget
     small enough that any real run exceeds it."""
-    recorded = json.loads(json.dumps(time_budget.load()))
+    recorded = _recorded_here()
     key = time_budget.platform_key()
     recorded["budgets"][key] = dict.fromkeys(time_budget.LAYERS, 1e-09)
     monkeypatch.setattr(time_budget, "load", lambda: recorded)
@@ -252,7 +280,7 @@ def test_a_corpus_that_shrank_fails_the_command(monkeypatch, capsys):
     from sixty to forty-five and bought a silent 40% of headroom while
     every test here stayed green.
     """
-    recorded = json.loads(json.dumps(time_budget.load()))
+    recorded = _recorded_here()
     about = recorded["recorded_on"][time_budget.platform_key()]
     about["inputs"] = about["inputs"] + 15
     monkeypatch.setattr(time_budget, "load", lambda: recorded)
@@ -266,7 +294,7 @@ def test_a_platform_losing_its_budget_by_rename_fails_the_command(
     which is the sentence for a platform nothing has run on. Renaming
     `Darwin` to `Darwin_arm64` turned the whole gate off and every test
     here passed."""
-    recorded = json.loads(json.dumps(time_budget.load()))
+    recorded = _recorded_here()
     key = time_budget.platform_key()
     recorded["budgets"][key + "_renamed"] = recorded["budgets"].pop(key)
     monkeypatch.setattr(time_budget, "load", lambda: recorded)
@@ -288,7 +316,7 @@ def test_a_layer_that_stopped_working_fails_even_though_it_is_fast(
     walk 1500x faster; the gate said "far under budget" and passed, which
     is also what a loaded machine says. Absolute seconds separate them:
     load is tens of percent, a collapse is orders."""
-    recorded = json.loads(json.dumps(time_budget.load()))
+    recorded = _recorded_here()
     about = recorded["recorded_on"][time_budget.platform_key()]
     for layer in time_budget.LAYERS:
         about["absolute_seconds"][layer] *= 1000
@@ -301,7 +329,7 @@ def test_a_warning_is_visible_where_warnings_are_read(monkeypatch, capsys):
     """Nothing read `warn` except one word in a log line, so a layer at
     1.7x of its budget passed with nobody told. On a runner it is a
     workflow annotation now."""
-    recorded = json.loads(json.dumps(time_budget.load()))
+    recorded = _recorded_here()
     key = time_budget.platform_key()
     recorded["budgets"][key] = {
         layer: budget / (time_budget.WARN_AT + 0.2)

@@ -56,8 +56,15 @@ import pytest
 # wastes an afternoon; the passing direction is worse, because a
 # contributor sees green for a change that was never executed. Putting
 # the tree in front costs nothing and removes both.
+# The tree itself is on the list because a test imports `tools.*`, and
+# `tools` is only reachable from the root. That worked under `make check`
+# and nowhere else: `python -m pytest` puts the working directory on the
+# path and a bare `pytest` does not, so the whole matrix met
+# `ModuleNotFoundError: No module named 'tools'` while this machine
+# stayed green. The comment above is about the same shape of mistake one
+# directory over.
 _TREE = Path(__file__).resolve().parents[1]
-for _entry in (_TREE / "src", _TREE / "tests"):
+for _entry in (_TREE / "src", _TREE / "tests", _TREE):
     if str(_entry) not in sys.path:
         sys.path.insert(0, str(_entry))
 
