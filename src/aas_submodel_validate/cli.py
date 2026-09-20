@@ -4,13 +4,16 @@ path that cannot be read and an input this reader refused, because
 nothing about either was judged. A report may still be printed on 2,
 saying what was refused and what to do about it.
 
-In the next minor release a command-line usage error -- an unknown option
-or a missing argument -- will exit 64 (EX_USAGE) instead of 2; exit 2 will
-then mean only that the run could not judge the input, never a mistake in
-how the tool was called."""
+64 is a mistake in how the tool was called -- an unknown option, a
+missing argument, a value outside the choices, a second path, or two
+flags that contradict. It was 2 until this release, so
+a caller branching on 2 could not tell "your file could not be judged"
+from "you spelled the flag wrong"; 2 now means only the first. 0.3.0
+announced the change one release ahead for callers who branch on it."""
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 from typing import Optional
@@ -24,11 +27,44 @@ from .report import render
 EXIT_OK = 0
 EXIT_FINDINGS = 1
 EXIT_ERROR = 2
+EXIT_USAGE = 64
+
+
+class _Parser(argparse.ArgumentParser):
+    """An `ArgumentParser` whose usage errors leave by 64, not by 2.
+
+    Only `error` is overridden. `exit` is what `--help` and `--version`
+    leave through, and both of those are 0: they are not mistakes, and
+    routing them through here too would make asking for the help page a
+    failure in every pipeline that runs it.
+
+    The message stays argparse's own. Writing it out here with the code
+    changed would drift from argparse the moment either side moved, and
+    would be untranslated wherever argparse is not -- the code is the
+    contract, the sentence is argparse's to phrase.
+
+    The number is written down rather than read from `os.EX_USAGE`,
+    which is 64 on Unix and does not exist on Windows. Reading it there
+    raises at import, which is a worse failure than the one it avoids.
+    """
+
+    def error(self, message):
+        # argparse prints the usage block and the sentence, then leaves by
+        # 2. The printing is what is wanted and the code is not, so the
+        # exit is suppressed and replaced. The replacement is outside the
+        # suppression rather than inside the `except`, so that this still
+        # leaves by 64 if a future argparse returns from `error` instead
+        # of raising -- falling through to the caller would hand `None`
+        # to the loader two calls later, which is the traceback this
+        # parser exists to prevent.
+        with contextlib.suppress(SystemExit):
+            super().error(message)
+        raise SystemExit(EXIT_USAGE)
 
 
 def main(argv: Optional[list] = None) -> int:
     survive()
-    parser = argparse.ArgumentParser(
+    parser = _Parser(
         prog="smtv",
         description="Validate an AAS submodel against its IDTA template, offline.",
         # Someone wiring this into a build reads `--help` before a
@@ -51,7 +87,11 @@ def main(argv: Optional[list] = None) -> int:
                "  1  at least one error -- or a warning, under -W\n"
                "  2  could not run: a path that cannot be read, or an input\n"
                "     this reader refused. Nothing was judged, so neither\n"
-               "     of those is a verdict.",
+               "     of those is a verdict.\n"
+               " 64  a mistake in how this was called (EX_USAGE): an unknown\n"
+               "     option, a missing argument, a value outside the choices,\n"
+               "     a second path, or two flags that contradict. This was 2\n"
+               "     before 0.4.0, which is why 2 above no longer covers it.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("path", nargs="?",
                         help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")
@@ -123,8 +163,15 @@ def main(argv: Optional[list] = None) -> int:
         # The first version of this refused a path and `--profile` and
         # went on quietly dropping `-q`, whose whole contract is "exit
         # code only", and `-f json`. Half a rule reads as arbitrary.
+        # `is not None`, not truth. `args.path` is None when no path was
+        # given and `""` when one was -- and a shell hands over `""` from
+        # `smtv "$FILE"` with `FILE` unset. Read for truth, the two look
+        # the same, so `--rules ""` printed the listing and dropped what
+        # the caller typed: the silent answer to a different question
+        # that this check exists to refuse, arriving through the shell
+        # instead of through a flag.
         ignored = [name for name, given in (
-            ("a path", args.path), ("--profile", args.profile),
+            ("a path", args.path is not None), ("--profile", args.profile),
             ("-q", args.quiet), ("-f json", args.format != "text"),
             ("-W", args.warnings_as_errors),
             ("--allow-unmatched", args.allow_unmatched),
@@ -149,13 +196,21 @@ def main(argv: Optional[list] = None) -> int:
         for rule in list(all_rules()) + [_meta_rule(args.meta or args.strict_meta)]:
             print("%-8s %-9s %-10s %s" % (rule.id, rule.kind, rule.severity, rule.title))
         return EXIT_OK
-    if args.example and args.path:
+    if args.example and args.path is not None:
         # Whichever one won, the other would be judged without being
         # mentioned -- a report about bytes the caller did not think it
         # was reading, which is what the provenance field exists to stop.
         parser.error("--example judges the bundled package; give it or a "
                      "path, not both")
-    if not (args.path or args.example):
+    if args.path is None and not args.example:
+        # Asked of absence, not of emptiness. `smtv ""` took this branch
+        # while `smtv " "` did not, so the one a shell produces by
+        # accident was called a mistake in the call and the one a person
+        # types was called a path -- a difference of one space deciding
+        # which half of the exit-code contract a caller lands on. It
+        # exited 2 at v0.3.0 and 64 would have been this release's own
+        # regression. An empty path now reaches the loader and comes back
+        # "no such file", like every other path with nothing behind it.
         parser.error("a path is required (or --example, or --rules)")
 
     if args.example:

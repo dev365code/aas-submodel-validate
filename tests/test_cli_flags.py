@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from aas_submodel_validate.cli import main
+from aas_submodel_validate.cli import EXIT_USAGE, main
 from aas_submodel_validate.registry import all_rules
 from builders import env_json, hd_env
 
@@ -88,7 +88,7 @@ def test_an_unknown_profile_is_the_callers_mistake_not_a_finding(capsys):
     a misspelling actually has."""
     with pytest.raises(SystemExit) as raised:
         main(["x.json", "--profile", "02099-1"])
-    assert raised.value.code == 2
+    assert raised.value.code == EXIT_USAGE
     assert "02035-2" in capsys.readouterr().err
 
 
@@ -293,11 +293,14 @@ def test_allow_unmatched_forgives_only_the_presence_rule(tmp_path, capsys):
 
 
 def test_no_path_and_no_rules_is_a_usage_error(capsys):
-    """argparse's own exit: code 2 and a usage line, not a traceback from
-    handing None to the loader two calls later."""
+    """argparse's own exit: a usage code and a usage line, not a traceback
+    from handing None to the loader two calls later.
+
+    The code was 2 until 0.4.0 and is 64 now -- the sentence and the
+    stream are unchanged, only the number a caller branches on."""
     with pytest.raises(SystemExit) as caught:
         main([])
-    assert caught.value.code == 2
+    assert caught.value.code == EXIT_USAGE
     assert "required" in capsys.readouterr().err
 
 
@@ -495,7 +498,7 @@ def test_example_and_a_path_are_two_different_requests(tmp_path, capsys):
     path = _write(tmp_path, json.dumps(hd_env()).encode("utf-8"))
     with pytest.raises(SystemExit) as raised:
         main(["--example", path])
-    assert raised.value.code == 2
+    assert raised.value.code == EXIT_USAGE
 
 
 def test_help_says_what_the_exit_codes_mean(capsys):
@@ -594,7 +597,7 @@ def test_example_and_rules_are_two_different_requests(capsys):
     error. The same kind of mistake, answered two ways."""
     with pytest.raises(SystemExit) as raised:
         main(["--example", "--rules"])
-    assert raised.value.code == 2
+    assert raised.value.code == EXIT_USAGE
     assert "--example" in capsys.readouterr().err
 
 
@@ -617,7 +620,7 @@ def test_the_two_spellings_of_the_meta_dial_cannot_disagree(tmp_path, capsys):
     for level in ("warning", "info"):
         with pytest.raises(SystemExit) as raised:
             main(["--strict-meta", "--meta", level, path])
-        assert raised.value.code == 2
+        assert raised.value.code == EXIT_USAGE
         assert "--strict-meta" in capsys.readouterr().err
 
 
@@ -654,7 +657,7 @@ def test_rules_takes_no_input_and_says_so(tmp_path, capsys):
     for argv in ([path], ["--profile", "02004"]):
         with pytest.raises(SystemExit) as raised:
             main(["--rules"] + argv)
-        assert raised.value.code == 2
+        assert raised.value.code == EXIT_USAGE
         assert "--rules" in capsys.readouterr().err
     assert main(["--rules"]) == 0
     assert len(capsys.readouterr().out.splitlines()) > 100
@@ -686,7 +689,7 @@ def test_rules_takes_only_the_flag_that_changes_the_listing(tmp_path, capsys):
                  ["-W"], ["--allow-unmatched"], ["--require-all-judged"]):
         with pytest.raises(SystemExit) as raised:
             main(["--rules"] + argv)
-        assert raised.value.code == 2, argv
+        assert raised.value.code == EXIT_USAGE, argv
         assert "--rules" in capsys.readouterr().err
 
 
@@ -790,7 +793,7 @@ def test_rules_does_not_answer_before_the_contradiction_is_caught(capsys):
                  ["--rules", "--strict-meta", "--meta", "warning"]):
         with pytest.raises(SystemExit) as raised:
             main(argv)
-        assert raised.value.code == 2, argv
+        assert raised.value.code == EXIT_USAGE, argv
         captured = capsys.readouterr()
         assert "--strict-meta" in captured.err, argv
         # And it did not answer the other request on the way past.

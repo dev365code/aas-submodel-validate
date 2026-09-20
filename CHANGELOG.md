@@ -13,13 +13,16 @@ including anyone validating IDTA 02002 Contact Information submodels,
 the first template written that way to be judged here. It adds a fifth
 and a sixth template pack, so a Carbon Footprint or a Contact
 Information submodel this tool could only report as unmatched (`SMT-D1`)
-is now judged against the template's own rows.
+is now judged against the template's own rows. And anyone whose pipeline
+branches on exit 2: a usage error leaves by 64 from this release, which
+0.3.0 announced one release ahead.
 
 219 rules, 178 generated from the vendored official template files, up
 from 157: the twenty-six generated rows of IDTA 02023 1.0 and the
 thirty-six of IDTA 02002 1.0.1. No rule is removed.
 This is a minor release because it adds templates rather than changing
-how the existing four are read.
+how the existing four are read; it also moves one exit code and raises a
+reported-text bound, both below.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
@@ -32,6 +35,40 @@ names every template there is a table for -- so it grows with each pack,
 403 characters at three and 690 at six, and the bound has to stay clear of
 it. A value a file supplied can therefore appear at twice the length it
 did, which is the cost of not shortening our own sentences.
+
+**If you gate a build on the exit code, read this paragraph.** A
+command-line usage error exits 64 now, as 0.3.0 announced. `notice` An
+unknown option, a missing argument, a value outside the choices, a second
+path the parser cannot place, or two requests that contradict --
+`--example` with a path of your own, `--rules` beside a flag it would have
+to ignore, `--strict-meta` against `--meta info` -- leaves by 64
+(`EX_USAGE`) where it left by 2. Ten shapes move; the last of those is
+worth naming because `--strict-meta` is a hidden spelling that no help
+page lists, so a pipeline pinned on it meets the new code with nothing to
+read.
+
+**Exit 2 is left with the cases where nothing could be judged**: the path
+could not be read, this reader refused what was in it, or this
+installation is missing the bytes it was asked to judge. A usage error
+was the same number as all of those, so a pipeline branching on 2 could
+not tell a file it should look at from a flag somebody mistyped -- and
+the first deserves a human while the second deserves a fix in the script.
+0.3.0 said this was coming a release ahead for exactly that reason.
+
+If you branch on 2, the branch that meant "bad invocation" needs 64; if
+you treat any non-zero code as failure, nothing changes; and if you parse
+the JSON report after checking for 2, check for anything above 1 instead,
+because 64 writes no report either. `--help` and `--version` still exit
+0 -- and they still do so when the call was also wrong, because argparse
+answers them while it is still reading the argv: `smtv --nonesuch
+--version` prints the version and exits 0, while `smtv --format bogus
+--version` exits 64, the bad value having been read first. Where you put
+the flag decides. That is argparse's behaviour and is older than this
+release, but a caller who appends `--version` for logging should know it
+is there. No verdict, report field or `schemaVersion` moves -- a usage
+error never reaches the rules. 64 is the number `sysexits.h` gives that meaning
+(`EX_USAGE`, "command line usage error"), written down here rather than
+read from `os.EX_USAGE`, which does not exist on Windows.
 
 **A Carbon Footprint submodel is now judged, not set aside.** `verdict`
 A submodel wearing `https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0`

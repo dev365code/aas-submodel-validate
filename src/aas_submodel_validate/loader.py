@@ -6,7 +6,9 @@ this module owns is the plumbing around it: the OPC chain (container.py),
 format sniffing, byte order marks, and the discipline that whatever
 breaks on the way in becomes *data* for the container rules to report,
 never an exception -- except a path that cannot be read at all, which is
-the caller's mistake rather than the file's, and a different exit code.
+not a defect in a file and leaves by 2 rather than by a verdict. It is not
+the caller's mistake either: since 0.4.0 that phrase belongs to exit 64,
+which is a wrong flag and not a path with nothing behind it.
 """
 from __future__ import annotations
 

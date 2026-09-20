@@ -158,7 +158,7 @@ A file can be perfectly valid against the AAS metamodel and still not be the sub
 |---|---|---|
 | **Terminal** | a machine with pip | `pip3 install aas-submodel-validate` then `smtv file.aasx` |
 | **Single file** | a machine with no package manager | carry `smtv.pyz`, run `python3 smtv.pyz file.aasx` (`py smtv.pyz file.aasx` on Windows) |
-| **A build** | a pipeline that reads exit codes | `smtv -q -W file.aasx` — 0 pass, 1 findings, 2 could not run |
+| **A build** | a pipeline that reads exit codes | `smtv -q -W file.aasx` — 0 pass, 1 findings, 2 could not run, 64 called incorrectly |
 
 The same rules and the same verdict behind all three. There is no browser door and no hosted service; nothing here uploads a file anywhere, because nothing here opens a socket.
 
@@ -291,7 +291,7 @@ What it refuses to do is written down in [docs/scope.md](https://github.com/dev3
 
 ## Putting it in a build
 
-    smtv -q -W your-submodel.aasx        # 0 pass, 1 findings, 2 could not run
+    smtv -q -W your-submodel.aasx    # 0 pass, 1 findings, 2 could not run, 64 called incorrectly
 
 `-W` fails on every warning, including the ones relayed from
 aas-core3.0 about the metamodel. Those are not always somebody else's
@@ -430,10 +430,11 @@ suite and fail the build when they go stale.
 document with a `schemaVersion`, described field by field in
 [docs/report-schema.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/report-schema.md).
 Keys are added without moving the version; nothing is renamed or removed
-under one. Exit codes are 0, 1 and 2 and mean what the page above says. In
-the next minor release a command-line usage error -- an unknown option or
-a missing argument -- will exit 64 (EX_USAGE) instead of 2, leaving 2 to
-mean only that the run could not judge the input.
+under one. Exit codes are 0, 1, 2 and 64, and mean what the page above
+says. 64 (`EX_USAGE`) is a mistake in how the tool was called -- an
+unknown option, a missing argument, two requests at once. It was 2 until
+0.4.0, announced a release ahead in 0.3.0, so 2 now says only that the
+run could not judge the input.
 There is no importable Python API yet — the supported way to call this
 from another program is the command and the JSON:
 
@@ -442,8 +443,8 @@ import json, subprocess
 
 done = subprocess.run(["smtv", "-f", "json", "submodel.aasx"],
                       capture_output=True, text=True)
-if done.returncode == 2:            # could not run; nothing was judged
-    raise SystemExit(done.stderr)
+if done.returncode >= 2:            # 2 could not run, 64 called wrong;
+    raise SystemExit(done.stderr)   # neither writes a report to parse
 report = json.loads(done.stdout)
 for finding in report["findings"]:
     print(finding["rule"], finding["severity"], finding["message"], finding["fix"])

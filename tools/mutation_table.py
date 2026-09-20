@@ -735,6 +735,36 @@ TABLE = [
      "absolute -- a relative reference like 'Model-1234/Serial' passes the "
      "metamodel and this rule both, and is not the unique global "
      "identification the template's definition asks for"),
+    ("cli/a-usage-error-leaves-by-64",
+     "src/aas_submodel_validate/cli.py",
+     "        raise SystemExit(EXIT_USAGE)",
+     "        raise SystemExit(EXIT_ERROR)",
+     ["tests/test_a_usage_error_exits_64.py::test_a_wrong_call_exits_64"],
+     "0.3.0 announced, one release ahead and in four public places, that a "
+     "usage error would leave by 64. Put the old code back and every wrong "
+     "call is 2 again -- indistinguishable from a file that could not be "
+     "judged, which is the conflation the announcement was about. Measured: "
+     "nineteen assertions die, and eight of them are in test_cli_flags.py, "
+     "which this release converted to the constant. What nothing catches is "
+     "the sentence, which is argparse's and is unchanged -- an earlier "
+     "version of this row said nothing else notices at all, and the suite "
+     "disproved it in one run."),
+    ("cli/could-not-run-did-not-quietly-become-called-wrong",
+     "src/aas_submodel_validate/cli.py",
+     "              % (refusal or \"nothing in %s was judged\" % path), "
+     "file=sys.stderr)\n        return EXIT_ERROR",
+     "              % (refusal or \"nothing in %s was judged\" % path), "
+     "file=sys.stderr)\n        return EXIT_USAGE",
+     ["tests/test_a_usage_error_exits_64.py::test_could_not_run_still_exits_2"],
+     "the other half of the same release, and the half a change like this "
+     "loses by accident: moving usage errors off 2 buys nothing if a path "
+     "that cannot be read drifts onto 64 with them, and a pipeline would "
+     "then read a missing file as its own mistake and stop looking for the "
+     "file. Aimed here rather than at the `UnreadablePath` clause above, "
+     "which the first version of this row picked and where the mutant "
+     "survived: `runner.run` catches that exception and returns a report, "
+     "so the clause in `cli` is not on the path any unreadable input "
+     "takes -- measured with `trace` over five shapes, and again by making the clause raise and running the suite, which stayed green."),
 
 ]
 

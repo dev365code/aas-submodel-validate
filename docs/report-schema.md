@@ -3,10 +3,12 @@
 `smtv -f json` writes one JSON object to stdout. This is what is in it,
 and what the version number at the top of it promises.
 
-One run writes nothing there: `-q`, which asks for the exit code alone.
-In the next minor release a command-line usage error -- an unknown option
-or a missing argument -- will exit 64 (EX_USAGE) instead of 2; exit 2 will
-then mean only that the run could not judge the input.
+Three runs write nothing there. `-q` asks for the exit code alone. A
+command-line usage error -- an unknown option, a missing argument, a
+value outside the choices, a second path, or two flags that contradict --
+exits 64 (`EX_USAGE`) and writes no report, because no input was read. And
+a path that could not be read at all has none to give, which is the next
+paragraph. A usage error exited 2 before 0.4.0; 2 no longer covers it.
 Exit 2 sometimes does and sometimes does not — an input this reader
 refused comes back with a report saying what was refused and what to do
 about it, while a path that could not be read at all has no report to
