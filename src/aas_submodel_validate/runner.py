@@ -491,15 +491,34 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # same contradiction the battery pack had repaired once.
     report.submodels_judged = len(detect.judged(ctx))
     if supplied is not None:
-        report.notes.append(
-            "judged against the template you supplied (%s), which is not a "
-            "published IDTA template; what a template states is checked and "
-            "nothing else." % template)
         answered = supplied["table"].TEMPLATE_SEMANTIC_ID
-        if any(pack.semantic_id == answered for pack in detect.PACKS):
+        took_part = rules.engine.matched_submodels(ctx, supplied["table"])
+        if took_part:
+            report.notes.append(
+                "judged against the template you supplied (%s), which is not "
+                "a published IDTA template; what a template states is checked "
+                "and nothing else. A verdict against a template you supplied "
+                "is not a statement about conformance to a published one."
+                % template)
+        else:
+            # Said, rather than left to a `provenance.template` a consumer
+            # reads as "this verdict was made against a supplied template".
+            # Measured: with `--example` and a template claiming something
+            # the bundled document does not carry, the pack produced the
+            # entire verdict and the note claimed it.
+            report.notes.append(
+                "the template you supplied (%s) claims %s, which no submodel "
+                "in this input declares; nothing was judged against it and "
+                "this verdict is this tool's own."
+                % (template, answered))
+        if took_part and any(pack.semantic_id == answered
+                             for pack in detect.PACKS):
             report.notes.append(
                 "a pack of this tool's own also answers for %s and stood "
-                "down; your template decided this run." % answered)
+                "down; your template decided this run. None of that pack's "
+                "rules ran -- not its table and not its hand-written ones, "
+                "which are readings of a specification and are not "
+                "derivable from a template (docs/scope.md)." % answered)
     report.findings.sort(key=_reading_order)
     # The registered rules, not everything that ran. A table the caller
     # supplied contributes rules on purpose and registers none of them,

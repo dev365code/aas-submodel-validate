@@ -56,13 +56,35 @@ def test_the_report_says_the_template_was_not_idtas(tmp_path):
     """A verdict against a file the caller brought is not a verdict
     against a published template, and a reader who cannot tell the two
     apart has been told something untrue."""
+    import hashlib
+
+    from aas_submodel_validate import tablegen
+
     document = runner.run(_instance(tmp_path), template=VENDORED).as_dict()
     provenance = document["provenance"]
     assert "template" in provenance, sorted(provenance)
     said = provenance["template"]
-    assert said["sha256"], "the report does not name the bytes it judged against"
+
+    # Every field, not the one that was easy to assert. Four of the five
+    # could be wrong with the whole suite green -- measured, including
+    # the strongest of them: `sha256` set to the digest of the *input*,
+    # which is the field whose entire purpose is naming the bytes that
+    # judged.
     assert said["published"] is False, (
         "the report presents a supplied template as a published one")
+    assert said["sha256"] == hashlib.sha256(VENDORED.read_bytes()).hexdigest(), (
+        "the report names bytes that are not the template's")
+    assert said["sha256"] != provenance["inputSha256"], (
+        "the template's digest is the input's")
+    assert said["path"] == str(VENDORED), said["path"]
+    assert said["semanticId"] == "0173-1#01-AHX837#002", said["semanticId"]
+    built = tablegen.table_from(
+        json.loads(VENDORED.read_text("utf-8-sig")),
+        {"prefix": "TPL-E", "citation": "c", "skip_sids": frozenset(),
+         "item_names": {}, "example_types": ()})
+    assert said["rows"] == len(built.ROWS) > 0, (
+        "the report says %r rows and the table has %d"
+        % (said["rows"], len(built.ROWS)))
 
 
 def test_a_template_that_is_not_a_template_is_refused_at_2(tmp_path):
@@ -93,11 +115,39 @@ def test_a_template_with_too_many_rows_is_refused(tmp_path):
                             "keys": [{"type": "GlobalReference",
                                       "value": "urn:x:%d" % i}]}}
             for i in range(tablegen.MAX_TEMPLATE_ROWS + 1)]}]}
+    pack = {"prefix": "TPL-E", "citation": "c", "skip_sids": frozenset(),
+            "item_names": {}, "example_types": ()}
     with pytest.raises(tablegen.TemplateRefused) as refused:
-        tablegen.build(enormous, {"prefix": "TPL-E", "citation": "c",
-                                  "skip_sids": frozenset(), "item_names": {},
-                                  "example_types": ()})
+        tablegen.build(enormous, pack)
     assert "rows" in str(refused.value), refused.value
+
+    # Nested, not only flat. The bound counts every row and the first
+    # version of this test built the rows at the top level, so a bound
+    # that counted only those would have passed it -- measured: swapping
+    # the counter for `len(tree)` left the whole suite green while three
+    # top-level collections holding twenty thousand children each sailed
+    # through.
+    def nest(rows):
+        children = [{"modelType": "Property", "idShort": "P%d" % i,
+                     "valueType": "xs:string",
+                     "semanticId": {"type": "GlobalReference",
+                                    "keys": [{"type": "GlobalReference",
+                                              "value": "urn:x:%d" % i}]}}
+                    for i in range(rows)]
+        return {"modelType": "SubmodelElementCollection", "idShort": "Holder",
+                "semanticId": {"type": "GlobalReference",
+                               "keys": [{"type": "GlobalReference",
+                                         "value": "urn:x:holder"}]},
+                "value": children}
+
+    deep = dict(enormous)
+    deep["submodels"] = [dict(enormous["submodels"][0],
+                              submodelElements=[nest(tablegen.MAX_TEMPLATE_ROWS)])]
+    with pytest.raises(tablegen.TemplateRefused) as nested:
+        tablegen.build(deep, pack)
+    assert "rows" in str(nested.value), (
+        "a template whose rows are nested rather than flat was not counted: %s"
+        % nested.value)
 
 
 def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
@@ -404,3 +454,73 @@ def test_a_published_number_does_not_move_with_a_flag(tmp_path):
         % (registered, with_template["summary"]["rulesChecked"]))
     assert with_template["provenance"]["template"]["rows"] > 0, (
         "and the template's own contribution is nowhere")
+
+
+def test_a_template_that_matched_nothing_does_not_claim_the_verdict(tmp_path):
+    """The note said "judged against the template you supplied" on a run
+    where that template matched nothing at all.
+
+    Measured with `--example` and a template claiming an identifier the
+    bundled document does not carry: the 02004 pack produced the entire
+    verdict and the report said otherwise, with `provenance.template`
+    present, which a consumer reads as "this verdict was made against a
+    supplied template".
+    """
+    import contextlib
+    import io
+
+    from aas_submodel_validate.cli import main
+
+    unmatched = _unclaimed_template(tmp_path)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        main([str(_instance(tmp_path)), "--template", str(unmatched)])
+    screen = out.getvalue()
+    assert "judged against the template you supplied" not in screen, (
+        "the report claims a verdict the supplied template took no part in")
+    assert "no submodel in this input declares" in screen, screen
+
+
+def test_standing_down_says_what_it_cost(tmp_path):
+    """A pack that stands down stops answering entirely — its table, its
+    hand-written rules and its lints — and the note said only that it
+    "stood down".
+
+    Measured on 02003: without the flag the report carries `TD-E01` and
+    `TDL2`; with it, `TPL-E01` alone. The info finding is gone and
+    nothing said a check was lost. A reader comparing two reports of one
+    file would see the run get quieter and read that as the file
+    improving.
+    """
+    vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
+                / "02003" / "2.0.1" / "template.json")
+    without = runner.run(_instance(tmp_path))
+    with_it = runner.run(_instance(tmp_path), template=vendored)
+
+    lost = ({f.id for f in without.findings}
+            - {f.id for f in with_it.findings})
+    assert lost, "this test proves nothing: the pack lost no finding"
+    said = " ".join(with_it.notes or [])
+    assert "hand-written" in said or "none of its rules" in said, (
+        "the note says a pack stood down and not what that removed: %r" % said)
+
+
+def test_the_help_page_says_a_supplied_verdict_is_not_a_conformance_claim(capsys):
+    """The load-bearing sentence lived in `docs/scope.md` and the
+    CHANGELOG and reached neither `--help` nor the terminal.
+
+    A stranger reading `--help` is the reader most likely to use the flag
+    without reading either, and "what the generator cannot read from a
+    template is not checked" is circular to somebody who does not know
+    what a generator reads."""
+    import pytest as _pytest
+
+    from aas_submodel_validate.cli import main
+
+    with _pytest.raises(SystemExit):
+        main(["--help"])
+    page = " ".join(capsys.readouterr().out.split())
+    assert "--template" in page
+    assert "not a statement about conformance" in page, page
+    for named in ("hand-written", "which elements"):
+        assert named in page, "the help page does not say %r" % named

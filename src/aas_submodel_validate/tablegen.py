@@ -1,8 +1,11 @@
 """Rows from a template document — the half of the generator that reads.
 
 Split out of `tools/extract_smt_rules.py` and moved here for one reason:
-`tools/` is not installed. It is not in the wheel (measured: a built
-wheel has 56 members and none of them under `tools`), and putting it
+`tools/` is not installed. It is not in the wheel, and none of a built wheel's members is under
+`tools` -- which is the half that matters and is checked by
+`tools/check_distributions.py` on every push. (An earlier version of
+this sentence quoted the member count, and the count moved the day
+this module was added to it.), and putting it
 there would install two more top-level names into everybody's
 site-packages, which `tools/check_distributions.py` refuses in writing.
 So an installed copy of this package could not build a table, and

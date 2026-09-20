@@ -133,11 +133,14 @@ def main(argv: Optional[list] = None) -> int:
                              % (", ".join(_PROFILE_KEYS), ", ".join(settles_only())))
     parser.add_argument("--template", metavar="FILE",
                         help="judge against an IDTA-shaped template file of "
-                             "your own instead of waiting for a pack. The "
-                             "report says the table came from your file and "
-                             "is not a published IDTA template; what the "
-                             "generator cannot read from a template is not "
-                             "checked")
+                             "your own. Only what a template states is "
+                             "checked: which elements, of which kind, under "
+                             "which identifiers, how many of each. The "
+                             "hand-written rules and recorded readings that "
+                             "come with a pack are not derivable from a "
+                             "template and do not apply. A verdict against a "
+                             "template you supplied is not a statement about "
+                             "conformance to a published IDTA template")
     parser.add_argument("--example", action="store_true",
                         help="judge the official IDTA 02004 example that "
                              "travels in this package; needs no file of your "

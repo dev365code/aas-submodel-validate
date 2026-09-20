@@ -95,3 +95,17 @@ def test_the_walk_accepts_a_table_that_is_not_a_module(tmp_path):
     assert analysed is not None
     assert engine.analyze(ctx, built) is analysed, \
         "the walk re-analysed; its cache keys on a name this table does not keep"
+
+    # And two different templates do not share one walk. The cache is
+    # keyed on `__name__`, which is a digest of the document for exactly
+    # this reason -- and a constant name satisfies the assertion above,
+    # measured: with the digest replaced by a literal the whole suite
+    # stayed green. Sharing a walk silently is the failure the table
+    # argument was stripped of its default to prevent.
+    other_pack = next(p for _w, p in PACKS if p["output"].name == "hd_tables.py")
+    other = tablegen.table_from(
+        json.loads(other_pack["template"].read_text("utf-8-sig")), other_pack)
+    assert other.__name__ != built.__name__, (
+        "two templates are named the same: %r" % built.__name__)
+    assert engine.analyze(ctx, other) is not analysed, (
+        "a different template was handed the first one's walk")
