@@ -57,6 +57,18 @@ document being judged because they are different files: forty-six
 megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
 
+**Three things the mode did not say.** `note` A template file may
+declare more than one submodel; the table comes from the first, and the
+report now says how many the file held and which one answered — a caller
+could not tell "my other templates matched nothing" from "my other
+templates were never read", and those ask opposite things of them. A
+supplied table takes an identifier from **both** sides of a `--profile`
+pair, so passing both flags left the profile deciding nothing in
+silence; it is said now. And the note saying your template made this
+verdict and the note saying nothing was judged against it could both
+appear in one report, which is two incompatible statements about one
+file.
+
 **A run over many submodels is faster, and a wide `--template` run is
 much faster.** `note` No verdict moves; this is what the same verdict
 costs. Every generated rule opens by asking which submodels its table

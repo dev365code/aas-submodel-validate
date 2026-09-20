@@ -382,7 +382,13 @@ def _supplied_table(template):
         raise tablegen.TemplateRefused(
             "%s parses as JSON and is not shaped like an IDTA template: "
             "%s: %s" % (path, type(exc).__name__, exc)) from exc
-    return {"table": table, "pack": pack, "sha256": digest}
+    # How many the file held, not how many were read. `build` takes the
+    # first submodel and there is no way for a reader to tell "your
+    # other templates matched nothing" from "your other templates were
+    # never opened" -- and those ask opposite things of them.
+    declared = len(document["submodels"]) if isinstance(document, dict) else 1
+    return {"table": table, "pack": pack, "sha256": digest,
+            "declared": declared}
 
 
 def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
@@ -473,6 +479,26 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             "--profile %s named a template no submodel here answers to, so it "
             "chose nothing; the verdict is the one you would have got without it"
             % profile)
+    # The other way the flag decides nothing, and the quiet one. A
+    # supplied table takes an identifier from *both* sides of a pair, so
+    # the choice is made before the flag is read -- and the note above
+    # asks `Selection.chosen`, which knows about the pair and not about
+    # the stand-down, so it stays silent on exactly this run. The
+    # stand-down note beside it names the pack that stood down and not
+    # the flag that selected it, and a caller who passed the flag on
+    # purpose reads that as their side having answered.
+    elif profile in rules.profiles.KEYS:
+        overridden = sorted(
+            pair.default.TEMPLATE_SEMANTIC_ID
+            for pair in rules.profiles.PROFILES
+            if profile in (pair.key, pair.default_key)
+            and pair.default.TEMPLATE_SEMANTIC_ID in ctx.taken_over)
+        if overridden:
+            report.notes.append(
+                "--profile %s chose nothing: the template you supplied "
+                "answers for %s, which is the identifier that pair "
+                "publishes, so both sides of it stood down."
+                % (profile, ", ".join(overridden)))
     # What the battery pack could look at in this run, computed from its
     # table rather than quoted from a document, and marked as the floor
     # it is. A note and not a finding: it reports the reach of a check,
@@ -537,6 +563,21 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                 "in this input declares; nothing was judged against it and "
                 "this verdict is this tool's own."
                 % (template, answered))
+        # A third statement, and not a branch of the two above: those
+        # two are one question with two answers -- did your template
+        # judge anything -- and this is a different question about the
+        # same file. Written between them, it took the `else` from the
+        # first, and then every single-submodel template that *did*
+        # answer drew the sentence meant for one that answered nothing.
+        # Said whether or not it answered, because a file whose second
+        # template is the one the input declares looks exactly like a
+        # file whose template matches nothing, and the reader can act on
+        # the first.
+        if supplied["declared"] > 1:
+            report.notes.append(
+                "the template file declares %d submodels; the table came "
+                "from the first of them (%s) and the rest were not read."
+                % (supplied["declared"], answered))
         if took_part and any(pack.semantic_id == answered
                              for pack in detect.PACKS):
             report.notes.append(

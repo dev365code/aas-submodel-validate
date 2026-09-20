@@ -938,6 +938,47 @@ TABLE = [
      "memoisation above back out moves this layer to 3.98x, and moved "
      "nothing the other four measure"),
 
+    ("template/who-judged-is-one-question-with-two-answers",
+     "src/aas_submodel_validate/runner.py",
+     # The `else` losing its `if`, which is how this happened: a third
+     # note was written between the two halves and took the branch.
+     '        else:\n'
+     '            # Said, rather than left to a `provenance.template` a consumer',
+     '        if True:\n'
+     '            # Said, rather than left to a `provenance.template` a consumer',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_the_two_notes_about_who_judged_cannot_both_be_said"],
+     "one note says the supplied template made this verdict and the "
+     "other says nothing was judged against it. Written as one if/else "
+     "and then a third note was inserted between the halves, which "
+     "handed the else to the new condition -- every single-submodel "
+     "template that did answer then drew both sentences, and the whole "
+     "suite stayed green because nothing asked whether they could "
+     "appear together"),
+
+    ("template/a-profile-the-template-overrode-is-said",
+     "src/aas_submodel_validate/runner.py",
+     "    elif profile in rules.profiles.KEYS:",
+     "    elif False:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_profile_the_supplied_template_overrode_is_not_left_unsaid"],
+     "a supplied table takes an identifier from both sides of a profile "
+     "pair, so the flag is decided before it is read. The note for a "
+     "flag that chose nothing asks `Selection.chosen`, which knows "
+     "about the pair and not about the stand-down, so it was silent on "
+     "exactly the run where the flag was overridden"),
+
+    ("template/a-file-of-several-templates-says-so",
+     "src/aas_submodel_validate/runner.py",
+     '        if supplied["declared"] > 1:',
+     '        if False:',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_template_file_holding_more_than_one_template_says_so"],
+     "the table comes from the first submodel in the file and the rest "
+     "are not read. Without this a caller cannot tell 'your other "
+     "templates matched nothing' from 'your other templates were never "
+     "opened', and those ask opposite things of them"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

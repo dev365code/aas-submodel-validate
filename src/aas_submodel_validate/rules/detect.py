@@ -148,7 +148,7 @@ def judgeable(ctx):
                        for identifier in taken)]
 
 
-def judged(ctx, extra=()):
+def judged(ctx):
     """Every instance submodel something in this tool judged.
 
     `matched` is the template half and was standing in for the whole,
@@ -172,8 +172,11 @@ def judged(ctx, extra=()):
     # module-level list of what this project vendored, so without this a
     # submodel judged against a template the caller supplied is counted
     # as unjudged -- findings about it in the report and `judged 0 of 1`
-    # under them.
-    for table in tuple(extra) + tuple(getattr(ctx, "supplied", ())):
+    # under them. It reads the context and takes no argument of its own:
+    # a parameter for the same tables was carried here for a while and
+    # never passed by anybody, which is a second way of answering one
+    # question and the thing the context field exists to stop.
+    for table in tuple(getattr(ctx, "supplied", ())):
         seen.update(id(submodel) for submodel in instances(ctx.loaded)
                     if submodel_declares(submodel, table.TEMPLATE_SEMANTIC_ID))
     return seen

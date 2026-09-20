@@ -150,46 +150,92 @@ def test_a_template_with_too_many_rows_is_refused(tmp_path):
         % nested.value)
 
 
-def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
-    """The same verdict from every entrance, asked as bytes.
+def _console_script_shim(tmp_path):
+    """The file an installer writes for `[project.scripts]`, built from
+    the declaration instead of from an install.
 
-    The command line, the library and the single file are the same engine
-    or they are not one engine. Compared as the JSON document, because
-    that is the contract, and a difference anywhere in it is a difference
-    a consumer sees.
+    Running an installed `smtv` would run whichever one is on the PATH,
+    which on a developer machine is an older release and in a fresh
+    checkout is nothing at all. What has to hold is narrower and is
+    entirely in this tree: the target named in `pyproject.toml` is a
+    callable, and reaching the tool through it gives the same verdict as
+    reaching it any other way. A shim generated from that declaration
+    asks exactly that, and goes red if the declaration moves.
+    """
+    import re
+
+    pyproject = (ROOT / "pyproject.toml").read_text("utf-8")
+    block = re.search(r"(?ms)^\[project\.scripts\]\n(.*?)(?=^\[|\Z)",
+                      pyproject)
+    assert block, "no [project.scripts] to build a console script from"
+    targets = {}
+    for line in block.group(1).splitlines():
+        name, sep, value = line.partition("=")
+        if sep:
+            targets[name.strip()] = value.strip().strip('"').strip("'")
+    assert "smtv" in targets, sorted(targets)
+    module, _, function = targets["smtv"].partition(":")
+    shim = tmp_path / "smtv-console-script.py"
+    shim.write_text("import sys\nfrom %s import %s\nsys.exit(%s())\n"
+                    % (module, function, function), encoding="utf-8")
+    return shim
+
+
+def _verdicts_through_every_entrance(tmp_path):
+    """One verdict per entrance, as the JSON document a consumer reads.
+
+    The roster below is these keys, so the list and the comparison
+    cannot drift: the list used to name the console script while the
+    comparison ran the package, the library and the single file, and the
+    gate that reads it passed.
     """
     import os
     import subprocess
     import sys
 
     instance = _instance(tmp_path)
-    from_library = json.dumps(
-        runner.run(instance, template=VENDORED).as_dict(), indent=2)
 
     def through(argv):
-        done = subprocess.run(argv, capture_output=True, text=True, cwd=str(ROOT),
+        done = subprocess.run(argv, capture_output=True, text=True,
+                              cwd=str(ROOT),
                               env=dict(os.environ, PYTHONPATH="src"))
         assert done.returncode in (0, 1), done.stderr
         return done.stdout.rstrip("\n")
 
-    command = through([sys.executable, "-m", "aas_submodel_validate",
-                       str(instance), "--template", str(VENDORED), "-f", "json"])
-
     single = tmp_path / "smtv.pyz"
-    built = subprocess.run([sys.executable, str(ROOT / "tools" / "build_zipapp.py"),
+    built = subprocess.run([sys.executable,
+                            str(ROOT / "tools" / "build_zipapp.py"),
                             "-o", str(single)], capture_output=True, text=True,
                            cwd=str(ROOT))
     assert built.returncode == 0, built.stdout + built.stderr
-    archive = through([sys.executable, str(single), str(instance),
-                       "--template", str(VENDORED), "-f", "json"])
 
-    # Three entrances, which is every one this tree has -- see
-    # `test_the_parity_test_covers_every_entrance_this_tree_has`, which
-    # goes red if a fourth appears. `path` is the one field that could
-    # legitimately differ and does not here: all three are handed the
-    # same absolute path.
-    assert command == from_library, "the command line and the library disagree"
-    assert archive == from_library, "the single file and the library disagree"
+    tail = [str(instance), "--template", str(VENDORED), "-f", "json"]
+    return {
+        "library": json.dumps(
+            runner.run(instance, template=VENDORED).as_dict(), indent=2),
+        "python -m": through([sys.executable, "-m", "aas_submodel_validate"]
+                             + tail),
+        "console script": through([sys.executable,
+                                   str(_console_script_shim(tmp_path))] + tail),
+        "single file": through([sys.executable, str(single)] + tail),
+    }
+
+
+def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
+    """The same verdict from every entrance, asked as bytes.
+
+    The command line, the console script, the library and the single
+    file are the same engine or they are not one engine. Compared as the
+    JSON document, because that is the contract, and a difference
+    anywhere in it is a difference a consumer sees.
+
+    `path` is the one field that could legitimately differ and does not
+    here: every entrance is handed the same absolute path.
+    """
+    verdicts = _verdicts_through_every_entrance(tmp_path)
+    expected = verdicts["library"]
+    for entrance, seen in sorted(verdicts.items()):
+        assert seen == expected, "%s and the library disagree" % entrance
 
 
 def test_a_run_time_rule_id_never_reaches_the_coverage_record(tmp_path):
@@ -591,11 +637,15 @@ def _entrances_the_tree_declares():
 
 
 #: What `test_the_same_template_gives_the_same_verdict_from_every_entrance`
-#: actually runs. Kept beside it so the two cannot drift apart silently.
-COMPARED_ENTRANCES = ("python -m", "console script", "single file")
+#: actually runs -- read off the comparison rather than written beside
+#: it. Written beside it, this named the console script while the
+#: comparison ran the package, the library and the single file, and the
+#: gate below read the list and passed.
+def _compared_entrances(tmp_path):
+    return set(_verdicts_through_every_entrance(tmp_path))
 
 
-def test_the_parity_test_covers_every_entrance_this_tree_has():
+def test_the_parity_test_covers_every_entrance_this_tree_has(tmp_path):
     """"The same verdict from every entrance" is only worth what the
     comparison covers.
 
@@ -607,9 +657,10 @@ def test_the_parity_test_covers_every_entrance_this_tree_has():
     without somebody remembering.
     """
     declared = set(_entrances_the_tree_declares())
-    assert declared <= set(COMPARED_ENTRANCES), (
+    compared = _compared_entrances(tmp_path)
+    assert declared <= compared, (
         "this tree declares %s and the comparison covers %s"
-        % (sorted(declared), sorted(COMPARED_ENTRANCES)))
+        % (sorted(declared), sorted(compared)))
     assert "github action" not in declared, (
         "an action exists now; add it to the comparison and to this list")
 
@@ -861,3 +912,123 @@ def test_a_template_this_reader_cannot_open_is_a_refusal_not_a_traceback(tmp_pat
 
     assert main([str(_instance(tmp_path)), "--template",
                  str(tmp_path / "no-such-template.json"), "-q"]) == 2
+
+
+# -- what the file held, and what was read out of it --------------------------
+
+def _two_template_file(tmp_path):
+    """One file declaring two templates, which is a legal environment."""
+    def ref(value):
+        return {"type": "GlobalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def template(semantic_id, short):
+        return {"kind": "Template", "idShort": short, "id": "urn:t:" + short,
+                "semanticId": ref(semantic_id),
+                "submodelElements": [{
+                    "modelType": "SubmodelElementCollection",
+                    "idShort": short + "Type",
+                    "semanticId": ref(semantic_id + "/Type"), "value": [],
+                    "qualifiers": [{"type": "SMT/Cardinality",
+                                    "valueType": "xs:string",
+                                    "value": "One"}]}]}
+
+    path = tmp_path / "two-templates.json"
+    path.write_text(json.dumps({"submodels": [
+        template(UNCLAIMED, "SoftwareNameplate"),
+        template(UNCLAIMED + "/second", "Second")]}), encoding="utf-8")
+    return path
+
+
+def test_a_template_file_holding_more_than_one_template_says_so(tmp_path):
+    """The table comes from the first submodel in the file. Nothing said
+    the others were there.
+
+    A caller whose file declares three templates gets a verdict about
+    one of them, a `provenance.template` naming one identifier, and a
+    summary counting the submodels that identifier matched -- and
+    nothing anywhere distinguishes "your other templates matched
+    nothing" from "your other templates were never read". Those call for
+    opposite things from the reader, and the report let them look
+    identical.
+
+    It is a note rather than a refusal: an environment may legitimately
+    carry several templates, and a reader who is told which one answered
+    can split the file or reorder it. What it may not be is quiet.
+    """
+    report = runner.run(_unclaimed_instance(tmp_path),
+                        template=_two_template_file(tmp_path))
+    notes = " ".join(report.notes)
+    assert "2 submodels" in notes or "two submodels" in notes, (
+        "the template file declares two submodels and only the first was "
+        "read; the report does not say so: %r" % report.notes)
+    assert UNCLAIMED in notes, (
+        "the note does not name the template the table came from: %r"
+        % report.notes)
+
+
+def test_a_profile_the_supplied_template_overrode_is_not_left_unsaid(tmp_path):
+    """`--profile` chooses between two templates publishing one submodel
+    identifier. A supplied table claiming that identifier takes it from
+    both, so the flag decides nothing -- and nothing said so.
+
+    The note that exists for a flag that chose nothing asks
+    `Selection.chosen`, which knows about the pair and not about the
+    stand-down, so it stays quiet on exactly the run where the flag was
+    overridden. A caller who passed `--profile 02035-2` on purpose is
+    entitled to know their choice was not the one that answered; the
+    stand-down note beside it names the pack that stood down and not
+    the flag that selected it.
+    """
+    import copy
+
+    from builders import hd_env
+
+    instance = tmp_path / "handover.json"
+    instance.write_bytes(json.dumps(copy.deepcopy(hd_env())).encode("utf-8"))
+    vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
+                / "02004" / "2.0.1" / "template.json")
+
+    report = runner.run(instance, profile="02035-2", template=vendored)
+    said = " ".join(report.notes)
+    assert "--profile 02035-2" in said, (
+        "the flag was overridden by the supplied template and no note "
+        "mentions it: %r" % report.notes)
+    assert "chose nothing" in said or "did not choose" in said, (
+        "the notes never say the flag decided nothing: %r" % report.notes)
+
+
+def test_the_two_notes_about_who_judged_cannot_both_be_said(tmp_path):
+    """One of them says the supplied template made this verdict and the
+    other says nothing was judged against it. A report carrying both
+    tells a reader two incompatible things about the same file.
+
+    They were written as one `if`/`else` and a later note was inserted
+    between the two halves, which handed the `else` to the new
+    condition: every single-submodel template that *did* answer then
+    drew the sentence meant for one that answered nothing. The whole
+    suite stayed green, because nothing asked whether the two could
+    appear together.
+    """
+    import copy
+
+    from builders import hd_env
+
+    instance = tmp_path / "handover.json"
+    instance.write_bytes(json.dumps(copy.deepcopy(hd_env())).encode("utf-8"))
+    vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
+                / "02004" / "2.0.1" / "template.json")
+
+    claimed = "judged against the template you supplied"
+    disowned = "nothing was judged against it"
+    for label, report in (
+            ("it answered", runner.run(instance, template=vendored)),
+            ("it answered nothing",
+             runner.run(_unclaimed_instance(tmp_path), template=vendored)),
+            ("two templates in the file",
+             runner.run(instance, template=_two_template_file(tmp_path)))):
+        said = " ".join(report.notes)
+        assert (claimed in said) != (disowned in said), (
+            "%s: the report says both that the supplied template made this "
+            "verdict and that nothing was judged against it -- %r"
+            % (label, report.notes))
