@@ -986,3 +986,35 @@ def test_the_summary_the_page_quotes_is_the_one_printed(tmp_path):
     printed = re.search(r"\(not a full verdict: [^)]*\)", render(runner.run(path))).group(0)
     quoted = re.findall(r"`(\(not a full verdict: [^)]*\))`", FLOWED)
     assert len(quoted) == 2 and set(quoted) == {printed}, (quoted, printed)
+
+
+def test_the_release_page_states_the_schema_version_the_code_writes():
+    """The page tells a reader to pin a version and says what 1.0 will
+    mean: the report's schema frozen at the number it carries today.
+
+    That number is a literal in `model.as_dict` and a word in prose,
+    which is the pair that drifts. When `schemaVersion` moves to 2, the
+    sentence promising to freeze 1 is a promise about a document this
+    tool no longer writes.
+
+    Asked of a report this code produces, not of a constant: there is no
+    constant, and reading the literal out of the source with `ast` would
+    be asking the same file twice rather than asking what it writes.
+    """
+    import json
+
+    from aas_submodel_validate import runner
+
+    # Any report carries the version, including the one a refused input
+    # gets -- which is the one to ask for here, because it needs no
+    # fixture to exist and so cannot start passing for the wrong reason
+    # the day a fixture is renamed.
+    written = runner.run("no-such-file-this-test-invents.json").as_dict()
+    carried = json.loads(json.dumps(written))["schemaVersion"]
+    assert isinstance(carried, int), carried
+
+    section = README.split("## Releases and version numbers")[1]
+    section = section.split("\n## ")[0]
+    assert "`schemaVersion: %d`" % carried in section, (
+        "the page freezes a schema version the code does not write; a "
+        "report carries %d" % carried)
