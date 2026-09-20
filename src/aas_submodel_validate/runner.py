@@ -386,7 +386,14 @@ def _supplied_table(template):
     # first submodel and there is no way for a reader to tell "your
     # other templates matched nothing" from "your other templates were
     # never opened" -- and those ask opposite things of them.
-    declared = len(document["submodels"]) if isinstance(document, dict) else 1
+    #
+    # Read without a guard, because `build` has already refused anything
+    # this could fail on: a document that is not a dict, or one whose
+    # `submodels` is missing or empty, leaves as a `TemplateRefused`
+    # above. A guard here would be a second answer to a question already
+    # settled, and the branch under it could not be entered -- which is
+    # the shape a dead `except` clause in `cli` was just removed for.
+    declared = len(document["submodels"])
     return {"table": table, "pack": pack, "sha256": digest,
             "declared": declared}
 
