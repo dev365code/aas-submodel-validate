@@ -1,9 +1,23 @@
-# Every pull-request commit must carry a Signed-off-by line — the Developer
-# Certificate of Origin, explained in CONTRIBUTING.md. Checked here rather
-# than trusted, for the same reason everything else in this repository is.
+# Every commit must carry a Signed-off-by line — the Developer Certificate
+# of Origin, explained in CONTRIBUTING.md. Checked here rather than trusted,
+# for the same reason everything else in this repository is.
+#
+# This ran on `pull_request` alone until 0.4.1, and this repository has had
+# no pull requests: the GitHub API reported zero runs of it, against 213 of
+# `ci.yml` and 8 of `release.yml`. Every commit did carry the line, so
+# nothing was wrong — which is the difficulty. The workflow looked like the
+# reason the trailers were there and had never once checked. A gate that has
+# never been red is a comment; CONTRIBUTING says so in those words.
+#
+# It runs on pushes now, and the range it reads is the one the event
+# describes rather than one computed from pull-request fields.
 name: dco
 
-on: pull_request
+on:
+  push:
+    branches: [main, "release/**", "wip/**"]
+    tags: ["v*"]
+  pull_request:
 
 permissions:
   contents: read
@@ -18,13 +32,51 @@ jobs:
         with:
           fetch-depth: 0
       - name: look for Signed-off-by on each commit in the range
+        env:
+          # Named here so the shell reads variables rather than having the
+          # workflow's own text pasted into it. On a pull request the range
+          # is base..head; on a push it is what the event says moved.
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -u
+          if [ -n "${PR_HEAD:-}" ]; then
+            range="$PR_BASE..$PR_HEAD"
+          # A branch's first push, and a tag, report an all-zero `before`:
+          # there is no previous tip, and `000..HEAD` is not a range git
+          # can read. The commits that arrive with a new branch are the
+          # ones not already on main, which is the same question asked a
+          # way that has an answer.
+          elif [ -z "${BEFORE:-}" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            if git rev-parse --verify --quiet origin/main >/dev/null; then
+              range="origin/main..$AFTER"
+            else
+              range="$AFTER~1..$AFTER"
+            fi
+          # A force-push leaves a `before` that is no longer reachable.
+          # Asking about it fails the command rather than the commits, so
+          # fall back to the same question.
+          elif ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="origin/main..$AFTER"
+          else
+            range="$BEFORE..$AFTER"
+          fi
+          echo "checking $range"
           missing=0
-          for sha in $(git rev-list --no-merges \
-              "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"); do
+          checked=0
+          for sha in $(git rev-list --no-merges "$range"); do
+            checked=$((checked + 1))
             if ! git log -1 --format=%B "$sha" | grep -Eq '^Signed-off-by: .+ <.+@.+>'; then
               echo "::error::commit $sha has no Signed-off-by line (git commit -s; see CONTRIBUTING.md)"
               missing=1
             fi
           done
+          # A range that holds nothing is the ordinary answer for a push
+          # that moved only merges, or for main after a merge whose parts
+          # were checked on the branch. It is reported rather than passed
+          # in silence, because "checked 0 commits" and "checked 30 and
+          # they were fine" print the same green tick otherwise.
+          echo "checked $checked commit(s) for Signed-off-by"
           exit "$missing"
