@@ -527,8 +527,17 @@ def generate(pack) -> str:
     # sharing a label would make one of them silently unreachable. Fail
     # here, where a person can name the second one, rather than there.
     labels = _labels(tree, [])
-    if len(set(labels)) != len(labels):
-        duplicates = sorted({label for label in labels if labels.count(label) > 1})
+    # Counted, not re-counted. This is the same `labels.count(label)` in a
+    # comprehension over `labels` that `_qualify_repeats` had, and the fix
+    # there left it standing here -- where it is worse, because it runs
+    # only when there are duplicates, so the path that got fast was the
+    # one that already worked and the refusal stayed quadratic. Measured
+    # end to end before this change: 4,000 elements refused in 0.11s,
+    # 8,000 in 0.55s, 16,000 in 2.5s, 32,000 in 9.4s, on files of a few
+    # megabytes.
+    seen = Counter(labels)
+    if len(seen) != len(labels):
+        duplicates = sorted(label for label, count in seen.items() if count > 1)
         raise SystemExit("%s: two rows share a label (%s); give the item a name "
                          "in the pack's item_names"
                          % (pack["output"].name, ", ".join(duplicates)))
