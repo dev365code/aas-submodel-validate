@@ -5,12 +5,25 @@
 # "the hash on the release page is the hash of the file I carried in" is
 # the entire trust story -- and then publishes the same bytes to PyPI.
 #
+# Four jobs, because one of them used to hold every permission this file
+# needs while also running arbitrary build code -- the suite, the wheel,
+# a zipapp, `twine`, a dependency fetched from an index. `contents:
+# write` and `attestations: write` were live for all of it. They are
+# separated now: `build` holds nothing it does not need and hands the
+# bytes on as an artifact; `attest` signs them; `github-release` attaches
+# them and is the only job that can write to this repository; `publish`
+# sends the two files an index takes. Each downloads the artifact the
+# first one uploaded, which is the same run's artifact, so re-running a
+# failed job re-runs that job and not the build.
+#
 # The publish job is last on purpose and touches nothing above it. When
 # pypi.org did not yet trust this repository it failed there, visibly,
 # with the GitHub Release already made -- which is the ordering to keep
 # even now that it does trust it, because the next thing that can refuse
 # an upload is the metadata, not the identity. This comment described the
-# trust as pending; 0.1.1 published from here on 2026-09-05.
+# trust as pending; 0.1.1 published from here on 2026-09-05. Splitting
+# the jobs did not reorder them: that decision came from a failure this
+# repository actually had, and nothing new argues against it.
 name: release
 
 on:
@@ -25,24 +38,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      # Creating the Release and attaching the assets to it. This is the
-      # strongest lift in the file and the one a reader will ask about
-      # first, so it says why here rather than being inferred from the
-      # step that uses it.
-      contents: write
       # Reading what CI concluded about this commit. `contents: read` at
       # the top of the file does not carry it, and without it the gate
       # below meets a 403 -- which it treats as "no verdict" and refuses,
       # correctly but unhelpfully, on every release.
+      #
+      # This is the whole list now. Creating the release and signing the
+      # artifact were here too, live through every step below, including
+      # the ones that run a dependency's code and a build backend's. They
+      # are in the jobs that do those things.
       actions: read
-      # Signing. Without it the only trust story is a checksum file that
-      # travels beside the files it vouches for and is replaceable by
-      # whoever could replace them -- an integrity proof read as an
-      # authenticity one. A site whose rule is "nothing unsigned comes
-      # in" stops there, and `shasum -c` printing OK is exactly what
-      # makes that stop look unnecessary to everyone else.
-      id-token: write
-      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
@@ -215,6 +220,39 @@ jobs:
           done
           echo "dist holds the 5 files this release publishes, and SHA256SUMS vouches for the 4 beside it"
 
+      # The publisher below uploads exactly these bytes; nothing is rebuilt.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          # The whole argument for the ordering above -- sign and upload
+          # before the release exists, so a failure leaves the tag and
+          # nothing published -- rests on being able to re-run this job.
+          # The default is `false`, which means a run that uploaded and
+          # then died at `gh release create` cannot be re-run: the second
+          # attempt stops here with "an artifact with this name already
+          # exists". Recoverable in theory, stuck in practice.
+          overwrite: true
+
+
+  attest:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      # The two the pinned version of the action asks for, and nothing
+      # else. Measured rather than read off a page: this pin has signed
+      # eight releases with exactly these. The action's current README
+      # lists a third, so the version bump that takes it is the moment to
+      # read this list again -- the runbook says so.
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: dist
+          path: dist
       - name: sign what was built
         # After this, `gh attestation verify smtv.pyz --repo <this>`
         # answers with the workflow, the repository and the commit that
@@ -239,21 +277,30 @@ jobs:
             dist/aas_submodel_validate-*.tar.gz
             dist/smtv.pyz
 
-      # The publisher below uploads exactly these bytes; nothing is rebuilt.
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+
+  github-release:
+    needs: attest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      # The strongest lift in the file, and now the only job that has it.
+      # Nothing in this job builds anything: it downloads bytes another
+      # job made and signed, writes the notes, and attaches them.
+      contents: write
+    env:
+      # No checkout. The notes are written here and the CHANGELOG is
+      # named in them rather than read, so the only thing a checkout was
+      # providing was somewhere for `gh` to find the repository -- and
+      # this says it directly. The job that can write to this repository
+      # therefore never has a credential-bearing git remote for a later
+      # step to reach, which is what `persist-credentials: false` would
+      # have been protecting against.
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: dist
-          path: dist/
-          if-no-files-found: error
-          # The whole argument for the ordering above -- sign and upload
-          # before the release exists, so a failure leaves the tag and
-          # nothing published -- rests on being able to re-run this job.
-          # The default is `false`, which means a run that uploaded and
-          # then died at `gh release create` cannot be re-run: the second
-          # attempt stops here with "an artifact with this name already
-          # exists". Recoverable in theory, stuck in practice.
-          overwrite: true
-
+          path: dist
       - name: attach them to a GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -339,7 +386,7 @@ jobs:
             --title "$GITHUB_REF_NAME" --notes-file notes.md
 
   publish:
-    needs: build
+    needs: [attest, github-release]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: pypi
