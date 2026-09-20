@@ -280,6 +280,41 @@ timeline
             : Cross-checks with neighbouring standards — VDI 2770, iiRDS
 ```
 
+## Releases and version numbers
+
+This is a 0.x tool, and a release goes out when a unit of judgement is
+ready rather than on a calendar. While a template pack is being built
+that can mean a few days apart; when nothing is ready it can mean
+nothing for a while. Neither is a signal about the project.
+
+**A patch release repairs.** A file that was legal and passing keeps
+passing: no rule is added, no rule is removed, and no verdict moves
+except one that was wrong. If a patch changes what your pipeline sees,
+that is a defect and worth reporting.
+
+**A minor release adds or changes judgement** — a new template pack, a
+rule that reads something it did not read before, a reading corrected.
+The CHANGELOG names every verdict that moves and, where an exit code
+moves with it, says so in a paragraph addressed to whoever gates a build
+on it. That is the paragraph to read before upgrading; it is the one
+place this project promises to be exhaustive.
+
+**A security repair goes out the day it is ready**, on its own, and an
+advisory is filed on this repository's Security tab saying what was
+wrong and what it could do.
+
+**Pin the version you validated against.** Not a range: a rule this tool
+adds is a verdict your pipeline has not seen, and the point of a
+validator is that its answer today is the answer it gave when you signed
+off on it. Upgrade deliberately, read the CHANGELOG paragraph, and
+re-run your corpus.
+
+**1.0 means two things and no more**: the JSON report's schema is frozen
+under `schemaVersion: 1`, and this page states exactly which standards
+are covered and to what depth, so that "covered" stops being a word you
+have to read the source to size. It does not mean the template list is
+finished.
+
 ## When aas-submodel-validate is not the tool
 
 - **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the six it supports.
