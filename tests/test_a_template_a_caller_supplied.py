@@ -183,8 +183,11 @@ def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
     archive = through([sys.executable, str(single), str(instance),
                        "--template", str(VENDORED), "-f", "json"])
 
-    # `path` is the one field that legitimately differs, and it does not
-    # here: all three are handed the same path.
+    # Three entrances, which is every one this tree has -- see
+    # `test_the_parity_test_covers_every_entrance_this_tree_has`, which
+    # goes red if a fourth appears. `path` is the one field that could
+    # legitimately differ and does not here: all three are handed the
+    # same absolute path.
     assert command == from_library, "the command line and the library disagree"
     assert archive == from_library, "the single file and the library disagree"
 
@@ -368,8 +371,46 @@ def test_a_template_the_interpreter_cannot_read_is_refused_not_raised(tmp_path):
         % (UNCLAIMED, collection * depth, "]}" * depth),
         encoding="utf-8")
 
+    # An answer, whatever this interpreter does with the depth. That is
+    # the whole property and it is the only portable form of it: three
+    # thousand levels raised `RecursionError` on 3.9 and parsed cleanly
+    # on 3.12 and 3.13, so asserting the refusal made this green here and
+    # red on three matrix rows. Lowering `setrecursionlimit` does not
+    # help either -- measured, those interpreters parse depth 3000 at a
+    # limit of 200, because the scanner is C and does not spend Python
+    # frames the way 3.9's did.
     assert main([str(_unclaimed_instance(tmp_path)), "--template", str(deep),
-                 "-q"]) == 2
+                 "-q"]) in (0, 1, 2)
+
+
+def test_an_interpreter_limit_while_reading_a_template_is_a_refusal(tmp_path,
+                                                                    monkeypatch):
+    """And the branch that turns one into a refusal, asked directly.
+
+    The test above cannot reach it on every interpreter, so it does not
+    try; this one hands `_supplied_table` a reader that raises, which is
+    what an exhausted stack looks like from inside. `loader.py` has the
+    same classifier on the sibling path and says why: an interpreter
+    limit is not a defect in the document, and a document nothing
+    finished reading is not a verdict.
+    """
+    import json as _json
+
+    from aas_submodel_validate import runner as _runner
+    from aas_submodel_validate import tablegen
+
+    # Patched on the module itself, because `_supplied_table` imports
+    # `json` when it is called rather than at the top of the file.
+    template = _unclaimed_template(tmp_path)
+    for raised, word in ((RecursionError("maximum recursion depth exceeded"),
+                          "deeply"),
+                         (MemoryError(), "deeply")):
+        monkeypatch.setattr(
+            _json, "loads",
+            lambda *_a, _raise=raised, **_k: (_ for _ in ()).throw(_raise))
+        with pytest.raises(tablegen.TemplateRefused) as refused:
+            _runner._supplied_table(template)
+        assert word in str(refused.value), refused.value
 
 
 def test_the_templates_own_identifier_is_normalised_like_every_other(tmp_path):
@@ -524,3 +565,45 @@ def test_the_help_page_says_a_supplied_verdict_is_not_a_conformance_claim(capsys
     assert "not a statement about conformance" in page, page
     for named in ("hand-written", "which elements"):
         assert named in page, "the help page does not say %r" % named
+
+
+#: The ways this tool can be started, and how each is declared in the
+#: tree. Read from the tree rather than listed, so an entrance that
+#: arrives is an entrance this has to cover.
+def _entrances_the_tree_declares():
+    import re
+
+    found = {"python -m": True}     # always, it is the package
+    pyproject = (ROOT / "pyproject.toml").read_text("utf-8")
+    scripts = re.search(r"(?ms)^\[project\.scripts\]\n(.*?)(?=^\[|\Z)", pyproject)
+    if scripts and scripts.group(1).strip():
+        found["console script"] = True
+    if (ROOT / "tools" / "build_zipapp.py").is_file():
+        found["single file"] = True
+    if (ROOT / "action.yml").is_file() or (ROOT / "action.yaml").is_file():
+        found["github action"] = True
+    return found
+
+
+#: What `test_the_same_template_gives_the_same_verdict_from_every_entrance`
+#: actually runs. Kept beside it so the two cannot drift apart silently.
+COMPARED_ENTRANCES = ("python -m", "console script", "single file")
+
+
+def test_the_parity_test_covers_every_entrance_this_tree_has():
+    """"The same verdict from every entrance" is only worth what the
+    comparison covers.
+
+    Three entrances exist here and the comparison runs all three. A
+    GitHub Action is named as a fourth and **does not exist** -- there is
+    no `action.yml` in this tree -- so a promise about it is a promise
+    about something unbuilt. When one arrives, this goes red until the
+    comparison takes it, which is the only way that promise stays true
+    without somebody remembering.
+    """
+    declared = set(_entrances_the_tree_declares())
+    assert declared <= set(COMPARED_ENTRANCES), (
+        "this tree declares %s and the comparison covers %s"
+        % (sorted(declared), sorted(COMPARED_ENTRANCES)))
+    assert "github action" not in declared, (
+        "an action exists now; add it to the comparison and to this list")
