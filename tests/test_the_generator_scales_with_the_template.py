@@ -19,6 +19,8 @@ import time
 
 from tools import extract_smt_rules as generator
 
+from aas_submodel_validate import tablegen
+
 #: Big enough that a quadratic cannot hide in the noise and small enough
 #: that a linear one is not worth timing twice. At this size the old code
 #: took about nine seconds here.
@@ -56,7 +58,7 @@ def test_a_wide_template_does_not_cost_the_square_of_its_width():
     """The early-return path, which is every template vendored here."""
     tree = _flat(ROWS)
     start = time.perf_counter()
-    generator._qualify_repeats(tree)
+    tablegen._qualify_repeats(tree)
     took = time.perf_counter() - start
     assert took < CEILING_SECONDS, (
         "%d rows with no repeated label took %.2fs; the work is meant to "
@@ -69,7 +71,7 @@ def test_the_same_holds_when_there_is_work_to_do():
     and the expensive one is the one a wide template takes."""
     tree = _collided(ROWS)
     start = time.perf_counter()
-    generator._qualify_repeats(tree)
+    tablegen._qualify_repeats(tree)
     took = time.perf_counter() - start
     assert took < CEILING_SECONDS, (
         "%d rows claimed by two scopes took %.2fs" % (ROWS, took))

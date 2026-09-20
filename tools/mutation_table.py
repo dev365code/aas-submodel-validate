@@ -799,7 +799,7 @@ TABLE = [
      "ContactInformation containers, each holding a drifted Phone: one "
      "record."),
     ("generator/refusing-a-template-is-not-the-square-of-its-width",
-     "tools/extract_smt_rules.py",
+     "src/aas_submodel_validate/tablegen.py",
      "    seen = Counter(labels)\n"
      "    if len(seen) != len(labels):\n"
      "        duplicates = sorted(label for label, count in seen.items() if count > 1)",
