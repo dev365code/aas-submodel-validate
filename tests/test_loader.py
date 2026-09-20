@@ -530,19 +530,24 @@ def test_an_environment_json_is_read_from_disk_once(tmp_path, monkeypatch):
     time outside any guard, where the .xml branch had learned to put
     one.
 
-    Counted at `open`, which is where the read happens now that it is
-    bounded. A counter aimed at the call the loader no longer makes
-    would have gone on reporting one read forever."""
-    import pathlib as _pathlib
+    Counted at `_read_bounded`, which is the call that reads the
+    contents. Two earlier spellings counted opens instead and each
+    stopped meaning what it said: aimed at `pathlib.Path.open` it went to
+    zero when the bounded read moved to a descriptor-checked open, and
+    aimed at that open it counted two, because the loader also opens the
+    path for one byte to find out whether it is reachable at all. A
+    reachability probe is not a read of the document, and this test is
+    about the document being read twice."""
+    import aas_submodel_validate.loader as _loader
     path = tmp_path / "env.json"
     path.write_bytes(env_json())
-    opens = []
-    original = _pathlib.Path.open
-    monkeypatch.setattr(_pathlib.Path, "open",
-                        lambda self, *a, **kw: (opens.append(str(self)),
-                                                original(self, *a, **kw))[1])
+    reads = []
+    original = _loader._read_bounded
+    monkeypatch.setattr(_loader, "_read_bounded",
+                        lambda loaded, p, *a, **kw: (reads.append(str(p)),
+                                                     original(loaded, p, *a, **kw))[1])
     load(path)
-    assert opens.count(str(path)) == 1
+    assert reads.count(str(path)) == 1
 
 
 def test_an_environment_json_is_parsed_once(tmp_path, monkeypatch):

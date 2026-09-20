@@ -38,15 +38,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      # Reading what CI concluded about this commit. `contents: read` at
-      # the top of the file does not carry it, and without it the gate
-      # below meets a 403 -- which it treats as "no verdict" and refuses,
-      # correctly but unhelpfully, on every release.
+      # Both, and the first is not redundant. A job-level block
+      # *replaces* the file's floor rather than adding to it -- "all of
+      # those that are not specified are set to `none`" -- so declaring
+      # `actions: read` alone left the only job that checks out with
+      # `contents: none`. It would have worked anyway, because this
+      # repository is public, which is not a thing to depend on
+      # silently; the eight releases before the split all ran this job
+      # with `contents: write`.
+      contents: read
+      # Reading what CI concluded about this commit. Without it the gate
+      # below meets a 403 -- which it treats as "no verdict" and
+      # refuses, correctly but unhelpfully, on every release.
       #
       # This is the whole list now. Creating the release and signing the
       # artifact were here too, live through every step below, including
-      # the ones that run a dependency's code and a build backend's. They
-      # are in the jobs that do those things.
+      # the ones that run a dependency's code and a build backend's.
+      # They are in the jobs that do those things.
       actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -241,11 +249,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      # The two the pinned version of the action asks for, and nothing
-      # else. Measured rather than read off a page: this pin has signed
-      # eight releases with exactly these. The action's current README
-      # lists a third, so the version bump that takes it is the moment to
-      # read this list again -- the runbook says so.
+      # What the vendor's own documented block carries, minus the one
+      # its current README adds for a newer version than the pin.
+      #
+      # The first spelling of this said the two token permissions were
+      # "measured -- this pin has signed eight releases with exactly
+      # these", and that was not what was measured: those eight signings
+      # happened inside the old single job, which also held
+      # `contents: write` and `actions: read`. What is measured is eight
+      # releases with these two *among four*, never with these two
+      # alone. `contents: read` costs nothing and is what the vendor
+      # documents, so it is here rather than left to a claim.
+      #
+      # A job block replaces the file's floor, so this really is the
+      # whole list for this job. The action's current README lists
+      # `artifact-metadata: write` as well; the version bump that takes
+      # it is the moment to read this again -- the runbook says so.
+      contents: read
       id-token: write
       attestations: write
     steps:
@@ -376,14 +396,20 @@ jobs:
 
           The tool itself reaches no network, ever.
           NOTES
-          python - <<'SUB'
-          import os, pathlib
-          notes = pathlib.Path("notes.md")
-          notes.write_text(notes.read_text(encoding="utf-8").replace(
-              "OWNER/REPO", os.environ["GITHUB_REPOSITORY"]), encoding="utf-8")
-          SUB
+          # `sed`, not `python`. This job lost its `setup-python` in the
+          # split and `python` is the runner image's to provide -- a new
+          # and unpinned dependency, on the one job that can write to this
+          # repository, for a string replacement.
+          sed -i "s|OWNER/REPO|$GITHUB_REPOSITORY|g" notes.md
+          # Creating, or attaching to one that is already there. A
+          # re-run of the whole workflow -- which is one click, and the
+          # click somebody reaches for -- died here with "release already
+          # exists", because the upload above is `overwrite: true` and
+          # this had no equivalent. Only "re-run failed jobs" worked, and
+          # nothing said so.
           gh release create "$GITHUB_REF_NAME" dist/* \
-            --title "$GITHUB_REF_NAME" --notes-file notes.md
+            --title "$GITHUB_REF_NAME" --notes-file notes.md \
+            || gh release upload --clobber "$GITHUB_REF_NAME" dist/*
 
   publish:
     needs: [attest, github-release]

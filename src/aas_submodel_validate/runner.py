@@ -236,7 +236,7 @@ _DIGEST_BLOCK = 64 * 1024
 def _digest(path, limit: int) -> str:
     """The sha256 of the file as it arrived, or None.
 
-    None in three cases, and each is a refusal to answer rather than a
+    None in four cases, and each is a refusal to answer rather than a
     partial answer. The file cannot be opened -- the loader has already
     decided what that is, and a digest must not be a second, louder
     answer to the same question. Or it is larger than this reader takes
@@ -248,18 +248,39 @@ def _digest(path, limit: int) -> str:
     weighs -- a digest is not a reason to take in what the rest of the
     reader refuses, and the first version read a megabyte at a time and
     was caught by the fixture that weighs a run.
+
+    Or it is not a regular file. "The loader has already decided" was
+    true of what the answer should be and not of whether asking was safe:
+    the loader refuses a FIFO as "not a file" without opening it, and this
+    opened it anyway -- and opening a FIFO with no writer blocks until one
+    arrives. Measured: `smtv pipe.json` never returned, sitting in the
+    `open` below, which made a named pipe the one unreadable shape where
+    "could not run" does not arrive at all. A directory and a missing path
+    were already covered, by `IsADirectoryError` and `FileNotFoundError`
+    under the `OSError` here; a pipe raises nothing, which is why it needs
+    asking. It is asked of the descriptor rather than of the name, because
+    `is_file()` then `open()` is a sample and a use with a gap between
+    them -- the first spelling of this fix did that, and the hang stayed
+    reachable.
     """
     import hashlib
     digest = hashlib.sha256()
     read = 0
     try:
-        with open(path, "rb") as handle:
+        with container.open_regular(path) as handle:
             for block in iter(lambda: handle.read(_DIGEST_BLOCK), b""):
                 read += len(block)
                 if read > limit:
                     return None
                 digest.update(block)
-    except OSError:
+    except (OSError, MemoryError):
+        # MemoryError too. A digest is never the reason a run dies -- the
+        # whole point of this function is that it declines to answer
+        # rather than answering partly -- and the loader's own read has
+        # caught it since a hostile file walked out of there as a
+        # traceback. The two were reached by different names until the
+        # descriptor check made them one call, and this one had never
+        # met it.
         return None
     return digest.hexdigest()
 

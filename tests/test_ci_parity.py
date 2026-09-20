@@ -1612,3 +1612,34 @@ def test_the_branches_this_project_works_on_are_the_ones_ci_watches():
             "%s/%s is pushed and is matched by none of CI's push filters "
             "%s, so work on it is proved on one machine only"
             % (remote, branch, watched))
+
+
+def test_a_job_that_checks_out_asks_for_the_contents_it_reads():
+    """A job-level `permissions:` block *replaces* the file's floor, it
+    does not add to it. GitHub's syntax reference: "If you specify the
+    access for any of these permissions, all of those that are not
+    specified are set to `none`."
+
+    So the file saying `contents: read` at the top buys a job nothing
+    once that job declares any permission of its own -- and the job
+    split left `build` with `actions: read` alone while it is the only
+    job that runs `actions/checkout`. It would work anyway today because
+    this repository is public, which is an undeclared dependency on that
+    and was never the intent. The eight release runs that preceded the
+    split all had `contents: write` in that job.
+
+    The test above this one reads the floor and calls the job blocks
+    "lifts above it", which is the model that made this invisible. This
+    one asks the question that catches it.
+    """
+    for workflow in _workflows():
+        for name, source in _jobs(workflow).items():
+            if "actions/checkout" not in source:
+                continue
+            granted = _granted(source)
+            if granted is None:
+                continue            # no block: the job keeps the file's floor
+            assert granted.get("contents") in ("read", "write"), (
+                "%s: job %r checks out and declares %s, and a job block "
+                "replaces the floor rather than adding to it -- so it has "
+                "`contents: none`" % (workflow.name, name, granted))

@@ -108,7 +108,7 @@ something can be built against.
 
 | key | type | |
 |---|---|---|
-| `inputSha256` | string or null | SHA-256 of the input file as it arrived — of the bytes on disk, whether or not any of them were judged. A refused input still gets one, and that is the point: the report names the file it refused. `null` only when the file could not be opened at all, or when it is larger than the digest itself will read (256 MiB, the bound on a whole container). |
+| `inputSha256` | string or null | SHA-256 of the input file as it arrived — of the bytes on disk, whether or not any of them were judged. A refused input still gets one, and that is the point: the report names the file it refused. `null` in three cases: the file could not be opened at all; it is larger than the digest itself will read (256 MiB, the bound on a whole container); or the path is not a regular file — a pipe, a socket or a device is refused without being read, so there are no bytes to name. Before 0.4.1 a device hashed to the sha of zero bytes and a pipe made the run hang, which is why the third case reads as a widening rather than a correction. |
 | `engine` | null | Reserved: a reference to the engine build that produced the report, beyond the version string `toolVersion` already carries. Nothing fills it yet. |
 | `envelope` | null | Reserved: the signed envelope a report may be wrapped in, and the signature over it. Nothing fills it yet, and nothing in this project will — the signer is the organisation issuing the document. |
 
