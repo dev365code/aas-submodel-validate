@@ -2640,3 +2640,39 @@ def test_each_refusal_gets_its_own_remedy_and_not_one_sentence(tmp_path,
     # accusations: what you sent was not read, so it was not judged.
     for sentence in (permission, loop, out_of_memory):
         assert "not judged" in sentence, sentence
+
+
+def test_a_rules_own_text_is_bounded_the_way_a_violations_is():
+    """`Violation` bounds five fields and `Rule` bounded none.
+
+    The comment above the bound says every finding is built through
+    `Violation`, "so this is the one funnel". A finding also carries its
+    *rule's* title and fix -- `Finding.fix` falls back to `rule.fix`
+    when the violation has none, and `as_dict` prints `rule.title`
+    unconditionally -- and neither went through it. Measured: a rule
+    whose title and fix are 200,000 characters reaches the JSON at
+    200,014 and 200,000 while the violation beside it is cut at 2,000.
+
+    Every generated pack builds its rules' text out of the template's
+    own strings (`rules/dbp.py` and its siblings interpolate a row's
+    label, identifier and remedy), so the length is the template's to
+    choose. Today the templates are ones this project vendored, which is
+    why nothing has met this; a mode that accepts a template from the
+    caller makes it theirs.
+    """
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS, Finding, Rule, Violation
+
+    long = "x" * (MAX_REPORTED_CHARACTERS * 100)
+    rule = Rule(id="Z9", kind="template", prio="MUST", title=long,
+                spec=long, fn=lambda ctx: (), fix=long)
+    for name in ("title", "spec", "fix"):
+        assert len(getattr(rule, name)) <= MAX_REPORTED_CHARACTERS, (
+            "Rule.%s is %d characters; the bound is %d and it is meant to be "
+            "the one funnel" % (name, len(getattr(rule, name)),
+                                MAX_REPORTED_CHARACTERS))
+
+    # And through the report, which is where a caller meets it.
+    printed = Finding(rule=rule, violation=Violation("short", subject="s")).as_dict()
+    for key in ("title", "fix"):
+        assert len(printed[key] or "") <= MAX_REPORTED_CHARACTERS, (
+            "the report's %r is %d characters" % (key, len(printed[key])))

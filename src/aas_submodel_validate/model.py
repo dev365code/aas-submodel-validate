@@ -79,8 +79,15 @@ assert META_KIND in KINDS
 #:
 #: Set here rather than at the one rule that was found doing it. Capping
 #: a single place is the mistake this project has met before: the class
-#: stays and the next rule to interpolate a value reopens it. Every
-#: finding is built through `Violation`, so this is the one funnel.
+#: stays and the next rule to interpolate a value reopens it. Applied
+#: by `Violation` and by `Rule`, which between them own every string
+#: a finding prints. `Violation` alone was called the one funnel here
+#: and was not one: a finding carries its rule's title too, and its
+#: `fix` falls back to the rule's when the violation has none.
+#: Measured -- a rule whose text was 200,000 characters reached the
+#: JSON at full length beside a violation cut at this bound. Every
+#: generated pack builds that text out of the template's own strings,
+#: so the length is the template's to choose and not this project's.
 #:
 #: Chosen above the longest sentence this project writes -- `SMT-D1`'s
 #: remedy, which names every template this tool has a table for and so
@@ -156,6 +163,20 @@ class Rule:
     fn: Callable[..., Iterable[Violation]]
     #: One imperative sentence: what to change so this stops being reported.
     fix: Optional[str] = None
+
+    def __post_init__(self):
+        # The same three lines `Violation` has, against the same bound and
+        # for the same reason. A rule's text is authored here for the hand
+        # rules and interpolated from the template's own strings for every
+        # generated pack, and the second of those is not this project's to
+        # keep short. Measured: the longest text any rule here carries is
+        # 690 characters (`SMT-D1`'s remedy) and none reaches the bound, so
+        # this cuts nothing that was written on purpose.
+        for name in ("title", "spec", "fix"):
+            value = getattr(self, name)
+            bounded = _bounded(value)
+            if bounded is not value:
+                object.__setattr__(self, name, bounded)
 
     @property
     def severity(self) -> Severity:

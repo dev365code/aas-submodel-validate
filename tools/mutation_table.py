@@ -814,6 +814,20 @@ TABLE = [
      "with the old spelling: 4,000 elements refused in 0.11s, 8,000 in "
      "0.55s, 16,000 in 2.5s, 32,000 in 9.4s, on files of a few megabytes. "
      "After: 32,000 in 0.20s and 128,000 in 1.2s."),
+    ("model/a-rules-own-text-goes-through-the-same-funnel",
+     "src/aas_submodel_validate/model.py",
+     '        for name in ("title", "spec", "fix"):',
+     '        for name in ():',
+     ["tests/test_hostile_input.py::"
+      "test_a_rules_own_text_is_bounded_the_way_a_violations_is"],
+     "the bound's own comment said every finding is built through "
+     "`Violation`, \"so this is the one funnel\", and it was not one: a "
+     "finding carries its rule's title, and its fix falls back to the "
+     "rule's when the violation has none. Measured with this emptied: a "
+     "rule whose text is 200,000 characters reaches the JSON at 200,014 "
+     "and 200,000, beside a violation cut at 2,000. Every generated pack "
+     "interpolates that text from the template's own strings, so the "
+     "length is the template's to choose."),
 
 ]
 
