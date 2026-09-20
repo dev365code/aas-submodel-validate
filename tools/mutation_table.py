@@ -783,6 +783,21 @@ TABLE = [
      "survived: `runner.run` catches that exception and returns a report, "
      "so the clause in `cli` is not on the path any unreadable input "
      "takes -- measured with `trace` over five shapes, and again by making the clause raise and running the suite, which stayed green."),
+    ("engine/a-subject-under-two-same-named-parents-is-two-subjects",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    names = Counter(element.id_short for element in elements if element.id_short)\n"
+     "    shared = {name for name, count in names.items() if count > 1}",
+     "    shared = set()",
+     ["tests/test_unmatched_coverage.py::"
+      "test_two_scopes_that_each_lost_rules_are_two_records"],
+     "two containers in one scope can carry the same idShort -- the "
+     "metamodel forbids it and this reader relays that as a warning rather "
+     "than refusing the file, so such a file is judged. With this empty, an "
+     "element under either container gets the same subject, and the record "
+     "keyed on it keeps one: the reader is told a single element left rules "
+     "unasked when two did. Measured before the fix on a file with two "
+     "ContactInformation containers, each holding a drifted Phone: one "
+     "record."),
 
 ]
 

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import re
 import sys
+from collections import Counter
 from typing import Dict, List
 
 from ..model import Violation
@@ -388,8 +389,28 @@ def reftype_remedy(expected: str) -> str:
             % (article, expected))
 
 
-def _subject(path: str, element, index: int) -> str:
-    return "%s/%s" % (path, element.id_short or "[%d]" % index)
+def _subject(path: str, element, index: int, shared=()) -> str:
+    """Where an element sits, as a reader reads it.
+
+    An index is appended in two cases and neither is decoration. An
+    element with no idShort has no name to print. And an element whose
+    idShort a sibling also carries has a name that does not identify it:
+    the metamodel forbids that, this project relays the violation as a
+    warning rather than refusing the file, so such a file is judged and
+    what it is judged to have done has to be attributable. Before this,
+    two elements produced the same string and the record keyed on it
+    merged them -- one record for what two elements did
+    (`docs/divergences.md` #53).
+
+    `shared` is the idShorts that repeat in this element's own scope, so
+    an element whose name is its own keeps the subject it always had.
+    Disambiguating everything would have changed the subject of every
+    finding this project prints, which is a wider change than the defect.
+    """
+    name = element.id_short or "[%d]" % index
+    if element.id_short and element.id_short in shared:
+        name = "%s[%d]" % (name, index)
+    return "%s/%s" % (path, name)
 
 
 def _matches_row(candidates, main_empty: bool, kind_name: str, row, in_list: bool) -> bool:
@@ -434,6 +455,12 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     indexed = [(index, element, element_candidate_values(element),
                 not candidate_values(element.semantic_id))
                for index, element in enumerate(elements)]
+    #: idShorts more than one child of this scope carries. Counted once
+    #: here rather than asked per element, and read by every `_subject`
+    #: call below, so the four of them cannot disagree about which
+    #: element a finding is about.
+    names = Counter(element.id_short for element in elements if element.id_short)
+    shared = {name for name, count in names.items() if count > 1}
     claimed = set()
     #: Per scope, not per run: the same row id appears in every item of a
     #: list, and a row that matched in one item has been entered.
@@ -460,7 +487,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         # looked the Property's string up as a part name and reported the
         # archive missing a file nobody declared.
         result["instances"].setdefault(row["id"], []).extend(
-            (_subject(path, element, index), element)
+            (_subject(path, element, index, shared), element)
             for index, element in matched if type(element).__name__ == row["kind"])
 
         low, high = row["card"]
@@ -471,14 +498,14 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 % (_KIND_WORDS.get((low, high), _UNCOUNTED), row["label"], count),
                 subject=path,
                 detail=("elements: %s" % ", ".join(
-                    _subject(path, e, i) for i, e in matched)) if matched else None))
+                    _subject(path, e, i, shared) for i, e in matched)) if matched else None))
             # No `continue`: a wrong count must not silence the per-element
             # checks or the recursion. A misplaced element hiding a whole
             # subtree's real findings is the failure this validator exists
             # to prevent, not to commit.
 
         for index, element in matched:
-            subject = _subject(path, element, index)
+            subject = _subject(path, element, index, shared)
             actual = type(element).__name__
             if actual != row["kind"]:
                 # Its own remedy. A generated row's rule is about how
@@ -675,7 +702,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     for index, element, candidates, _main_empty in indexed:
         if index in claimed or not candidates:
             continue
-        subject = _subject(path, element, index)
+        subject = _subject(path, element, index, shared)
         for row in rows:
             near = _near_miss(candidates, row["match"])
             if near:
