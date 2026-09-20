@@ -341,7 +341,14 @@ def build(document, pack):
         raise TemplateRefused(
             "this template declares %d rows, above the %d this reader builds "
             "a table from" % (counter[0], MAX_TEMPLATE_ROWS))
-    submodel_sid = "/".join(k["value"] for k in submodel["semanticId"]["keys"])
+    # Normalised, like every value on the instance side and like the
+    # supplementals four lines below. Read raw, a template written in the
+    # ECLASS-CDP spelling built rows that could match nothing, failed to
+    # take its identifier over so a pack answered instead, and left the
+    # report saying the caller's template decided a run it took no part
+    # in -- three wrong answers from one missing call.
+    submodel_sid = normalize(
+        "/".join(k["value"] for k in submodel["semanticId"]["keys"]))
     submodel_sid_type = submodel["semanticId"].get("type")
     # What the submodel says about itself *besides* its identifier. Two
     # templates can declare the same semanticId -- 02004 and 02035-2 do --

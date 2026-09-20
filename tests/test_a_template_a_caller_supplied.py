@@ -1,9 +1,8 @@
 """Judging against a template the caller brought.
 
-Three conditions the owner set, and each is a test here. The report says
-where the table came from and that it is not a published IDTA template.
-Every entrance gives the same verdict. What the generator cannot produce
-stays out.
+Three properties, each a test here. The report says where the table came
+from and that it is not a published IDTA template. Every entrance gives
+the same verdict. What the generator cannot produce stays out.
 
 And one this project set for itself: a file somebody else wrote is
 refused rather than trusted — with the code that means "could not judge
@@ -54,9 +53,9 @@ def test_a_submodel_judged_by_a_supplied_template_counts_as_judged(tmp_path):
 
 
 def test_the_report_says_the_template_was_not_idtas(tmp_path):
-    """The owner's first condition. A verdict against a file the caller
-    brought is not a verdict against a published template, and a reader
-    who cannot tell the two apart has been told something untrue."""
+    """A verdict against a file the caller brought is not a verdict
+    against a published template, and a reader who cannot tell the two
+    apart has been told something untrue."""
     document = runner.run(_instance(tmp_path), template=VENDORED).as_dict()
     provenance = document["provenance"]
     assert "template" in provenance, sorted(provenance)
@@ -102,7 +101,7 @@ def test_a_template_with_too_many_rows_is_refused(tmp_path):
 
 
 def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
-    """The owner's second condition, asked as bytes.
+    """The same verdict from every entrance, asked as bytes.
 
     The command line, the library and the single file are the same engine
     or they are not one engine. Compared as the JSON document, because
@@ -212,8 +211,8 @@ def test_a_supplied_template_answers_instead_of_the_pack_not_as_well(tmp_path):
 
 
 def test_the_terminal_says_the_template_was_yours(tmp_path):
-    """The owner's condition was a report field *and* a line on the
-    screen. The field was there and the line was not -- and the person
+    """Where the table came from belongs in the report field *and* on
+    the screen. The field was there and the line was not -- and the person
     reading a terminal is the one most likely to forget which table
     answered."""
     import contextlib
@@ -227,3 +226,181 @@ def test_the_terminal_says_the_template_was_yours(tmp_path):
     screen = out.getvalue()
     assert "template you supplied" in screen or "template you gave" in screen, screen
     assert "not a published IDTA template" in screen, screen
+
+
+#: A template no pack here has, which is the case the mode exists for.
+#: Every test above points at a vendored template, and that is why none
+#: of them saw what the three below are about: a template one of the six
+#: packs also answers for hides every defect that turns on nothing else
+#: answering.
+UNCLAIMED = "https://admin-shell.io/idta/SoftwareNameplate/1/0"
+
+
+def _unclaimed_template(tmp_path, *, semantic_id=UNCLAIMED):
+    def ref(value):
+        return {"type": "GlobalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    path = tmp_path / "unclaimed-template.json"
+    path.write_text(json.dumps({"submodels": [{
+        "kind": "Template", "idShort": "SoftwareNameplate", "id": "urn:t",
+        "semanticId": ref(semantic_id),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection",
+            "idShort": "SoftwareNameplateType",
+            "semanticId": ref(semantic_id + "/Type"), "value": [],
+            "qualifiers": [{"type": "SMT/Cardinality", "valueType": "xs:string",
+                            "value": "One"}]}]}]}), encoding="utf-8")
+    return path
+
+
+def _unclaimed_instance(tmp_path, *, semantic_id=UNCLAIMED):
+    from builders import env_json
+
+    path = tmp_path / "unclaimed.json"
+    path.write_bytes(env_json(semantic_id))
+    return path
+
+
+def test_a_submodel_the_supplied_template_judged_is_not_also_unmatched(tmp_path):
+    """`SMT-D1` says no submodel declares an identifier this tool has a
+    table for, and its remedy tells the author to relabel their document
+    as one of the six.
+
+    Measured on the mode's own headline case -- a template none of the
+    packs claims -- it fired anyway, beside a `TPL-E01` finding about
+    that very submodel and a summary reading `judged 1 of 1`. Three
+    statements in one report, each denying the one beside it, and two
+    errors where there is one defect.
+
+    The repair reached `submodels_judged` and not the rule: the summary
+    was handed the supplied table and `SMT-D1` calls `judged` with the
+    default. This is the contradiction that function's own docstring
+    records repairing once, for the battery pack.
+    """
+    report = runner.run(_unclaimed_instance(tmp_path),
+                        template=_unclaimed_template(tmp_path))
+    ids = sorted(f.id for f in report.findings)
+    assert "SMT-D1" not in ids, (
+        "the submodel was judged and reported unmatched in the same report: %s"
+        % ids)
+    assert any(rule_id.startswith("TPL-") for rule_id in ids), ids
+    assert report.submodels_judged == 1
+
+
+def test_a_template_the_interpreter_cannot_read_is_refused_not_raised(tmp_path):
+    """A file somebody else wrote can be deep enough to exhaust the
+    stack. `loader.py` has a classifier for exactly this on the sibling
+    path -- an interpreter limit is not a defect in the document -- and
+    this reader reached one of the two.
+
+    Measured: three thousand nested collections, half a megabyte of
+    well-formed JSON, came out as a `RecursionError` traceback at exit 1.
+    Exit 1 is the code for a verdict with findings, about a file nothing
+    finished reading; the same bytes handed in as the *input* exit 2 with
+    a sentence.
+    """
+    from aas_submodel_validate.cli import main
+
+    # Written as text. `json.dumps` walks the structure recursively, so
+    # building this the obvious way exhausts the stack in the test rather
+    # than in the reader -- which proves nothing about the reader.
+    collection = ('{"modelType": "SubmodelElementCollection", "idShort": "C", '
+                  '"semanticId": {"type": "GlobalReference", "keys": '
+                  '[{"type": "GlobalReference", "value": "urn:x:c"}]}, '
+                  '"value": [')
+    depth = 3000
+    deep = tmp_path / "deep.json"
+    deep.write_text(
+        '{"submodels": [{"kind": "Template", "idShort": "D", "id": "urn:t", '
+        '"semanticId": {"type": "GlobalReference", "keys": [{"type": '
+        '"GlobalReference", "value": "%s"}]}, "submodelElements": [%s%s]}]}'
+        % (UNCLAIMED, collection * depth, "]}" * depth),
+        encoding="utf-8")
+
+    assert main([str(_unclaimed_instance(tmp_path)), "--template", str(deep),
+                 "-q"]) == 2
+
+
+def test_the_templates_own_identifier_is_normalised_like_every_other(tmp_path):
+    """Every value on the instance side goes through `normalize`, and so
+    do the template's supplementals four lines from where its own
+    identifier is read raw.
+
+    Measured: the vendored 02003 template with its submodel identifier
+    written in the ECLASS-CDP spelling built fifty-four rules that could
+    match nothing, did not take the identifier over -- so the pack
+    answered instead -- and the report still said the caller's template
+    decided the run. Three wrong answers from one missing call.
+    """
+    from aas_submodel_validate import tablegen
+
+    cdp = "https://api.eclass-cdp.com/0173-1-01-AHX837-002"
+    path = _unclaimed_template(tmp_path, semantic_id=cdp)
+    built = tablegen.table_from(json.loads(path.read_text("utf-8")),
+                                {"prefix": "TPL-E", "citation": "c",
+                                 "skip_sids": frozenset(), "item_names": {},
+                                 "example_types": ()})
+    assert built.TEMPLATE_SEMANTIC_ID == "0173-1#01-AHX837#002", (
+        "the template's own identifier was not normalised: %r"
+        % built.TEMPLATE_SEMANTIC_ID)
+
+
+def test_no_pack_describes_a_run_it_stood_down_from(tmp_path):
+    """Two notes denying each other in one report is this codebase's own
+    phrase for the failure, and the stand-down produced it.
+
+    Measured: with `--template` and `--profile 02035-2` together, the
+    report said *"judged as Digital Battery Passport part 2 (IDTA
+    02035-2)"* and, three lines down, *"a pack of this tool's own also
+    answers for 0173-1#01-AHF578#003 and stood down"*. Neither pack ran.
+    The whole `SMT-D2` detail was an account of a table that did not
+    answer. `BAT-R2` has the same shape, on the identifier 02023 shares.
+
+    The stand-down was implemented in `matched_submodels` and the other
+    readers of "which table judged this submodel" were left alone --
+    which is the shape this project keeps meeting.
+    """
+    from aas_submodel_validate.cli import main
+
+    vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
+                / "02004" / "2.0.1" / "template.json")
+    from builders import env_json
+
+    instance = tmp_path / "hd.json"
+    instance.write_bytes(env_json("0173-1#01-AHF578#003"))
+
+    report = runner.run(instance, template=vendored, profile="02035-2")
+    said = sorted(f.id for f in report.findings)
+    assert "SMT-D2" not in said, (
+        "a pack that stood down still describes the run: %s" % said)
+    assert any(rule_id.startswith("TPL-") for rule_id in said), said
+    assert main([str(instance), "--template", str(vendored),
+                 "--profile", "02035-2", "-q"]) in (0, 1)
+
+
+def test_a_published_number_does_not_move_with_a_flag(tmp_path):
+    """`summary.rulesChecked` is documented as "every rule registered in
+    this build ... the number does not move when a different template
+    answers", and the rules a supplied table makes are deliberately not
+    registered.
+
+    Measured: it went from 219 to 273 with the flag, and to 221 on a run
+    where the supplied template matched nothing at all. A build reading
+    that number gets one that depends on a caller's file. The template's
+    own contribution is already carried, in `provenance.template.rows`,
+    which is where a reader who wants it should find it.
+    """
+    from aas_submodel_validate.registry import all_rules
+
+    registered = len(all_rules())
+    plain = runner.run(_instance(tmp_path)).as_dict()["summary"]["rulesChecked"]
+    assert plain == registered, plain
+
+    with_template = runner.run(_instance(tmp_path),
+                               template=VENDORED).as_dict()
+    assert with_template["summary"]["rulesChecked"] == registered, (
+        "a published number moved with a flag: %d registered, %d reported"
+        % (registered, with_template["summary"]["rulesChecked"]))
+    assert with_template["provenance"]["template"]["rows"] > 0, (
+        "and the template's own contribution is nowhere")

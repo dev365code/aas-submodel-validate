@@ -1,8 +1,8 @@
 """A table generated at run time is the table the build generated.
 
 The mode being built reads a template a caller supplies and judges
-against it. The owner's condition is that every entrance gives the same
-verdict, and the strongest form of that is this: given the same template
+against it. Every entrance has to give the same verdict, and the
+strongest form of that is this: given the same template
 file, the table built now and the table checked in must be the same
 table. If they can differ, the free engine and the vendored packs are
 two readers wearing one name.

@@ -120,6 +120,16 @@ class Context:
     #: a table nobody chose, which is the mistake `rules/engine.py`'s
     #: table argument was stripped of its own default to prevent.
     selection: object
+    #: Tables the caller supplied, carried here so that everything asking
+    #: "was this submodel judged" asks one place. `submodels_judged` was
+    #: handed them and `SMT-D1` was not, so a submodel judged against a
+    #: caller's template drew "no submodel declares a semanticId this
+    #: tool has a template table for" beside a finding about that very
+    #: submodel and a summary reading `judged 1 of 1` -- three statements
+    #: denying each other, and the remedy telling the author to relabel a
+    #: correct document. `detect.judged` records repairing exactly this
+    #: once, for the battery pack.
+    supplied: tuple = ()
     #: Submodel identifiers a table the caller supplied answers for. The
     #: packs stand down for these. Two tables for one identifier is one
     #: defect reported twice -- measured: handing `--template` the file
@@ -318,7 +328,28 @@ def _supplied_table(template):
             % (path, container.MAX_PART_BYTES))
     try:
         document = json.loads(raw.decode("utf-8-sig"))
-    except (ValueError, UnicodeDecodeError) as exc:
+    except UnicodeDecodeError as exc:
+        raise tablegen.TemplateRefused(
+            "%s is not JSON this reader can read: %s" % (path, exc)) from exc
+    except (RecursionError, MemoryError) as exc:
+        # Not a defect in the file. `loader.py` classifies this on the
+        # sibling path and says why; this reader reached one of the two,
+        # so a template three thousand collections deep came out as a
+        # traceback at exit 1 -- the code for a verdict with findings,
+        # about a file nothing finished reading.
+        raise tablegen.TemplateRefused(
+            "%s is nested more deeply than this reader can follow (%s); the "
+            "file may be fine and this machine could not walk it"
+            % (path, type(exc).__name__)) from exc
+    except ValueError as exc:
+        # A bare `ValueError` from `json` is not always malformed JSON:
+        # an integer past the interpreter's digit limit raises one, and
+        # calling that "not JSON this reader can read" tells a caller
+        # their file is broken when it is not.
+        if type(exc) is ValueError:
+            raise tablegen.TemplateRefused(
+                "%s met a limit of this interpreter while being read: %s"
+                % (path, exc)) from exc
         raise tablegen.TemplateRefused(
             "%s is not JSON this reader can read: %s" % (path, exc)) from exc
 
@@ -373,10 +404,10 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # between that and the tables. Built inline before, so the one thing
     # that knows what the run failed to ask was thrown away at the end of
     # the expression that produced the findings.
+    tables = () if supplied is None else (supplied["table"],)
     ctx = Context(loaded, rules.profiles.Selection(profile),
-                  taken_over=frozenset()
-                  if supplied is None
-                  else frozenset([supplied["table"].TEMPLATE_SEMANTIC_ID]))
+                  supplied=tables,
+                  taken_over=frozenset(t.TEMPLATE_SEMANTIC_ID for t in tables))
     report.findings = execute(rules_to_run, ctx)
     report.not_asked = rules.engine.rows_not_reached(ctx)
     report.unmatched = rules.engine.unmatched_elements(ctx)
@@ -458,9 +489,7 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # unjudged -- the report would carry findings about it and say
     # `judged 0 of 1`, and `--require-all-judged` could never pass. The
     # same contradiction the battery pack had repaired once.
-    report.submodels_judged = len(detect.judged(
-        Context(loaded, rules.profiles.Selection(profile)),
-        extra=() if supplied is None else (supplied["table"],)))
+    report.submodels_judged = len(detect.judged(ctx))
     if supplied is not None:
         report.notes.append(
             "judged against the template you supplied (%s), which is not a "
@@ -472,7 +501,17 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                 "a pack of this tool's own also answers for %s and stood "
                 "down; your template decided this run." % answered)
     report.findings.sort(key=_reading_order)
-    report.checked = len(rules_to_run)
+    # The registered rules, not everything that ran. A table the caller
+    # supplied contributes rules on purpose and registers none of them,
+    # and `docs/report-schema.md` says this number is "every rule
+    # registered in this build ... the number does not move when a
+    # different template answers". Counted from `rules_to_run` it went
+    # 219 to 273 with the flag, and to 221 on a run where the supplied
+    # template matched nothing -- a published number depending on a
+    # caller's file. What the template contributed is in
+    # `provenance.template.rows`, which is where a reader who wants it
+    # should look.
+    report.checked = len(all_rules())
     # Every load error means content that was not read: an archive that
     # would not open, a chain that went nowhere, a part that would not
     # parse, a document over the bound. What was not read was not judged,

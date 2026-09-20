@@ -146,7 +146,7 @@ def judged(ctx, extra=()):
     # submodel judged against a template the caller supplied is counted
     # as unjudged -- findings about it in the report and `judged 0 of 1`
     # under them.
-    for table in extra:
+    for table in tuple(extra) + tuple(getattr(ctx, "supplied", ())):
         seen.update(id(submodel) for submodel in instances(ctx.loaded)
                     if submodel_declares(submodel, table.TEMPLATE_SEMANTIC_ID))
     return seen

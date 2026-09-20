@@ -222,6 +222,15 @@ def smt_d2_the_report_names_the_profile(ctx):
     it changing with it.
     """
     for submodel in instances(ctx.loaded):
+        # Silent for an identifier a table the caller supplied took
+        # over. Neither pack ran, so an account of which one answered is
+        # an account of a run that did not happen -- two notes denying
+        # each other in one report, which is this file's own phrase for
+        # the failure. The stand-down was implemented where the walk
+        # asks and not where this asks.
+        if any(submodel_declares(submodel, identifier)
+               for identifier in getattr(ctx, "taken_over", ())):
+            continue
         picked = ctx.selection.chosen(submodel)
         if picked is None:
             continue
