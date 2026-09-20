@@ -164,3 +164,55 @@ def test_a_run_time_rule_id_never_reaches_the_coverage_record(tmp_path):
         kept = json.loads(recorded.read_text("utf-8"))
         assert not [i for i in kept if i.startswith(RUN_TIME_PREFIX)], \
             "the recorded observation carries run-time ids"
+
+
+def test_a_supplied_template_answers_instead_of_the_pack_not_as_well(tmp_path):
+    """Two tables for one identifier is one defect reported twice.
+
+    Measured: handing `--template` the very file 02003's pack was
+    generated from gave two errors where the pack alone gives one -- the
+    same missing element, under `TD-E01` and under `TPL-E01`. A reader is
+    told there are two problems when there is one, and a build counting
+    errors gets a number that depends on a flag rather than on the file.
+
+    The caller asked for their template explicitly, so theirs answers and
+    the pack stands down for the identifiers theirs declares. Standing
+    down is said out loud, because a pack that quietly stops answering is
+    the silence this project refuses everywhere else -- `--profile` has
+    the same shape and the same sentence.
+    """
+    report = runner.run(_instance(tmp_path), template=VENDORED)
+    ours = [f for f in report.findings if f.severity.name == "ERROR"]
+    ids = sorted(f.id for f in ours)
+    assert all(rule_id.startswith("TPL-") for rule_id in ids), (
+        "the pack answered as well as the supplied table: %s" % ids)
+
+    without = runner.run(_instance(tmp_path))
+    assert len(ours) == len([f for f in without.findings
+                             if f.severity.name == "ERROR"]), (
+        "the same file has %d errors with the template and %d without"
+        % (len(ours), len([f for f in without.findings
+                           if f.severity.name == "ERROR"])))
+
+    said = " ".join(note for note in (report.notes or []))
+    assert "0173-1#01-AHX837#002" in said, (
+        "nothing says which identifier the supplied template took over: %r"
+        % said)
+
+
+def test_the_terminal_says_the_template_was_yours(tmp_path):
+    """The owner's condition was a report field *and* a line on the
+    screen. The field was there and the line was not -- and the person
+    reading a terminal is the one most likely to forget which table
+    answered."""
+    import contextlib
+    import io
+
+    from aas_submodel_validate.cli import main
+
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        main([str(_instance(tmp_path)), "--template", str(VENDORED)])
+    screen = out.getvalue()
+    assert "template you supplied" in screen or "template you gave" in screen, screen
+    assert "not a published IDTA template" in screen, screen

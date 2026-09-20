@@ -396,10 +396,13 @@ class Table:
 
     __slots__ = ("__name__", "TEMPLATE_CITATION", "TEMPLATE_SEMANTIC_ID",
                  "TEMPLATE_SUBMODEL_SID_TYPE", "TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS",
-                 "TREE", "ROWS", "BY_ID", "BY_LABEL")
+                 "TREE", "ROWS", "BY_ID", "BY_LABEL", "_supplied")
 
     def __init__(self, name, citation, semantic_id, sid_type, supplemental, tree):
         self.__name__ = name
+        #: This table came from a caller, so it is the one that
+        #: stands when a pack claims the same identifier.
+        self._supplied = True
         self.TEMPLATE_CITATION = citation
         self.TEMPLATE_SEMANTIC_ID = semantic_id
         self.TEMPLATE_SUBMODEL_SID_TYPE = sid_type

@@ -201,6 +201,15 @@ def matched_submodels(ctx, tables) -> List:
     function.
     """
     from .detect import instances
+    # A table the caller supplied takes an identifier over, and a pack
+    # that also answers for it stands down -- reported, never silent.
+    # `getattr` because a context built before this existed has no such
+    # field and a table with no identifier of its own cannot be taken
+    # over anyway.
+    taken = getattr(ctx, "taken_over", frozenset())
+    if taken and tables.TEMPLATE_SEMANTIC_ID in taken \
+            and not getattr(tables, "_supplied", False):
+        return []
     return [submodel for submodel in instances(ctx.loaded)
             if submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)
             and ctx.selection.answers(submodel, tables)]

@@ -120,6 +120,13 @@ class Context:
     #: a table nobody chose, which is the mistake `rules/engine.py`'s
     #: table argument was stripped of its own default to prevent.
     selection: object
+    #: Submodel identifiers a table the caller supplied answers for. The
+    #: packs stand down for these. Two tables for one identifier is one
+    #: defect reported twice -- measured: handing `--template` the file
+    #: 02003's own pack was generated from gave two errors where the pack
+    #: alone gives one, the same missing element under two ids. The
+    #: caller asked for their template by name, so theirs answers.
+    taken_over: frozenset = frozenset()
 
 
 def _meta_rule(strict: bool) -> Rule:
@@ -366,7 +373,10 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # between that and the tables. Built inline before, so the one thing
     # that knows what the run failed to ask was thrown away at the end of
     # the expression that produced the findings.
-    ctx = Context(loaded, rules.profiles.Selection(profile))
+    ctx = Context(loaded, rules.profiles.Selection(profile),
+                  taken_over=frozenset()
+                  if supplied is None
+                  else frozenset([supplied["table"].TEMPLATE_SEMANTIC_ID]))
     report.findings = execute(rules_to_run, ctx)
     report.not_asked = rules.engine.rows_not_reached(ctx)
     report.unmatched = rules.engine.unmatched_elements(ctx)
@@ -451,6 +461,16 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     report.submodels_judged = len(detect.judged(
         Context(loaded, rules.profiles.Selection(profile)),
         extra=() if supplied is None else (supplied["table"],)))
+    if supplied is not None:
+        report.notes.append(
+            "judged against the template you supplied (%s), which is not a "
+            "published IDTA template; what a template states is checked and "
+            "nothing else." % template)
+        answered = supplied["table"].TEMPLATE_SEMANTIC_ID
+        if any(pack.semantic_id == answered for pack in detect.PACKS):
+            report.notes.append(
+                "a pack of this tool's own also answers for %s and stood "
+                "down; your template decided this run." % answered)
     report.findings.sort(key=_reading_order)
     report.checked = len(rules_to_run)
     # Every load error means content that was not read: an archive that
