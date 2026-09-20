@@ -328,15 +328,34 @@ def test_a_layer_that_stopped_working_fails_even_though_it_is_fast(
 def test_a_warning_is_visible_where_warnings_are_read(monkeypatch, capsys):
     """Nothing read `warn` except one word in a log line, so a layer at
     1.7x of its budget passed with nobody told. On a runner it is a
-    workflow annotation now."""
+    workflow annotation now.
+
+    The measurement is supplied rather than taken. Dividing the recorded
+    budget by 1.7 puts a layer in the warn band only if the budget fits
+    the machine, and on a runner it is a borrowed one: every row where
+    the machine was more than about a fifth slower than the machine that
+    recorded it landed past 2.0 instead, and the whole matrix went red on
+    a test about a log line. What this is for is the reporting, so the
+    reporting is all it exercises.
+    """
+    at = time_budget.WARN_AT + 0.2
     recorded = _recorded_here()
     key = time_budget.platform_key()
-    recorded["budgets"][key] = {
-        layer: budget / (time_budget.WARN_AT + 0.2)
-        for layer, budget in recorded["budgets"][key].items()}
+    budgets = recorded["budgets"][key]
     about = recorded["recorded_on"][key]
-    about["absolute_seconds"] = dict.fromkeys(time_budget.LAYERS, 0)
+    supplied = {
+        "yardstick_seconds": 0.002,
+        "inputs": about["inputs"],
+        "ratios": {layer: budget * at for layer, budget in budgets.items()},
+        # Matched to the record, so the collapse check -- which compares
+        # absolute seconds and not ratios -- has nothing to say here.
+        "layers": dict(about["absolute_seconds"]),
+        "units": dict(about["yardstick_seconds"]),
+    }
     monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    monkeypatch.setattr(time_budget, "measure", lambda: supplied)
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
-    assert time_budget.main(["--check"]) == 0
-    assert "::warning" in capsys.readouterr().out
+    assert time_budget.main(["--check"]) == 0, capsys.readouterr().out
+    printed = capsys.readouterr().out
+    assert "::warning" in printed, printed
+    assert "%.2fx" % at in printed or "1.7" in printed, printed
