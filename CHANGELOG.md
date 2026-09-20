@@ -48,8 +48,15 @@ a report about a file with same-named siblings reads
 The number is the element's position among **all** the scope's children,
 not an ordinal among the same-named ones, so inserting an unrelated
 sibling renumbers it — if you suppress a known finding by matching its
-subject, match the part before the bracket. No verdict moves: measured
-against 0.4.0 across the corpus, 0 of 60 inputs are judged differently
+subject, match the part before the bracket.
+
+No rule, severity or exit code moves. Measured against 0.4.0 across the
+corpus, one of sixty-one inputs is judged differently and the difference
+is this one: `CI-E09` on `…/ContactInformation/Phone` becomes `CI-E09`
+on `…/ContactInformation/Phone[23]`. The corpus gained that input, and
+the comparison learned to read a subject, for this release — it read
+rule ids, severities, the exit code and which rules went unasked, and
+would have reported zero against a change it had no case for
 (`docs/divergences.md` #53).
 
 **A rule's own text is bounded the way a finding's always was.** `note`
