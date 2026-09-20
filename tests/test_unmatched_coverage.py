@@ -356,3 +356,80 @@ def test_an_element_of_the_wrong_kind_is_named_too(tmp_path):
     text = render(report)
     assert record.subject in text
     assert "their element" not in text and "its element" not in text
+
+
+def _two_parents_one_name(env, id_short, value):
+    """Two scopes whose containers share an idShort, each holding its own
+    drifted child.
+
+    This is the shape `docs/divergences.md` #53 describes, and it is not
+    the same as two *siblings* sharing a drift: those carry one drift
+    between them and are one record on purpose, because handing each the
+    other's subtree is the double count #23 records an earlier version
+    making. Here there are two containers, two subtrees and two losses --
+    and the subject strings collided, so the record keyed on them kept
+    one.
+    """
+    out = _drift(env, id_short, value)
+    scope = out["submodels"][0]["submodelElements"][0]
+    out["submodels"][0]["submodelElements"].append(copy.deepcopy(scope))
+    return out
+
+
+def test_two_scopes_that_each_lost_rules_are_two_records(tmp_path):
+    """A subject was not an identity, so two elements were reported as one.
+
+    `_subject` appended an index only where an element had no idShort at
+    all, so an element under either of two same-named containers produced
+    the same string -- and the record is deduplicated by `(subject,
+    identifier)`, which merged them. Measured before the change: two
+    `ContactInformation` containers, each with a drifted `Phone`, one
+    record. The reader was told one element did what two did.
+
+    The metamodel forbids the shared idShort and this project relays that
+    as a warning rather than refusing the file ("ID-shorts of the value
+    must be unique"), so a file like this is judged, and what it is judged
+    to have done has to be attributable.
+    """
+    report = _run(tmp_path, _two_parents_one_name(contact_env(), "Phone",
+                                                  PHONE_TAIL))
+    records = [r for r in report.unmatched if r.seen == PHONE_TAIL]
+    assert len(records) == 2, (
+        "two scopes left rules unasked and %d record(s) were kept: %s"
+        % (len(records), [r.subject for r in records]))
+    assert len({r.subject for r in records}) == 2, (
+        "both records name the same element: %s" % [r.subject for r in records])
+    assert all("ContactInformation[" in r.subject for r in records), (
+        "the containers were not told apart: %s" % [r.subject for r in records])
+
+
+def test_siblings_carrying_one_drift_are_still_one_record(tmp_path):
+    """The direction this must not break.
+
+    Two siblings with the same drifted identifier carry one drift between
+    them, and handing each of them the whole subtree made the per-element
+    counts sum to twice what was lost. That grouping is by row and
+    identifier and is not what this change touches; pinned here because a
+    subject that now varies per element is exactly what would tempt
+    somebody to group by subject instead.
+    """
+    env = _drift(contact_env(), "Phone", PHONE_TAIL)
+    children = env["submodels"][0]["submodelElements"][0]["value"]
+    children.append(copy.deepcopy(
+        next(c for c in children if c.get("idShort") == "Phone")))
+    records = [r for r in _run(tmp_path, env).unmatched if r.seen == PHONE_TAIL]
+    assert len(records) == 1, (
+        "two siblings sharing one drift produced %d records: %s"
+        % (len(records), [r.subject for r in records]))
+
+
+def test_an_element_whose_id_short_is_its_own_is_named_by_it(tmp_path):
+    """And the reason this was recorded rather than repaired for a
+    release: disambiguating every subject would have changed the subject
+    string of every finding this project prints. Only a shared idShort
+    earns an index."""
+    report = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL))
+    record = next(r for r in report.unmatched if r.seen == PHONE_TAIL)
+    assert record.subject.endswith("/Phone"), (
+        "an element with an idShort nothing shares was renamed: %s"
+        % record.subject)

@@ -13,6 +13,19 @@ What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
 directory of names at 16 MiB.
 
+**Two elements under same-named containers are two records again.**
+`note` `summary.unmatchedElements` says which element left rules unasked,
+and it identified an element by the path to it -- which is not an
+identity when two containers in one scope carry the same `idShort`. The
+metamodel forbids that and this reader relays the violation as a warning
+rather than refusing the file, so such a file is judged; two elements
+under two same-named containers then produced the same path and were
+merged into one record, telling the reader that one element did what two
+did. An index is appended now, and only where a sibling shares the name,
+so every other subject is the string it was. No verdict moves: measured
+against 0.4.0 across the corpus, 0 of 60 inputs are judged differently
+(`docs/divergences.md` #53).
+
 **The suite now times what a caller waits for, and fails when it
 doubles.** `note` Four layers are measured -- starting the command,
 walking the corpus, a submodel wide enough to show a quadratic, and the
