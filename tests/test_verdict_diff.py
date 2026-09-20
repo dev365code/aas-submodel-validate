@@ -206,3 +206,36 @@ def _categories_stated(data):
 
     walk(data)
     return tuple(found)
+
+
+def test_the_comparison_says_what_it_does_not_cover():
+    """A zero is only worth the cases behind it, and this corpus has
+    none for `--template`.
+
+    `_judge` runs the tool with `-f json` and no other flag, so every
+    verdict a caller's own table decides is outside the comparison. The
+    figure is still true and still useful — and quoted in a commit about
+    that mode it reads as evidence it cannot be. `_judge`'s own
+    docstring is where this project wrote the principle down: a zero
+    from an instrument with no case for the change is the failure this
+    tool exists to stop.
+
+    The caveat is tied to the fact rather than left standing on its own.
+    Add `--template` to the corpus and the sentence has to go, and this
+    is what says so — a caveat nobody retires becomes a caveat nobody
+    reads.
+    """
+    source = (Path(verdict_diff.__file__)).read_text("utf-8")
+    # To the list's closing bracket, not to the first `)` -- which is
+    # `str(target)`'s, three arguments before `-f json`. Cut there, this
+    # read a fragment no flag could ever appear in, and adding
+    # `--template` to the call left it green. Measured.
+    invoked = source.split("subprocess.run(", 1)[1].split("]", 1)[0]
+    assert '"-f", "json"' in invoked, (
+        "this is not reading the argv the corpus is judged with: %r" % invoked)
+    covers_the_flag = "--template" in invoked
+    warns = "No case here is judged with --template" in source
+    assert covers_the_flag != warns, (
+        "the corpus %s judged with --template and the summary %s say so"
+        % ("is" if covers_the_flag else "is not",
+           "does" if warns else "does not"))

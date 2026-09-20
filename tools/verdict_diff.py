@@ -627,6 +627,17 @@ def main(argv=None):
         print("Every one of them belongs in the CHANGELOG, and the ones whose "
               "exit code falls belong there twice: a pipeline that is red on "
               "them today goes quiet, and nothing downstream reports that.")
+        # What the number does not cover, printed beside it rather than
+        # left to somebody's memory. `_judge` runs the tool with no flag
+        # but `-f json`, so a zero here is silent about every verdict
+        # `--template` decides -- and `_judge`'s own docstring is where
+        # this project wrote down that a zero from a comparison with no
+        # case for the change is the failure this tool exists to stop.
+        # A reader quoting the figure in a commit about that mode is
+        # quoting an instrument that was not pointed at it.
+        print("No case here is judged with --template: this compares the "
+              "tool's own packs. A zero above says nothing about a verdict "
+              "a supplied table decided.")
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
 
