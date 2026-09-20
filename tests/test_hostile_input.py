@@ -2752,6 +2752,61 @@ def test_a_named_pipe_comes_back_instead_of_waiting_forever(tmp_path):
     assert "not a file:" in done.stderr, done.stderr
 
 
+def test_open_regular_refuses_a_stream_and_opens_a_file(tmp_path):
+    """The guard itself, asked directly, because nothing else can see it.
+
+    `O_NONBLOCK` is what stops the hang: a FIFO opens at once instead of
+    waiting for a writer. It is `S_ISREG` that decides what to do with
+    what was opened, and without it a pipe is not refused -- it is *read*.
+    Measured against a writer holding one open and feeding it:
+    `open_regular` with the check removed returns a handle whose first
+    read is `b'{"submodels": []}'`. The reader would judge whatever was in
+    a stream's buffer at the instant it looked, and `inputSha256` would be
+    a hash of that -- bytes with no file behind them and no second reader
+    able to get the same ones.
+
+    Asked here rather than through the command line, where the loader's
+    own `is_file()` refuses a named pipe before this is reached. That is
+    why the end-to-end test below cannot see this: measured, the mutation
+    that empties this check leaves that test green.
+    """
+    import os
+
+    if not hasattr(os, "mkfifo"):                      # pragma: no cover - Windows
+        pytest.skip("no FIFOs on this platform")
+    from aas_submodel_validate.container import open_regular
+
+    ordinary = tmp_path / "ordinary.json"
+    ordinary.write_bytes(b'{"submodels": []}')
+    with open_regular(str(ordinary)) as handle:
+        assert handle.read() == b'{"submodels": []}'
+
+    pipe = tmp_path / "pipe.json"
+    os.mkfifo(str(pipe))
+    with pytest.raises(OSError) as refused:
+        open_regular(str(pipe))
+    assert "not a regular file" in str(refused.value), refused.value
+
+    # And with a writer, which is the case that would otherwise be read
+    # rather than merely be empty.
+    import subprocess
+    import sys
+    import time
+    writer = subprocess.Popen(
+        [sys.executable, "-c",
+         "import time\nf = open(%r, 'wb')\n"
+         "for _ in range(50):\n"
+         "    f.write(b'{\"submodels\": []}'); f.flush(); time.sleep(0.1)"
+         % str(pipe)])
+    try:
+        time.sleep(0.4)
+        with pytest.raises(OSError):
+            open_regular(str(pipe))
+    finally:
+        writer.kill()
+        writer.wait(timeout=10)
+
+
 def test_nothing_opens_a_path_without_asking_the_descriptor_what_it_is(tmp_path):
     """Every shape that is not a regular file, at every suffix.
 
@@ -2767,6 +2822,14 @@ def test_nothing_opens_a_path_without_asking_the_descriptor_what_it_is(tmp_path)
 
     The container was worse than a race: `AasxPackage` on a FIFO blocked
     with nothing racing it at all.
+
+    What this test cannot see, and the one above it can: the loader
+    refuses a named path that is not a regular file before anything
+    opens it, so emptying the descriptor check leaves every assertion
+    here true. Measured -- that mutation survives this test. This one is
+    the property a caller meets; the guard has its own test because a
+    property held by two mechanisms is a property whose second mechanism
+    can rot unnoticed.
     """
     import os
     import subprocess
