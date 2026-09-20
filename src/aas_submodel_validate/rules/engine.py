@@ -339,7 +339,15 @@ def rows_not_reached(ctx) -> List[str]:
     # list of three strands the same rows three times, and a reader
     # counting the list would read that as three times the loss.
     order = {row["id"]: index for index, row in enumerate(_all_rows(analysed))}
-    return sorted(set(missed), key=lambda rid: order.get(rid, len(order)))
+    # The id breaks the tie. Everything the tables do not place shares one
+    # position, `sorted` is stable, and what it is stable *over* is a set
+    # -- whose iteration order is string-hash order and is randomised per
+    # process. Nothing reaches that fallback today, because every analysed
+    # table is an imported module and every id in it is placed; it is
+    # reachable the moment a table is not a module. Measured on that
+    # shape: five interpreters, five orders, same input. A fallback that
+    # is only correct while nothing takes it is not correct.
+    return sorted(set(missed), key=lambda rid: (order.get(rid, len(order)), rid))
 
 
 def _all_rows(analysed) -> List:

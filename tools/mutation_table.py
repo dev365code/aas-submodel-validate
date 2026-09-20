@@ -846,6 +846,21 @@ TABLE = [
      "this mutant survived it, because the loader refuses a named path "
      "before anything opens it -- a property held by two mechanisms needs "
      "a test per mechanism."),
+    ("engine/the-same-input-is-the-same-report-in-any-process",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    return sorted(set(missed), key=lambda rid: (order.get(rid, len(order)), rid))",
+     "    return sorted(set(missed), key=lambda rid: order.get(rid, len(order)))",
+     ["tests/test_the_report_is_the_same_twice.py::"
+      "test_rules_not_asked_is_ordered_the_same_in_any_process"],
+     "everything the tables do not place shares one sort position, and "
+     "`sorted` is stable over a set -- whose iteration order is string-"
+     "hash order, randomised per process. Measured with the tie removed "
+     "and a table that is not an imported module: five interpreters, five "
+     "different orders for the same input, so the same file gives two "
+     "reports nobody can diff. Nothing reaches that fallback today; the "
+     "arriving `--template` mode is what makes a table not a module, and "
+     "a fallback that is only correct while nothing takes it is not "
+     "correct."),
 
 ]
 
