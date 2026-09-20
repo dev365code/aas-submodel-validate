@@ -6,7 +6,7 @@ RUFF_VERSION := 0.16.3
 PYTHON       ?= python3
 export PYTHONPATH := $(CURDIR)/src:$(CURDIR)/tests
 
-.PHONY: help check ci-axes test lint fix dev generated vendored exercised mutants
+.PHONY: help check ci-axes test lint fix dev generated vendored exercised time-budget mutants
 
 help:
 	@echo "make check   everything CI runs: lint, gates, the test suite"
@@ -18,7 +18,7 @@ help:
 	@echo "make fix     ruff --fix, for what it can correct itself"
 	@echo "make dev     install the pinned dev tools"
 
-check: lint generated vendored battery-data test exercised
+check: lint generated vendored battery-data test exercised time-budget
 
 # The two things CI can see and `check` cannot: which tree the suite
 # runs from, and which interpreter runs it. Both have gone red on a
@@ -44,6 +44,14 @@ vendored:
 
 exercised:
 	$(PYTHON) tools/rule_coverage.py --check
+
+# Correct and unusable is a state a validator can ship: every other
+# gate here asks whether the verdict is right, none of them asks
+# whether it arrived. Budgets are ratios against a yardstick measured
+# in the same run, so a slow machine does not fail and a slow layer
+# does.
+time-budget:
+	$(PYTHON) tools/time_budget.py --check
 
 battery-data:
 	$(PYTHON) tools/battery_data_check.py

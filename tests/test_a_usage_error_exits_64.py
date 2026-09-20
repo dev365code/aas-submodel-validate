@@ -343,10 +343,26 @@ def test_the_help_page_pairs_each_code_with_its_meaning(capsys):
                                                      rows[str(EXIT_USAGE)])
 
 
-def _newest_entry():
-    _, _, entries = (ROOT / "CHANGELOG.md").read_text("utf-8").partition("\n## ")
-    newest, _, _ = entries.partition("\n## ")
-    return newest
+#: The release that owed this and paid it. Written down rather than read
+#: as "the newest entry": 0.3.0 promised 64 for the next minor release and
+#: 0.4.0 is that release, so the paragraph belongs there forever. Asked of
+#: the newest entry instead, this gate started failing the moment a 0.4.1
+#: draft was opened for something else -- a gate that goes red for an
+#: unrelated entry teaches the next person to delete the gate.
+PAID_IN = "0.4.0"
+#: The entry that made the promise, and the only one allowed to keep its
+#: future tense: it is a record of what 0.3.0 said, not a claim about now.
+PROMISED_IN = "0.3.0"
+
+
+def _entries():
+    """Each CHANGELOG entry as {version: its text}."""
+    _, _, rest = (ROOT / "CHANGELOG.md").read_text("utf-8").partition("\n## ")
+    found = {}
+    for chunk in rest.split("\n## "):
+        found[chunk.split(" ", 1)[0].split("\n", 1)[0]] = chunk
+    assert PAID_IN in found and PROMISED_IN in found, sorted(found)
+    return found
 
 
 #: Present tense, and the number this release actually uses.
@@ -368,7 +384,7 @@ def test_the_release_that_owes_64_says_it_paid():
     satisfies every one of those while telling the reader the opposite of
     what shipped. Measured: that paragraph passed this file.
     """
-    entry = _normalised(_newest_entry())
+    entry = _normalised(_entries()[PAID_IN])
     # Sentence by sentence, and only the ones about this number. Asked of
     # the whole entry, the deferral words matched "IDTA 02007 ... is still
     # not vendored", which is a true sentence about something else -- a
@@ -378,8 +394,9 @@ def test_the_release_that_owes_64_says_it_paid():
                 if re.search(r"\b%d\b" % EXIT_USAGE, sentence)
                 and "MiB" not in sentence]
     assert about_64, (
-        "the newest entry says nothing about %d; every entry here carries "
-        "`64 MiB` twice, so the bare number proves nothing" % EXIT_USAGE)
+        "the %s entry says nothing about %d; every entry here carries "
+        "`64 MiB` twice, so the bare number proves nothing"
+        % (PAID_IN, EXIT_USAGE))
     assert any(DELIVERED.search(sentence) for sentence in about_64), (
         "the entry names %d but never says the tool exits by it: %r"
         % (EXIT_USAGE, about_64))
@@ -411,17 +428,26 @@ def test_nothing_public_still_says_64_is_coming():
         r"(next minor release|will exit 64|64 [^.]{0,40}instead of 2)",
         re.IGNORECASE)
     for path in _reader_facing():
-        text = path.read_text("utf-8")
         if path.name == "CHANGELOG.md":
-            text = _newest_entry()
-        found = promising.search(_normalised(text))
+            # Every entry but the one that made the promise. Restricting
+            # this to the newest entry would let a stale promise sit in
+            # any entry written after 0.3.0 and before today.
+            for version, entry in _entries().items():
+                if version == PROMISED_IN:
+                    continue
+                found = promising.search(_normalised(entry))
+                assert not found, (
+                    "the %s entry still promises %d for a later release: %r"
+                    % (version, EXIT_USAGE, found.group(0)))
+            continue
+        found = promising.search(_normalised(path.read_text("utf-8")))
         assert not found, "%s still promises %d for a later release: %r" % (
             path.relative_to(ROOT), EXIT_USAGE, found.group(0))
 
     # And the announcement is still on the record where it was made, so
     # this test cannot be satisfied by deleting the history instead.
-    assert "will exit 64" in (ROOT / "CHANGELOG.md").read_text("utf-8"), \
-        "0.3.0's announcement was edited away rather than answered"
+    assert "will exit 64" in _entries()[PROMISED_IN], \
+        "%s's announcement was edited away rather than answered" % PROMISED_IN
 
 
 def test_the_front_page_contract_paragraph_names_64_and_what_it_means():

@@ -96,3 +96,52 @@ Every one was found by corrupting an input. None would have been found
 by reading the code, and all four had been read.
 
 A gate that has never been red is a comment.
+
+## The time budget
+
+`make check` times four layers and compares each against a ratio recorded
+in `docs/time-budget.json`. Half again as expensive is said out loud; twice
+is a failure.
+
+Four, because each sees something the others cannot:
+
+- **`cold_start`** runs the command in a fresh interpreter, and is the only
+  figure that is the time a person actually waits. The others import the
+  package before the clock starts and then repeat a warm call, so work done
+  at import measures as zero in them -- an index built at import made the
+  command more than twice as slow and left every other layer unmoved.
+- **`corpus_pass`** judges *and renders* every input the corpus holds.
+- **`scale`** is one wide submodel, because the corpus cannot do this job:
+  its largest scope holds fifteen elements, so anything superlinear in
+  siblings barely moves it. A pairwise comparison added to the walk read
+  1.0x on the corpus and 4.4x here.
+- **`rules_layer`** is the walk alone, the layer with a cost history.
+
+The seconds are compared as well as the ratios, in one direction: a layer
+whose absolute time falls to a fifth of what was recorded has stopped doing
+its work, and no ratio can tell that from a fast machine.
+
+Seconds are not the budget. Every figure is a ratio against a yardstick
+measured in the same pass, immediately beside the layer it divides, so a
+slow machine does not fail. The ratio does not travel between operating
+systems either, so each carries its own entry and a platform with no entry
+passes quietly, saying so -- there is no way to write a budget for a
+machine before a run on it.
+
+What this catches and what it does not, plainly: run-to-run spread on an
+idle machine is about 11% on the corpus and 6% on the rules layer, and the
+failure line is at twice the budget. So it catches a layer that doubled,
+not a layer that got a fifth slower. It is a smoke alarm for the kind of
+regression that ships and then has to be apologised for -- the walk here
+was quadratic once, correct the whole time, and what noticed was a person
+waiting -- and it is not a benchmark. Something genuinely slower but under
+the line goes through, and that is the deliberate cost of a gate that does
+not fire on runner noise.
+
+If a change makes a layer genuinely more expensive and that is the right
+trade, run `python tools/time_budget.py --record` on an idle machine,
+about a dozen times, and write in a run close to the middle with a note
+giving the peak-to-peak spread and how many runs it came from. A standard
+deviation of three samples reads reassuringly and hides what a reader
+actually meets; recording one hurried run, or the fastest of several, is
+how a budget ends up warning on ordinary work.

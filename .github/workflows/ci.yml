@@ -112,6 +112,23 @@ jobs:
       - run: pytest -q -rs
       - name: every rule id fired somewhere
         run: python tools/rule_coverage.py --check
+      # On every row of the matrix, because a budget is a ratio per
+      # platform and a platform with no recorded budget passes
+      # quietly -- so the only way one gets written is a run that
+      # prints what this machine measures. `--record` runs after the
+      # check and never gates: it is how the next budget is read.
+      - name: the run stays inside its time budget
+        run: python tools/time_budget.py --check
+      - name: what this machine measures
+        # `success() || failure()` and not `always()`: always() is true for a
+        # cancelled job too, and pull requests here cancel their own older
+        # runs. And `continue-on-error`, because `if:` decides whether a step
+        # runs, not whether its failure fails the job -- this one is
+        # non-gating by intent, and it can raise on a tree with no tests
+        # directory, which is a reader `MANIFEST.in` grafts for.
+        if: success() || failure()
+        continue-on-error: true
+        run: python tools/time_budget.py --record
       # Also in the lint job, deliberately: this one runs on every OS in
       # the matrix, and end-of-line damage is a property of the checkout,
       # not of the commit. A hash verified only where the file was written

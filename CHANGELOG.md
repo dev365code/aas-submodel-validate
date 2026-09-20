@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.4.1 — unreleased
+
+Who should take this release: nobody has to. Nothing a caller sees
+changes -- no rule is added or removed, no verdict moves, no exit code
+moves, and the report is the same document with the same
+`schemaVersion`. It is 219 rules, 178 generated from the vendored
+official template files, across six template packs, exactly as 0.4.0
+was.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
+**The suite now times what a caller waits for, and fails when it
+doubles.** `note` Four layers are measured -- starting the command,
+walking the corpus, a submodel wide enough to show a quadratic, and the
+rule layer alone -- and each is compared against a budget for the
+platform it ran on. The comparison is a ratio rather than a stopwatch: a
+pure-Python yardstick is measured *beside* each layer in the same pass,
+so a loaded machine slows both and the ratio holds. Warn at 1.5x, fail
+at 2.0x. It is a smoke alarm and not a benchmark -- it is aimed at a
+layer that doubled, not at one a fifth slower -- and it is a gate on this
+repository rather than a promise about your machine. `docs/time-budget.json`
+carries the recorded budgets and now travels in the source distribution,
+which is the only part of this a reader downloading the sdist will see.
+
 ## 0.4.0 — 2026-09-20
 
 Who should take this release: anyone validating IDTA 02023 Carbon
