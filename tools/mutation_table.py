@@ -834,17 +834,18 @@ TABLE = [
      "            raise OSError(errno.EINVAL, \"not a regular file\", str(path))",
      "        pass",
      ["tests/test_hostile_input.py::"
-      "test_nothing_opens_a_path_without_asking_the_descriptor_what_it_is"],
-     "five places here open a path a caller named, and every one of them "
-     "hung on a named pipe -- opening a FIFO with no writer waits for one. "
-     "Measured with `faulthandler`: `smtv pipe.json` never returned, and "
-     "`AasxPackage` on a FIFO blocked with nothing racing it at all. It was "
-     "the one unreadable shape where \"could not run\" does not arrive. The "
-     "first repair put `Path.is_file()` in front of one of the five, which "
-     "is a sample of the name and then a use of it: two of sixteen raced "
-     "command-line runs still hung, in the loader's bounded read rather "
-     "than where the check had been added. Asked of the descriptor, raced "
-     "440,661 times in process with no block."),
+      "test_open_regular_refuses_a_stream_and_opens_a_file"],
+     "`O_NONBLOCK` above stops the hang -- a FIFO opens at once instead "
+     "of waiting for a writer -- and this is what decides what to do with "
+     "what was opened. Without it a pipe is not refused, it is read: "
+     "measured against a writer holding one open and feeding it, the "
+     "handle's first read is b'{\"submodels\": []}'. The reader would "
+     "judge whatever was in a stream's buffer at the instant it looked, "
+     "and `inputSha256` would be a hash of bytes with no file behind "
+     "them. The first check aimed at this row was the end-to-end one and "
+     "this mutant survived it, because the loader refuses a named path "
+     "before anything opens it -- a property held by two mechanisms needs "
+     "a test per mechanism."),
 
 ]
 
