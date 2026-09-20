@@ -443,14 +443,17 @@ def _building_jobs(path):
             if "python -m build" in _uncommented(source)}
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "measured 2026-09-19: release.yml has one job, `build`, that both makes "
-    "the artifact and creates the release with it. That is the shape the "
-    "job split is for -- it is what forces one job to hold contents:write "
-    "and attestations:write while also running arbitrary build code. This "
-    "turns green when the split lands, and is strict so that it cannot land "
-    "unnoticed."))
 def test_the_job_that_builds_is_not_the_job_that_publishes():
+    """Held as a strict xfail from the day it was written until the day
+    the split landed, which is what made the landing unmissable: the
+    marker had to come off on purpose, in the commit that separated the
+    jobs, or the suite went red for a test that had started passing.
+
+    What it is about: one job that both makes the artifact and sends it
+    is one job holding `contents: write` and `attestations: write` while
+    running the suite, a build backend, and a dependency wheel fetched
+    from an index.
+    """
     for workflow in _workflows():
         overlap = _building_jobs(workflow) & _publishing_jobs(workflow)
         assert not overlap, (
@@ -1410,10 +1413,15 @@ def test_only_the_job_that_signs_and_the_one_that_publishes_mint_a_token():
     """`id-token: write` is the credential that speaks for this
     repository to a service that has never seen it. Two steps need it --
     the attestation and the upload to PyPI -- and a third job holding it
-    is a third place it can leak from."""
+    is a third place it can leak from.
+
+    It was `build` and `publish` until the jobs were separated, and
+    `build` held it through the suite, a build backend and a dependency
+    wheel fetched from an index. The job that signs is the job that
+    holds it now."""
     minting = sorted(name for name, block in _release_jobs().items()
                      if (_granted(block) or {}).get("id-token") == "write")
-    assert minting == ["build", "publish"], minting
+    assert minting == ["attest", "publish"], minting
 
 
 def test_the_publishing_job_is_allowed_to_do_one_thing():
