@@ -828,6 +828,23 @@ TABLE = [
      "and 200,000, beside a violation cut at 2,000. Every generated pack "
      "interpolates that text from the template's own strings, so the "
      "length is the template's to choose."),
+    ("container/a-path-is-opened-only-after-the-descriptor-says-what-it-is",
+     "src/aas_submodel_validate/container.py",
+     "        if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):\n"
+     "            raise OSError(errno.EINVAL, \"not a regular file\", str(path))",
+     "        pass",
+     ["tests/test_hostile_input.py::"
+      "test_nothing_opens_a_path_without_asking_the_descriptor_what_it_is"],
+     "five places here open a path a caller named, and every one of them "
+     "hung on a named pipe -- opening a FIFO with no writer waits for one. "
+     "Measured with `faulthandler`: `smtv pipe.json` never returned, and "
+     "`AasxPackage` on a FIFO blocked with nothing racing it at all. It was "
+     "the one unreadable shape where \"could not run\" does not arrive. The "
+     "first repair put `Path.is_file()` in front of one of the five, which "
+     "is a sample of the name and then a use of it: two of sixteen raced "
+     "command-line runs still hung, in the loader's bounded read rather "
+     "than where the check had been added. Asked of the descriptor, raced "
+     "440,661 times in process with no block."),
 
 ]
 

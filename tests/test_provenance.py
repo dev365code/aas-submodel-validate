@@ -416,3 +416,29 @@ def test_material_that_ships_with_no_recorded_hash_is_refused(tmp_path,
     finally:
         stray.unlink()
     assert module.check() == 0, capsys.readouterr().err
+
+
+def test_the_schema_row_names_every_case_that_leaves_the_digest_null():
+    """The row published an "only when" the code stopped honouring.
+
+    It said `null` only for a file that could not be opened at all or one
+    above the digest bound. A path that is not a regular file is neither:
+    `/dev/null` opened perfectly well and hashed to the sha of zero bytes
+    until 0.4.1, and a pipe made the run hang. Both are `null` now, and
+    the page said otherwise while `test_the_digest_bound_the_schema_
+    publishes_is_the_one_in_the_code` stayed green -- it re-derives the
+    256 and reads nothing else in the sentence, which is the same shape
+    of blindness its own docstring was written about.
+    """
+    import pathlib
+    row = [line for line in
+           (pathlib.Path(__file__).resolve().parents[1] / "docs" / "report-schema.md")
+           .read_text("utf-8").splitlines()
+           if line.startswith("| `inputSha256`")]
+    assert row, "the row left the page"
+    said = row[0].lower()
+    assert "not a regular file" in said, (
+        "the page still publishes an `only when` that the code does not "
+        "honour: %s" % row[0])
+    for word in ("pipe", "socket", "device"):
+        assert word in said, "the row does not name a %s" % word

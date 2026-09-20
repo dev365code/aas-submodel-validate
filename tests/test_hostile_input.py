@@ -620,10 +620,18 @@ def test_a_read_that_runs_out_of_memory_could_not_run(tmp_path):
     """SECURITY.md promises that reading a hostile file fails as a finding
     rather than a crash, and MemoryError walked out of the loader as a
     traceback. It is not a defect in the file either, so it leaves by the
-    could-not-run code rather than as a verdict about the document."""
+    could-not-run code rather than as a verdict about the document.
+
+    Injected at `container.open_regular`, which is where the read opens
+    now. It was `pathlib.Path.open`, and when the bounded read stopped
+    going through that name this test went on passing while injecting
+    into nothing -- the failure it exists for could have come back
+    unnoticed. A patch aimed at a call the code no longer makes is a
+    test of the mock."""
     path = tmp_path / "env.json"
     path.write_bytes(env_json("urn:x"))
-    with mock.patch("pathlib.Path.open", side_effect=MemoryError("no memory")):
+    with mock.patch("aas_submodel_validate.container.open_regular",
+                    side_effect=MemoryError("no memory")):
         assert main([str(path), "-q"]) == EXIT_ERROR
 
 
@@ -2676,3 +2684,119 @@ def test_a_rules_own_text_is_bounded_the_way_a_violations_is():
     for key in ("title", "fix"):
         assert len(printed[key] or "") <= MAX_REPORTED_CHARACTERS, (
             "the report's %r is %d characters" % (key, len(printed[key])))
+
+
+def test_a_named_pipe_comes_back_instead_of_waiting_forever(tmp_path):
+    """`smtv pipe.json` never returned.
+
+    The loader refuses it correctly -- `is_file()` is false, so it is
+    "not a file" and nothing is judged. `_digest` is asked separately and
+    opens the path unconditionally, and opening a FIFO with no writer
+    blocks until one arrives. Measured with `faulthandler`: the process
+    sits in `runner.py`'s `open(path, "rb")` and never leaves.
+
+    It is the one shape where "could not run" does not arrive at all.
+    Every other unreadable path -- missing, a directory, a suffix this
+    reader chooses no format for, a bare `-` -- comes back with exit 2
+    and a sentence. A build that hands this one a path from a variable
+    hangs the job rather than failing it.
+
+    Run in a subprocess with a deadline, because a test for a hang that
+    hangs is not a test.
+    """
+    import os
+    import subprocess
+    import sys
+
+    if not hasattr(os, "mkfifo"):                      # pragma: no cover - Windows
+        pytest.skip("no FIFOs on this platform")
+    pipe = tmp_path / "pipe.json"
+    os.mkfifo(str(pipe))
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    seconds = 60                       # what this file's other hang test uses
+    try:
+        done = subprocess.run(
+            [sys.executable, "-m", "aas_submodel_validate", str(pipe), "-q"],
+            capture_output=True, text=True, timeout=seconds, cwd=str(root),
+            env=dict(os.environ, PYTHONPATH="src"))
+    except subprocess.TimeoutExpired as waited:
+        # The sentence, not a raw traceback: the one failure this test
+        # exists for arrived as `TimeoutExpired` and said nothing about
+        # what it was waiting on. This file already had the idiom.
+        #
+        # And whatever the child managed to say before it was killed,
+        # because "it did not come back" is the least useful half of the
+        # answer. This gate went red once, unexplained, and could not be
+        # reproduced in seventy runs since -- thirty of them under six
+        # busy cores, where the worst was 0.32s against this ceiling. If
+        # it happens again the output is what will say where it got to.
+        def _said(stream):
+            if not stream:
+                return "nothing"
+            return repr(stream.decode("utf-8", "replace")
+                        if isinstance(stream, bytes) else stream)[:400]
+        pytest.fail(
+            "a named pipe gave no answer within %ds; measured cost when it "
+            "works is under a third of a second under load.\nstdout: %s\n"
+            "stderr: %s" % (seconds, _said(waited.stdout), _said(waited.stderr)))
+    assert done.returncode == 2, (
+        "a named pipe left by %r; it is a path this reader cannot read, "
+        "which is 2" % done.returncode)
+    # The pipe's own sentence, not any refusal's. `rc == 2` plus "smtv: "
+    # is what a missing file, an empty file and a garbage file all
+    # produce, so the first spelling of this passed with an ordinary
+    # empty file in place of the pipe -- measured. "not a file" is the
+    # loader's answer for a path that is not a regular file and nothing
+    # else here says it.
+    assert "not a file:" in done.stderr, done.stderr
+
+
+def test_nothing_opens_a_path_without_asking_the_descriptor_what_it_is(tmp_path):
+    """Every shape that is not a regular file, at every suffix.
+
+    The first fix for the hang put `Path.is_file()` in front of one of
+    the five places this package opens a caller's path. That is a sample
+    of the name followed by a use of it, and the name can change in
+    between: measured on the command line against a path being swapped
+    between a regular file and a pipe, two of sixteen runs still hung --
+    and the stack was in the loader's bounded read, not in the digest
+    that had been guarded. `container.open_regular` asks the descriptor
+    instead, with `O_NONBLOCK` so a FIFO returns at once. Raced in
+    process 440,661 times after the change: no block.
+
+    The container was worse than a race: `AasxPackage` on a FIFO blocked
+    with nothing racing it at all.
+    """
+    import os
+    import subprocess
+    import sys
+
+    if not hasattr(os, "mkfifo"):                      # pragma: no cover - Windows
+        pytest.skip("no FIFOs on this platform")
+
+    shapes = {}
+    for name in ("p.json", "p.xml", "p.aasx", "p.unknown"):
+        os.mkfifo(str(tmp_path / name))
+        shapes[name] = tmp_path / name
+    os.symlink(str(tmp_path / "p.json"), str(tmp_path / "link.json"))
+    shapes["a symlink to a pipe"] = tmp_path / "link.json"
+    shapes["a directory"] = tmp_path
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    for label, path in shapes.items():
+        try:
+            done = subprocess.run(
+                [sys.executable, "-m", "aas_submodel_validate", str(path), "-q"],
+                capture_output=True, text=True, timeout=60, cwd=str(root),
+                env=dict(os.environ, PYTHONPATH="src"))
+        except subprocess.TimeoutExpired:
+            pytest.fail("%s gave no answer at all" % label)
+        assert done.returncode == 2, "%s left by %r" % (label, done.returncode)
+        assert "not a file:" in done.stderr, (label, done.stderr)
+
+    # And the container, which is reached without the loader in front of
+    # it and blocked on a FIFO with no race at all.
+    from aas_submodel_validate.container import AasxPackage, ContainerError
+    with pytest.raises((ContainerError, OSError)):
+        AasxPackage(str(shapes["p.aasx"]))

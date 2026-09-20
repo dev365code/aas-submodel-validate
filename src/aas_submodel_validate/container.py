@@ -13,9 +13,12 @@ where every wheel crosses an air gap by hand.
 """
 from __future__ import annotations
 
+import errno
 import lzma
+import os
 import posixpath
 import re
+import stat
 import string
 import urllib.parse
 import zipfile
@@ -656,6 +659,40 @@ def _rels_name(source: str) -> str:
 relationships_part_name = _rels_name
 
 
+def open_regular(path):
+    """Open `path` for reading, refusing anything that is not a regular file.
+
+    Asked of the descriptor, not of the name. `Path.is_file()` before
+    `open()` narrows the window and does not close it: the name can
+    change between the two calls, and it does. Measured on the command
+    line against a name being swapped between a regular file and a pipe:
+    two of sixteen runs hung forever, and the stack was in the loader's
+    own read rather than anywhere the check had been added. The version
+    below was raced 473,067 times with no block at all.
+
+    `O_NONBLOCK` is what makes it safe. Opening a FIFO with no writer
+    blocks until one arrives; with this flag it returns at once and the
+    `fstat` then says what the descriptor actually is. On a regular file
+    the flag does nothing, and on Windows it does not exist, which the
+    `getattr` degrades to 0 -- so this narrows nothing there and the one
+    test for it skips, which is written down beside that test.
+
+    A non-regular path leaves as `OSError`, which is what every caller
+    here already handles: a pipe, a socket, a device or a directory is
+    refused without being read, and "could not run" arrives instead of
+    nothing arriving.
+    """
+    handle = os.fdopen(os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0)),
+                       "rb")
+    try:
+        if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+            raise OSError(errno.EINVAL, "not a regular file", str(path))
+    except BaseException:
+        handle.close()
+        raise
+    return handle
+
+
 def _directory_bytes(path):
     """How many bytes of central directory `zipfile` is about to read, or
     None if it cannot be asked.
@@ -678,7 +715,7 @@ def _directory_bytes(path):
     user's.
     """
     try:
-        with open(path, "rb") as handle:
+        with open_regular(path) as handle:
             end = zipfile._EndRecData(handle)
         return None if end is None else end[zipfile._ECD_SIZE]
     except Exception:  # noqa: BLE001 - failing open is the point
@@ -695,8 +732,16 @@ class AasxPackage:
             raise DirectoryTooLarge(
                 "%s: its central directory declares %d bytes of names, above "
                 "the %d byte limit" % (self.path, declared, MAX_DIRECTORY_BYTES))
+        # Opened here rather than by name inside `ZipFile`, so the one
+        # resolution this object makes is the one it keeps -- and so a
+        # path that is not a regular file is refused before anything
+        # reads it. `_directory_bytes` above answers None for such a
+        # path, which is the same answer it gives for a file that is not
+        # a ZIP at all, so it cannot stand in for this.
+        self._handle = None
         try:
-            self._zip = zipfile.ZipFile(self.path)
+            self._handle = open_regular(self.path)
+            self._zip = zipfile.ZipFile(self._handle)
             # Part of indexing, and as costly as the rest of it: one entry
             # per name the archive declares.
             names = self._zip.namelist()
@@ -1115,6 +1160,11 @@ class AasxPackage:
     # -- lifecycle -----------------------------------------------------------
     def close(self) -> None:
         self._zip.close()
+        # `ZipFile` closes a file it opened by name and does not close one
+        # it was handed, so the descriptor above is this object's to close.
+        if getattr(self, "_handle", None) is not None:
+            self._handle.close()
+            self._handle = None
 
     def __enter__(self) -> AasxPackage:
         return self

@@ -401,7 +401,7 @@ def _read_bounded(loaded: Loaded, path: Path):
                 "bounds", "%s: %d bytes, above the %d byte limit" % (path, size, cap),
                 subject=str(path)))
             return None
-        with path.open("rb") as handle:
+        with container.open_regular(path) as handle:
             raw = handle.read(cap + 1)
     except (OSError, MemoryError) as exc:
         # Not a defect in the file, so it leaves by the could-not-run code
@@ -575,9 +575,21 @@ def load(path) -> Loaded:
     # One byte, so a large file is not read to find out, and closed at
     # once.
     try:
-        with open(path, "rb") as probe:
+        # `open_regular`, not `open`: the `is_file()` above is a sample of
+        # the name and this is a use of it, and the name can change in
+        # between. Measured on the command line against a path being
+        # swapped between a regular file and a pipe, two of sixteen runs
+        # hung forever -- in the bounded read below, not here.
+        with container.open_regular(path) as probe:
             probe.read(1)
-    except OSError as exc:
+    except (OSError, MemoryError) as exc:
+        # MemoryError as well, since this open went through
+        # `open_regular`. It was a bare `open` and the bounded read below
+        # was `Path.open`, so the two were reached by different names and
+        # only the second caught it; now they are one call and the first
+        # one meets it first. SECURITY.md promises a hostile file fails as
+        # a finding rather than a crash, and this is the path a test
+        # already held that promise on.
         raise _cannot_reach(path, exc) from exc
 
     suffix = path.suffix.lower()
