@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.5.0 — unreleased
+
+Who should take this release: anyone holding an IDTA-shaped submodel
+template this tool has no pack for. `--template FILE` generates a rule
+table from your file at run time and judges the submodel against it,
+where before it could only be reported as unmatched (`SMT-D1`).
+
+It is still 219 rules, 178 generated from the vendored official template
+files, across six template packs. A table built from your file adds no
+rule to that count and is not registered: the ids it uses exist for the
+run and are not ids this project publishes.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB.
+
+**A template you supply is judged against, and the report says it was
+yours.** `verdict` A submodel of a template with no pack here drew
+`SMT-D1` and exited 1 unless `--allow-unmatched` was given. Give
+`--template` the template file and the submodel is judged against the
+rows that file declares.
+
+What that buys is exactly what a generator can read out of a template:
+which elements, of which kind, under which identifiers, and how many of
+each. What it does not bring is everything a pack carries besides its
+table — the hand-written rules, which are readings of a specification
+rather than of a template, the readings recorded in
+`docs/divergences.md`, and the corpus that pins them. Those exist per
+template and cannot be derived from one.
+
+`provenance.template` carries the file's SHA-256, the path, the
+identifier it claims, its row count, and `published: false`; a line on
+the screen says the same. **A verdict against a template you supplied is
+not a statement about conformance to a published IDTA template**, and a
+consumer that cannot tell the two apart has been told something untrue.
+The key is absent rather than null when the run used this project's own
+packs, so a reader who finds it present knows why.
+
+Where your template claims an identifier one of the six packs also
+answers for, yours answers and the pack stands down — and says so, with
+the identifier named. Both answering was measured first: handing the
+flag the very file 02003's pack was generated from gave the same missing
+element twice, once under each id, so a build counting errors got a
+number that depended on the flag rather than on the file.
+
+A template that is not a template, is not JSON, cannot be read, is above
+the byte bound, or declares more than ten thousand rows is refused at
+exit 2 — "could not judge the input", the same code every other
+unreadable input gets. The row bound is separate from the bound on the
+document being judged because they are different files: forty-six
+megabytes of template sits comfortably inside the sixty-four this reader
+advertises, and what a generator spends is decided by rows.
+
 ## 0.4.1 — 2026-09-21
 
 Who should take this release: anyone whose build can be handed a path

@@ -61,6 +61,27 @@ Contact Information. A submodel of any other template is reported as not
 matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
+`--template FILE` is the other answer. Give it an IDTA-shaped template
+of your own and a table is generated from it at run time and the
+submodel judged against that. What that buys and what it does not:
+
+- It checks **what a template states** — which elements, of which kind,
+  under which identifiers, how many of each. That is what a generator
+  can read out of a template file, and it is all of it.
+- It does **not** bring the hand-written rules, which are readings of a
+  specification rather than of a template: the battery passport against
+  Regulation (EU) 2023/1542, `URIOfTheProduct` as an absolute URI, the
+  readings recorded in `docs/divergences.md`, the corpus that pins them.
+  Those exist per template and cannot be derived from one.
+- The report says so. `provenance.template` carries the file's hash and
+  `published: false`, and a line on the screen says the table came from
+  your file and is not a published IDTA template. **A verdict against a
+  template you supplied is not a statement about conformance to a
+  published one.**
+- Where your template claims an identifier one of the six packs also
+  answers for, yours answers and the pack stands down — the report says
+  which identifier that was.
+
 The generator reads a row's cardinality from one of three qualifier
 spellings -- the current `SMT/Cardinality`, the older `Multiplicity`, or a
 bare `Cardinality`, the same vocabulary (`One`, `ZeroToOne`, `OneToMany`,
@@ -99,4 +120,6 @@ the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
 One published template written in the `Multiplicity` spelling is still
 not vendored: **IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14
 mandatory), measured from the published template at the upstream pin.
-Until its table is added, a submodel of it draws `SMT-D1`.
+Until its table is added, a submodel of it draws `SMT-D1` — or can be
+judged with `--template` against the published template file, with the
+limits above.

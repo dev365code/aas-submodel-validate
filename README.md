@@ -319,7 +319,7 @@ finished.
 
 - **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the six it supports.
 - **You need a file repaired.** There is no `--fix`. A validator that edits your file has to be trusted twice.
-- **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly.
+- **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly. If you have the template file, `--template` judges against it: what a template states, and not the hand-written rules or the recorded readings that come with a pack. The report says the table was yours.
 - **You want a hosted check.** There is none, on purpose.
 
 What it refuses to do is written down in [docs/scope.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md).

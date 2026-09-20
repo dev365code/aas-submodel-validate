@@ -85,6 +85,35 @@ def test_every_key_the_report_emits_is_described_and_no_others():
         assert _documented_keys(SECTIONS[heading]) == emitted, heading
 
 
+def test_provenance_is_described_key_by_key_too():
+    """The one block the loop above never reached.
+
+    It walks four headings and `provenance` is not one of them, so a key
+    could reach the report, be added to the suite's own list of expected
+    keys, and stay undocumented with everything green. `provenance.template`
+    arrived that way and this is what would have caught it.
+
+    Asked of both shapes, because the block is not the same in both: a
+    run against this project's own packs carries three keys and a run
+    against a supplied template carries four, and the page has to
+    describe the union or it describes neither.
+    """
+    plain = set(_report()["provenance"])
+    documented = _documented_keys(SECTIONS["provenance"])
+    assert plain <= documented, (
+        "the page does not describe %s" % sorted(plain - documented))
+
+    from aas_submodel_validate.model import Report
+
+    with_template = Report(path="x", input_sha256="abc",
+                           template={"sha256": "d", "path": "t.json",
+                                     "published": False,
+                                     "semanticId": "urn:x", "rows": 1})
+    widest = set(with_template.as_dict()["provenance"])
+    assert widest == documented, (
+        "described %s, emitted %s" % (sorted(documented), sorted(widest)))
+
+
 def test_the_vocabularies_are_the_codes():
     """Three closed sets a consumer branches on, each read off its own
     row and compared as a set. A value added to the code and not here
