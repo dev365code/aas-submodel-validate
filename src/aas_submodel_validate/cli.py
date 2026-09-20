@@ -18,7 +18,7 @@ import json
 import sys
 from typing import Optional
 
-from . import __version__, runner
+from . import __version__, runner, tablegen
 from ._terminal import survive
 from .example import NotBundled, bundled_example, example_name
 from .loader import UnreadablePath
@@ -131,6 +131,13 @@ def main(argv: Optional[list] = None) -> int:
                              "claims to be, because this tool has a table for "
                              "neither side of that collision"
                              % (", ".join(_PROFILE_KEYS), ", ".join(settles_only())))
+    parser.add_argument("--template", metavar="FILE",
+                        help="judge against an IDTA-shaped template file of "
+                             "your own instead of waiting for a pack. The "
+                             "report says the table came from your file and "
+                             "is not a published IDTA template; what the "
+                             "generator cannot read from a template is not "
+                             "checked")
     parser.add_argument("--example", action="store_true",
                         help="judge the official IDTA 02004 example that "
                              "travels in this package; needs no file of your "
@@ -247,7 +254,15 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     try:
         report = runner.run(path, strict_meta=args.meta or args.strict_meta,
                             allow_unmatched=args.allow_unmatched,
-                            profile=args.profile)
+                            profile=args.profile, template=args.template)
+    except tablegen.TemplateRefused as refused:
+        # 2, not 64 and not 1. Naming a file is not a mistake in how the
+        # tool was called -- the flag was spelled right and the path was
+        # given -- and the build tool's own 1 is a build tool's answer.
+        # This is "could not judge the input", which is what every other
+        # unreadable input here gets.
+        print("smtv: %s" % refused, file=sys.stderr)
+        return EXIT_ERROR
     except UnreadablePath as exc:
         print("smtv: %s" % exc, file=sys.stderr)
         return EXIT_ERROR

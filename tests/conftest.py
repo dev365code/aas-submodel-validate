@@ -68,6 +68,11 @@ for _entry in (_TREE / "src", _TREE / "tests", _TREE):
     if str(_entry) not in sys.path:
         sys.path.insert(0, str(_entry))
 
+#: Rule ids that exist because a caller supplied a template. They
+#: are not this project's to publish, so they are not this
+#: project's to account for.
+RUN_TIME_PREFIX = "TPL-"
+
 FIRED: set = set()
 OBSERVED = Path(__file__).resolve().parents[1] / ".rule-coverage.json"
 
@@ -182,8 +187,17 @@ def _observe_which_rules_fire():
         # rules that never run -- pass on a rule that only ever crashes.
         # Measured: break one rule's body and the gate still says all 124
         # fire. It is asking about ids, and a crash brings the id with it.
+        # And not an id that exists because somebody passed a template.
+        # `make exercised` asks whether every rule *this project
+        # publishes* fired somewhere, against a baseline listing exactly
+        # those. A run-time id is in neither list, so recording it fails
+        # two of that gate's three comparisons at once -- "fired but not
+        # registered", and "firing but not in the baseline". Widening the
+        # registered set would answer the first and leave the second,
+        # which is what makes this the place to filter rather than there.
         FIRED.update(finding.id for finding in report.findings
-                     if finding.violation.message != runner.COULD_NOT_RUN)
+                     if finding.violation.message != runner.COULD_NOT_RUN
+                     and not finding.id.startswith(RUN_TIME_PREFIX))
         return report
 
     runner.run = wrapped

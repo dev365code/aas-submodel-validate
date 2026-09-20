@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import time
 
+import pytest
 from tools import extract_smt_rules as generator
 
 from aas_submodel_validate import tablegen
@@ -113,32 +114,51 @@ def _pack(tmp_path, elements):
             "skip_sids": frozenset(), "item_names": {}, "example_types": ()}
 
 
-def test_refusing_a_template_is_not_the_square_of_its_width(tmp_path):
-    """The path a bad template takes, which is the one a mode that
-    accepts a caller's file will take most.
+def test_a_template_far_above_the_row_bound_is_refused_before_anything_walks_it(tmp_path):
+    """What the bound bought, and what it retired.
 
-    The fix that made `_qualify_repeats` linear left the same shape one
-    function later: the duplicate-label backstop in `generate` asks
-    `labels.count(label)` inside a comprehension over `labels`, and it
-    runs only when there *are* duplicates -- so the common path got fast
-    and the refusal stayed quadratic. Measured end to end before this
-    change: 4,000 elements in 0.11s, 8,000 in 0.55s, 16,000 in 2.5s,
-    32,000 in 9.4s. Every one of those files is a few megabytes, well
-    inside the 64 MiB this reader advertises.
+    The duplicate-label backstop in `build` was quadratic and ran on the
+    refusal path -- the path a file somebody else wrote takes most.
+    Measured end to end before the bound: 4,000 elements refused in
+    0.11s, 8,000 in 0.55s, 16,000 in 2.5s, 32,000 in 9.4s, on files of a
+    few megabytes and well inside the 64 MiB this reader advertises.
 
-    The commit that fixed the first half said the generator's cost
-    follows the template rather than its square. That was true of the
-    path every vendored template takes and not true here.
+    Both were repaired: the counting is linear now, and `build` refuses
+    above `MAX_TEMPLATE_ROWS` before anything walks the tree twice. The
+    second makes the first unreachable at scale, which is why this test
+    no longer measures the backstop at 32,000 rows -- it cannot get
+    there. What it measures is that the bound is checked early enough to
+    be worth having: a template far above it is refused in the time it
+    takes to read, not in the time it would have taken to process.
+
+    The two tests above still measure the functions, because the bound
+    is a number somebody can raise and the shape of the cost is what
+    makes raising it safe.
     """
     pack = _pack(tmp_path, ROWS)
     start = time.perf_counter()
-    try:
+    with pytest.raises(tablegen.TemplateRefused) as refused:
         generator.generate(pack)
-    except SystemExit as refused:
-        took = time.perf_counter() - start
-        assert "share a label" in str(refused.code), refused.code
-    else:
-        raise AssertionError("a template with every label doubled was accepted")
+    took = time.perf_counter() - start
+    assert "rows" in str(refused.value), refused.value
+    assert str(tablegen.MAX_TEMPLATE_ROWS) in str(refused.value), (
+        "the refusal does not say what the bound is: %s" % refused.value)
     assert took < CEILING_SECONDS, (
-        "refusing %d elements took %.2fs; the refusal reads the labels as "
-        "many times as there are labels" % (ROWS, took))
+        "refusing %d elements on the row bound took %.2fs" % (ROWS, took))
+
+
+def test_the_bound_lets_every_vendored_template_through():
+    """A bound that refuses something this project ships would be a bound
+    nobody could have measured. The widest vendored template has
+    thirty-eight rows against a bound of ten thousand."""
+    import json
+
+    widest = 0
+    for pack in generator.PACKS:
+        document = json.loads(pack["template"].read_text("utf-8-sig"))
+        built = tablegen.build(document, pack)
+        widest = max(widest, len(built["tree"]))
+    assert widest, "no pack produced rows"
+    assert widest < tablegen.MAX_TEMPLATE_ROWS, (
+        "the widest vendored template has %d top-level rows and the bound is %d"
+        % (widest, tablegen.MAX_TEMPLATE_ROWS))

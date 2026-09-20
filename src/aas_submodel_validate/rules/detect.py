@@ -121,7 +121,7 @@ PACK_ONLY_SEMANTIC_IDS = frozenset(
                 + battery_tables.CONDITIONAL_ON_CATEGORY))
 
 
-def judged(ctx):
+def judged(ctx, extra=()):
     """Every instance submodel something in this tool judged.
 
     `matched` is the template half and was standing in for the whole,
@@ -141,6 +141,14 @@ def judged(ctx):
     seen.update(id(submodel) for submodel in instances(ctx.loaded)
                 if any(submodel_declares(submodel, identifier)
                        for identifier in PACK_ONLY_SEMANTIC_IDS))
+    # And anything a table built at run time answered for. `PACKS` is a
+    # module-level list of what this project vendored, so without this a
+    # submodel judged against a template the caller supplied is counted
+    # as unjudged -- findings about it in the report and `judged 0 of 1`
+    # under them.
+    for table in extra:
+        seen.update(id(submodel) for submodel in instances(ctx.loaded)
+                    if submodel_declares(submodel, table.TEMPLATE_SEMANTIC_ID))
     return seen
 
 

@@ -32,8 +32,26 @@ from collections import Counter
 
 from .semantics import normalize
 
+#: How many rows a template may declare. Not a byte bound: a template of
+#: 46 MiB sits inside the 64 MiB this reader advertises for a document,
+#: and what the generator spends is decided by rows, not by weight.
+#: Chosen far above anything published -- the widest template vendored
+#: here has thirty-eight rows -- and far below where a generated table
+#: stops being something a person could read a finding out of.
+MAX_TEMPLATE_ROWS = 10_000
 
-class DuplicateLabel(Exception):
+
+class TemplateRefused(Exception):
+    """This is not a template this reader will build a table from.
+
+    Raised rather than exited on, for the same reason `DuplicateLabel`
+    is: the code belongs to the entrance. A build tool leaves by 1 and a
+    reader handed a file by somebody else owes 2 -- "could not judge the
+    input" -- which is what every other unreadable input here gets.
+    """
+
+
+class DuplicateLabel(TemplateRefused):
     """Two rows of one template claim the same label.
 
     The hand rules navigate by label and `BY_LABEL` is a dict, so two
@@ -300,12 +318,29 @@ def build(document, pack):
     submodel itself. Rendering them into a module is the caller's, and
     for the vendored packs it is still the build tool's.
     """
-    submodel = document["submodels"][0]
+    submodels = (document or {}).get("submodels") if isinstance(document, dict) else None
+    if not submodels:
+        raise TemplateRefused(
+            "this file declares no submodels, so there is no template in it "
+            "to build a table from")
+    submodel = submodels[0]
+    if "semanticId" not in submodel or not submodel.get("submodelElements"):
+        raise TemplateRefused(
+            "the first submodel declares no semanticId or no elements; a "
+            "template states what it identifies and what it requires")
     counter = [0]
     tree = tuple(row for row in
                  (_rows(element, "", None, counter, pack)
                   for element in submodel["submodelElements"])
                  if row is not None)
+    # Counted here, before anything walks the tree twice. Put after the
+    # duplicate-label backstop it would be free: that backstop is the
+    # expensive path and the bound exists to keep a caller's file from
+    # reaching it at any size.
+    if counter[0] > MAX_TEMPLATE_ROWS:
+        raise TemplateRefused(
+            "this template declares %d rows, above the %d this reader builds "
+            "a table from" % (counter[0], MAX_TEMPLATE_ROWS))
     submodel_sid = "/".join(k["value"] for k in submodel["semanticId"]["keys"])
     submodel_sid_type = submodel["semanticId"].get("type")
     # What the submodel says about itself *besides* its identifier. Two
@@ -402,3 +437,44 @@ def table_from(document, pack, name=None):
     return Table(name, pack["citation"], built["submodel_sid"],
                  built["submodel_sid_type"],
                  tuple(sorted(built["supplemental"])), built["tree"])
+
+
+#: What a row's rule says about itself. The same two sentences the
+#: generated packs build, kept here so a run-time rule and a built-in one
+#: read alike -- a reader should not be able to tell which door a finding
+#: came through by its wording.
+def _title_of(row):
+    return "'%s' as the template declares it (%s)" % (
+        row["label"], row["sid"] or "by structure")
+
+
+def rules_for(table, pack):
+    """One `Rule` per row, not registered with anybody.
+
+    Not registered on purpose. `docs/rule-coverage.json` lists every id
+    this project publishes and `make exercised` compares the ids that
+    fired against it, so an id that exists because somebody passed a file
+    would fail a gate about this project's own rules. `runner._meta_rule`
+    is the precedent: a `Rule` the run puts without the registry having
+    heard of it.
+
+    They go to `runner.execute` like any other rule, which is the only
+    place here where a rule that raises becomes a finding rather than a
+    traceback. A rule built from a stranger's template is the last kind
+    that should be able to take the process down.
+    """
+    from .model import Rule
+    from .rules.engine import analyze, matched_submodels
+
+    def check_for(row_id):
+        def check(ctx):
+            if not matched_submodels(ctx, table):
+                return      # nothing here claims this template
+            yield from analyze(ctx, table)["violations"].get(row_id, ())
+        return check
+
+    return [Rule(id=row["id"], kind="template", prio="MUST",
+                 title=_title_of(row),
+                 spec="%s, SMT/Cardinality qualifier" % table.TEMPLATE_CITATION,
+                 fn=check_for(row["id"]), fix=row["fix"])
+            for row in table.ROWS]

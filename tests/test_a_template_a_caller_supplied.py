@@ -1,0 +1,166 @@
+"""Judging against a template the caller brought.
+
+Three conditions the owner set, and each is a test here. The report says
+where the table came from and that it is not a published IDTA template.
+Every entrance gives the same verdict. What the generator cannot produce
+stays out.
+
+And one this project set for itself: a file somebody else wrote is
+refused rather than trusted — with the code that means "could not judge
+this input", which is 2 and not the 1 a build tool leaves by.
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+
+import pytest
+
+from aas_submodel_validate import runner
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+VENDORED = (pathlib.Path(runner.__file__).parent / "data" / "smt"
+            / "02003" / "2.0.1" / "template.json")
+
+
+def _instance(tmp_path):
+    from builders import env_json
+
+    path = tmp_path / "env.json"
+    path.write_bytes(env_json("0173-1#01-AHX837#002"))
+    return path
+
+
+def test_a_submodel_judged_by_a_supplied_template_counts_as_judged(tmp_path):
+    """`submodels_judged` came from a fixed list of packs, so a submodel
+    judged by a table built at run time was counted as unjudged -- the
+    report would carry findings about it and say `judged 0 of 1`, and
+    `--require-all-judged` could never pass. The same contradiction the
+    battery pack already had repaired once."""
+    report = runner.run(_instance(tmp_path), template=VENDORED)
+    assert report.submodels_seen == 1
+    assert report.submodels_judged == 1, (
+        "a submodel judged against the supplied template is counted as "
+        "unjudged: judged %d of %d" % (report.submodels_judged,
+                                       report.submodels_seen))
+
+
+def test_the_report_says_the_template_was_not_idtas(tmp_path):
+    """The owner's first condition. A verdict against a file the caller
+    brought is not a verdict against a published template, and a reader
+    who cannot tell the two apart has been told something untrue."""
+    document = runner.run(_instance(tmp_path), template=VENDORED).as_dict()
+    provenance = document["provenance"]
+    assert "template" in provenance, sorted(provenance)
+    said = provenance["template"]
+    assert said["sha256"], "the report does not name the bytes it judged against"
+    assert said["published"] is False, (
+        "the report presents a supplied template as a published one")
+
+
+def test_a_template_that_is_not_a_template_is_refused_at_2(tmp_path):
+    """Not 1, which is a build tool's way of leaving, and not a
+    traceback. 2 is this reader's code for "could not judge the input"
+    and a file somebody else wrote is exactly that case."""
+    from aas_submodel_validate.cli import main
+
+    broken = tmp_path / "not-a-template.json"
+    broken.write_text("{}", encoding="utf-8")
+    assert main([str(_instance(tmp_path)), "--template", str(broken), "-q"]) == 2
+
+
+def test_a_template_with_too_many_rows_is_refused(tmp_path):
+    """The bound that could not be written while nothing handed this a
+    file it did not choose. A template is not bounded by the reader's own
+    byte limit: 46 MiB of template sits inside the 64 MiB this reader
+    advertises, and what costs is rows."""
+    from aas_submodel_validate import tablegen
+
+    enormous = {"submodels": [{
+        "kind": "Template", "idShort": "T",
+        "semanticId": {"type": "GlobalReference",
+                       "keys": [{"type": "GlobalReference", "value": "urn:x:top"}]},
+        "submodelElements": [
+            {"modelType": "Property", "idShort": "P%d" % i, "valueType": "xs:string",
+             "semanticId": {"type": "GlobalReference",
+                            "keys": [{"type": "GlobalReference",
+                                      "value": "urn:x:%d" % i}]}}
+            for i in range(tablegen.MAX_TEMPLATE_ROWS + 1)]}]}
+    with pytest.raises(tablegen.TemplateRefused) as refused:
+        tablegen.build(enormous, {"prefix": "TPL-E", "citation": "c",
+                                  "skip_sids": frozenset(), "item_names": {},
+                                  "example_types": ()})
+    assert "rows" in str(refused.value), refused.value
+
+
+def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
+    """The owner's second condition, asked as bytes.
+
+    The command line, the library and the single file are the same engine
+    or they are not one engine. Compared as the JSON document, because
+    that is the contract, and a difference anywhere in it is a difference
+    a consumer sees.
+    """
+    import os
+    import subprocess
+    import sys
+
+    instance = _instance(tmp_path)
+    from_library = json.dumps(
+        runner.run(instance, template=VENDORED).as_dict(), indent=2)
+
+    def through(argv):
+        done = subprocess.run(argv, capture_output=True, text=True, cwd=str(ROOT),
+                              env=dict(os.environ, PYTHONPATH="src"))
+        assert done.returncode in (0, 1), done.stderr
+        return done.stdout.rstrip("\n")
+
+    command = through([sys.executable, "-m", "aas_submodel_validate",
+                       str(instance), "--template", str(VENDORED), "-f", "json"])
+
+    single = tmp_path / "smtv.pyz"
+    built = subprocess.run([sys.executable, str(ROOT / "tools" / "build_zipapp.py"),
+                            "-o", str(single)], capture_output=True, text=True,
+                           cwd=str(ROOT))
+    assert built.returncode == 0, built.stdout + built.stderr
+    archive = through([sys.executable, str(single), str(instance),
+                       "--template", str(VENDORED), "-f", "json"])
+
+    # `path` is the one field that legitimately differs, and it does not
+    # here: all three are handed the same path.
+    assert command == from_library, "the command line and the library disagree"
+    assert archive == from_library, "the single file and the library disagree"
+
+
+def test_a_run_time_rule_id_never_reaches_the_coverage_record(tmp_path):
+    """`make exercised` asks whether every rule *this project publishes*
+    fired somewhere, against a baseline listing exactly those.
+
+    A rule that exists because somebody passed a file is in neither list,
+    so recording it fails two of that gate's three comparisons at once --
+    "fired but not registered", and "firing but not in the baseline".
+    Measured: before the filter, one `--template` run in the suite turned
+    `make exercised` red with `TPL-E01` on both lines.
+
+    The design for this mode proposed widening the registered set, which
+    answers the first comparison and leaves the second, and proposed
+    keeping the ids out of the baseline, which guarantees the second
+    fails. The place that answers both is where the ids are collected.
+    """
+    import json
+
+    from conftest import FIRED, RUN_TIME_PREFIX
+
+    report = runner.run(_instance(tmp_path), template=VENDORED)
+    ours = {finding.id for finding in report.findings}
+    assert any(rule_id.startswith(RUN_TIME_PREFIX) for rule_id in ours), (
+        "no run-time rule fired, so this test proves nothing: %s" % sorted(ours))
+    assert not any(rule_id.startswith(RUN_TIME_PREFIX) for rule_id in FIRED), (
+        "a run-time id reached the coverage record: %s"
+        % sorted(i for i in FIRED if i.startswith(RUN_TIME_PREFIX)))
+
+    recorded = pathlib.Path(runner.__file__).resolve().parents[2] / ".rule-coverage.json"
+    if recorded.is_file():
+        kept = json.loads(recorded.read_text("utf-8"))
+        assert not [i for i in kept if i.startswith(RUN_TIME_PREFIX)], \
+            "the recorded observation carries run-time ids"

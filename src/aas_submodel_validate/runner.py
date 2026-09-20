@@ -6,6 +6,7 @@ validator that dies on rule 3 of 40 has silently skipped 37.
 """
 from __future__ import annotations
 
+import pathlib
 from dataclasses import dataclass
 from typing import List
 
@@ -14,6 +15,7 @@ from aas_core3 import verification
 from . import (
     container,
     rules,  # noqa: F401  - importing registers every rule
+    tablegen,
 )
 from .loader import Loaded, LoadError, UnreadablePath, load
 from .model import KINDS, META_KIND, Finding, Report, Rule, Severity, Violation
@@ -285,8 +287,42 @@ def _digest(path, limit: int) -> str:
     return digest.hexdigest()
 
 
+def _supplied_table(template):
+    """The table a caller's own template describes, or a refusal.
+
+    Bounded before it is parsed. A template is not covered by the bound
+    on the document being judged -- they are different files -- and 46
+    MiB of template sits comfortably inside the 64 MiB this reader
+    advertises, which is why the row count is bounded separately in
+    `tablegen`.
+    """
+    import hashlib
+    import json
+
+    path = pathlib.Path(template)
+    try:
+        with container.open_regular(path) as handle:
+            raw = handle.read(container.MAX_PART_BYTES + 1)
+    except OSError as exc:
+        raise tablegen.TemplateRefused("cannot read %s: %s" % (path, exc)) from exc
+    if len(raw) > container.MAX_PART_BYTES:
+        raise tablegen.TemplateRefused(
+            "%s is above the %d byte limit this reader takes in"
+            % (path, container.MAX_PART_BYTES))
+    try:
+        document = json.loads(raw.decode("utf-8-sig"))
+    except (ValueError, UnicodeDecodeError) as exc:
+        raise tablegen.TemplateRefused(
+            "%s is not JSON this reader can read: %s" % (path, exc)) from exc
+
+    pack = {"prefix": "TPL-E", "citation": "a template you supplied",
+            "skip_sids": frozenset(), "item_names": {}, "example_types": ()}
+    return {"table": tablegen.table_from(document, pack), "pack": pack,
+            "sha256": hashlib.sha256(raw).hexdigest()}
+
+
 def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
-        profile: str = None) -> Report:
+        profile: str = None, template=None) -> Report:
     """Validate one input.
 
     A path this reader cannot open comes back as a report rather than as
@@ -310,6 +346,21 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # accepted is one whose own bounds already held.
     report = Report(path=str(path),
                     input_sha256=_digest(path, container.MAX_TOTAL_PART_BYTES))
+    supplied = None
+    if template is not None:
+        supplied = _supplied_table(template)
+        rules_to_run = list(rules_to_run) + tablegen.rules_for(
+            supplied["table"], supplied["pack"])
+        report.template = {"sha256": supplied["sha256"],
+                           "path": str(template),
+                           # Said plainly, because a verdict against a
+                           # file the caller brought is not a verdict
+                           # against a published template and a reader
+                           # who cannot tell them apart has been told
+                           # something untrue.
+                           "published": False,
+                           "semanticId": supplied["table"].TEMPLATE_SEMANTIC_ID,
+                           "rows": len(supplied["table"].ROWS)}
     # Held rather than discarded: the walk's own record of which rows it
     # considered lives on the context, and `not_asked` is the difference
     # between that and the tables. Built inline before, so the one thing
@@ -392,8 +443,14 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # summarised `judged 0 of 3 submodels` under eight findings about
     # those three -- and `--require-all-judged` could never pass on the
     # one input the pack was built for.
+    # The supplied table too. `judged` walks a fixed list of packs, so a
+    # submodel judged against a table built at run time was counted as
+    # unjudged -- the report would carry findings about it and say
+    # `judged 0 of 1`, and `--require-all-judged` could never pass. The
+    # same contradiction the battery pack had repaired once.
     report.submodels_judged = len(detect.judged(
-        Context(loaded, rules.profiles.Selection(profile))))
+        Context(loaded, rules.profiles.Selection(profile)),
+        extra=() if supplied is None else (supplied["table"],)))
     report.findings.sort(key=_reading_order)
     report.checked = len(rules_to_run)
     # Every load error means content that was not read: an archive that
