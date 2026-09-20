@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from aas_submodel_validate import (
+    __version__,
     rules,  # noqa: F401 - importing registers
     runner,
 )
@@ -359,6 +360,47 @@ def test_the_console_sample_is_what_the_tool_prints(tmp_path, monkeypatch):
         "the README's console sample went stale; regenerate it"
 
 
+#: A heading is a draft or a dated release, and nothing else -- the two
+#: forms the release workflow matches.
+def _heading_shape(heading):
+    if "unreleased" in heading.lower():
+        return "draft"
+    if re.match(r"^\d+\.\d+\.\d+ — \d{4}-\d\d-\d\d$", heading):
+        return "dated"
+    return None
+
+
+def _numbers_are_this_trees(heading, version):
+    """Do the newest entry's counts still describe the tree they sit in?
+
+    For a draft, always: that entry is what the next release will say,
+    and it is written against this tree.
+
+    For a dated entry it depends, and "no" was the whole answer for a
+    while. A dated entry is history and must not be edited, so checking
+    0.4.1's numbers against a tree three rules further on would demand
+    exactly the edit the shape rule forbids. But this project dates the
+    heading and bumps the version in **one commit**, and until that
+    commit the package still carries the previous version -- so between
+    the bump and the next draft heading the newest entry *is* this tree,
+    and that window contains the release commit itself. The gate was off
+    for precisely the commit that matters: a release that moved a count
+    and dated the entry in one go had nothing reading either.
+
+    So: a dated entry whose version is the package's own is this tree's
+    and is checked. The moment a new draft heading goes in, the draft
+    branch takes over; the moment the version moves past it without one,
+    that is a rule change nobody wrote down, which `test_package` is
+    the other half of.
+    """
+    shape = _heading_shape(heading)
+    if shape == "draft":
+        return True
+    if shape is None:
+        return False
+    return heading.split(" —")[0].strip() == version
+
+
 def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
     """Exactly two shapes, and the release workflow accepts the same two.
 
@@ -370,19 +412,17 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
     job's own `make check` step go red.
 
     So the shape is asserted here in the same two forms the workflow
-    matches, and the number check below applies to a draft only -- once
-    a version is dated its entry is history and must not be edited."""
+    matches, and `_numbers_are_this_trees` decides whether the numbers
+    below still describe the tree in front of it."""
     _, _, entries = CHANGELOG.partition("\n## ")     # past the file's title
     unreleased, _, _ = entries.partition("\n## ")     # the newest entry alone
     heading = unreleased.splitlines()[0]
-    draft = "unreleased" in heading.lower()
-    dated = re.match(r"^\d+\.\d+\.\d+ — \d{4}-\d\d-\d\d$", heading)
-    assert draft or dated, (
+    assert _heading_shape(heading), (
         "the newest entry reads %r; the release workflow accepts a draft "
         "(`— unreleased`) or a dated release (`— YYYY-MM-DD`) and nothing "
         "else, and this file is the other half of that gate" % heading)
-    if not draft:
-        return                                        # history, not a draft
+    if not _numbers_are_this_trees(heading, __version__):
+        return                                        # history, not this tree
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS))
@@ -1018,3 +1058,25 @@ def test_the_release_page_states_the_schema_version_the_code_writes():
     assert "`schemaVersion: %d`" % carried in section, (
         "the page freezes a schema version the code does not write; a "
         "report carries %d" % carried)
+
+
+@pytest.mark.parametrize("heading,version,checked", [
+    ("0.5.0 — unreleased", "0.4.1", True),
+    ("0.5.0 — 2026-09-30", "0.5.0", True),
+    ("0.5.0 — 2026-09-30", "0.6.0", False),
+    ("0.4.1 — 2026-09-21", "0.5.0", False),
+    ("0.5.0", "0.5.0", False),
+])
+def test_which_changelog_headings_are_checked_against_this_tree(heading, version,
+                                                                checked):
+    """The window the number gate was blind to, stated as a table.
+
+    The second row is the one that was missing: this project dates the
+    heading and bumps the version in one commit, so the release commit
+    itself had no gate on its counts. The third and fourth are why the
+    gate cannot simply always run -- a dated entry is history, and
+    checking it against a later tree would demand the edit the shape
+    rule forbids. The last is a malformed heading, which is neither and
+    is caught by the shape assertion rather than silently checked.
+    """
+    assert _numbers_are_this_trees(heading, version) is checked

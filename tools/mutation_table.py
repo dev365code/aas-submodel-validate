@@ -1011,6 +1011,19 @@ TABLE = [
      "reaches, and a mutation sending it to 64 survived the suite; the "
      "clause is gone and this is what its absence rests on"),
 
+    ("gates/the-release-commits-numbers-are-read",
+     "tests/test_readme_front.py",
+     '    return heading.split(" —")[0].strip() == version',
+     "    return False",
+     ["tests/test_readme_front.py::"
+      "test_which_changelog_headings_are_checked_against_this_tree"],
+     "the entry's rule counts and byte bounds were checked while the "
+     "heading said `unreleased` and not after. This project dates the "
+     "heading and bumps the version in one commit, so the gate was off "
+     "for exactly the commit that publishes those numbers. Measured: "
+     "dating the heading, bumping the version and changing 219 to 218 "
+     "in one edit went green before this and red after"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose
