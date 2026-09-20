@@ -1032,3 +1032,58 @@ def test_the_two_notes_about_who_judged_cannot_both_be_said(tmp_path):
             "%s: the report says both that the supplied template made this "
             "verdict and that nothing was judged against it -- %r"
             % (label, report.notes))
+
+
+def test_a_run_time_table_places_its_rows_in_the_order_it_declares_them(tmp_path):
+    """`rulesNotAsked` is "in the order the tables declare them", and a
+    table built at run time was placed by none of them.
+
+    `_all_rows` recovers each analysed table by looking its name up in
+    `sys.modules`, which answers for the six vendored packs and cannot
+    answer for a `Table` object: its name is a digest. So every run-time
+    id fell to the fallback position `rows_not_reached` keeps for rows
+    it cannot place, and came back sorted by its own spelling. The
+    function's own comment said that fallback was unreachable "because
+    every analysed table is an imported module" and named the moment it
+    would stop being true; this is that moment.
+
+    Past ninety-nine rows the two orders genuinely differ -- ids are
+    zero-padded to two digits, so `TPL-E100` sorts before `TPL-E99` as a
+    string and after it in the template.
+    """
+    from aas_submodel_validate import tablegen
+    from aas_submodel_validate.loader import load
+    from aas_submodel_validate.rules import engine, profiles
+
+    def ref(value):
+        return {"type": "GlobalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    rows = 105
+    document = {"submodels": [{
+        "kind": "Template", "idShort": "Wide", "id": "urn:t",
+        "semanticId": ref(UNCLAIMED),
+        "submodelElements": [
+            {"modelType": "Property", "idShort": "Row%03d" % index,
+             "semanticId": ref("%s/row%03d" % (UNCLAIMED, index)),
+             "valueType": "xs:string",
+             "qualifiers": [{"type": "SMT/Cardinality",
+                             "valueType": "xs:string", "value": "One"}]}
+            for index in range(rows)]}]}
+    pack = {"prefix": "TPL-E", "citation": "a template you supplied",
+            "skip_sids": frozenset(), "item_names": {}, "example_types": ()}
+    table = tablegen.table_from(document, pack)
+    assert len(table.ROWS) == rows
+
+    ctx = runner.Context(load(_unclaimed_instance(tmp_path)),
+                         profiles.Selection(None), supplied=(table,),
+                         taken_over=frozenset([table.TEMPLATE_SEMANTIC_ID]))
+    analysed = engine.analyze(ctx, table)
+
+    # Two rows the run did not reach, given to the sorter the way the
+    # walk gives them to it.
+    analysed["lost_candidates"].extend(["TPL-E100", "TPL-E99"])
+    assert engine.rows_not_reached(ctx) == ["TPL-E99", "TPL-E100"], (
+        "a run-time table's rows are ordered by their spelling rather "
+        "than by where the table puts them: %s"
+        % engine.rows_not_reached(ctx))

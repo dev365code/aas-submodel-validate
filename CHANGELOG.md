@@ -57,6 +57,14 @@ document being judged because they are different files: forty-six
 megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
 
+**`rulesNotAsked` orders a supplied table's ids the way that template
+declares them.** `note` It is documented as "in the order the tables
+declare them", and the tables were recovered by module name — which
+answers for the six vendored packs and cannot answer for a table built
+from your file. Its ids were sorted by their own spelling instead, and
+past ninety-nine rows that is a different order, ids being padded to two
+digits. No id is added or removed.
+
 **Three things the mode did not say.** `note` A template file may
 declare more than one submodel; the table comes from the first, and the
 report now says how many the file held and which one answered — a caller

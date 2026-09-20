@@ -979,6 +979,20 @@ TABLE = [
      "templates matched nothing' from 'your other templates were never "
      "opened', and those ask opposite things of them"),
 
+    ("template/a-run-time-tables-rows-are-placed",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    kept = ctx.__dict__.get("_smt_tables") or {}',
+     "    kept = {}",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_run_time_table_places_its_rows_in_the_order_it_declares_them"],
+     "`rulesNotAsked` is 'in the order the tables declare them'. The "
+     "tables were recovered from `sys.modules`, which answers for the "
+     "six vendored packs and cannot answer for a `Table` -- its name is "
+     "a digest -- so every run-time id fell to the position kept for "
+     "rows nothing places and came back sorted by its own spelling. Ids "
+     "are padded to two digits, so past ninety-nine rows that is not "
+     "the template's order: `TPL-E100` before `TPL-E99`"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

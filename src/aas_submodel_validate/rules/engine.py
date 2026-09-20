@@ -85,6 +85,12 @@ def analyze(ctx, tables) -> Dict:
     Handover submodel and a Technical Data submodel at once, and one
     cache slot would hand the second pack the first pack's answers."""
     cache = ctx.__dict__.setdefault("_smt_analysis", {})
+    # The table beside its name. `rows_not_reached` used to recover it
+    # by looking the name up in `sys.modules`, which answers for the six
+    # vendored packs and cannot answer for a table built at run time --
+    # its name is a digest. Keeping the object is how a `Table` gets
+    # ordered by what it declares rather than by how its ids are spelt.
+    ctx.__dict__.setdefault("_smt_tables", {})[tables.__name__] = tables
     cached = cache.get(tables.__name__)
     if cached is None:
         cached = cache[tables.__name__] = _analyze(ctx, tables)
@@ -367,22 +373,39 @@ def rows_not_reached(ctx) -> List[str]:
     # Ordered by the tables, deduplicated: one unrecognised element in a
     # list of three strands the same rows three times, and a reader
     # counting the list would read that as three times the loss.
-    order = {row["id"]: index for index, row in enumerate(_all_rows(analysed))}
+    order = {row["id"]: index
+             for index, row in enumerate(_all_rows(ctx, analysed))}
     # The id breaks the tie. Everything the tables do not place shares one
     # position, `sorted` is stable, and what it is stable *over* is a set
     # -- whose iteration order is string-hash order and is randomised per
-    # process. Nothing reaches that fallback today, because every analysed
-    # table is an imported module and every id in it is placed; it is
-    # reachable the moment a table is not a module. Measured on that
-    # shape: five interpreters, five orders, same input. A fallback that
-    # is only correct while nothing takes it is not correct.
+    # process. Measured on that shape: five interpreters, five orders,
+    # same input. A fallback that is only correct while nothing takes it
+    # is not correct.
+    #
+    # This one said it was unreachable "because every analysed table is
+    # an imported module", and named the moment that would stop being
+    # true. `--template` was that moment: a `Table` is not in
+    # `sys.modules`, so every run-time id landed here and came back
+    # sorted by its own spelling -- which past ninety-nine rows is not
+    # the template's order at all, ids being padded to two digits. The
+    # tables are kept beside their names now, so the fallback is back to
+    # holding nothing and is still here for when it does.
     return sorted(set(missed), key=lambda rid: (order.get(rid, len(order)), rid))
 
 
-def _all_rows(analysed) -> List:
+def _all_rows(ctx, analysed) -> List:
+    """Every row of every table this run analysed, in their order.
+
+    The tables are taken from the context, where `analyze` puts each one
+    beside the name it caches under. `sys.modules` stood here and
+    answered for the six vendored packs only; a table built from a
+    caller's file has a digest for a name and was silently contributing
+    no rows at all.
+    """
+    kept = ctx.__dict__.get("_smt_tables") or {}
     rows = []
-    for module_name in analysed:
-        tables = sys.modules.get(module_name)
+    for name in analysed:
+        tables = kept.get(name) or sys.modules.get(name)
         if tables is not None:
             rows.extend(tables.ROWS)
     return rows
