@@ -57,38 +57,35 @@ document being judged because they are different files: forty-six
 megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
 
-**`rulesNotAsked` orders a supplied table's ids the way that template
-declares them.** `note` It is documented as "in the order the tables
-declare them", and the tables were recovered by module name — which
-answers for the six vendored packs and cannot answer for a table built
-from your file. Its ids were sorted by their own spelling instead, and
-past ninety-nine rows that is a different order, ids being padded to two
-digits. No id is added or removed.
+A template file may declare more than one submodel. The table is built
+from the first, the rest are not read, and the report says both — how
+many the file held and which one answered. Without that a reader cannot
+tell "my other templates matched nothing" from "my other templates were
+never opened", and those ask opposite things of them.
 
-**Three things the mode did not say.** `note` A template file may
-declare more than one submodel; the table comes from the first, and the
-report now says how many the file held and which one answered — a caller
-could not tell "my other templates matched nothing" from "my other
-templates were never read", and those ask opposite things of them. A
-supplied table takes an identifier from **both** sides of a `--profile`
-pair, so passing both flags left the profile deciding nothing in
-silence; it is said now. And the note saying your template made this
-verdict and the note saying nothing was judged against it could both
-appear in one report, which is two incompatible statements about one
-file.
+`--profile` and `--template` together: your table takes the identifier
+from **both** sides of the pair, so the profile decides nothing, and the
+report says so rather than leaving you to infer it from the stand-down
+note beside it.
 
-**A run over many submodels is faster, and a wide `--template` run is
-much faster.** `note` No verdict moves; this is what the same verdict
-costs. Every generated rule opens by asking which submodels its table
-answers for, and that was recomputed for each rule — a scan of the
-whole input per rule, where the answer cannot differ between two rules
-of one table. It is decided once per table now. A table a caller
-supplies makes one rule per row, so the two numbers multiplying there
-were both the caller's: measured, a template of 9,900 rows judging 500
-submodels took 9.53 seconds, of which 6.48 went on re-deciding that one
-question, and takes 3.48 seconds now. The project's own corpus pass came
-down about twelve percent. The published example, and anything of its
-size, was already fast and stays so.
+`rulesNotAsked` lists a supplied table's ids in the order that template
+declares them, which is the order it has always promised for the packs.
+Ids are padded to two digits, so past ninety-nine rows that is not the
+order they sort in.
+
+**A run over many submodels is faster.** `note` No verdict moves; this
+is what the same verdict costs. Every generated rule opened by asking
+which submodels its table answers for, and that was recomputed for each
+rule — a scan of the whole input, per rule, where the answer cannot
+differ between two rules of one table. It is decided once per table now.
+This project's own corpus pass came down about twelve percent; the
+published example, and anything of its size, was already fast and stays
+so.
+
+It matters most under `--template`, where a table makes one rule per row
+and both numbers are yours: measured, a template of 9,900 rows judging
+500 submodels spends 3.48 seconds where the same work was 9.53, of which
+6.48 went on re-deciding that one question.
 
 ## 0.4.1 — 2026-09-21
 
