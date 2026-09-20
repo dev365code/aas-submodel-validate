@@ -64,8 +64,12 @@ By making a contribution to this project, I certify that:
 A rule is born red: commit a fixture that violates it and one that does
 not, watch the violation test fail, then implement. Every rule carries a
 `fix` sentence — what to change so the finding stops being reported, not
-the requirement restated in the imperative — and every rule id must fire
-somewhere in the suite. Match by semanticId, never by idShort
+the requirement restated in the imperative — and every rule id this
+project publishes must fire somewhere in the suite. The ids a
+`--template` run makes are the exception and are kept out of that
+accounting deliberately: they exist because somebody passed a file, they
+are not registered, and `make exercised` asks about this project's own
+rules against a baseline listing exactly those. Match by semanticId, never by idShort
 (docs/divergences.md explains why, with the template's own words).
 
 ## Adding a gate

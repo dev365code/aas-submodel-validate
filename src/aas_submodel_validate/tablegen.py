@@ -1,21 +1,19 @@
 """Rows from a template document — the half of the generator that reads.
 
 Split out of `tools/extract_smt_rules.py` and moved here for one reason:
-`tools/` is not installed. It is not in the wheel, and none of a built wheel's members is under
-`tools` -- which is the half that matters and is checked by
-`tools/check_distributions.py` on every push. (An earlier version of
-this sentence quoted the member count, and the count moved the day
-this module was added to it.), and putting it
-there would install two more top-level names into everybody's
-site-packages, which `tools/check_distributions.py` refuses in writing.
-So an installed copy of this package could not build a table, and
-neither could the single-file build, which copies exactly this directory.
+`tools/` is not installed, and must not be. No member of a built wheel
+sits under `tools/`, and putting one there would install two more
+top-level names into everybody's site-packages, which
+`tools/check_distributions.py` refuses in writing and CI runs on every
+push. So while the row builder lived there, an installed copy of this
+package could not build a table from a template, and neither could the
+single-file build, which copies exactly this directory.
 
 That matters because a mode that reads a template a caller supplies has
-to give the same verdict from every entrance. The command line, the
-library, the single file and an action are the same engine or they are
-not one engine, and the entrance that cannot reach the generator is the
-one that answers differently.
+to give the same verdict from every entrance. The library, the command
+line and the single file are the same engine or they are not one engine,
+and the entrance that cannot reach the generator is the one that answers
+differently.
 
 What stayed behind is the part that writes: the pack list, the Python
 source it renders, and the `--check` that proves a table matches its
@@ -150,6 +148,18 @@ def _rows(element, parent_label, parent_id, counter, pack):
     label = element.get("idShort") \
         or pack["item_names"].get(parent_label, parent_label + "Item")
     counter[0] += 1
+    if counter[0] > MAX_TEMPLATE_ROWS:
+        # Here, not after the walk. Checked afterwards the bound stopped
+        # the *second* pass and let the first build every row first:
+        # measured, 300,000 rows were materialised in 2.2 seconds and 282
+        # MiB before the refusal, and the densest template inside the byte
+        # bound costs many times that -- which on a container with a
+        # memory limit is a kill rather than an exit code. `SECURITY.md`
+        # says a template above the limit is refused before it is walked,
+        # and that sentence is only true from here.
+        raise TemplateRefused(
+            "this template declares more than the %d rows this reader "
+            "builds a table from" % MAX_TEMPLATE_ROWS)
     row_id = "%s%02d" % (pack["prefix"], counter[0])
     qualifiers = {q.get("type"): q.get("value") for q in element.get("qualifiers", [])}
     # Absent means 0..*: see the module docstring. Read in one of three
@@ -336,10 +346,11 @@ def build(document, pack):
                  (_rows(element, "", None, counter, pack)
                   for element in submodel["submodelElements"])
                  if row is not None)
-    # Counted here, before anything walks the tree twice. Put after the
-    # duplicate-label backstop it would be free: that backstop is the
-    # expensive path and the bound exists to keep a caller's file from
-    # reaching it at any size.
+    # `_rows` refuses while it walks, so reaching here means the count
+    # held. Kept as a second reading of the same number because the two
+    # are reached by different paths -- a template of exactly the bound
+    # passes the first and is checked again here, and a change that moves
+    # the counting has to get past both.
     if counter[0] > MAX_TEMPLATE_ROWS:
         raise TemplateRefused(
             "this template declares %d rows, above the %d this reader builds "

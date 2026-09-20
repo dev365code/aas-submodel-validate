@@ -202,10 +202,10 @@ def test_a_run_time_rule_id_never_reaches_the_coverage_record(tmp_path):
     Measured: before the filter, one `--template` run in the suite turned
     `make exercised` red with `TPL-E01` on both lines.
 
-    The design for this mode proposed widening the registered set, which
-    answers the first comparison and leaves the second, and proposed
-    keeping the ids out of the baseline, which guarantees the second
-    fails. The place that answers both is where the ids are collected.
+    Widening the registered set answers the first comparison and leaves
+    the second; keeping the ids out of the baseline guarantees the second
+    fails. The place that answers both is where the ids are collected,
+    which is why the filter is there and not in either list.
     """
     import json
 
@@ -560,10 +560,15 @@ def test_the_help_page_says_a_supplied_verdict_is_not_a_conformance_claim(capsys
 
     with _pytest.raises(SystemExit):
         main(["--help"])
-    page = " ".join(capsys.readouterr().out.split())
+    # Joined, and then the breaks argparse puts at hyphens rejoined:
+    # it wraps to the terminal width, so "hand-written" arrives as
+    # "hand- written" at some widths and not others. A test that passes
+    # on a wide terminal and fails on a narrow one is a test about the
+    # terminal.
+    page = " ".join(capsys.readouterr().out.split()).replace("- ", "-")
     assert "--template" in page
     assert "not a statement about conformance" in page, page
-    for named in ("hand-written", "which elements"):
+    for named in ("hand-written", "which elements", "valueType"):
         assert named in page, "the help page does not say %r" % named
 
 
@@ -661,3 +666,198 @@ def test_the_front_page_names_the_mode_where_a_reader_looks_for_a_capability():
         "the section that says what the tool checks does not mention the "
         "mode that checks a template the caller brought")
     assert "not a statement about conformance" in flowing, flowing[-400:]
+
+
+#: JSON that parses and is not shaped like a template. A file somebody
+#: else wrote is the case this mode exists for, and "well-formed JSON"
+#: is a very long way from "an IDTA template".
+NOT_TEMPLATE_SHAPED = (
+    ('{"submodels":[{"semanticId":{"keys":[{"value":"urn:x"}]},'
+     '"submodelElements":[{"idShort":"A"}]}]}', "an element with no modelType"),
+    ('{"submodels":{"x":1}}', "submodels as an object"),
+    ('{"submodels":[{"semanticId":3,"submodelElements":[]}]}',
+     "a semanticId that is a number"),
+    ('{"submodels":[{"semanticId":{"keys":"urn:x"},"submodelElements":[]}]}',
+     "keys as a string"),
+    ('{"submodels":[{"semanticId":{"keys":[{"value":"urn:x"}]},'
+     '"submodelElements":{"a":1}}]}', "submodelElements as an object"),
+    ('{"submodels":[{"semanticId":{"keys":[{"value":"urn:x"}]},'
+     '"submodelElements":[{"modelType":"Property","idShort":"A",'
+     '"qualifiers":7}]}]}', "qualifiers that are a number"),
+    ('{"submodels":[7]}', "a submodel that is a number"),
+)
+
+
+@pytest.mark.parametrize("payload,shape", NOT_TEMPLATE_SHAPED,
+                         ids=[shape for _p, shape in NOT_TEMPLATE_SHAPED])
+def test_json_that_is_not_a_template_is_refused_not_raised(tmp_path, payload, shape):
+    """The first repair wrapped the call that parses and left the three
+    that read.
+
+    Measured before this: fourteen of sixteen malformed shapes left as a
+    traceback at exit 1 -- the code for a verdict with findings, about a
+    file nothing finished reading, which is the contract that repair was
+    about. The guard inside `_rows` for a child element existed and the
+    entry loop over the submodel's own elements had none: written for the
+    recursion and not for the way in.
+    """
+    from aas_submodel_validate.cli import main
+
+    path = tmp_path / "not-a-template.json"
+    path.write_text(payload, encoding="utf-8")
+    assert main([str(_instance(tmp_path)), "--template", str(path), "-q"]) == 2, (
+        "%s left by something other than 2" % shape)
+
+
+def test_no_rule_describes_a_submodel_a_supplied_table_took_over(tmp_path):
+    """The stand-down reached `matched_submodels` and `SMT-D2` and not
+    the battery rules, which walk `detect.instances` directly.
+
+    Measured: a passport whose identifier a supplied template claims got
+    `TPL-E02` saying the template requires an element, and `BAT-R8` four
+    lines below saying the template permits it absent and "will not ask
+    for it". One absent element, two findings, each denying the other —
+    and `BAT-R8`'s whole premise is about a template that did not run.
+    `BAT-R2` does the same on the identifier 02023 shares.
+
+    Asked of every rule rather than of the two: the repair that reaches
+    one of two siblings is the shape this project keeps meeting, and a
+    third walker would inherit the same gap.
+    """
+    from builders import env_json
+
+    for identifier in ("https://admin-shell.io/idta/CarbonFootprint/"
+                       "CarbonFootprint/1/0",):
+        instance = tmp_path / "bat.json"
+        instance.write_bytes(env_json(identifier))
+        template = _unclaimed_template(tmp_path, semantic_id=identifier)
+        report = runner.run(instance, template=template)
+        said = sorted({f.id for f in report.findings})
+        strangers = [rule_id for rule_id in said
+                     if not rule_id.startswith(("TPL-", "META", "X"))]
+        assert not strangers, (
+            "%s: a pack that stood down still reports on the submodel: %s"
+            % (identifier, strangers))
+
+
+def test_rules_refuses_a_template_it_would_ignore(tmp_path):
+    """`cli.py` carries a list of the flags `--rules` would have to
+    ignore, under a comment saying that answering a different question
+    in silence is what this tool refuses everywhere else. `--template`
+    was added to the parser and not to the list.
+
+    Measured: `--rules --template /no/such/file.json` printed all 220
+    lines and exited 0, on a path that does not exist.
+    """
+    from aas_submodel_validate.cli import main
+
+    with pytest.raises(SystemExit) as raised:
+        main(["--rules", "--template", str(_unclaimed_template(tmp_path))])
+    assert raised.value.code == 64, raised.value.code
+
+
+def test_a_template_above_the_bound_is_refused_without_being_built(monkeypatch):
+    """Refusing is cheap only if it happens while walking.
+
+    The bound is read twice — once inside `_rows` as it goes, once after
+    the tree is built — and the second alone is enough to refuse, which
+    is why a test that only asserts the refusal cannot tell which one
+    did it. What the first one buys is that the rows are never made:
+    measured with only the second, three hundred thousand rows were
+    materialised in 2.2 seconds and 282 MiB before the answer came, and
+    the densest template inside the byte bound costs many times that —
+    which on a machine with a memory limit is a kill and not an exit
+    code.
+
+    Counted rather than timed, so it says the same thing on every
+    machine.
+    """
+    from aas_submodel_validate import tablegen
+
+    calls = [0]
+    original = tablegen._rows
+
+    def counting(*args, **kwargs):
+        calls[0] += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(tablegen, "_rows", counting)
+
+    over = tablegen.MAX_TEMPLATE_ROWS * 3
+    document = {"submodels": [{
+        "kind": "Template", "idShort": "T", "id": "urn:t",
+        "semanticId": {"type": "GlobalReference",
+                       "keys": [{"type": "GlobalReference", "value": "urn:x:top"}]},
+        "submodelElements": [
+            {"modelType": "Property", "idShort": "P%d" % i,
+             "valueType": "xs:string",
+             "semanticId": {"type": "GlobalReference",
+                            "keys": [{"type": "GlobalReference",
+                                      "value": "urn:x:%d" % i}]}}
+            for i in range(over)]}]}
+    with pytest.raises(tablegen.TemplateRefused):
+        tablegen.build(document, {"prefix": "TPL-E", "citation": "c",
+                                  "skip_sids": frozenset(), "item_names": {},
+                                  "example_types": ()})
+    assert calls[0] <= tablegen.MAX_TEMPLATE_ROWS + 1, (
+        "%d rows were built before the refusal, of a template declaring %d; "
+        "the bound is being read after the walk rather than during it"
+        % (calls[0], over))
+
+
+def test_no_pack_is_said_to_have_stood_down_when_none_did(tmp_path):
+    """The sibling of a note that was already repaired, repaired one
+    commit later than it should have been.
+
+    The first note — "judged against the template you supplied" — got a
+    condition and a test when it turned out to claim a verdict it took no
+    part in. The second got a condition and no test, so making it
+    unconditional leaves the report saying a pack of this tool's own
+    answers for an identifier no pack here has ever heard of, with the
+    whole suite green.
+    """
+    unclaimed = runner.run(_unclaimed_instance(tmp_path),
+                           template=_unclaimed_template(tmp_path))
+    assert not any("stood down" in note for note in unclaimed.notes), (
+        "a pack is said to have stood down for an identifier no pack "
+        "claims: %s" % unclaimed.notes)
+
+    # And present where one really did, so this cannot pass by the note
+    # having been deleted.
+    claimed = runner.run(_instance(tmp_path), template=VENDORED)
+    assert any("stood down" in note for note in claimed.notes), claimed.notes
+
+
+def test_a_template_above_the_byte_bound_is_refused(tmp_path, monkeypatch):
+    """`SECURITY.md` publishes a byte bound on the template file and
+    nothing measured it.
+
+    The row half of that sentence is held by a mutation row; the byte
+    half was a promise with no gate, which is the one thing this project
+    does not let itself ship.
+    """
+    from aas_submodel_validate import container, tablegen
+    from aas_submodel_validate.cli import main
+
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 512)
+    fat = tmp_path / "fat.json"
+    fat.write_text(_unclaimed_template(tmp_path).read_text("utf-8")
+                   + " " * 1024, encoding="utf-8")
+    with pytest.raises(tablegen.TemplateRefused) as refused:
+        runner._supplied_table(fat)
+    assert "limit" in str(refused.value), refused.value
+    assert main([str(_instance(tmp_path)), "--template", str(fat), "-q"]) == 2
+
+
+def test_a_template_this_reader_cannot_open_is_a_refusal_not_a_traceback(tmp_path):
+    """Named in the CHANGELOG as one of five refusals and measured as
+    none of them.
+
+    Without the classifier a missing path leaves as a `FileNotFoundError`
+    traceback at exit 1 — the code for a verdict with findings, about a
+    file nothing read.
+    """
+    from aas_submodel_validate.cli import main
+
+    assert main([str(_instance(tmp_path)), "--template",
+                 str(tmp_path / "no-such-template.json"), "-q"]) == 2

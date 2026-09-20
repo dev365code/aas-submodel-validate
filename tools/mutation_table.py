@@ -888,15 +888,26 @@ TABLE = [
      "lines."),
     ("template/a-template-is-refused-rather-than-trusted",
      "src/aas_submodel_validate/tablegen.py",
+     # The one inside `_rows`, which is the one that stops the walk. The
+     # check after it is a second reading of the same number, reached by
+     # a different path and kept for that reason -- so the anchor names
+     # the line above it rather than the bare condition, which now
+     # appears twice.
+     "    counter[0] += 1\n"
      "    if counter[0] > MAX_TEMPLATE_ROWS:",
+     "    counter[0] += 1\n"
      "    if False:",
      ["tests/test_a_template_a_caller_supplied.py::"
-      "test_a_template_with_too_many_rows_is_refused"],
+      "test_a_template_above_the_bound_is_refused_without_being_built"],
      "a template is not covered by the bound on the document being judged "
      "-- they are different files, and forty-six megabytes of template "
      "sits inside the sixty-four this reader advertises. What a generator "
      "spends is decided by rows, and with this gone a caller's file "
-     "reaches the duplicate-label backstop at any width."),
+     "reaches the duplicate-label backstop at any width. Checked here "
+     "rather than after the walk because after it the bound stopped only "
+     "the second pass: measured, 300,000 rows were built in 2.2s and 282 "
+     "MiB before the refusal, and 0.06s and 10 MiB once the walk refuses "
+     "as it goes."),
 
 ]
 

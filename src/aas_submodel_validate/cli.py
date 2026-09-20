@@ -135,7 +135,9 @@ def main(argv: Optional[list] = None) -> int:
                         help="judge against an IDTA-shaped template file of "
                              "your own. Only what a template states is "
                              "checked: which elements, of which kind, under "
-                             "which identifiers, how many of each. The "
+                             "which identifiers, how many of each, the "
+                             "valueType each declares, a list's item type, "
+                             "and any AllowedIdShort pattern. The "
                              "hand-written rules and recorded readings that "
                              "come with a pack are not derivable from a "
                              "template and do not apply. A verdict against a "
@@ -186,7 +188,14 @@ def main(argv: Optional[list] = None) -> int:
             ("-W", args.warnings_as_errors),
             ("--allow-unmatched", args.allow_unmatched),
             ("--require-all-judged", args.require_all_judged),
-            ("--show-meta", args.show_meta)) if given]
+            ("--show-meta", args.show_meta),
+            # `--template` decides which table judges, which is the
+            # strongest case on this list for a flag `--rules` would
+            # have to ignore. It was added to the parser and not to
+            # here, so `--rules --template /no/such/file.json` printed
+            # the listing and exited 0 -- the silent answer to a
+            # different question that the comment above is about.
+            ("--template", args.template)) if given]
         if ignored:
             parser.error("--rules lists the rules and judges nothing, so it "
                          "would ignore %s; --meta (or --strict-meta) is what "

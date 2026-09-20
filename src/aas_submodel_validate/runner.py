@@ -355,8 +355,34 @@ def _supplied_table(template):
 
     pack = {"prefix": "TPL-E", "citation": "a template you supplied",
             "skip_sids": frozenset(), "item_names": {}, "example_types": ()}
-    return {"table": tablegen.table_from(document, pack), "pack": pack,
-            "sha256": hashlib.sha256(raw).hexdigest()}
+    digest = hashlib.sha256(raw).hexdigest()
+    try:
+        # The reading, not only the parsing. The first repair wrapped
+        # `json.loads` and left the three calls after it, so JSON that
+        # parses and is not shaped like a template took the process down:
+        # fourteen of sixteen malformed shapes left as a traceback at
+        # exit 1, which is the code for a verdict about a file nothing
+        # finished reading.
+        #
+        # The name comes from the digest already computed above. It used
+        # to be a second serialisation of the whole document, which cost
+        # a full pass for nothing and could exhaust the stack one level
+        # shallower than the parse -- so the repair held on one side of a
+        # one-level boundary and not the other.
+        table = tablegen.table_from(document, pack,
+                                    name="<template %s>" % digest[:16])
+    except tablegen.TemplateRefused:
+        raise
+    except (RecursionError, MemoryError) as exc:
+        raise tablegen.TemplateRefused(
+            "%s is nested more deeply than this reader can follow (%s); the "
+            "file may be fine and this machine could not walk it"
+            % (path, type(exc).__name__)) from exc
+    except (KeyError, TypeError, AttributeError, IndexError, ValueError) as exc:
+        raise tablegen.TemplateRefused(
+            "%s parses as JSON and is not shaped like an IDTA template: "
+            "%s: %s" % (path, type(exc).__name__, exc)) from exc
+    return {"table": table, "pack": pack, "sha256": digest}
 
 
 def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,

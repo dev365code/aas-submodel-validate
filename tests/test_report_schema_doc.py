@@ -103,15 +103,39 @@ def test_provenance_is_described_key_by_key_too():
     assert plain <= documented, (
         "the page does not describe %s" % sorted(plain - documented))
 
-    from aas_submodel_validate.model import Report
+    import json as _json
+    import pathlib as _pathlib
+    import tempfile
 
-    with_template = Report(path="x", input_sha256="abc",
-                           template={"sha256": "d", "path": "t.json",
-                                     "published": False,
-                                     "semanticId": "urn:x", "rows": 1})
-    widest = set(with_template.as_dict()["provenance"])
-    assert widest == documented, (
-        "described %s, emitted %s" % (sorted(documented), sorted(widest)))
+    from aas_submodel_validate import runner
+
+    # From a real run, not a hand-written literal. The literal was the
+    # first spelling and it did not move when the code did: a sixth
+    # sub-field could ship undescribed with the whole suite green,
+    # measured, because this compared only the *names inside*
+    # `provenance` and built its widest case by hand.
+    root = _pathlib.Path(__file__).resolve().parents[1]
+    template = (root / "src" / "aas_submodel_validate" / "data" / "smt"
+                / "02003" / "2.0.1" / "template.json")
+    scratch = _pathlib.Path(tempfile.mkdtemp())
+    instance = scratch / "env.json"
+    instance.write_text(_json.dumps({"assetAdministrationShells": [],
+                                     "submodels": []}), encoding="utf-8")
+    emitted = runner.run(instance, template=template).as_dict()["provenance"]
+    assert set(emitted) == documented, (
+        "described %s, emitted %s" % (sorted(documented), sorted(emitted)))
+
+    # And one level down, which is where the new keys are. The row's
+    # prose names them in backticks; anything the report carries and the
+    # row does not name is a field nobody described.
+    row = [line for line in DOC.splitlines()
+           if line.startswith("| `template`")]
+    assert row, "the page no longer describes `provenance.template`"
+    described = set(re.findall(r"`([A-Za-z0-9_]+)`", row[0]))
+    missing = sorted(set(emitted["template"]) - described)
+    assert not missing, (
+        "`provenance.template` carries %s and the page names none of them"
+        % missing)
 
 
 def test_the_vocabularies_are_the_codes():

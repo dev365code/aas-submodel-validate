@@ -65,9 +65,8 @@ error into a note.
 of your own and a table is generated from it at run time and the
 submodel judged against that. What that buys and what it does not:
 
-- It checks **what a template states** — which elements, of which kind,
-  under which identifiers, how many of each. That is what a generator
-  can read out of a template file, and it is all of it.
+- It checks **what a template states** — which elements, of which kind, under which identifiers, how many of each, the `valueType` each declares, a list's item type, and any `AllowedIdShort` pattern. That is what a generator
+  can read out of a template file.
 - It does **not** bring the hand-written rules, which are readings of a
   specification rather than of a template: the battery passport against
   Regulation (EU) 2023/1542, `URIOfTheProduct` as an absolute URI, the

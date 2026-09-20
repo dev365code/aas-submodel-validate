@@ -12,9 +12,12 @@ files, across six template packs. A table built from your file adds no
 rule to that count and is not registered: the ids it uses exist for the
 run and are not ids this project publishes.
 
-What this reader takes in is unchanged: one document at 64 MiB, a
+What this reader takes in gains a second file. The bounds on the
+document being judged are unchanged — one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
-directory of names at 16 MiB.
+directory of names at 16 MiB — and a template given with `--template` is
+bounded separately, at the same 64 MiB and additionally at ten thousand
+rows. Bytes do not bound what a template costs; rows do.
 
 **A template you supply is judged against, and the report says it was
 yours.** `verdict` A submodel of a template with no pack here drew
@@ -22,9 +25,10 @@ yours.** `verdict` A submodel of a template with no pack here drew
 `--template` the template file and the submodel is judged against the
 rows that file declares.
 
-What that buys is exactly what a generator can read out of a template:
-which elements, of which kind, under which identifiers, and how many of
-each. What it does not bring is everything a pack carries besides its
+What that buys is what a generator can read out of a template: which
+elements, of which kind, under which identifiers, how many of each, the
+`valueType` each declares, a list's item type, and any `AllowedIdShort`
+pattern. What it does not bring is everything a pack carries besides its
 table — the hand-written rules, which are readings of a specification
 rather than of a template, the readings recorded in
 `docs/divergences.md`, and the corpus that pins them. Those exist per
