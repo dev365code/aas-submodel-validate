@@ -57,6 +57,19 @@ document being judged because they are different files: forty-six
 megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
 
+**A run over many submodels is faster, and a wide `--template` run is
+much faster.** `note` No verdict moves; this is what the same verdict
+costs. Every generated rule opens by asking which submodels its table
+answers for, and that was recomputed for each rule — a scan of the
+whole input per rule, where the answer cannot differ between two rules
+of one table. It is decided once per table now. A table a caller
+supplies makes one rule per row, so the two numbers multiplying there
+were both the caller's: measured, a template of 9,900 rows judging 500
+submodels took 9.53 seconds, of which 6.48 went on re-deciding that one
+question, and takes 3.48 seconds now. The project's own corpus pass came
+down about twelve percent. The published example, and anything of its
+size, was already fast and stays so.
+
 ## 0.4.1 — 2026-09-21
 
 Who should take this release: anyone whose build can be handed a path

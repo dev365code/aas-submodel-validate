@@ -199,7 +199,27 @@ def matched_submodels(ctx, tables) -> List:
     shape this project keeps meeting: a repair that reaches one of two
     siblings. `is_template` is asked here too, and it is the same
     function.
+
+    Computed once per table, for the same reason and with the same key
+    as `analyze`. Every generated rule opens by asking this, and the
+    answer cannot differ between two rules of one table -- the input,
+    the selection and the stand-down are all fixed for the life of a
+    context. Asked per rule it is a scan of every submodel per rule,
+    and both numbers are the caller's: measured at the row bound, a
+    supplied table of 9,900 rows against 500 submodels spent 6.48 of
+    the run's 9.53 seconds deciding the same thing over again.
+
+    Nothing may mutate what comes back -- the list is shared, exactly
+    as `analyze`'s record is.
     """
+    cache = ctx.__dict__.setdefault("_smt_matched", {})
+    cached = cache.get(tables.__name__)
+    if cached is None:
+        cached = cache[tables.__name__] = _matched_submodels(ctx, tables)
+    return cached
+
+
+def _matched_submodels(ctx, tables) -> List:
     from .detect import instances
     # A table the caller supplied takes an identifier over, and a pack
     # that also answers for it stands down -- reported, never silent.

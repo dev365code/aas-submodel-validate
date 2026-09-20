@@ -909,6 +909,35 @@ TABLE = [
      "MiB before the refusal, and 0.06s and 10 MiB once the walk refuses "
      "as it goes."),
 
+    ("engine/which-submodels-a-table-answers-for-is-decided-once",
+     "src/aas_submodel_validate/rules/engine.py",
+     # `analyze` is cached the same way three lines of code apart, so
+     # the anchor names the call that is this one.
+     "        cached = cache[tables.__name__] = _matched_submodels(ctx, tables)",
+     "        return _matched_submodels(ctx, tables)",
+     ["tests/test_engine_regressions.py::"
+      "test_which_submodels_a_table_answers_for_is_decided_once"],
+     "the verdict does not move, which is why this survived being "
+     "written: every rule of a table asked the same question and got "
+     "the same answer. What moves is what it costs, and both of its "
+     "numbers belong to the caller. Measured at the row bound, a "
+     "supplied table of 9,900 rows against 500 submodels spent 6.48 of "
+     "the run's 9.53 seconds re-deciding it; one input of the suite's "
+     "own drew 191 walks over the submodels"),
+
+    ("gates/a-table-built-at-run-time-is-timed",
+     "tools/time_budget.py",
+     'LAYERS = ("cold_start", "corpus_pass", "scale", "rules_layer",\n'
+     '          "supplied_template")',
+     'LAYERS = ("cold_start", "corpus_pass", "scale", "rules_layer")',
+     ["tests/test_the_run_stays_inside_its_time_budget.py::"
+      "test_a_table_built_at_run_time_is_timed"],
+     "the four layers before it run against tables generated at build "
+     "time, so neither the build nor a walk whose cost goes as rows "
+     "times submodels is in any of them. Measured: taking the "
+     "memoisation above back out moves this layer to 3.98x, and moved "
+     "nothing the other four measure"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose
