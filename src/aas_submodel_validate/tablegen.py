@@ -152,11 +152,14 @@ def _rows(element, parent_label, parent_id, counter, pack):
         # Here, not after the walk. Checked afterwards the bound stopped
         # the *second* pass and let the first build every row first:
         # measured, 300,000 rows were materialised in 2.2 seconds and 282
-        # MiB before the refusal, and the densest template inside the byte
-        # bound costs many times that -- which on a container with a
-        # memory limit is a kill rather than an exit code. `SECURITY.md`
-        # says a template above the limit is refused before it is walked,
-        # and that sentence is only true from here.
+        # MiB before the refusal -- which on a container with a memory
+        # limit is a kill rather than an exit code. And 300,000 is not
+        # the ceiling: an element this builds a row from needs only a
+        # `modelType` and an `idShort`, 42 bytes of it measured, so about
+        # 1.58 million rows fit inside the 64 MiB of template this reader
+        # takes in. `SECURITY.md` says a template above the limit is
+        # refused before it is walked, and that sentence is only true
+        # from here.
         raise TemplateRefused(
             "this template declares more than the %d rows this reader "
             "builds a table from" % MAX_TEMPLATE_ROWS)
