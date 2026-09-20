@@ -21,7 +21,6 @@ from typing import Optional
 from . import __version__, runner, tablegen
 from ._terminal import survive
 from .example import NotBundled, bundled_example, example_name
-from .loader import UnreadablePath
 from .report import render
 
 EXIT_OK = 0
@@ -274,9 +273,6 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         # This is "could not judge the input", which is what every other
         # unreadable input here gets.
         print("smtv: %s" % refused, file=sys.stderr)
-        return EXIT_ERROR
-    except UnreadablePath as exc:
-        print("smtv: %s" % exc, file=sys.stderr)
         return EXIT_ERROR
     if shown_as:
         report.path = shown_as

@@ -595,3 +595,42 @@ def test_the_json_report_is_unchanged_by_this(tmp_path, capsys):
     document = json.loads(capsys.readouterr().out)
     assert document["schemaVersion"] == 1
     assert document["toolVersion"] == __version__
+
+
+@pytest.mark.parametrize("shape", [
+    "missing", "directory", "wrong suffix", "bare -", "refused bytes",
+])
+def test_an_unreadable_path_comes_back_as_a_report_and_is_not_raised(tmp_path,
+                                                                     shape):
+    """`runner.run` promises this in its own docstring, and nothing held
+    it.
+
+    The promise is load-bearing twice over. A consumer that parses stdout
+    should not have to know which extension it sent -- the same
+    permission denial used to reach `.aasx` through the container reader
+    as an `X1` finding with a JSON document behind it, while `.json` and
+    `.xml` raised and printed nothing. And `cli` had an `except
+    UnreadablePath` clause that existed only for the propagating version:
+    `trace` put none of five unreadable shapes anywhere near it, and a
+    mutation sending that clause to 64 survived the suite. The clause is
+    gone, and this is what its absence rests on.
+    """
+    from aas_submodel_validate import runner
+
+    if shape == "missing":
+        path = tmp_path / "no-such-file.json"
+    elif shape == "directory":
+        path = tmp_path / "a-directory"
+        path.mkdir()
+    elif shape == "wrong suffix":
+        path = tmp_path / "notes.txt"
+        path.write_text("{}", encoding="utf-8")
+    elif shape == "bare -":
+        path = "-"
+    else:
+        path = tmp_path / "refused.json"
+        path.write_bytes(b"not json at all")
+
+    report = runner.run(path)            # must not raise
+    assert report.findings, "%s produced a report with nothing in it" % shape
+    assert not report.judged, shape

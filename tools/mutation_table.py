@@ -993,6 +993,24 @@ TABLE = [
      "are padded to two digits, so past ninety-nine rows that is not "
      "the template's order: `TPL-E100` before `TPL-E99`"),
 
+    ("runner/an-unreadable-path-is-a-report-not-an-exception",
+     "src/aas_submodel_validate/runner.py",
+     "    except UnreadablePath as exc:\n"
+     '        loaded = Loaded(path=str(path), form="unopened")',
+     "    except UnreadablePath as exc:\n"
+     "        raise exc",
+     ["tests/test_a_usage_error_exits_64.py::"
+      "test_an_unreadable_path_comes_back_as_a_report_and_is_not_raised"],
+     "one contract on exit 2 and not one per extension: the same "
+     "permission denial reached `.aasx` through the container reader as "
+     "an `X1` finding with a JSON document behind it while `.json` and "
+     "`.xml` raised and printed nothing, so a pipeline parsing stdout "
+     "broke on two of three extensions for a condition none of them "
+     "caused. `cli` carried an `except` clause for the propagating "
+     "version that `trace` showed none of five unreadable shapes "
+     "reaches, and a mutation sending it to 64 survived the suite; the "
+     "clause is gone and this is what its absence rests on"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose
