@@ -1506,3 +1506,101 @@ def test_the_rehearsal_holds_no_credential_and_reads_no_tag():
         assert forbidden not in text, (
             "the rehearsal names `%s`, which makes it something other than "
             "a rehearsal" % forbidden)
+
+
+# -- a gate only gates the events it is asked about ---------------------------
+
+def _on_block(path):
+    """The workflow's `on:` block, as raw lines.
+
+    Read as text rather than parsed, like everything else here: this file
+    has no YAML dependency and adding one for two triggers would put a
+    library between a gate and the thing it gates.
+    """
+    lines = path.read_text("utf-8").splitlines()
+    start = next((n for n, line in enumerate(lines)
+                  if re.match(r"^on:\s*(#.*)?$", line) or line.startswith("on: ")), None)
+    assert start is not None, "%s has no `on:` block" % path.name
+    if lines[start].startswith("on: "):
+        return [lines[start][len("on: "):].strip()]
+    block = []
+    for line in lines[start + 1:]:
+        if line.strip() and not line.startswith((" ", "\t")):
+            break
+        block.append(line)
+    return block
+
+
+def test_every_workflow_can_fire_on_a_push():
+    """A gate that no event reaches has never been red, and CONTRIBUTING
+    calls a gate that has never been red a comment.
+
+    Measured on 2026-09-19: `dco.yml` was `on: pull_request` alone, this
+    repository has had no pull requests, and the GitHub API reported
+    **zero runs** of it against 213 of `ci.yml` and 8 of `release.yml`.
+    Every commit did carry a `Signed-off-by` line, so nothing was wrong
+    -- which is the difficulty: the workflow looked like the reason, and
+    it had never once checked.
+    """
+    for workflow in _workflows():
+        block = "\n".join(_on_block(workflow))
+        assert re.search(r"(?m)^\s*(push:|push\s*$)|\[.*\bpush\b.*\]", block), (
+            "%s can only be reached by %r. This repository pushes; if it "
+            "does not also open pull requests, that workflow runs never."
+            % (workflow.name, block.strip()))
+
+
+def _push_branch_filters(path):
+    """The branch patterns the workflow's push trigger accepts."""
+    block = _on_block(path)
+    for n, line in enumerate(block):
+        if re.match(r"^\s+branches:", line):
+            inline = line.split("branches:", 1)[1].strip()
+            if inline.startswith("["):
+                return [item.strip().strip('"\'')
+                        for item in inline.strip("[]").split(",") if item.strip()]
+            listed = []
+            for entry in block[n + 1:]:
+                if not re.match(r"^\s+- ", entry):
+                    break
+                listed.append(entry.split("- ", 1)[1].strip().strip('"\''))
+            return listed
+    return []
+
+
+def test_the_branches_this_project_works_on_are_the_ones_ci_watches():
+    """Three branches carried a night's work and none of them ran CI.
+
+    The gate was on `main` and `release/**`, and the work happens on
+    `wip/*` -- so every branch unit was proved on one machine, one Python
+    and one platform until the moment it reached `main`, where the matrix
+    saw it for the first time. Measured: a merge that was green here went
+    red on all nine rows, for two reasons that had nothing to do with the
+    change and everything to do with where it had been run.
+    """
+    watched = _push_branch_filters(ROOT / ".github" / "workflows" / "ci.yml")
+    assert "main" in watched
+    assert any(pattern.startswith("wip/") for pattern in watched), (
+        "CI watches %s; the branches this project develops on are not "
+        "among them" % watched)
+
+    # Derived rather than asserted from a list: a branch named some other
+    # way tomorrow is the same hole. Only asked where there is a
+    # repository to ask -- an unpacked sdist has no branches.
+    if not (ROOT / ".git").is_dir():
+        return
+    # Asked of the remote, because that is where CI runs. Asked of local
+    # branches, this fired on three that were merged long ago and exist
+    # on nobody else's machine: a branch that was never pushed triggers
+    # nothing, so it is not a gap in what CI watches.
+    listed = subprocess.run(["git", "branch", "-r", "--format=%(refname:short)"],
+                            capture_output=True, text=True, cwd=str(ROOT))
+    for line in listed.stdout.split():
+        remote, _, branch = line.partition("/")
+        if not branch or branch == "HEAD":
+            continue
+        assert any(fnmatch.fnmatch(branch, pattern.replace("**", "*"))
+                   for pattern in watched), (
+            "%s/%s is pushed and is matched by none of CI's push filters "
+            "%s, so work on it is proved on one machine only"
+            % (remote, branch, watched))

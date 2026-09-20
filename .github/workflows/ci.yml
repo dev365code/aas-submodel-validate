@@ -2,7 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [main, "release/**"]
+    # `wip/**` is here because the work happens there and was being
+    # proved on one machine, one Python and one platform until the
+    # moment it reached main. Measured: a branch green under `make
+    # check` went red on all nine matrix rows the minute it merged, for
+    # two reasons that were about where it had run and not about the
+    # change. A branch that cannot be tested before it lands is a branch
+    # whose first real test is main's history.
+    branches: [main, "release/**", "wip/**"]
   pull_request:
 
 permissions:
@@ -22,7 +29,14 @@ concurrency:
   #
   # The cost is that two pushes to main now queue instead of one dying;
   # the intended habit is to let a run finish before pushing again.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # A `wip/**` push is superseded the same way a pull request's is: it is
+  # never tagged, so no release gate will ever ask what CI concluded
+  # about it, and the per-commit history main rests on is not written on
+  # a branch. Cancelling there costs a runner nothing and keeps a rapid
+  # branch from queueing behind itself.
+  cancel-in-progress: >-
+    ${{ github.event_name == 'pull_request'
+        || startsWith(github.ref, 'refs/heads/wip/') }}
 
 jobs:
   lint:
