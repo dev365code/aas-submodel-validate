@@ -333,3 +333,72 @@ def build(document, pack):
 
     return {"tree": tree, "submodel_sid": submodel_sid,
             "submodel_sid_type": submodel_sid_type, "supplemental": supplemental}
+
+
+def _flatten(rows, out):
+    for row in rows:
+        out.append(row)
+        _flatten(row["children"], out)
+    return out
+
+
+class Table:
+    """A rule table that is not a module.
+
+    The walk takes a table as an argument and reads eight names off it,
+    plus `__name__` to key its per-context cache. A generated pack is a
+    module and answers all nine; a table built from a template a caller
+    supplied has to answer the same nine or it is a second reader wearing
+    one name.
+
+    `__name__` is not decoration. `engine.analyze` caches its walk under
+    it, so two tables sharing a name silently share one walk — which is
+    the failure the table argument was given no default to prevent. A
+    run-time table is named for the digest of the document it was built
+    from, so two different templates cannot collide and the same template
+    twice is the same name.
+    """
+
+    __slots__ = ("__name__", "TEMPLATE_CITATION", "TEMPLATE_SEMANTIC_ID",
+                 "TEMPLATE_SUBMODEL_SID_TYPE", "TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS",
+                 "TREE", "ROWS", "BY_ID", "BY_LABEL")
+
+    def __init__(self, name, citation, semantic_id, sid_type, supplemental, tree):
+        self.__name__ = name
+        self.TEMPLATE_CITATION = citation
+        self.TEMPLATE_SEMANTIC_ID = semantic_id
+        self.TEMPLATE_SUBMODEL_SID_TYPE = sid_type
+        self.TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = supplemental
+        self.TREE = tree
+        self.ROWS = tuple(_flatten(tree, []))
+        self.BY_ID = {row["id"]: row for row in self.ROWS}
+        self.BY_LABEL = {row["label"]: row for row in self.ROWS}
+
+    def __repr__(self):                 # pragma: no cover - diagnostics
+        return "<Table %s, %d rows>" % (self.__name__, len(self.ROWS))
+
+
+def table_from(document, pack, name=None):
+    """The table a template describes, as an object the walk can take.
+
+    The same `build` the emitter uses, presented the way a generated
+    module presents itself -- so the run-time path and the build-time
+    path are one code path with two renderings, and a test can put the
+    two side by side and compare rows.
+
+    `name` defaults to a digest of the document, because the walk caches
+    on it and a name that repeats is a walk that is reused for a
+    different table.
+    """
+    import hashlib
+    import json as _json
+
+    built = build(document, pack)
+    if name is None:
+        digest = hashlib.sha256(
+            _json.dumps(document, sort_keys=True,
+                        separators=(",", ":")).encode("utf-8")).hexdigest()
+        name = "<template %s>" % digest[:16]
+    return Table(name, pack["citation"], built["submodel_sid"],
+                 built["submodel_sid_type"],
+                 tuple(sorted(built["supplemental"])), built["tree"])
