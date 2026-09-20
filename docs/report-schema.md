@@ -127,6 +127,16 @@ something about its reader rather than about the file. Read
 `summary.warnings` and the two `submodels` counts to see what those two
 would have decided.
 
+One flag that moves the report is deliberately **not** here either, and
+for a different reason: `--template` is recorded in `provenance`. What
+decides a verdict is the template's bytes, not the flag's spelling — the
+same path can hold a different file tomorrow — so the record of it
+belongs where this report names bytes, beside the hash of the input.
+`provenance.template` carries that hash, the path, the identifier the
+template claims and how many rows came out of it. Two reports of one
+file are comparable on that, and comparable on a path alone they would
+not be.
+
 | key | type | |
 |---|---|---|
 | `profile` | string or null | The `--profile` value, or `null` when the choice was left to the default. |

@@ -607,3 +607,57 @@ def test_the_parity_test_covers_every_entrance_this_tree_has():
         % (sorted(declared), sorted(COMPARED_ENTRANCES)))
     assert "github action" not in declared, (
         "an action exists now; add it to the comparison and to this list")
+
+
+def test_the_security_page_names_the_second_file_and_its_bound():
+    """`SECURITY.md` promises what this reader takes in, file by file
+    and bound by bound, and `--template` reads one the paragraph did not
+    mention.
+
+    The row limit especially: it is the one bound in this project that
+    is not about bytes, and it exists because bytes do not bound what a
+    template costs. A reader sizing the tool from that page would have
+    had no way to know either.
+    """
+    from aas_submodel_validate import tablegen
+
+    page = " ".join((ROOT / "SECURITY.md").read_text("utf-8").split())
+    assert "--template" in page, "the page does not mention the mode"
+    assert "second" in page, page[:200]
+    assert str(tablegen.MAX_TEMPLATE_ROWS) in page or "ten thousand" in page, (
+        "the page does not name the row limit")
+
+
+def test_the_schema_page_says_where_the_template_flag_is_recorded():
+    """`options` is introduced as "the flags that move what is in the
+    report", and `--template` moves it more than anything listed there.
+
+    It is in `provenance` instead, on the argument that what decides a
+    verdict is the template's bytes rather than the flag's spelling. That
+    is a defensible place and an indefensible silence: the page states a
+    rule and a reader who finds the flag in neither list is left to guess
+    whether it was forgotten.
+    """
+    page = " ".join((ROOT / "docs" / "report-schema.md").read_text("utf-8").split())
+    options = page.split("## `options`")[1].split("| key ")[0]
+    assert "--template" in options, (
+        "the options section states a rule the flag appears to break and "
+        "never says where the flag went")
+    assert "provenance" in options, options[:200]
+
+
+def test_the_front_page_names_the_mode_where_a_reader_looks_for_a_capability():
+    """It was named only in "When aas-submodel-validate is not the tool",
+    which is the least likely place a reader looks for something the
+    tool does."""
+    page = (ROOT / "README.md").read_text("utf-8")
+    section = page.split("## What it checks")[1].split("\n## ")[0]
+    # Whitespace-normalised before matching. The sentence wraps across a
+    # line in the file and a raw search for it finds nothing -- the same
+    # miss the exit-code gates made, where a reflow was enough to hide a
+    # promise from a check written line by line.
+    flowing = " ".join(section.split())
+    assert "--template" in flowing, (
+        "the section that says what the tool checks does not mention the "
+        "mode that checks a template the caller brought")
+    assert "not a statement about conformance" in flowing, flowing[-400:]

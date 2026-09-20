@@ -456,6 +456,16 @@ promote — and never re-implemented here.
 The rule counts (219, 178), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
+**And a template of your own.** `--template FILE` generates a table from
+an IDTA-shaped template you supply and judges against that, which is how
+a submodel of a template with no pack here gets judged at all. It buys
+the first half of the paragraph above and not the second: what a
+template states — elements, kinds, identifiers, how many of each — and
+none of the hand-written rules, which are readings of a specification
+and cannot be derived from a template. The report says the table was
+yours, and a verdict against a template you supplied is not a statement
+about conformance to a published IDTA one.
+
 ## Using this validator in your product
 
 <details>
