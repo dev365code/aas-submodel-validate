@@ -430,7 +430,15 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                            # something untrue.
                            "published": False,
                            "semanticId": supplied["table"].TEMPLATE_SEMANTIC_ID,
-                           "rows": len(supplied["table"].ROWS)}
+                           "rows": len(supplied["table"].ROWS),
+                           # How many the file held, which `rows` and
+                           # `semanticId` cannot say: both describe the
+                           # one submodel the table came from and read
+                           # the same whether the file held one or five.
+                           # The note beside it says so in a sentence,
+                           # and a sentence is not something a consumer
+                           # should have to match on.
+                           "submodels": supplied["declared"]}
     # Held rather than discarded: the walk's own record of which rows it
     # considered lives on the context, and `not_asked` is the difference
     # between that and the tables. Built inline before, so the one thing

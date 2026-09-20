@@ -1087,3 +1087,27 @@ def test_a_run_time_table_places_its_rows_in_the_order_it_declares_them(tmp_path
         "a run-time table's rows are ordered by their spelling rather "
         "than by where the table puts them: %s"
         % engine.rows_not_reached(ctx))
+
+
+def test_provenance_says_how_many_templates_the_file_held(tmp_path):
+    """The note that says the file held more than one is prose, and
+    `provenance` is the half a program reads.
+
+    A consumer sees `rows` and `semanticId` and has no way to learn that
+    two other templates in the same file were never opened: both fields
+    describe the one submodel the table came from, and both look exactly
+    the same whether the file held one or five. `notes` says it in a
+    sentence, which means string-matching a sentence.
+    """
+    report = runner.run(_unclaimed_instance(tmp_path),
+                        template=_two_template_file(tmp_path))
+    carried = report.as_dict()["provenance"]["template"]
+    assert carried["submodels"] == 2, (
+        "provenance does not say how many submodels the template file "
+        "declared: %s" % sorted(carried))
+    # And the ordinary case is still stated rather than implied by
+    # absence: a key that appears only sometimes is a key a consumer
+    # cannot branch on.
+    one = runner.run(_unclaimed_instance(tmp_path),
+                     template=_unclaimed_template(tmp_path))
+    assert one.as_dict()["provenance"]["template"]["submodels"] == 1

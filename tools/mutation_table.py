@@ -1024,6 +1024,18 @@ TABLE = [
      "dating the heading, bumping the version and changing 219 to 218 "
      "in one edit went green before this and red after"),
 
+    ("template/provenance-says-how-many-the-file-held",
+     "src/aas_submodel_validate/runner.py",
+     '                           "submodels": supplied["declared"]}',
+     '                           "submodels": 1}',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_provenance_says_how_many_templates_the_file_held"],
+     "the table is built from the first submodel in the file and the "
+     "rest are not read. `rows` and `semanticId` both describe that one "
+     "and read the same whether the file held one or five, so without "
+     "this field a program cannot tell a template of the caller's that "
+     "matched nothing from one this run never opened"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

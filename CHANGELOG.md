@@ -58,10 +58,12 @@ megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
 
 A template file may declare more than one submodel. The table is built
-from the first, the rest are not read, and the report says both — how
-many the file held and which one answered. Without that a reader cannot
-tell "my other templates matched nothing" from "my other templates were
-never opened", and those ask opposite things of them.
+from the first, the rest are not read, and the report says both — in a
+note, and as `provenance.template.submodels` for a program. Without it a
+reader cannot tell "my other templates matched nothing" from "my other
+templates were never opened", and those ask opposite things of them:
+`rows` and `semanticId` both describe the submodel the table came from
+and read the same either way.
 
 `--profile` and `--template` together: your table takes the identifier
 from **both** sides of the pair, so the profile decides nothing, and the
