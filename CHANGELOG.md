@@ -35,8 +35,8 @@ rather than of a template, the readings recorded in
 template and cannot be derived from one.
 
 `provenance.template` carries the file's SHA-256, the path, the
-identifier it claims, its row count, and `published: false`; a line on
-the screen says the same. **A verdict against a template you supplied is
+identifier it claims, its row count, how many `submodels` the file
+declared, and `published: false`; a line on the screen says the same. **A verdict against a template you supplied is
 not a statement about conformance to a published IDTA template**, and a
 consumer that cannot tell the two apart has been told something untrue.
 The key is absent rather than null when the run used this project's own
