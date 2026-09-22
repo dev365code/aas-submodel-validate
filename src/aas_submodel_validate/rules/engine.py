@@ -150,6 +150,51 @@ def file_part_violations(container, subject, value):
                         subject=subject, detail=value)
 
 
+def install_file_rule(rule_id: str, tables, citation: str) -> None:
+    """Register, for `tables`, the question `file_part_violations` answers.
+
+    The body has been one since two packs' copies of it diverged in the
+    field. What stayed per pack was the *call*: 02004's family installs
+    it with the rest of its hand rules, and a pack outside that family
+    got it only if somebody remembered. Four tables declare File rows and
+    two asked, so a Digital Nameplate naming two images its package does
+    not carry was judged clean -- not because the rule was missing but
+    because nobody asked it on that pack's behalf.
+
+    The labels come from the table (`row["kind"] == "File"`), so a pack
+    whose template gains a File row gains the question with it.
+    """
+    from ..registry import rule
+
+    labels = tuple(row["label"] for row in tables.ROWS
+                   if row["kind"] == "File")
+    if not labels:
+        raise ValueError(
+            "%s: this table declares no File row, so there is nothing for "
+            "this rule to navigate" % rule_id)
+
+    @rule(rule_id, kind="template", prio="MUST",
+          title="files named by %s exist in the container"
+                % ", ".join(labels),
+          spec="%s; IDTA 01005 (AASX)" % citation,
+          fix="Add the file to the .aasx under the name this File value "
+              "gives, or correct the value's path. (Declaring an aas-suppl "
+              "relationship for it is X4's question, not this one's.)")
+    def check(ctx):
+        """Only answerable when the input *is* a container; an environment
+        JSON names files this rule cannot see, and silence there is
+        honesty rather than laxity."""
+        container = ctx.loaded.container
+        if container is None:
+            return
+        for label in labels:
+            for subject, element in instances_of(ctx, label, tables):
+                yield from file_part_violations(container, subject,
+                                                getattr(element, "value", None))
+
+    return check
+
+
 def near_miss_violations(ctx, tables):
     """The near-miss lint, for whichever pack asks.
 

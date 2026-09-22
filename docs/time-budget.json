@@ -5,33 +5,33 @@
  ],
  "budgets": {
   "Darwin": {
-   "cold_start": 58.7,
-   "corpus_pass": 97.5,
-   "scale": 82.3,
-   "rules_layer": 0.426,
-   "supplied_template": 27.9
+   "cold_start": 60.2,
+   "corpus_pass": 104.0,
+   "scale": 86.2,
+   "rules_layer": 0.459,
+   "supplied_template": 29.2
   }
  },
  "recorded_on": {
   "Darwin": {
    "machine": "arm64",
    "python": "3.9.6",
-   "inputs": 61,
+   "inputs": 63,
    "yardstick_seconds": {
-    "cold_start": 0.002201,
-    "corpus_pass": 0.002395,
-    "scale": 0.002379,
-    "rules_layer": 0.002329,
-    "supplied_template": 0.002234
+    "cold_start": 0.001941,
+    "corpus_pass": 0.001733,
+    "scale": 0.001698,
+    "rules_layer": 0.001675,
+    "supplied_template": 0.00168
    },
    "absolute_seconds": {
-    "cold_start": 0.1293,
-    "corpus_pass": 0.2334,
-    "scale": 0.1958,
-    "rules_layer": 0.000992,
-    "supplied_template": 0.06236
+    "cold_start": 0.1169,
+    "corpus_pass": 0.1797,
+    "scale": 0.1464,
+    "rules_layer": 0.0007688,
+    "supplied_template": 0.04897
    },
-   "_from": "one run on an idle machine, chosen as the closest to the mean of five. Re-recorded when `supplied_template` joined the layers and when deciding which submodels a table answers for stopped being recomputed once per rule -- the second of those is why `corpus_pass` fell from 111 to 97.5, and leaving the old figure would have been a budget with twelve percent of slack nobody could account for. Those five spanned cold_start 56.4-62.1 (10% peak to peak), corpus_pass 97.5-101 (4%), scale 79.7-86.0 (8%), rules_layer 0.417-0.451 (8%), supplied_template 27.4-29.7 (8%). Peak-to-peak over a stated number of runs is the figure worth quoting; a standard deviation of three samples reads reassuringly and hides what a reader meets. The yardstick itself came out about half the seconds it did when these were first recorded, on the same machine, which is what the ratios exist to absorb and did. Under heavy background load an unchanged tree has been measured between 0.54x and 1.74x, so the warning line at 1.5x is inside the noise on a loaded machine and is advisory, while the failure line at 2.0x has not been crossed by an unchanged tree since the yardstick moved beside the layer. Taking the memoisation back out puts `supplied_template` at 3.98x, measured."
+   "_from": "one run on an idle machine, chosen as the closest to the mean of five. Re-recorded because the corpus grew from 61 inputs to 63: a File reference case on a pack outside 02004's family had no case here, so a change that gives that question to another pack reported as nothing moved. `corpus_pass` rose from 97.5 to 104 with the two inputs, which is the only layer the corpus is in; the other four moved 3-5% on the same tree and are drift, not a change -- recorded together because the tool measures them in one pass and a mixed file would not say when each half was taken. Those five spanned cold_start 58.8-61.1 (4% peak to peak), corpus_pass 102-106 (4%), scale 86.2-88.7 (3%), rules_layer 0.446-0.461 (3%), supplied_template 28.3-29.2 (3%). Peak-to-peak over a stated number of runs is the figure worth quoting; a standard deviation of three samples reads reassuringly and hides what a reader meets."
   }
  },
  "thresholds": {

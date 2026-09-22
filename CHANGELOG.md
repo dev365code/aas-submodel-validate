@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.6.0 — unreleased
+
+Who should take this release: anyone whose packages name files, and
+anyone who needs to know what a run did *not* look at.
+
+It is 221 rules, 178 generated from the vendored official template
+files, across six template packs. The two added ask, for Digital
+Nameplate and for Carbon Footprint, a question two packs were already
+asking.
+
+**A File value that names a part the package does not hold is now a
+finding, for every pack whose template declares File rows.** The body
+that answers it has been one since two packs' copies of it diverged in
+the field; what stayed per pack was the *call*, so four tables declared
+File rows and two asked. A Digital Nameplate package naming
+`/aasx/files/logo.png` and `/aasx/files/ce.png` with neither in the
+archive was judged clean. It draws two errors and leaves by 1.
+
+`X4` asks a different question — whether every declared `aas-suppl`
+relationship resolves — and both still fire, because a package can fail
+either alone: a model can name a file it never declares a relationship
+for, and a relationship can name a part no model mentions. A file that
+is present, and a File value that is an absolute URL, and an
+environment JSON with no package around it, all stay silent.
+
+What this reader takes in is unchanged: one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB. A template given with `--template` is
+bounded separately, at the same 64 MiB and additionally at ten thousand
+rows.
+
+**And the report says what the run did not open.** `summary` gains
+`scopeNotExamined`: one record per template row whose scope no element
+matched, the rules that went unasked with it, and -- as a separate fact,
+not a cause -- whether anything in that same scope matched no row at
+all. Before it, a container carrying an identifier the template does not
+name passed with every published number identical to a clean run, while
+the rule that would have checked inside it was never put to anything.
+
+It names no culprit. A different identifier may be a legitimate vendor
+extension, and nothing tells that from a typo by looking, so
+`rulesNotAsked` and `unmatchedElements` keep their narrower triggers and
+this reports the reach of the check without the blame. Nothing here
+moves a verdict or an exit code, and the screen prints only the records
+that have an unplaceable element beside them -- the other kind is on
+nearly every clean run.
+
 ## 0.5.0 — unreleased
 
 Who should take this release: anyone holding an IDTA-shaped submodel

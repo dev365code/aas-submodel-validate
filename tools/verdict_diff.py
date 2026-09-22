@@ -175,6 +175,23 @@ def build_corpus(into: Path):
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[("aasx/files/manual.pdf", b"%PDF-1.4 ")])))
 
+    # And the same question on a pack outside 02004's family. Every File
+    # case above is built on a Handover document, and Handover has asked
+    # this since the rule existed -- so a change that gives the question
+    # to another pack moves no case here and reports as nothing moved.
+    # That is the shape this file's own docstring is about, met a second
+    # time: an instrument with no case for the thing that changed.
+    from builders import dn_env  # noqa: E402
+    for index, (label, held) in enumerate((
+            ("a Nameplate whose images are in the package",
+             [("aasx/files/logo.png", b"\x89PNG\r\n"),
+              ("aasx/files/ce.png", b"\x89PNG\r\n")]),
+            ("a Nameplate naming images the package does not hold", []))):
+        cases.append((label,
+                      build_aasx(into / ("nameplate-file-%d.aasx" % index),
+                                 payload=json.dumps(dn_env()).encode("utf-8"),
+                                 files=held, suppl_targets=[])))
+
     # The same question asked the other way round: the archive holds the
     # odd spelling and the value is ordinary, or the reverse. This is
     # where the two ways into the normaliser could disagree, so it is
