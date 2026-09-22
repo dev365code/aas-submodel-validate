@@ -80,6 +80,13 @@ submodel judged against that. What that buys and what it does not:
 - Where your template claims an identifier one of the six packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
+- An element a template declares **inside itself** — 02011 Hierarchical
+  Structures is the published case — is judged at its outermost
+  occurrence only. The table stops at the repeat so that it stays
+  finite, and this reader does not yet re-apply the scope at depth
+  (`docs/divergences.md` #48). The report names the identifier and
+  counts the nested copies it did not look inside, so the reach of the
+  check is on the page rather than in the silence.
 
 The generator reads a row's cardinality from one of three qualifier
 spellings -- the current `SMT/Cardinality`, the older `Multiplicity`, or a

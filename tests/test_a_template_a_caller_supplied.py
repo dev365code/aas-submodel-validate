@@ -1322,3 +1322,79 @@ def test_an_allowed_idshort_is_read_as_written(tmp_path):
         % literal)
     assert not re.match(literal, "Doc1"), (
         "%r matched an element the template did not name" % literal)
+
+
+def _self_containing(tmp_path):
+    """A template whose `Node` holds a `Node`, and a file three deep.
+
+    The two inner copies each break the template's own mandatory row.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    inner = {"modelType": "SubmodelElementCollection", "idShort": "Node",
+             "semanticId": sid("urn:test:node"),
+             "qualifiers": [card("ZeroToMany")], "value": []}
+    node = {"modelType": "SubmodelElementCollection", "idShort": "Node",
+            "semanticId": sid("urn:test:node"), "qualifiers": [card("One")],
+            "value": [{"modelType": "Property", "idShort": "Name",
+                       "semanticId": sid("urn:test:name"),
+                       "valueType": "xs:string",
+                       "qualifiers": [card("One")]}, inner]}
+    template = tmp_path / "hier-tpl.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:htpl", "idShort": "H",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [node]}]}).encode("utf-8"))
+
+    def instance_node(id_short, children):
+        return {"modelType": "SubmodelElementCollection", "idShort": id_short,
+                "semanticId": sid("urn:test:node"), "value": children}
+
+    third = instance_node("Node3", [])
+    second = instance_node("Node2", [third])
+    first = instance_node("Node", [
+        {"modelType": "Property", "idShort": "Name",
+         "semanticId": sid("urn:test:name"), "valueType": "xs:string",
+         "value": "v"}, second])
+    document = tmp_path / "hier.json"
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:h", "idShort": "H",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [first]}]}).encode("utf-8"))
+    return document, template
+
+
+def test_a_template_that_contains_itself_says_what_it_did_not_enter(tmp_path):
+    """Silence is the one answer this cannot give.
+
+    `tablegen` marks a self-containing element `recurses` and leaves its
+    repeating child unexpanded, so the table stays finite
+    (`docs/divergences.md` #48). Nothing read the marker: the walk
+    descends into `row["children"]`, the repeat is not among them, and an
+    instance's nested copies were judged by nobody. Measured on a file
+    three deep whose two inner copies each omit the template's own
+    mandatory element: no finding, no `rulesNotAsked`, no
+    `unmatchedElements`, `ok` true, exit 0.
+
+    What #48 defers is *how* to re-apply the scope -- the entry and
+    recursion cardinalities are settled against the first vendored
+    self-containing template, and none is vendored. `--template` is what
+    ended the other half of that premise, because a caller can hand one
+    over today. Until the walk re-applies the scope, the reach of the
+    check is a note, the way the battery coverage note is one: it
+    reports what was looked at, not a defect in the file.
+    """
+    document, template = _self_containing(tmp_path)
+    report = runner.run(document, template=template)
+    said = " ".join(report.notes)
+    assert "urn:test:node" in said, (
+        "the run did not enter two nested copies and said nothing about "
+        "them; notes were %r" % report.notes)

@@ -259,6 +259,10 @@ def _analyze(ctx, tables) -> Dict:
         #: for each element this walk could not place. Same standing as
         #: `lost_candidates` and subtracted the same way.
         "unmatched": [],
+        #: (subject, identifier) for each nested copy of a self-containing
+        #: row that this walk did not enter. Same standing as the two
+        #: above: a statement about the run, not about the file.
+        "not_entered": [],
     }
     for submodel in matched_submodels(ctx, tables):
         root = submodel.id_short or "submodel"
@@ -278,7 +282,7 @@ def _analyze(ctx, tables) -> Dict:
         # second item was entered in the first.
         per = {"violations": {}, "instances": {}, "near_misses": [],
                "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
-               "unmatched": []}
+               "unmatched": [], "not_entered": []}
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
@@ -299,7 +303,7 @@ def _analyze(ctx, tables) -> Dict:
             for row_id, entries in per[key].items():
                 result[key].setdefault(row_id, []).extend(entries)
         for key in ("near_misses", "idshort_drift", "reftype_drift",
-                    "lost_candidates", "unmatched"):
+                    "lost_candidates", "unmatched", "not_entered"):
             result[key].extend(per[key])
     return result
 
@@ -338,6 +342,16 @@ def unmatched_elements(ctx) -> List:
     return [UnmatchedElement(subject=subject, seen=seen,
                              unasked=unasked, resembles=resembles)
             for (subject, seen), (unasked, resembles) in sorted(best.items())]
+
+
+def repeats_not_entered(ctx) -> List:
+    """(subject, identifier) for every nested copy of a self-containing
+    row this run did not walk into, deduplicated and in path order."""
+    analysed = ctx.__dict__.get("_smt_analysis") or {}
+    seen = set()
+    for analysis in analysed.values():
+        seen.update(analysis.get("not_entered", ()))
+    return sorted(seen)
 
 
 def rows_not_reached(ctx) -> List[str]:
@@ -485,6 +499,25 @@ def _matches_row(candidates, main_empty: bool, kind_name: str, row, in_list: boo
     if candidates & set(row["match"]):
         return True
     return in_list and main_empty and kind_name == row["kind"]
+
+
+def _repeats_below(element, sid, subject):
+    """Every descendant of `element` carrying `sid`, with where it sits.
+
+    The whole chain and not the immediate children: the walk does not
+    enter the first copy, so it would never meet the second. Measured on
+    a file three deep, counting only the immediate ones reported one
+    copy of two.
+    """
+    found = []
+    stack = [(child, subject) for child in _sub_elements(element)]
+    while stack:
+        child, where = stack.pop()
+        here = "%s/%s" % (where, child.id_short or "?")
+        if sid in element_candidate_values(child):
+            found.append((here, sid))
+        stack.extend((below, here) for below in _sub_elements(child))
+    return found
 
 
 def _sub_elements(element):
@@ -719,6 +752,17 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                        subject, result,
                        in_list=(row["kind"] == "SubmodelElementList"),
                        citation=citation)
+            # A row the table marked as containing itself. The repeating
+            # child was left unexpanded so the table stays finite
+            # (docs/divergences.md #48), and nothing here read the
+            # marker -- so an instance's nested copies were walked by
+            # nobody and the report said nothing at all. How to re-apply
+            # the scope is what #48 defers to the first vendored
+            # self-containing template; what cannot wait for that is
+            # saying the copies were not entered.
+            if row.get("recurses"):
+                result["not_entered"].extend(
+                    _repeats_below(element, row["recurses"], subject))
 
     # What this scope did not enter, and only where the reader has
     # already said something is wrong.

@@ -463,6 +463,20 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     report.findings = execute(rules_to_run, ctx)
     report.not_asked = rules.engine.rows_not_reached(ctx)
     report.unmatched = rules.engine.unmatched_elements(ctx)
+    # The reach of the check, the way the battery coverage note reports
+    # one: a note and not a finding, because nothing here says the file
+    # is wrong -- only that this reader did not look.
+    repeats = rules.engine.repeats_not_entered(ctx)
+    if repeats:
+        report.notes.append(
+            "the template you supplied describes an element that contains "
+            "itself (%s); this reader judges the outermost occurrence and "
+            "did not look inside %d nested cop%s below it (%s). Nothing "
+            "here is a statement about what they hold."
+            % (repeats[0][1], len(repeats),
+               "y" if len(repeats) == 1 else "ies",
+               ", ".join(subject for subject, _ in repeats[:3])
+               + ("" if len(repeats) <= 3 else ", and more")))
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
         # The verdict that no template matched, and only that. A presence
