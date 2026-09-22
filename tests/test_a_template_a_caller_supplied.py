@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 
 import pytest
 
@@ -1347,7 +1348,33 @@ def test_every_marker_idta_publishes_is_skipped(tmp_path):
                 "type": "SMT/Cardinality", "valueType": "xs:string",
                 "value": value}
 
-    for marker in sorted(tablegen.OPEN_CONTENT_MARKERS):
+    # Read from somewhere other than the set this holds. Iterating
+    # `OPEN_CONTENT_MARKERS` made the gate agree with whatever the set
+    # said: removing `IntentionallyEmpty` -- the defect this test was
+    # written for -- simply shortened the loop and it passed. The two
+    # published ones are literals with their source; the typed ones are
+    # read out of the vendored template bytes, which is where they came
+    # from and which no edit to the set can change.
+    published = {
+        # IDTA, How to Create a Submodel Template Specification V1.1
+        # (June 2025), Table 11 "Marking arbitrary content in
+        # SubmodelElement data" -- these two and no others.
+        "https://admin-shell.io/SMT/General/Arbitrary",
+        "https://admin-shell.io/SMT/General/IntentionallyEmpty",
+    }
+    carried = set()
+    data = pathlib.Path(runner.__file__).parent / "data" / "smt"
+    for document in sorted(data.glob("*/*/template.json")):
+        for found in re.findall(r"https://admin-shell\.io/SMT/General/\w+",
+                                document.read_text("utf-8-sig")):
+            carried.add(found)
+    assert carried, "no vendored template names a marker any more"
+    missing = (published | carried) - set(tablegen.OPEN_CONTENT_MARKERS)
+    assert not missing, (
+        "a marker a published guideline names, or one a vendored template "
+        "carries, is not skipped: %s" % sorted(missing))
+
+    for marker in sorted(published | carried):
         template = tmp_path / ("marker-%s.json" % marker.rsplit("/", 1)[-1])
         template.write_bytes(json.dumps({"submodels": [{
             "modelType": "Submodel", "id": "urn:test:m", "idShort": "S",
@@ -1390,6 +1417,75 @@ def test_every_marker_idta_publishes_is_skipped(tmp_path):
             "%s: a manufacturer's own element was faulted against a "
             "placeholder the template says it may fill freely: %s"
             % (marker, [(f.id, f.violation.message) for f in report.findings]))
+
+
+def test_a_marker_is_recognised_in_the_comparison_form(tmp_path):
+    """The skip folds its side, like every other reference reader here.
+
+    It was the one that did not, so a marker written with a trailing
+    space generated a row while the same value matched on the instance
+    side. Reverting the fold left the whole suite green, which is what
+    this is for.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    spaced = " https://admin-shell.io/SMT/General/Arbitrary "
+    template = tmp_path / "spaced-marker.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:sp", "idShort": "S",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [
+            {"modelType": "Property", "idShort": "Named",
+             "semanticId": sid("urn:test:named"), "valueType": "xs:string",
+             "qualifiers": [card("One")]},
+            {"modelType": "Property", "idShort": "UserProperty",
+             "semanticId": sid(spaced), "valueType": "xs:string",
+             "qualifiers": [card("ZeroToMany")]}]}]}).encode("utf-8"))
+
+    built = runner._supplied_table(template)["table"]
+    assert [row["label"] for row in built.ROWS] == ["Named"], (
+        "a marker this reader would match on the instance side generated a "
+        "row on the template side: %s" % [r["label"] for r in built.ROWS])
+
+
+def test_every_pack_skips_through_the_one_shared_set(tmp_path):
+    """The generator and the run-time builder read one list.
+
+    Three packs kept a literal empty set after the list was shared --
+    correct for the templates vendored today and one re-vendoring away
+    from the divergence the sharing was meant to end. Reverting any one
+    of them left the suite green and the generated tables byte-identical,
+    because no vendored byte moves. Asked of the generator's own pack
+    table instead.
+    """
+    from aas_submodel_validate import tablegen
+
+    generator = _generator_module()
+    for pack in generator.PACKS:
+        assert pack["skip_sids"] is tablegen.OPEN_CONTENT_MARKERS, (
+            "%s carries its own open-content list (%s); the point of sharing "
+            "one is that a marker added to it reaches every pack"
+            % (pack["output"].name, sorted(pack["skip_sids"])))
+
+
+def _generator_module():
+    """`tools/extract_smt_rules.py`, imported by path -- `tools/` is not
+    a package and is not installed."""
+    import importlib.util
+
+    where = pathlib.Path(runner.__file__).parents[2] / "tools" / "extract_smt_rules.py"
+    spec = importlib.util.spec_from_file_location("_extract_for_test", where)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
