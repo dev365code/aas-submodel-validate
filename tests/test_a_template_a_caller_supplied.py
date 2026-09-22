@@ -761,6 +761,23 @@ def test_json_that_is_not_a_template_is_refused_not_raised(tmp_path, payload, sh
         "%s left by something other than 2" % shape)
 
 
+def _declaring(identifier):
+    """An environment whose one submodel declares `identifier`, and says
+    which category of battery it is where that is what makes this tool's
+    own rules speak."""
+    from builders import env_json
+
+    document = json.loads(env_json(identifier).decode("utf-8"))
+    document["submodels"][0]["submodelElements"] = [{
+        "modelType": "Property", "idShort": "batteryCategory",
+        "semanticId": {"type": "ExternalReference", "keys": [{
+            "type": "GlobalReference",
+            "value": "urn:samm:io.admin-shell.idta.batterypass."
+                     "technical_data:1.0.0#batteryCategory"}]},
+        "valueType": "xs:string", "value": "ev"}]
+    return json.dumps(document).encode("utf-8")
+
+
 def test_no_rule_describes_a_submodel_a_supplied_table_took_over(tmp_path):
     """The stand-down reached `matched_submodels` and `SMT-D2` and not
     the battery rules, which walk `detect.instances` directly.
@@ -776,20 +793,66 @@ def test_no_rule_describes_a_submodel_a_supplied_table_took_over(tmp_path):
     one of two siblings is the shape this project keeps meeting, and a
     third walker would inherit the same gap.
     """
-    from builders import env_json
+    from aas_submodel_validate.rules import detect
 
-    for identifier in ("https://admin-shell.io/idta/CarbonFootprint/"
-                       "CarbonFootprint/1/0",):
-        instance = tmp_path / "bat.json"
-        instance.write_bytes(env_json(identifier))
+    # Read from the source rather than listed. The list stood here and
+    # held one identifier -- a `detect.PACKS` one -- while the docstring
+    # above said "every rule". `BAT-R8` reads only the three
+    # `PACK_ONLY_SEMANTIC_IDS`, so the loop never reached the rule whose
+    # stand-down `detect.judgeable` was written for, and reverting that
+    # stand-down left the whole suite green.
+    identifiers = sorted(
+        {pack.semantic_id for pack in detect.PACKS}
+        | set(detect.PACK_ONLY_SEMANTIC_IDS))
+    exercised = set()
+    for index, identifier in enumerate(identifiers):
+        instance = tmp_path / ("took-over-%d.json" % index)
+        instance.write_bytes(_declaring(identifier))
+        # A case that draws nothing without the flag proves nothing with
+        # it. Measured: a bare submodel draws `BAT-R8` only once it says
+        # which category of battery it is, and two of the three
+        # table-less identifiers say nothing at all about a submodel
+        # this thin. Those are passed over here rather than asserted
+        # into silence -- and the coverage of the two *classes* is
+        # asserted below, because the class with no table is the one the
+        # loop used to miss entirely.
+        alone = [f.id for f in runner.run(instance).findings
+                 if not f.id.startswith(("TPL-", "META", "X"))]
+        if not alone:
+            continue
+        exercised.add(identifier)
+
         template = _unclaimed_template(tmp_path, semantic_id=identifier)
         report = runner.run(instance, template=template)
-        said = sorted({f.id for f in report.findings})
-        strangers = [rule_id for rule_id in said
-                     if not rule_id.startswith(("TPL-", "META", "X"))]
+        strangers = sorted({f.id for f in report.findings
+                            if not f.id.startswith(("TPL-", "META", "X"))})
         assert not strangers, (
             "%s: a pack that stood down still reports on the submodel: %s"
             % (identifier, strangers))
+        # And it was said. A report that simply gets quieter reads as the
+        # file improving -- which is the failure
+        # `test_standing_down_says_what_it_cost` exists to prevent, and
+        # the note's condition consulted `detect.PACKS` alone, so for
+        # these three identifiers two warnings vanished in silence.
+        assert any("stood down" in note for note in report.notes), (
+            "%s: %d finding(s) went away and no note says why: %s"
+            % (identifier, len(alone), report.notes))
+        # And nothing else describes what the stood-down rules found.
+        # The coverage note was computed from `detect.instances` while
+        # the rule it describes reads `detect.judgeable`, so it said
+        # "BAT-R8 reported 2 of the 9 elements this table holds" in a run
+        # where BAT-R8 reported none.
+        reported = [note for note in report.notes
+                    for rule_id in alone if note.startswith(rule_id + " ")]
+        assert not reported, (
+            "%s: a rule that stood down is described as having reported: %s"
+            % (identifier, reported))
+
+    assert exercised & {pack.semantic_id for pack in detect.PACKS}, (
+        "no identifier with a table was exercised: %s" % sorted(exercised))
+    assert exercised & set(detect.PACK_ONLY_SEMANTIC_IDS), (
+        "no identifier whose rules have no table was exercised, which is "
+        "exactly the class this test used to miss: %s" % sorted(exercised))
 
 
 def test_rules_refuses_a_template_it_would_ignore(tmp_path):

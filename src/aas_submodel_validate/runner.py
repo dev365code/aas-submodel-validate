@@ -537,7 +537,12 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # table rather than quoted from a document, and marked as the floor
     # it is. A note and not a finding: it reports the reach of a check,
     # not a defect in the file.
-    coverage = rules.battery.coverage_note(detect.instances(loaded))
+    # `judgeable`, not `instances`: the rule this note describes reads
+    # the first. Left on the second, the note said "BAT-R8 reported 2 of
+    # the 9 elements this table holds" in a run where the pack had stood
+    # down and BAT-R8 reported none. The last walker of `instances` to
+    # move across.
+    coverage = rules.battery.coverage_note(detect.judgeable(ctx))
     if coverage is not None:
         report.notes.append(coverage)
     # How much of the input a template answered for. Counted from the
@@ -612,8 +617,17 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                 "the template file declares %d submodels; the table came "
                 "from the first of them (%s) and the rest were not read."
                 % (supplied["declared"], answered))
-        if took_part and any(pack.semantic_id == answered
-                             for pack in detect.PACKS):
+        # `PACKS` answers "there is a table generated from the published
+        # template"; the three identifiers below have rules and no table,
+        # and they stand down the same way. Asked of `PACKS` alone, a
+        # supplied template claiming one of them took two `BAT-R8`
+        # warnings away and the report said nothing -- a reader comparing
+        # two reports of one file sees the run get quieter and reads that
+        # as the file improving, which is the failure this note exists to
+        # prevent.
+        if took_part and (any(pack.semantic_id == answered
+                              for pack in detect.PACKS)
+                          or answered in detect.PACK_ONLY_SEMANTIC_IDS):
             report.notes.append(
                 "a pack of this tool's own also answers for %s and stood "
                 "down; your template decided this run. None of that pack's "
