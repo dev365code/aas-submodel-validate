@@ -52,6 +52,31 @@ finding.
 Information for Use submodel and handing its iiRDS payload to
 iirds-validate, so the two standards' validators compose.
 
+## What a pass means, in five runs
+
+`ok` and the exit code answer one question — *did anything this build
+asked come back wrong* — and that is narrower than "this file is
+conformant". These are the five shapes a run comes back in, each with
+what it says and what it does not. No option below is new; they are the
+ones already there.
+
+| run | exit | `ok` | what it means |
+|---|---|---|---|
+| a file whose only complaint is from the metamodel | 0 | true | one `META` warning, `judged 1 of 1`. The metamodel relay is a warning by default, so a file with a metamodel defect and no template defect passes |
+| the same file with `--strict-meta` | 1 | false | the same single `META`, promoted to an error. Nothing about the file changed; the policy did |
+| a submodel of a template this build has no table for | 1 | false | `SMT-D1`, `judged 0 of 1`. The file is not being called wrong — nothing here judged it |
+| the same with `--allow-unmatched` | 0 | true | no findings, and still `judged 0 of 1`. **This is a pass that judged nothing**, which is why the count is in the report and worth reading |
+| an input this reader refuses | 2 | — | a report naming the file, its digest, and the refusal (`X1` here), plus a line on stderr. 2 means "could not judge", not "judged and failed" |
+
+A usage error — an unknown option, a missing argument, two flags that
+contradict — exits **64** and writes no report, because no input was
+read.
+
+Two of those five are `ok: true` and only one of them judged anything.
+A build that gates on the exit code alone cannot tell them apart;
+`summary.submodelsJudged` is the number that can, and
+`--require-all-judged` turns the difference into an exit code.
+
 ## Which templates it covers, and which it does not
 
 Six official templates are given rule tables: IDTA 02004 Handover
