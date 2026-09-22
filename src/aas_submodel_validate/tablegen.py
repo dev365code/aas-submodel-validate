@@ -395,8 +395,17 @@ def build(document, pack):
     # take its identifier over so a pack answered instead, and left the
     # report saying the caller's template decided a run it took no part
     # in -- three wrong answers from one missing call.
-    submodel_sid = normalize(
-        "/".join(k["value"] for k in submodel["semanticId"]["keys"]))
+    # Each key, then the join -- the order `_values_of` uses for every
+    # other reference in this file, and for the instance-side candidates
+    # these are compared against. Joined first and normalised once, a
+    # reference stacking two ECLASS-CDP URLs stayed a URL pair while
+    # every row and every candidate carried the IRDI form, so the
+    # template took its identifier over from nobody, a pack answered
+    # instead, and the report named a joined URL as what the caller's
+    # file claims. The single-key case was repaired; this is the same
+    # call, still missing one reader along.
+    submodel_sid = "/".join(
+        normalize(k["value"]) for k in submodel["semanticId"]["keys"])
     submodel_sid_type = submodel["semanticId"].get("type")
     # What the submodel says about itself *besides* its identifier. Two
     # templates can declare the same semanticId -- 02004 and 02035-2 do --

@@ -21,6 +21,7 @@ from .loader import Loaded, LoadError, UnreadablePath, load
 from .model import KINDS, META_KIND, Finding, Report, Rule, Severity, Violation
 from .registry import all_rules
 from .rules import detect
+from .semantics import submodel_declares
 
 #: What a rule that raised is reported as. Named rather than written
 #: twice, because the coverage collector has to tell this apart from the
@@ -597,11 +598,30 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             # Measured: with `--example` and a template claiming something
             # the bundled document does not carry, the pack produced the
             # entire verdict and the note claimed it.
-            report.notes.append(
-                "the template you supplied (%s) claims %s, which no submodel "
-                "in this input declares; nothing was judged against it and "
-                "this verdict is this tool's own."
-                % (template, answered))
+            # Which of the two reasons, because they take different
+            # remedies. `matched_submodels` reads `instances`, so a
+            # submodel declared `kind: Template` is filtered out before
+            # it gets here -- and the report then said the identifier
+            # was declared by nothing, in the same breath as saying a
+            # specification had been set aside. It is declared; it is
+            # not an instance. Telling the reader to change the
+            # identifier fixes nothing and breaks a correct file.
+            spoken_for = [submodel for submodel in loaded.submodels
+                          if submodel_declares(submodel, answered)]
+            if spoken_for:
+                report.notes.append(
+                    "the template you supplied (%s) claims %s, and what "
+                    "declares it here is a specification rather than an "
+                    "instance, so it was set aside before any rule ran. "
+                    "Nothing was judged against your template and this "
+                    "verdict is this tool's own."
+                    % (template, answered))
+            else:
+                report.notes.append(
+                    "the template you supplied (%s) claims %s, which no "
+                    "submodel in this input declares; nothing was judged "
+                    "against it and this verdict is this tool's own."
+                    % (template, answered))
         # A third statement, and not a branch of the two above: those
         # two are one question with two answers -- did your template
         # judge anything -- and this is a different question about the

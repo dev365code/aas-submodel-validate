@@ -1523,3 +1523,76 @@ def test_a_template_that_contains_itself_says_what_it_did_not_enter(tmp_path):
     assert "urn:test:node" in said, (
         "the run did not enter two nested copies and said nothing about "
         "them; notes were %r" % report.notes)
+
+
+def test_a_specification_that_declares_the_identifier_is_not_called_absent(tmp_path):
+    """Two sentences about one file, and the second one is false.
+
+    A submodel declared `kind: Template` is a specification, and every
+    rule here is a requirement on an instance, so it is set aside and
+    the report says so. When the only submodel carrying the supplied
+    template's identifier is one of those, the run also said "claims
+    ..., which no submodel in this input declares" -- because
+    `matched_submodels` reads `instances`, which had filtered it out.
+
+    The identifier is declared. The remedy a reader takes from the false
+    sentence is to change it, which fixes nothing and breaks a correct
+    file. Reproduces with a template file handed to itself as input.
+    """
+    document, template = _self_containing(tmp_path)
+    report = runner.run(template, template=template)
+    absent = [note for note in report.notes
+              if "no submodel in this input declares" in note]
+    assert not absent, (
+        "a specification declaring the identifier was reported as nothing "
+        "declaring it: %s" % absent)
+    assert any("kind Template" in note for note in report.notes), (
+        "the run no longer says the specification was set aside: %s"
+        % report.notes)
+
+
+def test_a_multi_key_template_identifier_is_normalised_key_by_key(tmp_path):
+    """The same reference, read by the two halves of this module, has to
+    come out the same.
+
+    `_values_of` normalises each key and joins; `build` joined and then
+    normalised once. For a reference stacking two ECLASS-CDP URLs the
+    two disagree: the joined string matches no CDP shape, so it stays a
+    URL pair while every element row and every instance-side candidate
+    carries the IRDI form. The template then took its identifier over
+    from nobody, a pack answered instead, and `provenance.template`
+    named a joined URL as the identifier the caller's file claims --
+    the three wrong answers one missing call already produced once for
+    the single-key case, repaired there and not here.
+    """
+    from aas_submodel_validate import runner as runner_module
+    from aas_submodel_validate.semantics import normalize
+
+    keys = ["https://api.eclass-cdp.com/0173-1-01-AHF578-003",
+            "https://api.eclass-cdp.com/0173-1-02-ABI002-003"]
+    expected = "/".join(normalize(key) for key in keys)
+    assert expected != normalize("/".join(keys)), (
+        "this fixture no longer tells the two orders apart")
+
+    def sid(values):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": v}
+                         for v in values]}
+
+    template = tmp_path / "two-key.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:two", "idShort": "T",
+        "kind": "Template", "semanticId": sid(keys),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": "A",
+            "semanticId": sid(["urn:test:a"]), "valueType": "xs:string",
+            "qualifiers": [{
+                "semanticId": sid(["https://admin-shell.io/SubmodelTemplates/"
+                                   "Cardinality/1/0"]),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": "One"}]}]}]}).encode("utf-8"))
+
+    built = runner_module._supplied_table(template)["table"]
+    assert expected == built.TEMPLATE_SEMANTIC_ID, (
+        "the table claims %r where every other reader of this reference "
+        "says %r" % (built.TEMPLATE_SEMANTIC_ID, expected))
