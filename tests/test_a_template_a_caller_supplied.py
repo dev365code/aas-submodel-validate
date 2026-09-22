@@ -871,6 +871,68 @@ def test_rules_refuses_a_template_it_would_ignore(tmp_path):
     assert raised.value.code == 64, raised.value.code
 
 
+def test_a_supplied_table_reads_an_idshort_pattern_and_says_nothing(tmp_path):
+    """Pinned because four published sentences said otherwise.
+
+    `--help`, `docs/scope.md`, the README and the CHANGELOG each listed
+    "any `AllowedIdShort` pattern" among what a supplied template
+    checks. The table does carry the pattern and the walk does record an
+    element whose name does not match it -- and then `tablegen.rules_for`
+    yields a rule per row from `violations` alone, so the drift reaches
+    nothing. The only reporter is a pack's own lint, and a table built at
+    run time registers no lints. Measured: a template demanding `^Beta$`
+    against an element named `NotBeta` gave `ok`, 0 errors, 0 warnings,
+    0 info.
+
+    The four sentences say that now. This gate holds the fact rather
+    than the wording: the day a supplied table reports the pattern, this
+    goes red and the sentences are owed the item back.
+    """
+    from aas_submodel_validate import loader, rules
+    from aas_submodel_validate import runner as runner_module
+    from aas_submodel_validate.rules import engine
+
+    template = _template_with_idshort_rule(tmp_path, "Beta")
+    document = _instance_named(tmp_path, "NotBeta")
+
+    report = runner.run(document, template=template)
+    assert not report.findings, (
+        "something reported the idShort pattern; the four sentences that "
+        "say it is read and not said are owed the item back: %s"
+        % [(f.id, f.violation.message) for f in report.findings])
+
+    # And the drift *is* seen -- so what the sentences describe is a
+    # reporting gap and not a reading one, which is what they claim.
+    table = runner_module._supplied_table(template)["table"]
+    ctx = runner_module.Context(
+        loader.load(document), rules.profiles.Selection(None),
+        supplied=(table,), taken_over=frozenset([table.TEMPLATE_SEMANTIC_ID]))
+    assert engine.analyze(ctx, table)["idshort_drift"], (
+        "the walk no longer records the drift either, so the table is not "
+        "reading the pattern at all")
+
+
+def test_rules_refuses_an_empty_template_the_same_way(tmp_path):
+    """`smtv --rules --template "$TPL"` with `TPL` unset.
+
+    The list of flags `--rules` would have to ignore reads `args.path is
+    not None` for the path, under a comment about this exact shape: a
+    shell hands over `""`, read for truth it looks like "not given", and
+    the tool answers a different question in silence. `--template` was
+    added to that list two entries below, read for truth.
+
+    Measured: `--rules --template ""` printed the listing and returned 0
+    while the same call with a real path exits 64.
+    """
+    from aas_submodel_validate.cli import main
+
+    with pytest.raises(SystemExit) as raised:
+        main(["--rules", "--template", ""])
+    assert raised.value.code == 64, (
+        "an empty --template was dropped and the listing printed instead: "
+        "returned %r" % (raised.value.code,))
+
+
 def test_a_template_above_the_bound_is_refused_without_being_built(monkeypatch):
     """Refusing is cheap only if it happens while walking.
 

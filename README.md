@@ -461,9 +461,11 @@ an IDTA-shaped template you supply and judges against that, which is how
 a submodel of a template with no pack here gets judged at all. It buys
 the first half of the paragraph above and not the second: what a
 template states — elements, kinds, identifiers, how many of each, the
-`valueType` each declares, a list's item type, an `AllowedIdShort`
-pattern — and none of the hand-written rules, which are readings of a specification
-and cannot be derived from a template. The report says the table was
+`valueType` each declares, a list's item type — and none of the
+hand-written rules, which are readings of a specification
+and cannot be derived from a template. An `AllowedIdShort` pattern sits
+between the two: the table carries it, and the lint that reports one
+belongs to a pack, so a supplied table reads it and says nothing. The report says the table was
 yours, and a verdict against a template you supplied is not a statement
 about conformance to a published IDTA one.
 

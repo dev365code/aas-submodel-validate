@@ -65,8 +65,13 @@ error into a note.
 of your own and a table is generated from it at run time and the
 submodel judged against that. What that buys and what it does not:
 
-- It checks **what a template states** — which elements, of which kind, under which identifiers, how many of each, the `valueType` each declares, a list's item type, and any `AllowedIdShort` pattern. That is what a generator
-  can read out of a template file.
+- It checks **what a template states** — which elements, of which kind, under which identifiers, how many of each, the `valueType` each declares, and a list's item type. That is what a generator
+  can read out of a template file and what a rule is made from.
+- One thing a generator reads and no rule is made from: an
+  `AllowedIdShort` pattern. The table carries it and the walk records an
+  element whose name does not match, but only a pack's own lint reports
+  that, and a table built at run time registers no lints. So a supplied
+  template's `AllowedIdShort` is read and not said.
 - It does **not** bring the hand-written rules, which are readings of a
   specification rather than of a template: the battery passport against
   Regulation (EU) 2023/1542, `URIOfTheProduct` as an absolute URI, the

@@ -27,8 +27,10 @@ rows that file declares.
 
 What that buys is what a generator can read out of a template: which
 elements, of which kind, under which identifiers, how many of each, the
-`valueType` each declares, a list's item type, and any `AllowedIdShort`
-pattern. What it does not bring is everything a pack carries besides its
+`valueType` each declares, and a list's item type. An `AllowedIdShort`
+pattern is read into the table and reported by nothing: the lint that
+reports one is a pack's, and a table built at run time registers no
+lints. What it does not bring is everything a pack carries besides its
 table — the hand-written rules, which are readings of a specification
 rather than of a template, the readings recorded in
 `docs/divergences.md`, and the corpus that pins them. Those exist per

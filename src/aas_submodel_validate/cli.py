@@ -135,8 +135,11 @@ def main(argv: Optional[list] = None) -> int:
                              "your own. Only what a template states is "
                              "checked: which elements, of which kind, under "
                              "which identifiers, how many of each, the "
-                             "valueType each declares, a list's item type, "
-                             "and any AllowedIdShort pattern. The "
+                             "valueType each declares, and a list's item "
+                             "type. An AllowedIdShort pattern is read into "
+                             "the table and reported only by a pack's own "
+                             "lint, so a table built from your file carries "
+                             "it and says nothing about it. The "
                              "hand-written rules and recorded readings that "
                              "come with a pack are not derivable from a "
                              "template and do not apply. A verdict against a "
@@ -194,7 +197,15 @@ def main(argv: Optional[list] = None) -> int:
             # here, so `--rules --template /no/such/file.json` printed
             # the listing and exited 0 -- the silent answer to a
             # different question that the comment above is about.
-            ("--template", args.template)) if given]
+            #
+            # And then added here reading for truth, two entries below
+            # the one that carries the paragraph about why that is
+            # wrong: `--template ""` is what a shell hands over from
+            # `--template "$TPL"` with `TPL` unset, and it printed the
+            # listing and left by 0. The only two entries on this list
+            # that take a value are this one and `--profile`, whose
+            # `choices` refuse an empty string before this runs.
+            ("--template", args.template is not None)) if given]
         if ignored:
             parser.error("--rules lists the rules and judges nothing, so it "
                          "would ignore %s; --meta (or --strict-meta) is what "
