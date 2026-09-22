@@ -264,6 +264,44 @@ class UnmatchedElement:
         return out
 
 
+@dataclass(frozen=True)
+class NotExamined:
+    """A row whose scope this run never opened, and what sat there.
+
+    `unmatched` above names an element and the rules it cost, and is
+    recorded only where the reader already reported something that
+    explains the loss. This one makes no attribution at all: it says a
+    row was not entered, which rules went unasked with it, and -- as a
+    separate fact, not a cause -- whether any element in that same scope
+    matched no row.
+
+    `because` is one of:
+
+    `absent`
+        nothing in that scope matched the row and nothing there was
+        unplaceable either. The file does not carry this section, which
+        for an optional row is not a defect and for a required one has
+        already drawn its own finding.
+    `unclaimed-element-present`
+        the row was not entered *and* something in that scope matched no
+        row. The two facts are reported side by side and neither is
+        named as the cause of the other: a different identifier may be a
+        legitimate extension (`docs/divergences.md` #19) and there is no
+        way to tell that from a typo by looking (#22, #23).
+    """
+
+    where: str
+    rule: str
+    label: str
+    unasked: tuple
+    because: str
+
+    def as_dict(self) -> dict:
+        return {"where": self.where, "rule": self.rule, "label": self.label,
+                "rulesNotAskedHere": list(self.unasked),
+                "because": self.because}
+
+
 @dataclass
 class Report:
     path: str
@@ -323,6 +361,13 @@ class Report:
     #: standing as `not_asked` -- a statement about the run, not about the
     #: file, and it moves no verdict.
     unmatched: List[UnmatchedElement] = field(default_factory=list)
+    #: Rows whose scope this run never opened, with no claim about why.
+    #: `unmatched` reports a loss something explains; this reports the
+    #: reach of the check whether or not anything explains it, which is
+    #: the half that was given up along with the blame. Same standing as
+    #: the two above -- a statement about the run, not about the file,
+    #: and it moves no verdict.
+    not_examined: List[NotExamined] = field(default_factory=list)
     allow_unmatched: bool = False
     #: The digest of the bytes this run read, or None when there were
     #: none to read. A report that says a file failed and does not say
@@ -416,6 +461,7 @@ class Report:
                 # to act on it. A new flag was deliberately not added: a
                 # consumer that wants to fail on this reads it here.
                 "unmatchedElements": [u.as_dict() for u in self.unmatched],
+                "scopeNotExamined": [n.as_dict() for n in self.not_examined],
             },
             "notes": self.notes,
             "findings": [f.as_dict() for f in self.findings],

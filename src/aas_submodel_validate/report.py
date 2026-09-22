@@ -291,6 +291,30 @@ def render(report: Report, *, show_meta: bool = False,
                       ", ".join(named),
                       "" if not rest else ", and %d more -- -f json lists them" % rest,
                       who))
+    # What the run did not open, said whether or not anything explains
+    # it. `unasked` above speaks only where the reader already reported
+    # something in that scope; this is the rest of the same reach, and
+    # without it a container wearing an identifier the template does not
+    # name printed a line identical to a clean run's.
+    examined = ""
+    #: Only where something was sitting in the place that went
+    #: unexamined. A file that simply omits an optional section leaves
+    #: its rules unasked too, and that is on nearly every clean run --
+    #: printed there it would be a sentence a reader learns to skip, and
+    #: the one case worth stopping on would be inside it. `-f json`
+    #: carries both, which is where a pipeline reads them; the screen
+    #: says the one a person can act on. Same rule the line above it
+    #: follows: speak where there is something to say.
+    sat = [record for record in report.not_examined
+           if record.because == "unclaimed-element-present"]
+    if sat:
+        lost = sum(len(record.unasked) for record in sat)
+        examined = ("; %d rule%s not examined, under %d section%s carrying an "
+                    "element no row describes (%s) -- not a defect, and not "
+                    "checked either; -f json lists them"
+                    % (lost, "" if lost == 1 else "s", len(sat),
+                       "" if len(sat) == 1 else "s",
+                       ", ".join(sorted({record.label for record in sat})[:3])))
     judged = ""
     specified = ""
     if report.submodels_specified:
@@ -325,7 +349,7 @@ def render(report: Report, *, show_meta: bool = False,
         # checked them has told the reader something it did not do.
         lines.append("%s -- %s (%d rules registered%s%s)%s"
                      % (verdict, report.path, report.checked, judged,
-                        unasked, incomplete))
+                        unasked + examined, incomplete))
     else:
         # The third count is INFO findings. It said "note(s)" and the
         # report has notes of its own, printed above and not counted
@@ -338,6 +362,7 @@ def render(report: Report, *, show_meta: bool = False,
         lines.append("%s -- %d error(s), %d warning(s), %d info -- %s%s%s%s"
                      % (verdict,
                         report.count(Severity.ERROR), report.count(Severity.WARNING),
-                        report.count(Severity.INFO), report.path, judged, unasked,
+                        report.count(Severity.INFO), report.path, judged,
+                        unasked + examined,
                         incomplete))
     return "\n".join(lines)
