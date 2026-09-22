@@ -353,8 +353,13 @@ def _supplied_table(template):
         raise tablegen.TemplateRefused(
             "%s is not JSON this reader can read: %s" % (path, exc)) from exc
 
+    # The same open-content markers the generator reads. Empty here, this
+    # built a rule for every placeholder the template declares and then
+    # faulted the manufacturer's own element that sits under it
+    # (`docs/divergences.md` #19 names that outcome in advance).
     pack = {"prefix": "TPL-E", "citation": "a template you supplied",
-            "skip_sids": frozenset(), "item_names": {}, "example_types": ()}
+            "skip_sids": tablegen.OPEN_CONTENT_MARKERS,
+            "item_names": {}, "example_types": ()}
     digest = hashlib.sha256(raw).hexdigest()
     try:
         # The reading, not only the parsing. The first repair wrapped

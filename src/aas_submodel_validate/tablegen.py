@@ -41,6 +41,27 @@ from .semantics import normalize
 #: stops being something a person could read a finding out of.
 MAX_TEMPLATE_ROWS = 10_000
 
+#: The identifiers a published template uses to say "a section may hold
+#: content I do not describe". No rule is generated from an element
+#: wearing one: the template states no obligation there, so a
+#: manufacturer's own property passes without comment
+#: (`docs/divergences.md` #19).
+#:
+#: One set, read by both readers of a template. It was written per pack
+#: in the generator and left empty for a table built at run time, so the
+#: same file read the two ways described different obligations: handed
+#: this project's own 02003 template, `--template` built 54 rows against
+#: the pack's 26 and faulted a manufacturer's element for being the
+#: wrong kind -- which is the failure #19 names in advance. The three
+#: per-pack lists held between them exactly these four markers, and the
+#: subsets were which template happened to use which.
+OPEN_CONTENT_MARKERS = frozenset((
+    "https://admin-shell.io/SMT/General/Arbitrary",
+    "https://admin-shell.io/SMT/General/ArbitraryProp",
+    "https://admin-shell.io/SMT/General/ArbitraryMLP",
+    "https://admin-shell.io/SMT/General/ArbitraryFile",
+))
+
 
 class TemplateRefused(Exception):
     """This is not a template this reader will build a table from.

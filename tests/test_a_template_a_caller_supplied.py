@@ -58,8 +58,6 @@ def test_the_report_says_the_template_was_not_idtas(tmp_path):
     apart has been told something untrue."""
     import hashlib
 
-    from aas_submodel_validate import tablegen
-
     document = runner.run(_instance(tmp_path), template=VENDORED).as_dict()
     provenance = document["provenance"]
     assert "template" in provenance, sorted(provenance)
@@ -78,10 +76,13 @@ def test_the_report_says_the_template_was_not_idtas(tmp_path):
         "the template's digest is the input's")
     assert said["path"] == str(VENDORED), said["path"]
     assert said["semanticId"] == "0173-1#01-AHX837#002", said["semanticId"]
-    built = tablegen.table_from(
-        json.loads(VENDORED.read_text("utf-8-sig")),
-        {"prefix": "TPL-E", "citation": "c", "skip_sids": frozenset(),
-         "item_names": {}, "example_types": ()})
+    # Asked of the runner rather than rebuilt here. A second copy of the
+    # pack definition stood in this test, and it said `skip_sids:
+    # frozenset()` -- which is what the runner said too, so the pair
+    # agreed with each other and both were wrong about what a template
+    # declares (`docs/divergences.md` #19). A reference the test writes
+    # itself can only check that the report matches the test.
+    built = runner._supplied_table(VENDORED)["table"]
     assert said["rows"] == len(built.ROWS) > 0, (
         "the report says %r rows and the table has %d"
         % (said["rows"], len(built.ROWS)))
@@ -1111,3 +1112,121 @@ def test_provenance_says_how_many_templates_the_file_held(tmp_path):
     one = runner.run(_unclaimed_instance(tmp_path),
                      template=_unclaimed_template(tmp_path))
     assert one.as_dict()["provenance"]["template"]["submodels"] == 1
+
+
+def _arbitrary_instance(tmp_path):
+    """A Technical Data submodel carrying one element of a manufacturer's
+    own, under 02003 §3.5's open-content marker.
+
+    This is the shape `docs/divergences.md` #19 is about: the template
+    says a section may hold content it does not describe, and the file
+    holds some.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    general = {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "GeneralInformation",
+        "semanticId": sid("0173-1#02-ABK161#002/0173-1#01-AHX838#002"),
+        "value": [
+            {"modelType": "Property", "idShort": "ManufacturerName",
+             "semanticId": sid("0173-1#02-AAO677#004"),
+             "valueType": "xs:string", "value": "x"},
+            {"modelType": "MultiLanguageProperty",
+             "idShort": "ManufacturerProductDesignation",
+             "semanticId": sid("0173-1#02-AAW338#003"),
+             "value": [{"language": "en", "text": "t"}]},
+            {"modelType": "Property", "idShort": "ManufacturerArticleNumber",
+             "semanticId": sid("0173-1#02-AAO676#005"),
+             "valueType": "xs:string", "value": "x"},
+            {"modelType": "Property", "idShort": "ManufacturerOrderCode",
+             "semanticId": sid("0173-1#02-AAO227#004"),
+             "valueType": "xs:string", "value": "x"},
+        ],
+    }
+    area = {
+        "modelType": "SubmodelElementCollection",
+        "idShort": "TechnicalPropertyArea",
+        "semanticId": sid("0173-1#02-ABL358#002/0173-1#01-AHX773#002"),
+        "value": [{"modelType": "MultiLanguageProperty", "idShort": "MyOwnNote",
+                   "semanticId": sid("https://admin-shell.io/SMT/General/Arbitrary"),
+                   "value": [{"language": "en", "text": "mine"}]}],
+    }
+    areas = {
+        "modelType": "SubmodelElementList", "idShort": "TechnicalPropertyAreas",
+        "semanticId": sid("0173-1#02-ABK163#002"),
+        "typeValueListElement": "SubmodelElementCollection",
+        "orderRelevant": True, "value": [area],
+    }
+    path = tmp_path / "td-arbitrary.json"
+    path.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:td", "idShort": "TechnicalData",
+        "semanticId": sid("0173-1#01-AHX837#002"),
+        "submodelElements": [general, areas]}]}).encode("utf-8"))
+    return path
+
+
+def test_open_content_a_template_declares_draws_nothing(tmp_path):
+    """A manufacturer's own element passes, whichever table judges it.
+
+    `docs/divergences.md` #19 is a reading of the *template*, not a
+    choice one pack made: 02003 §3.5 says a section may hold content the
+    template does not describe, so no rule is generated from the
+    placeholder. Every pack that has such placeholders drops them.
+
+    A table built at run time was handed an empty skip list, so it
+    generated rules from them -- and #19 names what that produces
+    exactly: "the first row would claim every arbitrary element the walk
+    met and then fault it for being the wrong kind". Measured on this
+    file and this project's own vendored 02003 template: clean by
+    default, `TPL-E22 'Section (TechnicalPropertyAreasItem)' must be a
+    SubmodelElementCollection` with the flag, exit 0 becoming exit 1 on
+    a file nothing is wrong with.
+    """
+    supplied = runner.run(_arbitrary_instance(tmp_path), template=VENDORED)
+    faulted = [f for f in supplied.findings if f.id.startswith("TPL-")]
+    assert not faulted, (
+        "a template's own open-content placeholder generated a rule, and it "
+        "faulted an element the template permits: %s"
+        % [(f.id, f.violation.message) for f in faulted])
+
+
+def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
+    """The same file, read twice, describes the same obligations.
+
+    Each pack here is generated from one of these template files. Handed
+    the very file its pack came from, the run-time builder has to reach
+    the same table -- and the row count is the cheap end of that: it went
+    54 against the pack's 26 for 02003, 36 against 30 for 02006, 27
+    against 26 for 02023, and every one of those extra rows was an
+    open-content placeholder the pack drops.
+
+    Asked of all six rather than of the one that failed, because the
+    difference was a list the two readers kept separately.
+    """
+    from aas_submodel_validate.rules import (
+        contact_tables,
+        dbp_tables,
+        dn_tables,
+        hd_tables,
+        pcf_tables,
+        td_tables,
+    )
+
+    packs = {"02002": contact_tables, "02003": td_tables, "02004": hd_tables,
+             "02006": dn_tables, "02023": pcf_tables, "02035-2": dbp_tables}
+    data = pathlib.Path(runner.__file__).parent / "data" / "smt"
+    seen = 0
+    for document in sorted(data.glob("*/*/template.json")):
+        key = document.parent.parent.name
+        built = runner._supplied_table(document)["table"]
+        assert len(built.ROWS) == len(packs[key].ROWS), (
+            "%s: the table built from this file at run time has %d rows and "
+            "the pack generated from the same file has %d"
+            % (key, len(built.ROWS), len(packs[key].ROWS)))
+        seen += 1
+    assert seen == len(packs), (
+        "this gate read %d vendored templates and there are %d packs"
+        % (seen, len(packs)))

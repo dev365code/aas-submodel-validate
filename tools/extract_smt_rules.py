@@ -133,25 +133,29 @@ DN_ITEM_NAMES = {
     "GuidelineSpecificProperties": "GuidelineSpecificProperty",
 }
 
-#: The open-content placeholders of 02003 §3.5 -- see the module docstring.
-ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
+#: The open-content placeholders, read from the package so that the
+#: generator and a table built at run time skip the same things. They
+#: were three per-pack lists here, holding between them exactly the four
+#: markers the package now names, while the run-time builder was handed
+#: an empty one -- so one template read two ways stated two different
+#: sets of obligations. See `tablegen.OPEN_CONTENT_MARKERS`.
+ARBITRARY = tablegen.OPEN_CONTENT_MARKERS
 
-#: 02006's open-content placeholders -- a manufacturer's arbitrary
-#: additions under AssetSpecificProperties and GuidelineSpecificProperties,
-#: three of them, distinct from 02003's single ARBITRARY.
+#: Kept as names because the pack table below reads them, and because
+#: what each template *uses* is worth saying even when what they skip is
+#: one list: 02006 marks a manufacturer's additions under
+#: AssetSpecificProperties and GuidelineSpecificProperties with the three
+#: typed markers, and 02023 marks one `ArbitraryContent` property inside
+#: PcfInformation with the untyped one.
+#:
 #: 02023's ProductOrSectorSpecificCarbonFootprints repeats the named
 #: PcfCalculationMethods sub-structure that ProductCarbonFootprints
 #: already carries (same semanticId, different scope). The generator
 #: qualifies a label repeated across scopes by the shortest ancestor
 #: suffix that distinguishes the copies (`_qualify_repeats`), so both
-#: sections are judged. What is left out is
-#: the open-content placeholder inside PcfInformation: an `ArbitraryContent`
-#: property wearing the SMT/General/Arbitrary marker, which stands for
-#: content the template does not define -- the same treatment 02006 gives
-#: its Arbitrary* elements (docs/divergences.md).
-PCF_SKIP = frozenset((
-    "https://admin-shell.io/SMT/General/Arbitrary",
-))
+#: sections are judged; the placeholder is what is left out
+#: (docs/divergences.md #19).
+PCF_SKIP = ARBITRARY
 
 PCF_ITEM_NAMES = {
     "ProductCarbonFootprints": "ProductCarbonFootprint",
@@ -160,11 +164,7 @@ PCF_ITEM_NAMES = {
     "ProductOrSectorSpecificCarbonFootprints": "ProductOrSectorSpecificCarbonFootprint",
 }
 
-DN_ARBITRARY = frozenset((
-    "https://admin-shell.io/SMT/General/ArbitraryProp",
-    "https://admin-shell.io/SMT/General/ArbitraryMLP",
-    "https://admin-shell.io/SMT/General/ArbitraryFile",
-))
+DN_ARBITRARY = ARBITRARY
 
 #: One entry per vendored template. `source` names the file in the header
 #: of the generated module, so a reader lands on the right upstream
@@ -196,7 +196,7 @@ PACKS = (
         "item_names": TD_ITEM_NAMES,
         "example_types": ("SMT/ExampleValue/ECLASS", "SMT/ExampleValue/CDD",
                           "SMT/ExampleValue/UNSPSC", "SMT/ExampleValue/CustomerSpecific"),
-        "skip_sids": frozenset((ARBITRARY,)),
+        "skip_sids": ARBITRARY,
     },
     # The Digital Battery Passport's part 2 is a second Handover
     # Documentation template and declares 02004's submodel semanticId
