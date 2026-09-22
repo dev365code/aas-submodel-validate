@@ -202,9 +202,11 @@ def main(argv: Optional[list] = None) -> int:
             # the one that carries the paragraph about why that is
             # wrong: `--template ""` is what a shell hands over from
             # `--template "$TPL"` with `TPL` unset, and it printed the
-            # listing and left by 0. The only two entries on this list
-            # that take a value are this one and `--profile`, whose
-            # `choices` refuse an empty string before this runs.
+            # listing and left by 0. Three entries on this list take a
+            # value -- a path, `--profile` and this one -- and the other
+            # two were already safe: the path by the same `is not None`
+            # the paragraph above is about, `--profile` by `choices`,
+            # which refuses an empty string before this runs.
             ("--template", args.template is not None)) if given]
         if ignored:
             parser.error("--rules lists the rules and judges nothing, so it "

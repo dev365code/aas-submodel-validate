@@ -5,11 +5,11 @@ Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
 extracted, not hand-written: hand-copying 178 rows is how one of them
-silently goes stale. The README's copy of that number is pinned
-(`tests/test_readme_front.py`); this sentence's is not, and it has now
-been wrong twice -- it said sixty-four through a third table and 178
-through a sixth -- which makes it, twice, an instance of the thing it
-warns about. `--check` regenerates and
+silently goes stale. This sentence's number is pinned against the
+generator's own list of packs, and the README's beside it
+(`tests/test_readme_front.py`) -- pinned because it has been wrong
+twice, saying sixty-four through a third table and 142 through a sixth,
+which makes it, twice, an instance of the thing it warns about. `--check` regenerates and
 byte-compares, the same contract the sibling validators use for their
 generated files.
 
@@ -186,7 +186,7 @@ PACKS = (
         "citation": "IDTA 02004-2-0-1 template",
         "item_names": HD_ITEM_NAMES,
         "example_types": ("ExampleValue",),
-        "skip_sids": frozenset(),
+        "skip_sids": ARBITRARY,
     },
     {
         "template": ROOT / "src/aas_submodel_validate/data/smt/02003/2.0.1/template.json",
@@ -214,7 +214,7 @@ PACKS = (
         "citation": "IDTA 02035-2 1.0 template",
         "item_names": DBP_ITEM_NAMES,
         "example_types": ("ExampleValue",),
-        "skip_sids": frozenset(),
+        "skip_sids": ARBITRARY,
     },
     {
         "template": ROOT / "src/aas_submodel_validate/data/smt/02006/3.0/template.json",
@@ -252,7 +252,7 @@ PACKS = (
         "citation": "IDTA 02002-1-0-1 template",
         "item_names": {},
         "example_types": (),
-        "skip_sids": frozenset(),
+        "skip_sids": ARBITRARY,
     },
 )
 

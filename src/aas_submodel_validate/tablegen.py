@@ -37,10 +37,10 @@ from .semantics import normalize
 #: 46 MiB sits inside the 64 MiB this reader advertises for a document,
 #: and what the generator spends is decided by rows, not by weight.
 #: Chosen far above anything published -- the widest template vendored
-#: here builds fifty-four rows when a caller supplies it, and thirty-eight
-#: in the pack generated from it, which skips what that template declares
-#: as open content -- and far below where a generated table stops being
-#: something a person could read a finding out of.
+#: here builds thirty-eight rows, the same number whether a caller
+#: supplies it or the pack is generated from it, because both readers
+#: skip the same open content -- and far below where a generated table
+#: stops being something a person could read a finding out of.
 MAX_TEMPLATE_ROWS = 10_000
 
 #: The identifiers a published template uses to say "a section may hold
@@ -54,11 +54,22 @@ MAX_TEMPLATE_ROWS = 10_000
 #: same file read the two ways described different obligations: handed
 #: this project's own 02003 template, `--template` built 54 rows against
 #: the pack's 26 and faulted a manufacturer's element for being the
-#: wrong kind -- which is the failure #19 names in advance. The three
-#: per-pack lists held between them exactly these four markers, and the
-#: subsets were which template happened to use which.
+#: wrong kind -- which is the failure #19 names in advance.
+#:
+#: The first two are the two IDTA publishes: *How to Create a Submodel
+#: Template Specification* V1.1 (June 2025), Table 11 "Marking arbitrary
+#: content in SubmodelElement data", which names `Arbitrary` and
+#: `IntentionallyEmpty` and nothing else. The three typed spellings
+#: after them are not in that table; they are what IDTA 02006 3.0's own
+#: template uses, and they are here because a template that uses them
+#: exists. Collecting the per-pack lists gave the first and the three
+#: typed ones -- those were what the vendored six happened to use -- and
+#: `IntentionallyEmpty` was in no pack and so in no list, which is why a
+#: template marking content that way generated rules from the
+#: placeholder and faulted a manufacturer's element against it.
 OPEN_CONTENT_MARKERS = frozenset((
     "https://admin-shell.io/SMT/General/Arbitrary",
+    "https://admin-shell.io/SMT/General/IntentionallyEmpty",
     "https://admin-shell.io/SMT/General/ArbitraryProp",
     "https://admin-shell.io/SMT/General/ArbitraryMLP",
     "https://admin-shell.io/SMT/General/ArbitraryFile",
@@ -121,7 +132,15 @@ def _intended_pattern(raw):
     """
     matched = _ALLOWED.match(raw)
     if matched:
-        return "^%s(?:%s)?$" % (matched.group(1), matched.group(2))
+        # The name is escaped here too. The first repair reached the
+        # branch below and left this one, where the *suffix* is IDTA's
+        # and the part before it is still the caller's: `A[[\d{2}]`
+        # matched this pattern and produced `^A[(?:\d{2})?$`, which
+        # does not compile, so every row of that table raised and the
+        # funnel reported each as a defect in this validator. Both
+        # halves of the defect lived on in one of its two branches.
+        return "^%s(?:%s)?$" % (re.escape(matched.group(1)),
+                                matched.group(2))
     return "^%s$" % re.escape(raw)
 
 
@@ -155,6 +174,23 @@ def _primary_sid(element):
     return "/".join(keys)
 
 
+def _folded_sid(element):
+    """`_primary_sid` in the comparison form, for the open-content check.
+
+    Folded there and not in `_primary_sid` itself: that one also supplies
+    the `sid` a row publishes and the text of its remedy, and folding it
+    rewrote a published sentence for an element whose identifier the
+    template spells as an ECLASS-CDP URL. What needed folding is the
+    comparison -- `_values_of` folds every other reference in this file,
+    and unfolded, a marker written with a trailing space was not skipped
+    and generated a rule while the same value on the instance side
+    matched.
+    """
+    keys = [normalize(key["value"])
+            for key in element.get("semanticId", {}).get("keys", [])]
+    return "/".join(keys)
+
+
 def _cardinality_words(card):
     low, high = card
     if (low, high) == (1, 1):
@@ -176,7 +212,7 @@ def _rows(element, parent_label, parent_id, counter, pack):
     describes open content rather than an obligation (see `skip_sids`).
     The check comes before the counter so skipped subtrees leave no gap in
     the numbering and no trace in a sibling template's table."""
-    if _primary_sid(element) in pack["skip_sids"]:
+    if _folded_sid(element) in pack["skip_sids"]:
         return None
     label = element.get("idShort") \
         or pack["item_names"].get(parent_label, parent_label + "Item")
@@ -190,9 +226,9 @@ def _rows(element, parent_label, parent_id, counter, pack):
         # the ceiling: an element this builds a row from needs only a
         # `modelType` and an `idShort`, 42 bytes of it measured, so about
         # 1.58 million rows fit inside the 64 MiB of template this reader
-        # takes in. `SECURITY.md` says a template above the limit is
-        # refused before it is walked, and that sentence is only true
-        # from here.
+        # takes in. `SECURITY.md` says a template above the row
+        # limit is refused at the row that crosses it, and that sentence
+        # is only true from here.
         raise TemplateRefused(
             "this template declares more than the %d rows this reader "
             "builds a table from" % MAX_TEMPLATE_ROWS)

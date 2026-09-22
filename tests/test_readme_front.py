@@ -96,6 +96,13 @@ def test_the_rule_counts_are_the_registrys():
                   # sentence said six over five rows, and the line below
                   # the table said "each of those five".
                   "%s of the %d," % (_ROW_WORDS[_catch_rows(README)], total),
+                  # And the sentence under the table. Holding only the
+                  # one above it left the pair able to disagree again
+                  # with the roles swapped -- the pinned half right and
+                  # the loose half wrong -- which is the same defect
+                  # this gate was added for.
+                  "Each of those %s carries"
+                  % _ROW_WORDS[_catch_rows(README)].lower(),
                   ": %d rules, %d of them generated" % (total, generated),
                   "%d rules, " % total,
                   "The rule counts (%d, %d)" % (total, generated)):

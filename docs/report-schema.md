@@ -3,21 +3,24 @@
 `smtv -f json` writes one JSON object to stdout. This is what is in it,
 and what the version number at the top of it promises.
 
-Four runs write nothing there. `-q` asks for the exit code alone. A
+Three runs write nothing there. `-q` asks for the exit code alone. A
 command-line usage error -- an unknown option, a missing argument, a
 value outside the choices, a second path, or two flags that contradict --
-exits 64 (`EX_USAGE`) and writes no report, because no input was read. A
-path that could not be read at all has none to give, which is the next
-paragraph. And a `--template` file this reader refuses -- unreadable, not
-JSON, not shaped like a template, over either bound -- leaves at 2 with no
-report either: the input was readable and nothing judged it, so it is the
-one exit-2 path where the input's own digest is not recorded anywhere. A usage error exited 2 before 0.4.0; 2 no longer covers it.
-Exit 2 sometimes does and sometimes does not — an input this reader
-refused comes back with a report saying what was refused and what to do
-about it, while a path that could not be read at all has no report to
-give and leaves only a line on stderr. Both write that line, so read
-stdout when it is not empty. A reader that parses it unconditionally
-meets its first `JSONDecodeError` on the case it most needs to handle.
+exits 64 (`EX_USAGE`) and writes no report, because no input was read.
+And a `--template` file this reader refuses -- unreadable, not JSON, not
+shaped like a template, over either bound -- leaves at 2 with no report
+either: the file that would have been judged was readable, nothing was
+written about it, and the template's own digest is recorded nowhere.
+
+A usage error exited 2 before 0.4.0; 2 no longer covers it. Exit 2
+otherwise always writes one: an input this reader refused comes back
+with a report saying what was refused and what to do about it, and so
+does a path it could not read at all -- that one names the path, carries
+an `X6` finding, and has a null `provenance.inputSha256` because nothing
+was opened to take a digest of. Both also write a line on stderr, so
+read stdout when it is not empty. A reader that parses it
+unconditionally meets its first `JSONDecodeError` on the case it most
+needs to handle.
 
 ```json
 {

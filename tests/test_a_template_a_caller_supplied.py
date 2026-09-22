@@ -1318,6 +1318,80 @@ def test_open_content_a_template_declares_draws_nothing(tmp_path):
         % [(f.id, f.violation.message) for f in faulted])
 
 
+def test_every_marker_idta_publishes_is_skipped(tmp_path):
+    """Asked of a template of our own, because the parity gate cannot.
+
+    That gate reads the six vendored templates, and what they happen to
+    use is what the per-pack lists happened to hold -- so a marker IDTA
+    publishes and none of the six uses is invisible to it, in both
+    directions. `IntentionallyEmpty` was exactly that: named in *How to
+    Create a Submodel Template Specification* V1.1 Table 11 beside
+    `Arbitrary`, carried by no vendored pack, and therefore in no list.
+    A template marking content with it generated a rule from the
+    placeholder and faulted a manufacturer's own element for being the
+    wrong kind -- `docs/divergences.md` #19's sentence, reached through
+    the one marker the collection missed.
+
+    Built here rather than read from a file, so a marker added to the
+    set without a template to show for it still has to earn its place.
+    """
+    from aas_submodel_validate import tablegen
+
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    for marker in sorted(tablegen.OPEN_CONTENT_MARKERS):
+        template = tmp_path / ("marker-%s.json" % marker.rsplit("/", 1)[-1])
+        template.write_bytes(json.dumps({"submodels": [{
+            "modelType": "Submodel", "id": "urn:test:m", "idShort": "S",
+            "kind": "Template", "semanticId": sid("urn:test:top"),
+            "submodelElements": [{
+                "modelType": "SubmodelElementCollection", "idShort": "Section",
+                "semanticId": sid("urn:test:section"),
+                "qualifiers": [card("One")],
+                "value": [
+                    {"modelType": "Property", "idShort": "Named",
+                     "semanticId": sid("urn:test:named"),
+                     "valueType": "xs:string", "qualifiers": [card("One")]},
+                    {"modelType": "Property", "idShort": "UserProperty",
+                     "semanticId": sid(marker), "valueType": "xs:string",
+                     "qualifiers": [card("ZeroToMany")]}]}]}]}
+        ).encode("utf-8"))
+
+        instance = tmp_path / ("marker-inst-%s.json" % marker.rsplit("/", 1)[-1])
+        instance.write_bytes(json.dumps({"submodels": [{
+            "modelType": "Submodel", "id": "urn:test:i", "idShort": "S",
+            "semanticId": sid("urn:test:top"),
+            "submodelElements": [{
+                "modelType": "SubmodelElementCollection", "idShort": "Section",
+                "semanticId": sid("urn:test:section"),
+                "value": [
+                    {"modelType": "Property", "idShort": "Named",
+                     "semanticId": sid("urn:test:named"),
+                     "valueType": "xs:string", "value": "v"},
+                    {"modelType": "MultiLanguageProperty",
+                     "idShort": "MyOwnNote", "semanticId": sid(marker),
+                     "value": [{"language": "en", "text": "mine"}]}]}]}]}
+        ).encode("utf-8"))
+
+        built = runner._supplied_table(template)["table"]
+        assert len(built.ROWS) == 2, (
+            "%s: the placeholder generated a row; the table is %s"
+            % (marker, [row["label"] for row in built.ROWS]))
+        report = runner.run(instance, template=template)
+        assert not report.findings, (
+            "%s: a manufacturer's own element was faulted against a "
+            "placeholder the template says it may fill freely: %s"
+            % (marker, [(f.id, f.violation.message) for f in report.findings]))
+
+
 def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
     """The same file, read twice, describes the same obligations.
 
@@ -1441,6 +1515,18 @@ def test_an_allowed_idshort_is_read_as_written(tmp_path):
         "^RefersTo(?:\\d{2,3})?$", "the IDTA spelling stopped being translated"
 
     import re
+
+    # The branch that keeps IDTA's spelling is still the caller's text
+    # in front of IDTA's suffix. The first repair escaped the other
+    # branch only, so a value that matched this one carried both halves
+    # of the defect: `A[[\\d{2}]` did not compile, and `Doc(1)[\\d{2}]`
+    # matched `Doc1` rather than the element the template names.
+    for spelling in ("A[[\\d{2}]", "A)[\\d{2}]", "A|B[\\d{2}]"):
+        re.compile(tablegen._intended_pattern(spelling))
+    numbered = tablegen._intended_pattern("Doc(1)[\\d{2}]")
+    assert re.match(numbered, "Doc(1)") and re.match(numbered, "Doc(1)07"), numbered
+    assert not re.match(numbered, "Doc1"), numbered
+
     literal = tablegen._intended_pattern("Doc(1)")
     assert re.match(literal, "Doc(1)"), (
         "the element the template names does not match its own qualifier: %r"
@@ -1523,6 +1609,14 @@ def test_a_template_that_contains_itself_says_what_it_did_not_enter(tmp_path):
     assert "urn:test:node" in said, (
         "the run did not enter two nested copies and said nothing about "
         "them; notes were %r" % report.notes)
+    # The count and the names, not just the identifier. The note's whole
+    # purpose is to state the reach of the check, and asserting only that
+    # it mentions the identifier left the reach unheld: walking the
+    # immediate children instead of the chain reports one copy of two
+    # and passes.
+    assert "2 nested copies" in said, said
+    for where in ("H/Node/Node2", "H/Node/Node2/Node3"):
+        assert where in said, (where, said)
 
 
 def test_a_specification_that_declares_the_identifier_is_not_called_absent(tmp_path):
