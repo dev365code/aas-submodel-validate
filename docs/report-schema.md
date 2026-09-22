@@ -3,12 +3,15 @@
 `smtv -f json` writes one JSON object to stdout. This is what is in it,
 and what the version number at the top of it promises.
 
-Three runs write nothing there. `-q` asks for the exit code alone. A
+Four runs write nothing there. `-q` asks for the exit code alone. A
 command-line usage error -- an unknown option, a missing argument, a
 value outside the choices, a second path, or two flags that contradict --
-exits 64 (`EX_USAGE`) and writes no report, because no input was read. And
-a path that could not be read at all has none to give, which is the next
-paragraph. A usage error exited 2 before 0.4.0; 2 no longer covers it.
+exits 64 (`EX_USAGE`) and writes no report, because no input was read. A
+path that could not be read at all has none to give, which is the next
+paragraph. And a `--template` file this reader refuses -- unreadable, not
+JSON, not shaped like a template, over either bound -- leaves at 2 with no
+report either: the input was readable and nothing judged it, so it is the
+one exit-2 path where the input's own digest is not recorded anywhere. A usage error exited 2 before 0.4.0; 2 no longer covers it.
 Exit 2 sometimes does and sometimes does not — an input this reader
 refused comes back with a report saying what was refused and what to do
 about it, while a path that could not be read at all has no report to
@@ -179,7 +182,7 @@ differ.
 
 | key | type | |
 |---|---|---|
-| `rule` | string | The rule id — stable, and the thing to filter on. |
+| `rule` | string | The rule id — the thing to filter on, and stable for the rules this build registers. A `--template` run is the exception: its table is built from the caller's file and mints `TPL-E…` ids for that run, so `TPL-E22` means whatever row 22 of *that* file is and means something else for the next file. Those ids are not registered and are not published. |
 | `kind` | string | `container`, `template`, `lint` or `meta`. The prose above calls these *channels*; this field is spelled kind, and a reader who filters on `.channel` gets null for every finding with nothing to say why. |
 | `severity` | string | `error`, `warning` or `info` — this project's reading of the priority. |
 | `priority` | string | The rule's own priority word, one of `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `RECOMMENDED`, `SHOULD`, `MAY` or `OPTIONAL` — the RFC 2119 keywords this project maps to a severity. The set is closed and wider than what today's rules use, so accept all eight. Both fields are published so a consumer that wants to re-derive the severity can. |
@@ -188,7 +191,7 @@ differ.
 | `detail` | string or null | Context — usually the value that was seen. |
 | `fix` | string | What to do about it — usually one imperative sentence: what to change so this stops being reported. Where this reader refused a document rather than judged it (past one of its bounds, past what this interpreter can build, or bytes that are cut short or not UTF-8), it says why and that nothing was judged, and asks for a change only where one is known. Every finding carries one. |
 | `title` | string | The rule's standing description, the same for every finding it produces. |
-| `spec` | string | Where the requirement lives, and always present. It is prose, not a key: a template and section for most rules; a provision of the regulation for the rules that read one, built from the row being reported rather than fixed per rule; the OPC or AASX standard for the rules about the container; the metamodel standard and its schemas for the ones about what a document must be, and the metamodel constraints for the relayed `meta` channel; a pointer to this project's own documented bounds for the limits it puts on what it will read; and, for the lints and for the rule about two templates sharing an identifier, a pointer to `docs/divergences.md` for the reading being applied. |
+| `spec` | string | Where the requirement lives, and always present. It is prose, not a key: a template and section for most rules; a provision of the regulation for the rules that read one, built from the row being reported rather than fixed per rule; the OPC or AASX standard for the rules about the container; the metamodel standard and its schemas for the ones about what a document must be, and the metamodel constraints for the relayed `meta` channel; a pointer to this project's own documented bounds for the limits it puts on what it will read; for the lints and for the rule about two templates sharing an identifier, a pointer to `docs/divergences.md` for the reading being applied; and, for a table built from a template the caller supplied, the words "a template you supplied" and the field the row was read from — `the element's declared valueType`, `the list's declared typeValueListElement`, `the element's declared modelType`, or the cardinality qualifier. |
 
 Every text field of a finding — `message`, `subject`, `detail`, `fix`, `spec` — is bounded at 2000 characters. A report repeats what a file said, and a file can say a great deal: a 200 KB `File` value produced a 200,670-character report before the bound existed. Where a field was cut it says so and by how much (`... (198000 more characters, not shown)`), so a short value and a shortened one are never the same thing on the page. The bound sits far above anything this tool writes — the longest remedy it ships is 690 characters — so it can only ever cut what a file supplied.
 

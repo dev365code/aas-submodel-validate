@@ -124,7 +124,7 @@ and failed.
 
 ## What it catches
 
-Six of the 219, in the words the tool actually prints:
+Five of the 219, in the words the tool actually prints:
 
 | You ship this | `smtv` says |
 |---|---|
@@ -150,7 +150,7 @@ flowchart LR
     class E,F mine
 ```
 
-A file can be perfectly valid against the AAS metamodel and still not be the submodel it claims to be: the wrong cardinalities, the wrong semantic identifiers, a mandatory VDI 2770 classification missing. **That gap is the whole of this project.** Metamodel checking is delegated to [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python) and reported in a separate channel, never re-invented here.
+A file can be perfectly valid against the AAS metamodel and still not be the submodel it claims to be: the wrong cardinalities, the wrong semantic identifiers, a mandatory VDI 2770 classification missing. **That difference -- a file valid against the metamodel and not conformant to the submodel template it claims to be -- is what this project judges.** Metamodel checking is delegated to [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python) and reported in a separate channel, never re-invented here.
 
 ## Three doors, one judgement
 

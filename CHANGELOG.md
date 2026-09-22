@@ -87,9 +87,9 @@ published example, and anything of its size, was already fast and stays
 so.
 
 It matters most under `--template`, where a table makes one rule per row
-and both numbers are yours: measured, a template of 9,900 rows judging
-500 submodels spends 3.48 seconds where the same work was 9.53, of which
-6.48 went on re-deciding that one question.
+and both numbers are yours: measured, a template of 9,900 rows against
+500 submodels spent 6.48 of the run's 9.53 seconds deciding the same
+thing over again.
 
 ## 0.4.1 — 2026-09-21
 

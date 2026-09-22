@@ -37,8 +37,10 @@ from .semantics import normalize
 #: 46 MiB sits inside the 64 MiB this reader advertises for a document,
 #: and what the generator spends is decided by rows, not by weight.
 #: Chosen far above anything published -- the widest template vendored
-#: here has thirty-eight rows -- and far below where a generated table
-#: stops being something a person could read a finding out of.
+#: here builds fifty-four rows when a caller supplies it, and thirty-eight
+#: in the pack generated from it, which skips what that template declares
+#: as open content -- and far below where a generated table stops being
+#: something a person could read a finding out of.
 MAX_TEMPLATE_ROWS = 10_000
 
 #: The identifiers a published template uses to say "a section may hold

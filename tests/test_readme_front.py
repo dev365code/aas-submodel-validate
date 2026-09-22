@@ -89,7 +89,13 @@ def test_the_rule_counts_are_the_registrys():
     total = len(all_rules())
     for where in ("[![templates](https://img.shields.io/badge/"
                   "IDTA_templates-6_\u00b7_%d_rules" % total,
-                  "Six of the %d," % total,
+                  # The count of rows in the table underneath, not a
+                  # word written twice. `8dbc1bc` changed "Five of the
+                  # 183" to "Six of the 219" without adding a sixth row,
+                  # and this gate then held the wrong word in place: the
+                  # sentence said six over five rows, and the line below
+                  # the table said "each of those five".
+                  "%s of the %d," % (_ROW_WORDS[_catch_rows(README)], total),
                   ": %d rules, %d of them generated" % (total, generated),
                   "%d rules, " % total,
                   "The rule counts (%d, %d)" % (total, generated)):
@@ -341,15 +347,44 @@ def test_the_readme_names_the_rules_that_are_about_packaging(tmp_path, monkeypat
         ", ".join(packaging[:-1]), packaging[-1]) in " ".join(README.split())
 
 
+def _generator():
+    """The generator module, imported by path because `tools/` is not a
+    package and is not installed."""
+    import importlib.util
+
+    where = ROOT / "tools" / "extract_smt_rules.py"
+    spec = importlib.util.spec_from_file_location("_extract_smt_rules", where)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _rows_of(output_path):
+    """`ROWS` of a generated table module, by path."""
+    import importlib.util
+
+    name = Path(output_path).stem
+    spec = importlib.util.spec_from_file_location("_gen_" + name, output_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.ROWS
+
+
 def test_the_generator_counts_the_rows_it_warns_about():
     """The generator's docstring warns that a hand-copied row count goes
     stale, and was one: it said sixty-four from when two tables existed and
     went on saying it through a third. The warning is worth keeping and the
     number belongs where the others are."""
-    generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
-                 + len(dn_tables.ROWS) + len(pcf_tables.ROWS))
+    # Every pack the generator writes, read from the generator's own
+    # list. This summed five modules named here by hand, and when a
+    # sixth pack landed the sum stayed at 142 -- so the gate and the
+    # sentence it holds went stale together and agreed with each other,
+    # which is the failure the sentence is about.
+    generated = sum(len(_rows_of(pack["output"])) for pack in _generator().PACKS)
     source = (ROOT / "tools" / "extract_smt_rules.py").read_text("utf-8")
-    assert "hand-copying %d rows" % generated in source
+    assert "hand-copying %d rows" % generated in source, (
+        "the generator's own docstring says a row count this tree does not "
+        "have; it is %d" % generated)
 
 
 def test_the_console_sample_is_what_the_tool_prints(tmp_path, monkeypatch):
@@ -362,6 +397,31 @@ def test_the_console_sample_is_what_the_tool_prints(tmp_path, monkeypatch):
 
 #: A heading is a draft or a dated release, and nothing else -- the two
 #: forms the release workflow matches.
+#: The words this sentence can open with, by how many rows the table
+#: underneath actually holds. Spelled out because the sentence is
+#: English and a digit there would read as a rule id.
+_ROW_WORDS = {3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven",
+              8: "Eight", 9: "Nine", 10: "Ten"}
+
+
+def _catch_rows(readme: str) -> int:
+    """How many rows the table under "What it catches" holds.
+
+    Counted rather than trusted: the sentence above the table and the
+    sentence below it disagreed for as long as one of them was a written
+    word nothing checked.
+    """
+    after = readme.split("## What it catches", 1)[1]
+    rows = 0
+    for line in after.splitlines():
+        line = line.strip()
+        if line.startswith("|") and not set(line) <= set("|- "):
+            rows += 1
+        elif rows and not line.startswith("|"):
+            break
+    return rows - 1          # the header row
+
+
 def _heading_shape(heading):
     if "unreleased" in heading.lower():
         return "draft"

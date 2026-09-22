@@ -103,11 +103,11 @@ A gate that has never been red is a comment.
 
 ## The time budget
 
-`make check` times four layers and compares each against a ratio recorded
+`make check` times five layers and compares each against a ratio recorded
 in `docs/time-budget.json`. Half again as expensive is said out loud; twice
 is a failure.
 
-Four, because each sees something the others cannot:
+Five, because each sees something the others cannot:
 
 - **`cold_start`** runs the command in a fresh interpreter, and is the only
   figure that is the time a person actually waits. The others import the
@@ -120,6 +120,12 @@ Four, because each sees something the others cannot:
   siblings barely moves it. A pairwise comparison added to the walk read
   1.0x on the corpus and 4.4x here.
 - **`rules_layer`** is the walk alone, the layer with a cost history.
+- **`supplied_template`** is one `--template` run: the only layer that
+  times building a table while the caller waits. The four above run
+  against tables generated at build time from small vendored files, so
+  the build cost is in none of them, and the walk they time asks its
+  questions once per pack where a supplied table asks them once per row
+  of a file the caller chose.
 
 The seconds are compared as well as the ratios, in one direction: a layer
 whose absolute time falls to a fifth of what was recorded has stopped doing
