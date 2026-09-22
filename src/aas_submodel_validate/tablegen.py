@@ -101,16 +101,26 @@ _ALLOWED = re.compile(r"^(.*)\[(\\d\{\d(?:,\d)?\})\]$")
 
 
 def _intended_pattern(raw):
-    """`RefersTo[\\d{2,3}]` -> `^RefersTo(?:\\d{2,3})?$`.
+    """`RefersTo[\\d{2,3}]` -> `^RefersTo(?:\\d{2,3})?$`, and anything
+    else the name it spells.
 
     The digits are the numbering suffix for multiple instances, so they
     are optional: the template's *own* idShort for the single case
     ("PreviewFile") must not fail the template's own qualifier.
+
+    Everything else is a name, not a program. Passed through as a
+    pattern, a qualifier reading `Doc(1)` matched `Doc1` and not the
+    element the template names, and one reading `A[` did not compile at
+    all -- so every row of that table raised at walk time and the funnel
+    reported each as "the rule itself could not run", under a remedy
+    saying the defect is this validator's. Measured across the six
+    vendored templates, every `AllowedIdShort` uses the bracket
+    spelling above, so escaping the rest moves no pack.
     """
     matched = _ALLOWED.match(raw)
     if matched:
         return "^%s(?:%s)?$" % (matched.group(1), matched.group(2))
-    return "^%s$" % raw
+    return "^%s$" % re.escape(raw)
 
 
 def _values_of(reference):

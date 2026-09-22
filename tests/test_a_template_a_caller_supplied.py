@@ -1230,3 +1230,95 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
     assert seen == len(packs), (
         "this gate read %d vendored templates and there are %d packs"
         % (seen, len(packs)))
+
+
+def _template_with_idshort_rule(tmp_path, pattern, name="t.json"):
+    """A one-row template whose only row carries `AllowedIdShort`."""
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def qualifier(kind, value, marker):
+        return {"semanticId": sid(marker), "type": kind,
+                "valueType": "xs:string", "value": value}
+
+    path = tmp_path / name
+    path.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:tpl", "idShort": "Mine",
+        "kind": "Template", "semanticId": sid("urn:test:mine"),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": "A",
+            "semanticId": sid("urn:test:a"), "valueType": "xs:string",
+            "qualifiers": [
+                qualifier("SMT/Cardinality", "One",
+                          "https://admin-shell.io/SubmodelTemplates/"
+                          "Cardinality/1/0"),
+                qualifier("AllowedIdShort", pattern,
+                          "https://admin-shell.io/SubmodelTemplates/"
+                          "AllowedIdShort/1/0")]}]}]}).encode("utf-8"))
+    return path
+
+
+def _instance_named(tmp_path, id_short, name="i.json"):
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    path = tmp_path / name
+    path.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:inst", "idShort": "Mine",
+        "semanticId": sid("urn:test:mine"),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": id_short,
+            "semanticId": sid("urn:test:a"), "valueType": "xs:string",
+            "value": "v"}]}]}).encode("utf-8"))
+    return path
+
+
+def test_an_allowed_idshort_that_is_not_a_regex_does_not_blame_this_tool(tmp_path):
+    """A caller's qualifier is a value, not a program.
+
+    `_intended_pattern` translates IDTA's `Name[\\d{2,3}]` spelling and
+    otherwise wrapped the value into `^...$` without compiling it. A
+    template whose `AllowedIdShort` is `A[` therefore made *every* row of
+    that table raise at walk time -- and the funnel turned each one into
+    "the rule itself could not run", whose remedy reads "This is a defect
+    in the validator, not in your file; please report it." It is a defect
+    in the file, the run left by 1 rather than the 2 that means the input
+    could not be judged, and the report said `judged 1 of 1` over a run
+    in which no row was evaluated.
+
+    Measured on every `AllowedIdShort` in all six vendored templates:
+    each one uses the bracket spelling, so reading anything else as a
+    literal moves no pack.
+    """
+    template = _template_with_idshort_rule(tmp_path, "A[")
+    report = runner.run(_instance_named(tmp_path, "A["), template=template)
+    could_not_run = [f for f in report.findings
+                     if "could not run" in f.violation.message]
+    assert not could_not_run, (
+        "a value in the caller's file was run as a pattern and the crash was "
+        "reported as ours: %s"
+        % [(f.id, f.violation.fix) for f in could_not_run])
+
+
+def test_an_allowed_idshort_is_read_as_written(tmp_path):
+    """`Doc(1)` names an element called `Doc(1)`.
+
+    Unescaped, the parentheses were a regex group and the qualifier
+    matched `Doc1` -- so a file that carries the element the template
+    asks for by name was told it does not, and one that does not was
+    told it does. IDTA's own spelling for a numbering suffix is the
+    bracket form, which `_intended_pattern` still translates."""
+    from aas_submodel_validate import tablegen
+
+    assert tablegen._intended_pattern("RefersTo[\\d{2,3}]") == \
+        "^RefersTo(?:\\d{2,3})?$", "the IDTA spelling stopped being translated"
+
+    import re
+    literal = tablegen._intended_pattern("Doc(1)")
+    assert re.match(literal, "Doc(1)"), (
+        "the element the template names does not match its own qualifier: %r"
+        % literal)
+    assert not re.match(literal, "Doc1"), (
+        "%r matched an element the template did not name" % literal)
