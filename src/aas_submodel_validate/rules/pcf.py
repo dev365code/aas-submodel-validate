@@ -55,4 +55,11 @@ for _row in pcf_tables.ROWS:
 # template: whether the files its File rows name are in the package.
 # The body is shared and was called from 02004's family alone, so a
 # package of this kind naming parts it does not hold was judged clean.
-install_file_rule("PCF-D1", pcf_tables, pcf_tables.TEMPLATE_CITATION)
+# `ExplanatoryStatement` only. The other File row this template declares
+# is `PcfRuleOnlineReference`, which the vendored template describes as an
+# "Online PCF calculation methodology reference" -- the published method a
+# footprint was calculated by, which lives where its publisher put it. Asked
+# whether it is in the container, this rule faulted conformant files for
+# naming it the way such a reference is written (`docs/divergences.md` #55).
+install_file_rule("PCF-D1", pcf_tables, pcf_tables.TEMPLATE_CITATION,
+                  only=("ExplanatoryStatement",))

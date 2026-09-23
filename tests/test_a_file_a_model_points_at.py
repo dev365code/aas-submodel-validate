@@ -166,3 +166,94 @@ def test_every_pack_with_a_file_row_asks(tmp_path):
             "hold drew nothing about them: %s"
             % (pack.name, [row["label"] for row in rows],
                sorted({f.id for f in report.findings})))
+
+
+def test_a_row_the_template_calls_online_is_not_asked_for_a_part(tmp_path):
+    """02023 declares two File rows and they do not mean the same thing.
+
+    The vendored template's own description for `PcfRuleOnlineReference`
+    is "Online PCF calculation methodology reference that provides
+    detailed instructions and guidelines for calculating a product's
+    carbon footprint" -- a pointer to somebody else's published method,
+    not a file the supplier packs. Installing the question on
+    `kind == "File"` alone made it a MUST that the file be in the
+    container, with the remedy "Add the file to the .aasx".
+
+    Measured, with the other File row held at a real part so only this
+    one moves: three of four ways an online reference is actually
+    written -- `www.…/standard.pdf`, `ghgprotocol.org`,
+    `//www.…/standard.pdf` -- failed the package and told the supplier
+    to put a standards body's PDF inside their own `.aasx`. Only the
+    fully-formed `https://` spelling was spared, and only because a
+    scheme makes the rule look elsewhere.
+
+    `ExplanatoryStatement` is the other row and it is a real attachment
+    (`docs/divergences.md` #55), so it keeps the question.
+    """
+    import json
+
+    from builders import build_aasx, pcf_env
+
+    def judged(value):
+        document = json.loads(json.dumps(pcf_env()))
+
+        def walk(node):
+            if isinstance(node, dict):
+                if node.get("modelType") == "File":
+                    node["value"] = (value if node.get("idShort")
+                                     == "PcfRuleOnlineReference"
+                                     else "/aasx/files/held.pdf")
+                for child in node.values():
+                    walk(child)
+            elif isinstance(node, list):
+                for child in node:
+                    walk(child)
+
+        walk(document)
+        path = build_aasx(tmp_path / ("cf-%d.aasx" % abs(hash(value))),
+                          payload=json.dumps(document).encode("utf-8"),
+                          files=(("aasx/files/held.pdf", b"%PDF-1.4 "),))
+        return [finding for finding in runner.run(str(path)).findings
+                if finding.rule.id == "PCF-D1"
+                and "PcfRuleOnlineReference" in (finding.violation.subject or "")]
+
+    for spelling in ("https://ghgprotocol.org/standard.pdf",
+                     "www.ghgprotocol.org/standard/product-standard.pdf",
+                     "ghgprotocol.org",
+                     "//www.ghgprotocol.org/standard.pdf"):
+        assert not judged(spelling), (
+            "%r: the template calls this row an online reference and the "
+            "report tells the supplier to put the file in their package"
+            % spelling)
+
+
+def test_the_other_file_row_of_that_pack_still_asks(tmp_path):
+    """The exclusion is one row, not the rule.
+
+    A pack that stopped asking entirely would pass this file too, so the
+    row that *is* an attachment is asked in the same breath.
+    """
+    import json
+
+    from builders import build_aasx, pcf_env
+
+    document = json.loads(json.dumps(pcf_env()))
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("modelType") == "File":
+                node["value"] = ("/aasx/files/absent.pdf"
+                                 if node.get("idShort") == "ExplanatoryStatement"
+                                 else "https://ghgprotocol.org/standard.pdf")
+            for child in node.values():
+                walk(child)
+        elif isinstance(node, list):
+            for child in node:
+                walk(child)
+
+    walk(document)
+    path = build_aasx(tmp_path / "cf-attachment.aasx",
+                      payload=json.dumps(document).encode("utf-8"), files=())
+    drawn = [finding for finding in runner.run(str(path)).findings
+             if finding.rule.id == "PCF-D1"]
+    assert drawn, "the pack stopped asking about the row that is an attachment"
