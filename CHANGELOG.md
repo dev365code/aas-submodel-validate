@@ -5,6 +5,17 @@
 Who should take this release: anyone whose packages name files, and
 anyone who needs to know what a run did *not* look at.
 
+**Security: names on the summary line are escaped**
+([GHSA-8w4g-mg5q-c4m4](https://github.com/dev365code/aas-submodel-validate/security/advisories/GHSA-8w4g-mg5q-c4m4)).
+From 0.4.0 the summary line a run prints last named the element that
+explains why some rules were not asked, by the `idShort`s the file
+wrote, without the escaping every finding line already had. A control
+sequence there reached the terminal as it was: on one that honours it,
+the lines above could be erased and other text drawn where the summary
+is read. The line now goes through the same escaping, including the
+clause this release adds to it. The exit code and the JSON report were
+never affected.
+
 It is 221 rules, 178 generated from the vendored official template
 files, across six template packs. The two added ask, for Digital
 Nameplate and for Carbon Footprint, a question two packs were already

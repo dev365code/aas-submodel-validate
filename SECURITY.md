@@ -43,3 +43,6 @@ this repository, naming the versions it reaches and the release that fixes it:
 - [GHSA-m8g8-xjhr-x529](https://github.com/dev365code/aas-submodel-validate/security/advisories/GHSA-m8g8-xjhr-x529):
   a DTD refused at any smaller size could be processed in an oversized UTF-16
   relationships part. 0.1.3 and 0.1.4; fixed in 0.1.5.
+- [GHSA-8w4g-mg5q-c4m4](https://github.com/dev365code/aas-submodel-validate/security/advisories/GHSA-8w4g-mg5q-c4m4):
+  a control sequence in a file-supplied `idShort` reached the terminal
+  through the summary line. 0.4.0 to 0.5.1; fixed in 0.6.0.
