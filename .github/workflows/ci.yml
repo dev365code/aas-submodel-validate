@@ -116,7 +116,14 @@ jobs:
           # differently from the machine the archive was built on.
           - { os: macos-latest, python: "3.12" }
     steps:
+      # The whole history, two megabytes of it, because the suite asks the
+      # released reader what options it has and takes it out of git. At the
+      # default depth there are no tags here and that gate skips -- visibly,
+      # with a reason, which is how it was found, but a gate that skips on
+      # every matrix row is a gate this project is not running.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ matrix.python }}
@@ -290,7 +297,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # The whole history, two megabytes of it, because the suite asks the
+      # released reader what options it has and takes it out of git. At the
+      # default depth there are no tags here and that gate skips -- visibly,
+      # with a reason, which is how it was found, but a gate that skips on
+      # every matrix row is a gate this project is not running.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"

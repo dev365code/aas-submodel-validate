@@ -13,7 +13,20 @@ read so far, before each next part is decompressed -- so a container
 stops costing once it is past the bound, having read the part that
 crossed it: the ceiling in practice is the bound plus one part, and what
 it buys is that the cost cannot keep growing. A part counts once however
-many relationships name it. A container's directory
+many relationships name it.
+
+`--template` reads a **second** file, and it is bounded separately
+because it is a separate file: the same 64 MiB, and additionally a limit
+of ten thousand rows on what the template may declare. The row limit is
+not decoration. Bytes do not bound the work a template costs — rows do,
+and a template of 46 MiB sits comfortably inside the byte bound while
+declaring far more rows than anything published. A template above the byte
+limit is refused before it is parsed -- the reader stops at the bound,
+so what it holds is bounded by the limit and not by the size of the
+file; one above the row limit is refused at the row that crosses it, so
+what a template can cost is bounded by ten thousand rows rather than by
+its size. Both leave at the exit code
+that means the input could not be judged. A container's directory
 of names is bounded too, at 16 MiB, and separately: a ZIP is indexed
 whole before any of it is read, so the cost falls on how many names the
 archive declares rather than on what its entries hold — an archive of

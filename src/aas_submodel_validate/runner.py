@@ -6,6 +6,7 @@ validator that dies on rule 3 of 40 has silently skipped 37.
 """
 from __future__ import annotations
 
+import pathlib
 from dataclasses import dataclass
 from typing import List
 
@@ -14,11 +15,13 @@ from aas_core3 import verification
 from . import (
     container,
     rules,  # noqa: F401  - importing registers every rule
+    tablegen,
 )
 from .loader import Loaded, LoadError, UnreadablePath, load
 from .model import KINDS, META_KIND, Finding, Report, Rule, Severity, Violation
 from .registry import all_rules
 from .rules import detect
+from .semantics import submodel_declares
 
 #: What a rule that raised is reported as. Named rather than written
 #: twice, because the coverage collector has to tell this apart from the
@@ -118,6 +121,23 @@ class Context:
     #: a table nobody chose, which is the mistake `rules/engine.py`'s
     #: table argument was stripped of its own default to prevent.
     selection: object
+    #: Tables the caller supplied, carried here so that everything asking
+    #: "was this submodel judged" asks one place. `submodels_judged` was
+    #: handed them and `SMT-D1` was not, so a submodel judged against a
+    #: caller's template drew "no submodel declares a semanticId this
+    #: tool has a template table for" beside a finding about that very
+    #: submodel and a summary reading `judged 1 of 1` -- three statements
+    #: denying each other, and the remedy telling the author to relabel a
+    #: correct document. `detect.judged` records repairing exactly this
+    #: once, for the battery pack.
+    supplied: tuple = ()
+    #: Submodel identifiers a table the caller supplied answers for. The
+    #: packs stand down for these. Two tables for one identifier is one
+    #: defect reported twice -- measured: handing `--template` the file
+    #: 02003's own pack was generated from gave two errors where the pack
+    #: alone gives one, the same missing element under two ids. The
+    #: caller asked for their template by name, so theirs answers.
+    taken_over: frozenset = frozenset()
 
 
 def _meta_rule(strict: bool) -> Rule:
@@ -285,8 +305,112 @@ def _digest(path, limit: int) -> str:
     return digest.hexdigest()
 
 
+#: How many places a note names before it stops and says so. The count a
+#: note carries is never bounded; this is about what a reader can read.
+NAMED_IN_A_NOTE = 3
+
+
+def _supplied_table(template):
+    """The table a caller's own template describes, or a refusal.
+
+    Bounded before it is parsed. A template is not covered by the bound
+    on the document being judged -- they are different files -- and 46
+    MiB of template sits comfortably inside the 64 MiB this reader
+    advertises, which is why the row count is bounded separately in
+    `tablegen`.
+    """
+    import hashlib
+    import json
+
+    path = pathlib.Path(template)
+    try:
+        with container.open_regular(path) as handle:
+            raw = handle.read(container.MAX_PART_BYTES + 1)
+    except OSError as exc:
+        raise tablegen.TemplateRefused("cannot read %s: %s" % (path, exc)) from exc
+    if len(raw) > container.MAX_PART_BYTES:
+        raise tablegen.TemplateRefused(
+            "%s is above the %d byte limit this reader takes in"
+            % (path, container.MAX_PART_BYTES))
+    try:
+        document = json.loads(raw.decode("utf-8-sig"))
+    except UnicodeDecodeError as exc:
+        raise tablegen.TemplateRefused(
+            "%s is not JSON this reader can read: %s" % (path, exc)) from exc
+    except (RecursionError, MemoryError) as exc:
+        # Not a defect in the file. `loader.py` classifies this on the
+        # sibling path and says why; this reader reached one of the two,
+        # so a template three thousand collections deep came out as a
+        # traceback at exit 1 -- the code for a verdict with findings,
+        # about a file nothing finished reading.
+        raise tablegen.TemplateRefused(
+            "%s is nested more deeply than this reader can follow (%s); the "
+            "file may be fine and this machine could not walk it"
+            % (path, type(exc).__name__)) from exc
+    except ValueError as exc:
+        # A bare `ValueError` from `json` is not always malformed JSON:
+        # an integer past the interpreter's digit limit raises one, and
+        # calling that "not JSON this reader can read" tells a caller
+        # their file is broken when it is not.
+        if type(exc) is ValueError:
+            raise tablegen.TemplateRefused(
+                "%s met a limit of this interpreter while being read: %s"
+                % (path, exc)) from exc
+        raise tablegen.TemplateRefused(
+            "%s is not JSON this reader can read: %s" % (path, exc)) from exc
+
+    # The same open-content markers the generator reads. Empty here, this
+    # built a rule for every placeholder the template declares and then
+    # faulted the manufacturer's own element that sits under it
+    # (`docs/divergences.md` #19 names that outcome in advance).
+    pack = {"prefix": "TPL-E", "citation": "a template you supplied",
+            "skip_sids": tablegen.OPEN_CONTENT_MARKERS,
+            "item_names": {}, "example_types": ()}
+    digest = hashlib.sha256(raw).hexdigest()
+    try:
+        # The reading, not only the parsing. The first repair wrapped
+        # `json.loads` and left the three calls after it, so JSON that
+        # parses and is not shaped like a template took the process down:
+        # fourteen of sixteen malformed shapes left as a traceback at
+        # exit 1, which is the code for a verdict about a file nothing
+        # finished reading.
+        #
+        # The name comes from the digest already computed above. It used
+        # to be a second serialisation of the whole document, which cost
+        # a full pass for nothing and could exhaust the stack one level
+        # shallower than the parse -- so the repair held on one side of a
+        # one-level boundary and not the other.
+        table = tablegen.table_from(document, pack,
+                                    name="<template %s>" % digest[:16])
+    except tablegen.TemplateRefused:
+        raise
+    except (RecursionError, MemoryError) as exc:
+        raise tablegen.TemplateRefused(
+            "%s is nested more deeply than this reader can follow (%s); the "
+            "file may be fine and this machine could not walk it"
+            % (path, type(exc).__name__)) from exc
+    except (KeyError, TypeError, AttributeError, IndexError, ValueError) as exc:
+        raise tablegen.TemplateRefused(
+            "%s parses as JSON and is not shaped like an IDTA template: "
+            "%s: %s" % (path, type(exc).__name__, exc)) from exc
+    # How many the file held, not how many were read. `build` takes the
+    # first submodel and there is no way for a reader to tell "your
+    # other templates matched nothing" from "your other templates were
+    # never opened" -- and those ask opposite things of them.
+    #
+    # Read without a guard, because `build` has already refused anything
+    # this could fail on: a document that is not a dict, or one whose
+    # `submodels` is missing or empty, leaves as a `TemplateRefused`
+    # above. A guard here would be a second answer to a question already
+    # settled, and the branch under it could not be entered -- which is
+    # the shape a dead `except` clause in `cli` was just removed for.
+    declared = len(document["submodels"])
+    return {"table": table, "pack": pack, "sha256": digest,
+            "declared": declared}
+
+
 def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
-        profile: str = None) -> Report:
+        profile: str = None, template=None) -> Report:
     """Validate one input.
 
     A path this reader cannot open comes back as a report rather than as
@@ -310,15 +434,126 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # accepted is one whose own bounds already held.
     report = Report(path=str(path),
                     input_sha256=_digest(path, container.MAX_TOTAL_PART_BYTES))
+    supplied = None
+    if template is not None:
+        supplied = _supplied_table(template)
+        rules_to_run = list(rules_to_run) + tablegen.rules_for(
+            supplied["table"], supplied["pack"])
+        report.template = {"sha256": supplied["sha256"],
+                           "path": str(template),
+                           # Said plainly, because a verdict against a
+                           # file the caller brought is not a verdict
+                           # against a published template and a reader
+                           # who cannot tell them apart has been told
+                           # something untrue.
+                           "published": False,
+                           "semanticId": supplied["table"].TEMPLATE_SEMANTIC_ID,
+                           "rows": len(supplied["table"].ROWS),
+                           # How many the file held, which `rows` and
+                           # `semanticId` cannot say: both describe the
+                           # one submodel the table came from and read
+                           # the same whether the file held one or five.
+                           # The note beside it says so in a sentence,
+                           # and a sentence is not something a consumer
+                           # should have to match on.
+                           "submodels": supplied["declared"]}
+        # A table with no rows in it. `--require-all-judged` counts
+        # submodels and this one was judged, so a template whose every
+        # element is open content -- or which identifies none of them --
+        # came back `ok` at exit 0 having asked nothing at all, with the
+        # count only in `provenance.template.rows` where a person
+        # reading the screen never sees it.
+        if not supplied["table"].ROWS:
+            report.notes.append(
+                "the template you supplied states no rule this reader can "
+                "check: every element it declares is open content or "
+                "carries no semanticId. Nothing in your file was compared "
+                "against it, and a pass here says only that.")
+        # An element the template asks for and identifies with nothing.
+        # Matching here is by identifier and never by idShort, so
+        # outside a list -- where a sole item row is matched by kind --
+        # no element can answer such a row. Stated rather than enforced:
+        # as an obligation it was an error no file could clear, and the
+        # remedy it printed ended "with semanticId " and nothing.
+        unidentified = [row["label"] for row in supplied["table"].ROWS
+                        if row.get("unidentified")]
+        if unidentified:
+            named = unidentified[:NAMED_IN_A_NOTE]
+            report.notes.append(
+                "the template you supplied describes %d element%s it gives "
+                "no semanticId (%s). Elements are matched by identifier "
+                "here and never by idShort, so nothing in your file can "
+                "answer for %s and this run did not ask. Give %s a "
+                "semanticId in the template and %s become%s a rule."
+                % (len(unidentified), "" if len(unidentified) == 1 else "s",
+                   ", ".join(named)
+                   + ("" if len(named) == len(unidentified) else ", and more"),
+                   "it" if len(unidentified) == 1 else "them",
+                   "it" if len(unidentified) == 1 else "each of them",
+                   "it" if len(unidentified) == 1 else "they",
+                   "s" if len(unidentified) == 1 else ""))
+        # A qualifier of the caller's this reader could not read. Said
+        # once, in a note, and nothing about the file changes: the value
+        # feeds one `info` rule whose own remedy calls it tidiness
+        # rather than conformance, and a run-time table registers no
+        # lints, so under this flag nothing reads it at all. Refusing
+        # the template over it threw away every verdict on the file --
+        # including the errors it had -- over a suggestion.
+        unreadable = [(row["label"], row["allowed_idshort_unreadable"])
+                      for row in supplied["table"].ROWS
+                      if "allowed_idshort_unreadable" in row]
+        if unreadable:
+            named = unreadable[:NAMED_IN_A_NOTE]
+            report.notes.append(
+                "the template you supplied states an AllowedIdShort this "
+                "reader cannot read on %d of its rows (%s). IDTA's spelling "
+                "is `Name[\\d{2,3}]`, lower bound first. Nothing else about "
+                "the verdict changes: that qualifier is a naming "
+                "suggestion, and a table built from your file reports none."
+                % (len(unreadable),
+                   ", ".join(
+                       "%s: `%s`" % (label, value) if isinstance(value, str)
+                       # A qualifier of this type carrying no string is
+                       # a legal file -- `Qualifier.value` is optional --
+                       # and quoting `None` back would send the caller
+                       # looking for that word in their template.
+                       else "%s: no value" % label
+                       for label, value in named)
+                   + ("" if len(named) == len(unreadable) else ", and more")))
     # Held rather than discarded: the walk's own record of which rows it
     # considered lives on the context, and `not_asked` is the difference
     # between that and the tables. Built inline before, so the one thing
     # that knows what the run failed to ask was thrown away at the end of
     # the expression that produced the findings.
-    ctx = Context(loaded, rules.profiles.Selection(profile))
+    tables = () if supplied is None else (supplied["table"],)
+    ctx = Context(loaded, rules.profiles.Selection(profile),
+                  supplied=tables,
+                  taken_over=frozenset(t.TEMPLATE_SEMANTIC_ID for t in tables))
     report.findings = execute(rules_to_run, ctx)
     report.not_asked = rules.engine.rows_not_reached(ctx)
     report.unmatched = rules.engine.unmatched_elements(ctx)
+    # The reach of the check, the way the battery coverage note reports
+    # one: a note and not a finding, because nothing here says the file
+    # is wrong -- only that this reader did not look.
+    repeats = rules.engine.repeats_not_entered(ctx)
+    if repeats:
+        # How many are named, read once. Written as two literals -- the
+        # slice and the comparison that decides whether to say the naming
+        # stopped -- widening one left the other saying "and more" after
+        # a list that held everything. The count above is all of them;
+        # only the naming is bounded, because a note that printed five
+        # hundred paths would tell a reader neither how much went
+        # unexamined nor where to start.
+        named = repeats[:NAMED_IN_A_NOTE]
+        report.notes.append(
+            "the template you supplied describes an element that contains "
+            "itself (%s); this reader judges the outermost occurrence and "
+            "did not look inside %d nested cop%s below it (%s). Nothing "
+            "here is a statement about what they hold."
+            % (repeats[0][1], len(repeats),
+               "y" if len(repeats) == 1 else "ies",
+               ", ".join(subject for subject, _ in named)
+               + ("" if len(named) == len(repeats) else ", and more")))
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
         # The verdict that no template matched, and only that. A presence
@@ -355,11 +590,36 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             "--profile %s named a template no submodel here answers to, so it "
             "chose nothing; the verdict is the one you would have got without it"
             % profile)
+    # The other way the flag decides nothing, and the quiet one. A
+    # supplied table takes an identifier from *both* sides of a pair, so
+    # the choice is made before the flag is read -- and the note above
+    # asks `Selection.chosen`, which knows about the pair and not about
+    # the stand-down, so it stays silent on exactly this run. The
+    # stand-down note beside it names the pack that stood down and not
+    # the flag that selected it, and a caller who passed the flag on
+    # purpose reads that as their side having answered.
+    elif profile in rules.profiles.KEYS:
+        overridden = sorted(
+            pair.default.TEMPLATE_SEMANTIC_ID
+            for pair in rules.profiles.PROFILES
+            if profile in (pair.key, pair.default_key)
+            and pair.default.TEMPLATE_SEMANTIC_ID in ctx.taken_over)
+        if overridden:
+            report.notes.append(
+                "--profile %s chose nothing: the template you supplied "
+                "answers for %s, which is the identifier that pair "
+                "publishes, so both sides of it stood down."
+                % (profile, ", ".join(overridden)))
     # What the battery pack could look at in this run, computed from its
     # table rather than quoted from a document, and marked as the floor
     # it is. A note and not a finding: it reports the reach of a check,
     # not a defect in the file.
-    coverage = rules.battery.coverage_note(detect.instances(loaded))
+    # `judgeable`, not `instances`: the rule this note describes reads
+    # the first. Left on the second, the note said "BAT-R8 reported 2 of
+    # the 9 elements this table holds" in a run where the pack had stood
+    # down and BAT-R8 reported none. The last walker of `instances` to
+    # move across.
+    coverage = rules.battery.coverage_note(detect.judgeable(ctx))
     if coverage is not None:
         report.notes.append(coverage)
     # How much of the input a template answered for. Counted from the
@@ -392,10 +652,96 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # summarised `judged 0 of 3 submodels` under eight findings about
     # those three -- and `--require-all-judged` could never pass on the
     # one input the pack was built for.
-    report.submodels_judged = len(detect.judged(
-        Context(loaded, rules.profiles.Selection(profile))))
+    # The supplied table too. `judged` walks a fixed list of packs, so a
+    # submodel judged against a table built at run time was counted as
+    # unjudged -- the report would carry findings about it and say
+    # `judged 0 of 1`, and `--require-all-judged` could never pass. The
+    # same contradiction the battery pack had repaired once.
+    report.submodels_judged = len(detect.judged(ctx))
+    if supplied is not None:
+        answered = supplied["table"].TEMPLATE_SEMANTIC_ID
+        took_part = rules.engine.matched_submodels(ctx, supplied["table"])
+        if took_part:
+            report.notes.append(
+                "judged against the template you supplied (%s), which is not "
+                "a published IDTA template; what a template states is checked "
+                "and nothing else. A verdict against a template you supplied "
+                "is not a statement about conformance to a published one."
+                % template)
+        else:
+            # Said, rather than left to a `provenance.template` a consumer
+            # reads as "this verdict was made against a supplied template".
+            # Measured: with `--example` and a template claiming something
+            # the bundled document does not carry, the pack produced the
+            # entire verdict and the note claimed it.
+            # Which of the two reasons, because they take different
+            # remedies. `matched_submodels` reads `instances`, so a
+            # submodel declared `kind: Template` is filtered out before
+            # it gets here -- and the report then said the identifier
+            # was declared by nothing, in the same breath as saying a
+            # specification had been set aside. It is declared; it is
+            # not an instance. Telling the reader to change the
+            # identifier fixes nothing and breaks a correct file.
+            spoken_for = [submodel for submodel in loaded.submodels
+                          if submodel_declares(submodel, answered)]
+            if spoken_for:
+                report.notes.append(
+                    "the template you supplied (%s) claims %s, and what "
+                    "declares it here is a specification rather than an "
+                    "instance, so it was set aside before any rule ran. "
+                    "Nothing was judged against your template and this "
+                    "verdict is this tool's own."
+                    % (template, answered))
+            else:
+                report.notes.append(
+                    "the template you supplied (%s) claims %s, which no "
+                    "submodel in this input declares; nothing was judged "
+                    "against it and this verdict is this tool's own."
+                    % (template, answered))
+        # A third statement, and not a branch of the two above: those
+        # two are one question with two answers -- did your template
+        # judge anything -- and this is a different question about the
+        # same file. Written between them, it took the `else` from the
+        # first, and then every single-submodel template that *did*
+        # answer drew the sentence meant for one that answered nothing.
+        # Said whether or not it answered, because a file whose second
+        # template is the one the input declares looks exactly like a
+        # file whose template matches nothing, and the reader can act on
+        # the first.
+        if supplied["declared"] > 1:
+            report.notes.append(
+                "the template file declares %d submodels; the table came "
+                "from the first of them (%s) and the rest were not read."
+                % (supplied["declared"], answered))
+        # `PACKS` answers "there is a table generated from the published
+        # template"; the three identifiers below have rules and no table,
+        # and they stand down the same way. Asked of `PACKS` alone, a
+        # supplied template claiming one of them took two `BAT-R8`
+        # warnings away and the report said nothing -- a reader comparing
+        # two reports of one file sees the run get quieter and reads that
+        # as the file improving, which is the failure this note exists to
+        # prevent.
+        if took_part and (any(pack.semantic_id == answered
+                              for pack in detect.PACKS)
+                          or answered in detect.PACK_ONLY_SEMANTIC_IDS):
+            report.notes.append(
+                "a pack of this tool's own also answers for %s and stood "
+                "down; your template decided this run. None of that pack's "
+                "rules ran -- not its table and not its hand-written ones, "
+                "which are readings of a specification and are not "
+                "derivable from a template (docs/scope.md)." % answered)
     report.findings.sort(key=_reading_order)
-    report.checked = len(rules_to_run)
+    # The registered rules, not everything that ran. A table the caller
+    # supplied contributes rules on purpose and registers none of them,
+    # and `docs/report-schema.md` says this number is "every rule
+    # registered in this build ... the number does not move when a
+    # different template answers". Counted from `rules_to_run` it went
+    # 219 to 273 with the flag, and to 221 on a run where the supplied
+    # template matched nothing -- a published number depending on a
+    # caller's file. What the template contributed is in
+    # `provenance.template.rows`, which is where a reader who wants it
+    # should look.
+    report.checked = len(all_rules())
     # Every load error means content that was not read: an archive that
     # would not open, a chain that went nowhere, a part that would not
     # parse, a document over the bound. What was not read was not judged,

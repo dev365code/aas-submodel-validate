@@ -59,7 +59,7 @@ from ..model import Violation
 from ..registry import rule
 from ..semantics import candidate_values, element_candidate_values
 from . import battery_tables, detect
-from .detect import instances
+from .detect import judgeable
 
 R2_ID = "BAT-R2"
 R8_ID = "BAT-R8"
@@ -389,7 +389,7 @@ def bat_r2_shared_identifier_without_a_table(ctx):
     table for, where there is no choice to carry and the alternative is
     a report that calls a known template unknown."""
     forced = getattr(ctx.selection, "forced", None)
-    for submodel in instances(ctx.loaded):
+    for submodel in judgeable(ctx):
         subject = getattr(submodel, "id_short", None) or "submodel"
         for identifier in sorted(_declared(submodel)):
             claimants = battery_tables.SHARED_SUBMODEL_IDS.get(identifier)
@@ -551,7 +551,7 @@ def bat_r8_template_optional_but_law_requires(ctx):
     """Every row whose submodel is here, in table order, and the walk
     reads every element rather than the first: an absence past the first
     element is the same absence."""
-    here = list(instances(ctx.loaded))
+    here = judgeable(ctx)
     # Which column settled the row, named in the finding. Every row this
     # rule reports is conditional on a category now, so a finding that
     # does not say which one is a claim about batteries in general --

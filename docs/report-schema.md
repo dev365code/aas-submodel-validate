@@ -6,15 +6,21 @@ and what the version number at the top of it promises.
 Three runs write nothing there. `-q` asks for the exit code alone. A
 command-line usage error -- an unknown option, a missing argument, a
 value outside the choices, a second path, or two flags that contradict --
-exits 64 (`EX_USAGE`) and writes no report, because no input was read. And
-a path that could not be read at all has none to give, which is the next
-paragraph. A usage error exited 2 before 0.4.0; 2 no longer covers it.
-Exit 2 sometimes does and sometimes does not — an input this reader
-refused comes back with a report saying what was refused and what to do
-about it, while a path that could not be read at all has no report to
-give and leaves only a line on stderr. Both write that line, so read
-stdout when it is not empty. A reader that parses it unconditionally
-meets its first `JSONDecodeError` on the case it most needs to handle.
+exits 64 (`EX_USAGE`) and writes no report, because no input was read.
+And a `--template` file this reader refuses -- unreadable, not JSON, not
+shaped like a template, over either bound -- leaves at 2 with no report
+either: the file that would have been judged was readable, nothing was
+written about it, and the template's own digest is recorded nowhere.
+
+A usage error exited 2 before 0.4.0; 2 no longer covers it. Exit 2
+otherwise always writes one: an input this reader refused comes back
+with a report saying what was refused and what to do about it, and so
+does a path it could not read at all -- that one names the path, carries
+an `X6` finding, and has a null `provenance.inputSha256` because nothing
+was opened to take a digest of. Both also write a line on stderr, so
+read stdout when it is not empty. A reader that parses it
+unconditionally meets its first `JSONDecodeError` on the case it most
+needs to handle.
 
 ```json
 {
@@ -88,7 +94,7 @@ report needs the second one.
 | `ok` | boolean | No finding at `error` severity. `-W` raises the bar for the exit code without changing `ok`, and so does `summary.judged`: a run that judged nothing exits 2 whatever `ok` says. |
 | `options` | object | What was asked of this run; see below. |
 | `summary` | object | Counts; see below. |
-| `notes` | array of string | Things worth saying once about the run rather than about the file — a `--profile` that named a template nothing here answers to, or an unmatched submodel that `--allow-unmatched` let through. |
+| `notes` | array of string | Things worth saying once about the run rather than about the file — a `--profile` that named a template nothing here answers to, or an unmatched submodel that `--allow-unmatched` let through. A run given `--template` says several here: whether your template judged anything, which submodel of it the table came from where the file held more than one, which pack stood down for it and what that removed, and whether a `--profile` it overrode decided anything. Free text, one string per note; `provenance.template` is where the same run is recorded in fields a consumer can read. |
 | `findings` | array of object | Every finding, in reading order; see below. |
 
 ## `provenance`
@@ -109,6 +115,7 @@ something can be built against.
 | key | type | |
 |---|---|---|
 | `inputSha256` | string or null | SHA-256 of the input file as it arrived — of the bytes on disk, whether or not any of them were judged. A refused input still gets one, and that is the point: the report names the file it refused. `null` in three cases: the file could not be opened at all; it is larger than the digest itself will read (256 MiB, the bound on a whole container); or the path is not a regular file — a pipe, a socket or a device is refused without being read, so there are no bytes to name. Before 0.4.1 a device hashed to the sha of zero bytes and a pipe made the run hang, which is why the third case reads as a widening rather than a correction. |
+| `template` | object, absent | Present only when `--template` was given. `sha256` of the template file as it arrived, the `path` it was given under, the `semanticId` it claims, how many `rows` were generated from it, how many `submodels` that file declared, and `published`, which is always false and is the point of the key. The table is built from the first submodel in the file and the rest are not read, so `submodels` above 1 is the only field that distinguishes a template of yours that matched nothing from one this run never opened; `notes` says the same thing in a sentence. A verdict made against a template the caller supplied is not a statement about conformance to a published IDTA template, and a consumer that cannot tell the two apart has been told something untrue. Absent, rather than null, when the run used this project's own packs: a key that is there for every report says nothing, and the reader who needs this is the one who finds it present. |
 | `engine` | null | Reserved: a reference to the engine build that produced the report, beyond the version string `toolVersion` already carries. Nothing fills it yet. |
 | `envelope` | null | Reserved: the signed envelope a report may be wrapped in, and the signature over it. Nothing fills it yet, and nothing in this project will — the signer is the organisation issuing the document. |
 
@@ -125,6 +132,16 @@ what the verdict is, and a report that recorded them would be saying
 something about its reader rather than about the file. Read
 `summary.warnings` and the two `submodels` counts to see what those two
 would have decided.
+
+One flag that moves the report is deliberately **not** here either, and
+for a different reason: `--template` is recorded in `provenance`. What
+decides a verdict is the template's bytes, not the flag's spelling — the
+same path can hold a different file tomorrow — so the record of it
+belongs where this report names bytes, beside the hash of the input.
+`provenance.template` carries that hash, the path, the identifier the
+template claims and how many rows came out of it. Two reports of one
+file are comparable on that, and comparable on a path alone they would
+not be.
 
 | key | type | |
 |---|---|---|
@@ -168,16 +185,16 @@ differ.
 
 | key | type | |
 |---|---|---|
-| `rule` | string | The rule id — stable, and the thing to filter on. |
+| `rule` | string | The rule id — the thing to filter on, and stable for the rules this build registers. A `--template` run is the exception: its table is built from the caller's file and mints `TPL-E…` ids for that run, so `TPL-E22` means whatever row 22 of *that* file is and means something else for the next file. Those ids are not registered and are not published. |
 | `kind` | string | `container`, `template`, `lint` or `meta`. The prose above calls these *channels*; this field is spelled kind, and a reader who filters on `.channel` gets null for every finding with nothing to say why. |
 | `severity` | string | `error`, `warning` or `info` — this project's reading of the priority. |
 | `priority` | string | The rule's own priority word, one of `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `RECOMMENDED`, `SHOULD`, `MAY` or `OPTIONAL` — the RFC 2119 keywords this project maps to a severity. The set is closed and wider than what today's rules use, so accept all eight. Both fields are published so a consumer that wants to re-derive the severity can. |
 | `message` | string | What is wrong. |
-| `subject` | string or null | Where: an idShort path, an identifier, or a part name. `null` where the finding is about the document as a whole. |
+| `subject` | string or null | Where: a path of idShorts, an identifier, or a part name. `null` where the finding is about the document as a whole. The path joins its segments with `/`, gives a list item a segment of its own, and appends an index to a name only where a sibling shares it (`docs/divergences.md` #53): `HandoverDocumentation/Documents[1]/[0]` is one this reader printed. That is this report's spelling and not the metamodel's `IdShortPath`, which joins with `.`; a relayed `meta` finding carries a third, the one that channel uses (`.submodels[0]`). Three spellings of *where* reach one report, and a consumer matching on this field is matching the first of them. |
 | `detail` | string or null | Context — usually the value that was seen. |
 | `fix` | string | What to do about it — usually one imperative sentence: what to change so this stops being reported. Where this reader refused a document rather than judged it (past one of its bounds, past what this interpreter can build, or bytes that are cut short or not UTF-8), it says why and that nothing was judged, and asks for a change only where one is known. Every finding carries one. |
 | `title` | string | The rule's standing description, the same for every finding it produces. |
-| `spec` | string | Where the requirement lives, and always present. It is prose, not a key: a template and section for most rules; a provision of the regulation for the rules that read one, built from the row being reported rather than fixed per rule; the OPC or AASX standard for the rules about the container; the metamodel standard and its schemas for the ones about what a document must be, and the metamodel constraints for the relayed `meta` channel; a pointer to this project's own documented bounds for the limits it puts on what it will read; and, for the lints and for the rule about two templates sharing an identifier, a pointer to `docs/divergences.md` for the reading being applied. |
+| `spec` | string | Where the requirement lives, and always present. It is prose, not a key: a template and section for most rules; a provision of the regulation for the rules that read one, built from the row being reported rather than fixed per rule; the OPC or AASX standard for the rules about the container; the metamodel standard and its schemas for the ones about what a document must be, and the metamodel constraints for the relayed `meta` channel; a pointer to this project's own documented bounds for the limits it puts on what it will read; for the lints and for the rule about two templates sharing an identifier, a pointer to `docs/divergences.md` for the reading being applied; and, for a table built from a template the caller supplied, the words "a template you supplied" and the field the row was read from — `the element's declared valueType`, `the list's declared typeValueListElement`, `the element's declared modelType`, or the cardinality qualifier. |
 
 Every text field of a finding — `message`, `subject`, `detail`, `fix`, `spec` — is bounded at 2000 characters. A report repeats what a file said, and a file can say a great deal: a 200 KB `File` value produced a 200,670-character report before the bound existed. Where a field was cut it says so and by how much (`... (198000 more characters, not shown)`), so a short value and a shortened one are never the same thing on the page. The bound sits far above anything this tool writes — the longest remedy it ships is 690 characters — so it can only ever cut what a file supplied.
 

@@ -21,12 +21,13 @@ whether an answer of "nothing moved" would mean anything.
 from __future__ import annotations
 
 import json
+import pathlib
 import sys
 from pathlib import Path
 
 import pytest
 
-from aas_submodel_validate import runner
+from aas_submodel_validate import runner, tablegen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -56,14 +57,27 @@ def test_every_input_in_the_corpus_says_something_that_could_change(corpus):
     with a finding on it is a row that just did.
     """
     empty = []
-    for label, target in corpus:
-        report = runner.run(str(target))
+    for case in corpus:
+        # With whatever the case is judged with. A case carrying a
+        # template asked without it is a different question, and one
+        # that would answer green here while the corpus measured
+        # something nobody asked for.
+        try:
+            report = runner.run(str(case.path), template=case.template)
+        except tablegen.TemplateRefused:
+            # A table this reader will not read: exit 2 at the command
+            # line, where every other refusal in this corpus is a report
+            # with `complete` false. The asymmetry is the schema page's
+            # to settle and not this file's; what matters here is that
+            # "refused the table" is an answer a later version can give
+            # differently, so it is not the silence this looks for.
+            continue
         # A clean pass is a row with content: it moves the day a rule
         # wrongly starts firing on it, and several entries here are
         # exactly that. What cannot move is a refusal that says nothing,
         # which is what a refusal used to be.
         if not report.complete and not report.findings:
-            empty.append((label, "refused and said nothing"))
+            empty.append((case.label, "refused and said nothing"))
     assert not empty, empty
 
 
@@ -75,9 +89,15 @@ def test_the_corpus_tells_inputs_apart(corpus):
     many distinct verdicts there should be -- that number moves
     whenever a rule does -- only that there is more than one.
     """
-    verdicts = {
-        tuple(sorted((f.id, str(f.severity)) for f in runner.run(str(target)).findings))
-        for _label, target in corpus}
+    verdicts = set()
+    for case in corpus:
+        try:
+            report = runner.run(str(case.path), template=case.template)
+        except tablegen.TemplateRefused:
+            verdicts.add(("the table was refused",))
+            continue
+        verdicts.add(tuple(sorted((f.id, str(f.severity))
+                                  for f in report.findings)))
     assert len(verdicts) > 1, "every input in the corpus is judged the same"
 
 
@@ -91,10 +111,10 @@ def test_the_file_value_shapes_reach_the_rule_they_were_written_for(corpus):
     tool keeps printing a number.
     """
     drawn = set()
-    for label, target in corpus:
-        if not label.startswith("a File value"):
+    for case in corpus:
+        if not case.label.startswith("a File value"):
             continue
-        drawn |= {f.id for f in runner.run(str(target)).findings}
+        drawn |= {f.id for f in runner.run(str(case.path)).findings}
     assert "HD-D7" in drawn, sorted(drawn)
 
 
@@ -119,15 +139,15 @@ def test_the_held_spelling_inputs_hold_the_part_their_value_names(corpus):
 
     from aas_submodel_validate.container import AasxPackage
 
-    held = [(label, target) for label, target in corpus if label.startswith("the archive holds")]
+    held = [case for case in corpus if case.label.startswith("the archive holds")]
     assert len(held) == len(verdict_diff.HELD_SPELLINGS) == 4, held
 
-    for (entry, value, resolves), (label, target) in zip(verdict_diff.HELD_SPELLINGS, held):
-        with zipfile.ZipFile(str(target)) as archive:
-            assert entry in archive.namelist(), (label, archive.namelist())
-        with AasxPackage(str(target)) as package:
+    for (entry, value, resolves), case in zip(verdict_diff.HELD_SPELLINGS, held):
+        with zipfile.ZipFile(str(case.path)) as archive:
+            assert entry in archive.namelist(), (case.label, archive.namelist())
+        with AasxPackage(str(case.path)) as package:
             found = package.part(value)
-        assert found == (entry if resolves else None), (label, found)
+        assert found == (entry if resolves else None), (case.label, found)
     assert [r for _e, _v, r in verdict_diff.HELD_SPELLINGS].count(False) == 1, (
         "the row that must stay refused is what stops an over-eager fix"
     )
@@ -147,7 +167,8 @@ def test_the_corpus_holds_a_passport_that_states_two_categories(corpus):
     file has -- and then a difference could not be attributed.
     """
     seen = []
-    for _label, path in corpus:
+    for case in corpus:
+        path = pathlib.Path(case.path)
         if not path.name.endswith(".json"):
             continue
         try:
@@ -206,3 +227,255 @@ def _categories_stated(data):
 
     walk(data)
     return tuple(found)
+
+
+def test_the_comparison_says_what_it_does_not_cover(corpus):
+    """A zero is only worth the cases behind it, and this corpus has
+    none for `--template`.
+
+    `_judge` runs the tool with `-f json` and no other flag, so every
+    verdict a caller's own table decides is outside the comparison. The
+    figure is still true and still useful — and quoted in a commit about
+    that mode it reads as evidence it cannot be. `_judge`'s own
+    docstring is where this project wrote the principle down: a zero
+    from an instrument with no case for the change is the failure this
+    tool exists to stop.
+
+    The caveat is tied to the fact rather than left standing on its own.
+    Add `--template` to the corpus and the sentence has to go, and this
+    is what says so — a caveat nobody retires becomes a caveat nobody
+    reads.
+
+    The fact is read from the corpus and not from the source text. The
+    first version of this cut `_judge`'s argv out of the file and looked
+    for the flag in it, which meant the gate answered a question about
+    spelling: build the list in a variable, or spread a case's flags
+    into it, and the caveat stays required while the corpus already
+    carries templates. Asking the corpus is asking the thing the
+    sentence is about.
+    """
+    carried = [case.label for case in corpus if case.template is not None]
+    source = (Path(verdict_diff.__file__)).read_text("utf-8")
+    warns = "No case here is judged with --template" in source
+    assert bool(carried) != warns, (
+        "the corpus %s judged with --template (%d case(s)) and the summary "
+        "%s say so" % ("is" if carried else "is not", len(carried),
+                       "does" if warns else "does not"))
+
+
+@pytest.fixture(scope="module")
+def released_tree(tmp_path_factory):
+    """The tree of the tag this comparison runs against by default, or a
+    skip that says which of the three reasons applied.
+
+    Taken out of git rather than installed, the way the tool takes it --
+    0.08s measured, which is what makes asking the real released reader
+    affordable here instead of a stand-in built to answer the way this
+    test wants.
+
+    The three reasons are not hypothetical; the first version of this
+    asserted instead of skipping and went red in two places at once.
+    An unpacked sdist has no `.git` and `git tag` exits 128 there, and a
+    checkout made at depth 1 has the history but none of the tags, which
+    is what the matrix does. `make check` runs with `-rs`, so a skip
+    here is printed with its reason rather than counted.
+    """
+    import subprocess
+
+    try:
+        tag = subprocess.run(["git", "-C", str(ROOT), "tag", "--sort=-v:refname"],
+                             capture_output=True, text=True)
+    except OSError:
+        pytest.skip("git is not available")
+    if tag.returncode != 0:
+        pytest.skip("not a git checkout (an unpacked sdist is not one)")
+    latest = tag.stdout.split("\n", 1)[0].strip()
+    if not latest:
+        pytest.skip("this checkout carries no tags, so there is no released "
+                    "reader here to ask; a clone made at depth 1 looks like this")
+    into = tmp_path_factory.mktemp("released")
+    archive = subprocess.run(["git", "-C", str(ROOT), "archive", latest],
+                             capture_output=True, check=True)
+    subprocess.run(["tar", "-x", "-C", str(into)], input=archive.stdout, check=True)
+    return latest, into / "src"
+
+
+def _a_template_case(tmp_path):
+    """An input and a table for it, the smallest pair that needs the flag."""
+    identifier = "urn:example:verdict-diff:no-pack-answers-for-this"
+
+    def ref(value):
+        return {"type": "GlobalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    from builders import env_json
+
+    template = tmp_path / "own-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "kind": "Template", "idShort": "SomethingNobodyVendored",
+        "id": "urn:example:verdict-diff:template",
+        "semanticId": ref(identifier),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": "SerialNumber",
+            "semanticId": ref(identifier + "/SerialNumber"),
+            "valueType": "xs:string",
+            "qualifiers": [{"type": "SMT/Cardinality", "valueType": "xs:string",
+                            "value": "One"}]}]}]}), encoding="utf-8")
+    document = tmp_path / "declares-it.json"
+    document.write_bytes(env_json(identifier))
+    return verdict_diff.Case("a template no pack has", document, template=template)
+
+
+def test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved(
+        released_tree, tmp_path):
+    """`--template` is new, and new is not moved.
+
+    The released reader answers a case carrying it with `unrecognized
+    arguments` and exit 64 -- measured, not assumed. Compared as a
+    verdict that is a difference, and every template case would land in
+    the moved list the day the option shipped: true, useless, and it
+    buries the one input whose verdict actually changed. The same
+    mistake this file made over `rulesNotAsked`, which is why that one
+    is counted apart too.
+    """
+    tag, old_src = released_tree
+    case = _a_template_case(tmp_path)
+
+    # What the comparison would have had to work with, stated rather
+    # than assumed: not a verdict, and not one that could be compared.
+    before = verdict_diff._judge(old_src, case)
+    assert before[2] == 64 and before[-1] == "no report", (tag, before)
+    assert (verdict_diff._verdict_of(before)
+            != verdict_diff._verdict_of(verdict_diff._judge(ROOT / "src", case))), (
+        "the two answers are identical, so this case proves nothing")
+
+    assert verdict_diff._comparable(ROOT / "src", case)
+    assert not verdict_diff._comparable(old_src, case), (
+        "%s has no --template and this says it can be asked one" % tag)
+    # And a case with no flag on it is asked of both, which is every
+    # other row in the corpus.
+    assert verdict_diff._comparable(old_src, verdict_diff.Case("plain", case.path))
+
+
+def test_a_probe_that_cannot_run_is_not_an_option_that_is_absent(tmp_path):
+    """False here would empty the comparison and say nothing.
+
+    Every template case is set aside on the strength of this answer, so
+    a probe answering False when it simply could not run turns the whole
+    axis off quietly -- and a quiet instrument reading zero is what this
+    file exists to prevent. It stops instead.
+    """
+    holds_a_reader = tmp_path / "a-tree"
+    package = holds_a_reader / "aas_submodel_validate"
+    package.mkdir(parents=True)
+    (package / "cli.py").write_text("", encoding="utf-8")
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "__main__.py").write_text("raise SystemExit(3)", encoding="utf-8")
+
+    with pytest.raises(RuntimeError) as refused:
+        verdict_diff._has_the_option(holds_a_reader, "--template")
+    assert "which options it has" in str(refused.value)
+
+
+def test_a_tree_with_no_reader_in_it_does_not_get_answered_by_the_machine(tmp_path):
+    """The quieter half of the same failure, and this one is measured.
+
+    `PYTHONPATH` comes before site-packages, so a tree holding the
+    package answers for it -- and a tree that does not lets whatever is
+    installed answer instead. This project *is* installed on the machine
+    this was written on, so pointing the comparison at a tree with no
+    reader in it produced a confident `--help`, a real verdict on every
+    input, and both sides agreeing because both sides were the same
+    reader. `--against` a tag from before the `src/` layout is the way
+    somebody meets this, and it reads as "nothing moved".
+    """
+    empty = tmp_path / "no-package-here"
+    empty.mkdir()
+    with pytest.raises(RuntimeError) as refused:
+        verdict_diff._has_the_option(empty, "--template")
+    assert "holds no reader" in str(refused.value)
+
+
+def test_the_count_leaves_out_what_the_old_version_was_never_asked(
+        released_tree, tmp_path, capsys):
+    """The denominator is a claim, and it is the one that gets quoted.
+
+    "0 of 65 inputs are judged differently" over a corpus where four of
+    the sixty-five were never put to the old reader is a true sentence
+    that reads as a false one. So the cases nobody could ask are named
+    above the count, and taken out of it.
+
+    Measured through `compare` rather than read off the source, which is
+    why it is a parameter: a test that had to build all sixty-one inputs
+    and run two readers over each would be a test nobody runs.
+    """
+    tag, old_src = released_tree
+    corpus = [verdict_diff.Case("the official example, untouched",
+                                verdict_diff.EXAMPLE),
+              _a_template_case(tmp_path)]
+
+    counts = verdict_diff.compare(tag, old_src, corpus)
+    printed = capsys.readouterr().out
+
+    assert counts["unanswerable"] == 1, printed
+    assert counts["compared"] == len(corpus) - 1
+    assert ("%d of %d inputs are judged differently."
+            % (counts["moved"], counts["compared"])) in printed
+    assert ("1 of 2 are asked with an option %s does not have" % tag) in printed
+    # Set aside, not dropped: what the working tree makes of it is
+    # printed, because a case that stopped being judgeable at all is
+    # worth seeing even when there is nothing to compare it with.
+    assert "a template no pack has" in printed
+
+
+def test_every_case_that_carries_a_table_is_judged_with_it(corpus):
+    """A case can name a table the reader never opens.
+
+    Then the corpus looks like it covers the mode while judging those
+    inputs with the packs, and the caveat that used to stand under the
+    count has been retired on a promise. So each carrier is asked
+    whether the table it names is the one the report says answered.
+    """
+    carriers = [case for case in corpus if case.template is not None]
+    assert len(carriers) == 4, [case.label for case in carriers]
+
+    for case in carriers:
+        try:
+            report = runner.run(str(case.path), template=case.template)
+        except tablegen.TemplateRefused:
+            # Refused, which is proof enough that it was read.
+            continue
+        assert report.template, case.label
+        assert report.template["path"] == str(case.template), case.label
+
+
+def test_the_table_a_case_carries_reaches_the_command_line(corpus):
+    """And that the reader answers from it.
+
+    `runner.run` above is the library entrance; this is the one the
+    comparison actually uses, and a `_judge` that built its argv without
+    the flag would leave every carrier judged by the packs while the
+    report above said otherwise.
+
+    The pairs are measured, and they are what makes these rows worth a
+    pass each: the same missing element comes back under a `TPL-E` id
+    with the table and a pack's id without it, so a change to which
+    reader answers is visible here as a change of rule id.
+    """
+    expected = {
+        "a submodel judged by a table no pack has": ("TPL-E01", "SMT-D1"),
+        "a Digital Nameplate, judged by the vendored template handed in by hand":
+            ("TPL-E02", "DN-E02"),
+    }
+    by_label = {case.label: case for case in corpus}
+    assert set(expected) <= set(by_label), sorted(by_label)
+
+    for label, (with_the_table, without_it) in expected.items():
+        case = by_label[label]
+        judged = verdict_diff._judge(ROOT / "src", case)
+        plain = verdict_diff._judge(ROOT / "src", case._replace(template=None))
+        assert {rule for rule, _severity, _subject in judged[0]} == {with_the_table}, (
+            label, judged)
+        assert {rule for rule, _severity, _subject in plain[0]} == {without_it}, (
+            label, plain)
+        assert verdict_diff._verdict_of(judged) != verdict_diff._verdict_of(plain)

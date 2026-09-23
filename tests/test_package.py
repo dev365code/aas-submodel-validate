@@ -135,3 +135,75 @@ def test_nothing_local_is_tracked():
         offenders = [t for t in tracked if t == name or t.startswith(name + "/")]
         assert not offenders, "%s is local-only and tracked" % offenders
 
+
+
+def test_a_table_can_be_built_from_the_package_alone():
+    """The reason the row builder is in `src/` and not in `tools/`.
+
+    `tools/` is not installed and must not be: a wheel carrying it would
+    put two more top-level names into everybody's site-packages, which
+    `tools/check_distributions.py` refuses in writing. So while the
+    builder lived there, an installed copy of this package could not
+    build a table from a template, and neither could the single-file
+    build, which copies exactly this directory and nothing else.
+
+    A mode that reads a template a caller supplies has to answer the same
+    from every entrance, and an entrance that cannot reach the builder is
+    an entrance that answers differently. This asks the package on its
+    own -- no repository, no `tools` on the path.
+    """
+    import os
+    import pathlib
+    import subprocess
+    import sys
+
+    # In a process where `tools` is not on the path at all. Asserting
+    # that `tools` is absent from `sys.modules` was the first spelling
+    # and it asked about the session rather than about the package: the
+    # whole suite imports `tools` elsewhere, so it failed for a reason
+    # that has nothing to do with whether the package stands alone.
+    root = pathlib.Path(__file__).resolve().parents[1]
+    asking = (
+        "import json, pathlib, sys\n"
+        "from aas_submodel_validate import tablegen\n"
+        "import importlib.util as u\n"
+        "assert u.find_spec('tools') is None, 'tools is reachable; ask again'\n"
+        "here = pathlib.Path(tablegen.__file__).parent\n"
+        "t = here / 'data' / 'smt' / '02003' / '2.0.1' / 'template.json'\n"
+        "assert t.is_file(), 'the vendored template does not travel'\n"
+        "b = tablegen.build(json.loads(t.read_text('utf-8-sig')),\n"
+        "                   {'prefix': 'TD-E', 'citation': 'c',\n"
+        "                    'skip_sids': frozenset(), 'item_names': {},\n"
+        "                    'example_types': ('ExampleValue',)})\n"
+        "print(len(b['tree']), b['submodel_sid'])\n")
+    done = subprocess.run([sys.executable, "-c", asking], capture_output=True,
+                          text=True, cwd=str(root / "src"),
+                          env={k: v for k, v in os.environ.items()
+                               if k not in ("PYTHONPATH",)})
+    assert done.returncode == 0, done.stdout + done.stderr
+    rows, sid = done.stdout.split()
+    assert int(rows) > 0, "no rows came out"
+    assert sid == "0173-1#01-AHX837#002", sid
+
+
+def test_the_single_file_carries_the_row_builder():
+    """The entrance most likely to be forgotten, because it is built by a
+    script rather than by packaging metadata."""
+    import pathlib
+    import subprocess
+    import sys
+    import tempfile
+    import zipfile
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    if not (root / "tools" / "build_zipapp.py").is_file():   # pragma: no cover
+        pytest.skip("not a checkout")
+    built = pathlib.Path(tempfile.mkdtemp()) / "smtv.pyz"
+    done = subprocess.run([sys.executable, str(root / "tools" / "build_zipapp.py"),
+                           "-o", str(built)],
+                          capture_output=True, text=True, cwd=str(root))
+    assert done.returncode == 0, done.stdout + done.stderr
+    with zipfile.ZipFile(built) as archive:
+        assert any(name.endswith("/tablegen.py") or name == "tablegen.py"
+                   for name in archive.namelist()), \
+            "the single file cannot build a table"

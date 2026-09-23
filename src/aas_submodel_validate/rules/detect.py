@@ -121,6 +121,33 @@ PACK_ONLY_SEMANTIC_IDS = frozenset(
                 + battery_tables.CONDITIONAL_ON_CATEGORY))
 
 
+def judgeable(ctx):
+    """The instances a rule of this tool's own should look at.
+
+    `instances` is every instance in the input. This is that list minus
+    the ones a table the caller supplied has taken over -- because when
+    it has, none of this tool's packs ran for them, and a rule that
+    reports on a submodel its pack did not judge is describing a run
+    that did not happen.
+
+    The stand-down was put in `matched_submodels`, which the generated
+    tables ask, and the hand-written rules walk `instances` directly and
+    did not get it. Measured: a passport whose identifier a supplied
+    template claimed got a finding saying the template requires an
+    element and, four lines below, `BAT-R8` saying the template permits
+    it absent and "will not ask for it" -- one absent element, two
+    findings, each denying the other. Hoisted here so the next rule that
+    walks submodels inherits the answer instead of having to remember
+    it.
+    """
+    taken = getattr(ctx, "taken_over", ())
+    if not taken:
+        return list(instances(ctx.loaded))
+    return [submodel for submodel in instances(ctx.loaded)
+            if not any(submodel_declares(submodel, identifier)
+                       for identifier in taken)]
+
+
 def judged(ctx):
     """Every instance submodel something in this tool judged.
 
@@ -141,6 +168,17 @@ def judged(ctx):
     seen.update(id(submodel) for submodel in instances(ctx.loaded)
                 if any(submodel_declares(submodel, identifier)
                        for identifier in PACK_ONLY_SEMANTIC_IDS))
+    # And anything a table built at run time answered for. `PACKS` is a
+    # module-level list of what this project vendored, so without this a
+    # submodel judged against a template the caller supplied is counted
+    # as unjudged -- findings about it in the report and `judged 0 of 1`
+    # under them. It reads the context and takes no argument of its own:
+    # a parameter for the same tables was carried here for a while and
+    # never passed by anybody, which is a second way of answering one
+    # question and the thing the context field exists to stop.
+    for table in tuple(getattr(ctx, "supplied", ())):
+        seen.update(id(submodel) for submodel in instances(ctx.loaded)
+                    if submodel_declares(submodel, table.TEMPLATE_SEMANTIC_ID))
     return seen
 
 

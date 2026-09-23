@@ -32,7 +32,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-import extract_smt_rules as g  # noqa: E402
+# The row builder moved into the package (`tablegen`) so an installed
+# copy and the single-file build can reach it; what stayed in `tools/`
+# is the emitter. These ask the builder, so they follow it.
+from aas_submodel_validate import tablegen as g  # noqa: E402
 
 
 def _sid(value):

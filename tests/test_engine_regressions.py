@@ -1036,3 +1036,43 @@ def test_a_multilanguage_propertys_languages_are_not_child_elements():
     assert engine._sub_elements(mlp) == []     # languages are not children
     assert engine.child_of(mlp, "Document", hd_tables) is None
     assert engine.children_of(mlp, "Document", hd_tables) == []
+
+
+# -- the same question, asked once ------------------------------------------
+
+def test_which_submodels_a_table_answers_for_is_decided_once(tmp_path,
+                                                             monkeypatch):
+    """`matched_submodels` is asked once per table, not once per rule.
+
+    Every generated rule opens by asking whether its table answers for
+    anything here, and the answer cannot differ between two rules of one
+    table: the input, the selection and the stand-down are all fixed for
+    the life of a context. Asked per rule it is a scan of every submodel
+    per rule, which is the product of two numbers a caller controls --
+    measured at the row bound, a table of 9,900 rows against 500
+    submodels spent 6.48 of the run's 9.53 seconds re-answering it.
+
+    The scan is counted rather than the clock read, because a wall-clock
+    assertion is a different test on every machine. What it counts is
+    `detect.instances`, which is the walk `matched_submodels` cannot
+    avoid doing at least once.
+    """
+    from aas_submodel_validate.rules import detect
+
+    real = detect.instances
+    calls = []
+
+    def counted(loaded):
+        calls.append(loaded)
+        return real(loaded)
+
+    monkeypatch.setattr(detect, "instances", counted)
+    runner.run(_write(tmp_path, copy.deepcopy(hd_env())))
+
+    # One walk per table that is asked, plus the handful of places that
+    # ask `detect` directly for the count and the presence rule. What it
+    # must not be is one per rule: this input draws well over a hundred.
+    assert len(calls) < 40, (
+        "%d walks over the submodels for one input -- the answer to "
+        "'which submodels does this table answer for' is being recomputed "
+        "per rule" % len(calls))

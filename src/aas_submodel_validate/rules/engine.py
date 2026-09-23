@@ -85,6 +85,12 @@ def analyze(ctx, tables) -> Dict:
     Handover submodel and a Technical Data submodel at once, and one
     cache slot would hand the second pack the first pack's answers."""
     cache = ctx.__dict__.setdefault("_smt_analysis", {})
+    # The table beside its name. `rows_not_reached` used to recover it
+    # by looking the name up in `sys.modules`, which answers for the six
+    # vendored packs and cannot answer for a table built at run time --
+    # its name is a digest. Keeping the object is how a `Table` gets
+    # ordered by what it declares rather than by how its ids are spelt.
+    ctx.__dict__.setdefault("_smt_tables", {})[tables.__name__] = tables
     cached = cache.get(tables.__name__)
     if cached is None:
         cached = cache[tables.__name__] = _analyze(ctx, tables)
@@ -199,8 +205,37 @@ def matched_submodels(ctx, tables) -> List:
     shape this project keeps meeting: a repair that reaches one of two
     siblings. `is_template` is asked here too, and it is the same
     function.
+
+    Computed once per table, for the same reason and with the same key
+    as `analyze`. Every generated rule opens by asking this, and the
+    answer cannot differ between two rules of one table -- the input,
+    the selection and the stand-down are all fixed for the life of a
+    context. Asked per rule it is a scan of every submodel per rule,
+    and both numbers are the caller's: measured at the row bound, a
+    supplied table of 9,900 rows against 500 submodels spent 6.48 of
+    the run's 9.53 seconds deciding the same thing over again.
+
+    Nothing may mutate what comes back -- the list is shared, exactly
+    as `analyze`'s record is.
     """
+    cache = ctx.__dict__.setdefault("_smt_matched", {})
+    cached = cache.get(tables.__name__)
+    if cached is None:
+        cached = cache[tables.__name__] = _matched_submodels(ctx, tables)
+    return cached
+
+
+def _matched_submodels(ctx, tables) -> List:
     from .detect import instances
+    # A table the caller supplied takes an identifier over, and a pack
+    # that also answers for it stands down -- reported, never silent.
+    # `getattr` because a context built before this existed has no such
+    # field and a table with no identifier of its own cannot be taken
+    # over anyway.
+    taken = getattr(ctx, "taken_over", frozenset())
+    if taken and tables.TEMPLATE_SEMANTIC_ID in taken \
+            and not getattr(tables, "_supplied", False):
+        return []
     return [submodel for submodel in instances(ctx.loaded)
             if submodel_declares(submodel, tables.TEMPLATE_SEMANTIC_ID)
             and ctx.selection.answers(submodel, tables)]
@@ -224,6 +259,10 @@ def _analyze(ctx, tables) -> Dict:
         #: for each element this walk could not place. Same standing as
         #: `lost_candidates` and subtracted the same way.
         "unmatched": [],
+        #: (subject, identifier) for each nested copy of a self-containing
+        #: row that this walk did not enter. Same standing as the two
+        #: above: a statement about the run, not about the file.
+        "not_entered": [],
     }
     for submodel in matched_submodels(ctx, tables):
         root = submodel.id_short or "submodel"
@@ -243,7 +282,7 @@ def _analyze(ctx, tables) -> Dict:
         # second item was entered in the first.
         per = {"violations": {}, "instances": {}, "near_misses": [],
                "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
-               "unmatched": []}
+               "unmatched": [], "not_entered": []}
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
@@ -264,7 +303,7 @@ def _analyze(ctx, tables) -> Dict:
             for row_id, entries in per[key].items():
                 result[key].setdefault(row_id, []).extend(entries)
         for key in ("near_misses", "idshort_drift", "reftype_drift",
-                    "lost_candidates", "unmatched"):
+                    "lost_candidates", "unmatched", "not_entered"):
             result[key].extend(per[key])
     return result
 
@@ -305,6 +344,34 @@ def unmatched_elements(ctx) -> List:
             for (subject, seen), (unasked, resembles) in sorted(best.items())]
 
 
+#: Digits inside a subject sort by value, not by spelling.
+_RUN_OF_DIGITS = re.compile(r"(\d+)")
+
+
+def _in_path_order(record):
+    """A sort key that reads `[2]` as two rather than as the text "2".
+
+    Positions are how an unnamed element is addressed, so a scope of
+    twelve sorts `[0] [10] [11] [1] ...` by string. The caller prints
+    the first few of these as a place to start looking, and the first
+    few were the wrong few.
+    """
+    subject, identifier = record
+    parts = _RUN_OF_DIGITS.split(subject)
+    return ([(int(part), "") if index % 2 else (-1, part)
+             for index, part in enumerate(parts)], identifier)
+
+
+def repeats_not_entered(ctx) -> List:
+    """(subject, identifier) for every nested copy of a self-containing
+    row this run did not walk into, deduplicated and in path order."""
+    analysed = ctx.__dict__.get("_smt_analysis") or {}
+    seen = set()
+    for analysis in analysed.values():
+        seen.update(analysis.get("not_entered", ()))
+    return sorted(seen, key=_in_path_order)
+
+
 def rows_not_reached(ctx) -> List[str]:
     """Rule ids this run never put, in the order the tables declare them.
 
@@ -338,22 +405,39 @@ def rows_not_reached(ctx) -> List[str]:
     # Ordered by the tables, deduplicated: one unrecognised element in a
     # list of three strands the same rows three times, and a reader
     # counting the list would read that as three times the loss.
-    order = {row["id"]: index for index, row in enumerate(_all_rows(analysed))}
+    order = {row["id"]: index
+             for index, row in enumerate(_all_rows(ctx, analysed))}
     # The id breaks the tie. Everything the tables do not place shares one
     # position, `sorted` is stable, and what it is stable *over* is a set
     # -- whose iteration order is string-hash order and is randomised per
-    # process. Nothing reaches that fallback today, because every analysed
-    # table is an imported module and every id in it is placed; it is
-    # reachable the moment a table is not a module. Measured on that
-    # shape: five interpreters, five orders, same input. A fallback that
-    # is only correct while nothing takes it is not correct.
+    # process. Measured on that shape: five interpreters, five orders,
+    # same input. A fallback that is only correct while nothing takes it
+    # is not correct.
+    #
+    # This one said it was unreachable "because every analysed table is
+    # an imported module", and named the moment that would stop being
+    # true. `--template` was that moment: a `Table` is not in
+    # `sys.modules`, so every run-time id landed here and came back
+    # sorted by its own spelling -- which past ninety-nine rows is not
+    # the template's order at all, ids being padded to two digits. The
+    # tables are kept beside their names now, so the fallback is back to
+    # holding nothing and is still here for when it does.
     return sorted(set(missed), key=lambda rid: (order.get(rid, len(order)), rid))
 
 
-def _all_rows(analysed) -> List:
+def _all_rows(ctx, analysed) -> List:
+    """Every row of every table this run analysed, in their order.
+
+    The tables are taken from the context, where `analyze` puts each one
+    beside the name it caches under. `sys.modules` stood here and
+    answered for the six vendored packs only; a table built from a
+    caller's file has a digest for a name and was silently contributing
+    no rows at all.
+    """
+    kept = ctx.__dict__.get("_smt_tables") or {}
     rows = []
-    for module_name in analysed:
-        tables = sys.modules.get(module_name)
+    for name in analysed:
+        tables = kept.get(name) or sys.modules.get(name)
         if tables is not None:
             rows.extend(tables.ROWS)
     return rows
@@ -433,6 +517,38 @@ def _matches_row(candidates, main_empty: bool, kind_name: str, row, in_list: boo
     if candidates & set(row["match"]):
         return True
     return in_list and main_empty and kind_name == row["kind"]
+
+
+def _repeats_below(element, sid, subject):
+    """Every descendant of `element` carrying `sid`, with where it sits.
+
+    The whole chain and not the immediate children: the walk does not
+    enter the first copy, so it would never meet the second. Measured on
+    a file three deep, counting only the immediate ones reported one
+    copy of two.
+
+    Named by `_subject`, which is what names every other record in this
+    module. Spelled `?` here instead, the children of a
+    `SubmodelElementList` -- which the metamodel forbids an idShort, and
+    which is where repeats actually sit -- all came out as one string,
+    and `repeats_not_entered` deduplicates: three unentered subtrees
+    were reported as one, at a place with no name. That is exactly the
+    merge `docs/divergences.md` #53 names and `_subject` was written to
+    stop, in a walk added beside it that did not call it.
+    """
+    found = []
+    stack = [(element, subject)]
+    while stack:
+        parent, where = stack.pop()
+        children = _sub_elements(parent)
+        names = Counter(child.id_short for child in children if child.id_short)
+        shared = {name for name, count in names.items() if count > 1}
+        for index, child in enumerate(children):
+            here = _subject(where, child, index, shared)
+            if sid in element_candidate_values(child):
+                found.append((here, sid))
+            stack.append((child, here))
+    return found
 
 
 def _sub_elements(element):
@@ -667,6 +783,17 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                        subject, result,
                        in_list=(row["kind"] == "SubmodelElementList"),
                        citation=citation)
+            # A row the table marked as containing itself. The repeating
+            # child was left unexpanded so the table stays finite
+            # (docs/divergences.md #48), and nothing here read the
+            # marker -- so an instance's nested copies were walked by
+            # nobody and the report said nothing at all. How to re-apply
+            # the scope is what #48 defers to the first vendored
+            # self-containing template; what cannot wait for that is
+            # saying the copies were not entered.
+            if row.get("recurses"):
+                result["not_entered"].extend(
+                    _repeats_below(element, row["recurses"], subject))
 
     # What this scope did not enter, and only where the reader has
     # already said something is wrong.

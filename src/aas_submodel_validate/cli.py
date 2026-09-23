@@ -18,10 +18,9 @@ import json
 import sys
 from typing import Optional
 
-from . import __version__, runner
+from . import __version__, runner, tablegen
 from ._terminal import survive
 from .example import NotBundled, bundled_example, example_name
-from .loader import UnreadablePath
 from .report import render
 
 EXIT_OK = 0
@@ -131,6 +130,22 @@ def main(argv: Optional[list] = None) -> int:
                              "claims to be, because this tool has a table for "
                              "neither side of that collision"
                              % (", ".join(_PROFILE_KEYS), ", ".join(settles_only())))
+    parser.add_argument("--template", metavar="FILE",
+                        help="judge against an IDTA-shaped template file of "
+                             "your own. Only what a template states is "
+                             "checked: which elements, of which kind, under "
+                             "which identifiers, how many of each, the "
+                             "valueType each declares, and a list's item "
+                             "type. An AllowedIdShort pattern is read into "
+                             "the table and reported only by a pack's own "
+                             "lint, so a table built from your file carries "
+                             "it and says nothing about it; one this reader "
+                             "cannot read is named in a note instead. The "
+                             "hand-written rules and recorded readings that "
+                             "come with a pack are not derivable from a "
+                             "template and do not apply. A verdict against a "
+                             "template you supplied is not a statement about "
+                             "conformance to a published IDTA template")
     parser.add_argument("--example", action="store_true",
                         help="judge the official IDTA 02004 example that "
                              "travels in this package; needs no file of your "
@@ -176,7 +191,32 @@ def main(argv: Optional[list] = None) -> int:
             ("-W", args.warnings_as_errors),
             ("--allow-unmatched", args.allow_unmatched),
             ("--require-all-judged", args.require_all_judged),
-            ("--show-meta", args.show_meta)) if given]
+            ("--show-meta", args.show_meta),
+            # `--template` decides which table judges, which is the
+            # strongest case on this list for a flag `--rules` would
+            # have to ignore. It was added to the parser and not to
+            # here, so `--rules --template /no/such/file.json` printed
+            # the listing and exited 0 -- the silent answer to a
+            # different question that the comment above is about.
+            #
+            # And then added here reading for truth, two entries below
+            # the one that carries the paragraph about why that is
+            # wrong: `--template ""` is what a shell hands over from
+            # `--template "$TPL"` with `TPL` unset, and it printed the
+            # listing and left by 0. Four entries on this list take a
+            # value -- a path, `--profile`, `-f` and `--template` -- and
+            # the other three were already safe: the path by the same
+            # `is not None` the paragraph above is about, and `--profile`
+            # and `-f` by `choices`, which refuses an empty string before
+            # this runs.
+            #
+            # That count was written by eye three times and was wrong
+            # three times -- two, then three, and `-f` appeared in none
+            # of them. It is now held by a gate that reads the entries
+            # from this list and asks each `add_argument` whether it
+            # takes a value, so the sentence cannot be the only witness
+            # to its own number.
+            ("--template", args.template is not None)) if given]
         if ignored:
             parser.error("--rules lists the rules and judges nothing, so it "
                          "would ignore %s; --meta (or --strict-meta) is what "
@@ -247,9 +287,14 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
     try:
         report = runner.run(path, strict_meta=args.meta or args.strict_meta,
                             allow_unmatched=args.allow_unmatched,
-                            profile=args.profile)
-    except UnreadablePath as exc:
-        print("smtv: %s" % exc, file=sys.stderr)
+                            profile=args.profile, template=args.template)
+    except tablegen.TemplateRefused as refused:
+        # 2, not 64 and not 1. Naming a file is not a mistake in how the
+        # tool was called -- the flag was spelled right and the path was
+        # given -- and the build tool's own 1 is a build tool's answer.
+        # This is "could not judge the input", which is what every other
+        # unreadable input here gets.
+        print("smtv: %s" % refused, file=sys.stderr)
         return EXIT_ERROR
     if shown_as:
         report.path = shown_as

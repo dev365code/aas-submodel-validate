@@ -2565,9 +2565,10 @@ def test_a_refusal_prints_a_report_whatever_the_extension(tmp_path, name, how,
     document a consumer could parse, and gave `.json` and `.xml` an empty
     stdout -- so a pipeline that parses stdout broke on two of three
     extensions for a condition none of them caused. The split was not a
-    decision: `runner.run` says an unreadable path propagates as the
-    caller's mistake, and the container reader happened to catch the same
-    refusal one layer in and make a finding of it.
+    decision: `runner.run` used to let an unreadable path propagate as
+    the caller's mistake, and the container reader happened to catch the
+    same refusal one layer in and make a finding of it. It comes back as
+    a report now, whichever extension was sent.
     """
     path = _refused(tmp_path, name, how)
     if how == "permission":

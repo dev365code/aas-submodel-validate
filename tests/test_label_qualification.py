@@ -20,7 +20,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import pytest  # noqa: E402,F401  (kept for future xfail markers)
 
+# Both halves, because this file asks both: the emitter still renders a
+# module (`g.generate`) and still holds the pack list, while the row
+# building moved into the package so an installed copy and the
+# single-file build can reach it.
 import extract_smt_rules as g  # noqa: E402
+from aas_submodel_validate import tablegen  # noqa: E402
 
 TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02023/1.0/template.json"
 
@@ -107,8 +112,8 @@ def test_a_top_level_repeat_keeps_its_bare_label_not_an_empty_qualifier():
     collide with a nested one."""
     tree = [{"label": "A", "children": ()},
             {"label": "B", "children": ({"label": "A", "children": ()},)}]
-    g._qualify_repeats(tree)
-    labels = g._labels(tree, [])
+    tablegen._qualify_repeats(tree)
+    labels = tablegen._labels(tree, [])
     assert "A" in labels                 # top-level keeps its bare label
     assert "A (B)" in labels             # the nested copy is qualified
     assert "A ()" not in labels          # never an empty parenthetical

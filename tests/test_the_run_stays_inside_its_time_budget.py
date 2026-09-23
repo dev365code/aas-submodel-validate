@@ -223,6 +223,31 @@ def test_the_layers_measure_things_the_others_cannot_see():
                ["submodelElements"]) >= 1000
 
 
+def test_a_table_built_at_run_time_is_timed():
+    """`--template` builds a rule table while the caller waits, and no
+    other layer here can see that.
+
+    The four before it run against tables generated at build time from
+    small vendored templates, so the build cost is not in any of them --
+    and the walk they time asks its questions once per pack, where a
+    supplied table asks them once per row of a file the caller chose.
+    Both numbers are the caller's, and their product is what this layer
+    holds: measured at the row bound, a table of 9,900 rows against 500
+    submodels spent 6.48 of the run's 9.53 seconds deciding, once per
+    row, which submodels the one table answers for.
+
+    The layer's own shape is asserted because a layer sized down to
+    nothing still passes its budget: it has to be wide in both
+    directions or it is timing neither.
+    """
+    assert "supplied_template" in time_budget.LAYERS
+    template, judged = time_budget._supplied_template()
+    assert len(template["submodels"][0]["submodelElements"]) >= 500, (
+        "a template this narrow does not time building a table")
+    assert len(judged["submodels"]) >= 50, (
+        "one submodel cannot show work that goes as rows times submodels")
+
+
 def test_the_corpus_is_not_left_on_the_disk():
     """The corpus is written to a temp directory every run, which is every
     `make check` and every matrix row. This borrowed the `mkdtemp` from

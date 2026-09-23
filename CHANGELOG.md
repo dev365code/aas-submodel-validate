@@ -1,5 +1,170 @@
 # Changelog
 
+## 0.5.0 — unreleased
+
+Who should take this release: anyone holding an IDTA-shaped submodel
+template this tool has no pack for. `--template FILE` generates a rule
+table from your file at run time and judges the submodel against it,
+where before it could only be reported as unmatched (`SMT-D1`).
+
+It is still 219 rules, 178 generated from the vendored official template
+files, across six template packs. A table built from your file adds no
+rule to that count and is not registered: the ids it uses exist for the
+run and are not ids this project publishes.
+
+What this reader takes in gains a second file. The bounds on the
+document being judged are unchanged — one document at 64 MiB, a
+container's parts at 64 MiB each and 256 MiB together, and a container's
+directory of names at 16 MiB — and a template given with `--template` is
+bounded separately, at the same 64 MiB and additionally at ten thousand
+rows. Bytes do not bound what a template costs; rows do.
+
+**A template you supply is judged against, and the report says it was
+yours.** `verdict` A submodel of a template with no pack here drew
+`SMT-D1` and exited 1 unless `--allow-unmatched` was given. Give
+`--template` the template file and the submodel is judged against the
+rows that file declares.
+
+What that buys is what a generator can read out of a template: which
+elements, of which kind, under which identifiers, how many of each, the
+`valueType` each declares, and a list's item type. An `AllowedIdShort`
+pattern is read into the table and reported by nothing: the lint that
+reports one is a pack's, and a table built at run time registers no
+lints. One this reader cannot read is the exception and is named in a
+note, because there the template is what went wrong. What it does not bring is everything a pack carries besides its
+table — the hand-written rules, which are readings of a specification
+rather than of a template, the readings recorded in
+`docs/divergences.md`, and the corpus that pins them. Those exist per
+template and cannot be derived from one.
+
+`provenance.template` carries the file's SHA-256, the path, the
+identifier it claims, its row count, how many `submodels` the file
+declared, and `published: false`; a line on the screen says the same. **A verdict against a template you supplied is
+not a statement about conformance to a published IDTA template**, and a
+consumer that cannot tell the two apart has been told something untrue.
+The key is absent rather than null when the run used this project's own
+packs, so a reader who finds it present knows why.
+
+Where your template claims an identifier one of the six packs also
+answers for, yours answers and the pack stands down — and says so, with
+the identifier named. Both answering was measured first: handing the
+flag the very file 02003's pack was generated from gave the same missing
+element twice, once under each id, so a build counting errors got a
+number that depended on the flag rather than on the file.
+
+A template that is not a template, is not JSON, cannot be read, is above
+the byte bound, or declares more than ten thousand rows is refused at
+exit 2 — "could not judge the input", the same code every other
+unreadable input gets.
+
+An `AllowedIdShort` this reader cannot read is **not** one of those.
+`Name[\d{3,2}]` asks for at least three digits and at most two, and a
+qualifier of that type carrying no value at all is a legal file; either
+way that row keeps no naming pattern, a note names the rows and quotes
+the values, and every other verdict on your file stands. That qualifier
+is a naming suggestion — the rule reporting one belongs to a pack, at
+`info`, and a table built from your file registers no lints — so
+refusing the template over it would throw away the answer you asked
+for, mandatory elements and all. A value that does not claim IDTA's
+spelling is a name, and an element is matched against it as written. Where one element carries two qualifiers
+of the same type — which the metamodel forbids — the later is the one read:
+measured, `SMT/Cardinality` `ZeroToOne` written after `One` leaves that
+element optional and the other order requires it, and nothing reports that
+the first was dropped. The row bound is separate from the bound on the
+document being judged because they are different files: forty-six
+megabytes of template sits comfortably inside the sixty-four this reader
+advertises, and what a generator spends is decided by rows.
+
+A template file may declare more than one submodel. The table is built
+from the first, the rest are not read, and the report says both — in a
+note, and as `provenance.template.submodels` for a program. Without it a
+reader cannot tell "my other templates matched nothing" from "my other
+templates were never opened", and those ask opposite things of them:
+`rows` and `semanticId` both describe the submodel the table came from
+and read the same either way.
+
+**What a template marks as open content draws no rule, and never
+answers for one.** The two markers IDTA publishes for this are read, and
+so are the three narrower spellings the vendored template files carry —
+wherever the template declares them, as an element's own identifier or
+beside one. An element the template identifies *as* a marker
+generates no row, whatever else it carries beside that — a unit, a
+preferred type, a pointer to what the free content is about, none of
+which turn the place into a requirement — and neither does one
+identified by nothing but markers, which would leave a row with nothing
+to ask for. Either way your own content in that place is not faulted for
+failing to be a placeholder. And a marker is never one of the
+identifiers a row answers to: without that, an element of yours sitting
+under a marker satisfied a row the template meant for something else,
+and a file missing the element that row requires was called fine. One shape
+is read this way and is worth saying plainly: an element identified as a
+marker that also declares children of its own. The marker decides the
+element, so nothing under it draws a row — a template that calls a place
+free content and then describes what must be inside it is answered as free
+content only. Where a whole template reads that way the note below says the
+table came out empty; where such an element sits beside rows that do stand,
+nothing says so. None of the vendored template files has that shape.
+
+**A template that states no rule this reader can check says so.** Every
+element open content, or none of them identified, and the table has no
+rows — a submodel judged against it is still judged, so the run came
+back `ok` at exit 0 having compared nothing, with the count only in
+`provenance.template.rows` where nobody reading the screen would find
+it. A note says it now, and a pass there says only what it means.
+
+**An element your template does not identify is reported, not
+enforced.** Elements are matched by identifier here and never by
+idShort, so a row for an element the template gives no `semanticId` is
+one nothing in your file can answer — asked as an obligation it was an
+error no file could clear, printed against a file that carried an
+element of exactly the name the template writes, under a remedy that
+ended `with semanticId ` and stopped. A note names those elements
+instead. A list's item row is matched by its kind and keeps whatever
+the template asks of it.
+
+**A template whose element holds a copy of itself says what it did not
+enter.** The table stops at the first copy so that it stays finite, and
+a note reports how many nested copies below it went unexamined and names
+the first few of them by where they sit — by position inside a list,
+which is where repeats usually sit and where the metamodel gives them no
+name to be reported under. The count is all of them; the naming stops,
+and the note says that it stopped. Nothing in that note is a statement about what those copies hold.
+
+`--profile` and `--template` together: your table takes the identifier
+from **both** sides of the pair, so the profile decides nothing, and the
+report says so rather than leaving you to infer it from the stand-down
+note beside it.
+
+`rulesNotAsked` lists a supplied table's ids in the order that template
+declares them, which is the order it has always promised for the packs.
+Ids are padded to two digits, so past ninety-nine rows that is not the
+order they sort in.
+
+**A run over many submodels is faster.** `note` No verdict moves; this
+is what the same verdict costs. Every generated rule opened by asking
+which submodels its table answers for, and that was recomputed for each
+rule — a scan of the whole input, per rule, where the answer cannot
+differ between two rules of one table. It is decided once per table now.
+This project's own corpus pass came down about twelve percent; the
+published example, and anything of its size, was already fast and stays
+so.
+
+It matters most under `--template`, where a table makes one rule per row
+and both numbers are yours: measured, a template of 9,900 rows against
+500 submodels spent 6.48 of the run's 9.53 seconds deciding the same
+thing over again.
+
+**What moves for a run that does not pass `--template`: nothing.**
+`verdict` Measured against 0.4.1 across the corpus, none of the
+sixty-one inputs that both versions can be asked about is judged
+differently. Four more are judged with a table supplied on the command
+line; 0.4.1 has no such option and answers them `unrecognized
+arguments` at exit 64, so there is no earlier verdict for those four to
+move from and they are named beside that count rather than folded into
+it. The corpus gained them for this release, because a comparison with
+no case for the mode a release is named after reports that nothing
+moved in it however much does.
+
 ## 0.4.1 — 2026-09-21
 
 Who should take this release: anyone whose build can be handed a path

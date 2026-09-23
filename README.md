@@ -124,7 +124,7 @@ and failed.
 
 ## What it catches
 
-Six of the 219, in the words the tool actually prints:
+Five of the 219, in the words the tool actually prints:
 
 | You ship this | `smtv` says |
 |---|---|
@@ -150,7 +150,7 @@ flowchart LR
     class E,F mine
 ```
 
-A file can be perfectly valid against the AAS metamodel and still not be the submodel it claims to be: the wrong cardinalities, the wrong semantic identifiers, a mandatory VDI 2770 classification missing. **That gap is the whole of this project.** Metamodel checking is delegated to [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python) and reported in a separate channel, never re-invented here.
+A file can be perfectly valid against the AAS metamodel and still not be the submodel it claims to be: the wrong cardinalities, the wrong semantic identifiers, a mandatory VDI 2770 classification missing. **That difference -- a file valid against the metamodel and not conformant to the submodel template it claims to be -- is what this project judges.** Metamodel checking is delegated to [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python) and reported in a separate channel, never re-invented here.
 
 ## Three doors, one judgement
 
@@ -319,7 +319,7 @@ finished.
 
 - **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the six it supports.
 - **You need a file repaired.** There is no `--fix`. A validator that edits your file has to be trusted twice.
-- **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly.
+- **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly. If you have the template file, `--template` judges against it: what a template states, and not the hand-written rules or the recorded readings that come with a pack. The report says the table was yours.
 - **You want a hosted check.** There is none, on purpose.
 
 What it refuses to do is written down in [docs/scope.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md).
@@ -456,6 +456,21 @@ promote — and never re-implemented here.
 The rule counts (219, 178), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
+**And a template of your own.** `--template FILE` generates a table from
+an IDTA-shaped template you supply and judges against that, which is how
+a submodel of a template with no pack here gets judged at all. It buys
+the first half of the paragraph above and not the second: what a
+template states — elements, kinds, identifiers, how many of each, the
+`valueType` each declares, a list's item type — and none of the
+hand-written rules, which are readings of a specification
+and cannot be derived from a template. An `AllowedIdShort` pattern sits
+between the two: the table carries it, and the lint that reports one
+belongs to a pack, so a supplied table reads it and says nothing — one
+it cannot read at all is named in a note, since that is the template's
+defect and not the file's. The report says the table was
+yours, and a verdict against a template you supplied is not a statement
+about conformance to a published IDTA one.
+
 ## Using this validator in your product
 
 <details>
@@ -498,9 +513,12 @@ upgrading.
 
 What has not moved is the report. `schemaVersion` is 1; keys are added
 without moving it, and nothing has been renamed or removed under it. No
-rule id has been renamed or reused — the ids of the last release are
-written down in the test suite and checked against every build, because
-a rule id is a citation somebody else made. Vendored IDTA template files
+rule id this project publishes has been renamed or reused — the ids of
+the last release are written down in the test suite and checked against
+every build, because a rule id is a citation somebody else made. The
+`TPL-E*` ids a table built from your own template uses are not among
+them: they are numbered by position in your file, so a change to your
+template renumbers them, and nothing here promises otherwise. Vendored IDTA template files
 are pinned by commit and verified by hash on every run of the suite, so
 an upstream change cannot arrive silently.
 

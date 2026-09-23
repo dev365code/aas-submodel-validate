@@ -85,6 +85,59 @@ def test_every_key_the_report_emits_is_described_and_no_others():
         assert _documented_keys(SECTIONS[heading]) == emitted, heading
 
 
+def test_provenance_is_described_key_by_key_too():
+    """The one block the loop above never reached.
+
+    It walks four headings and `provenance` is not one of them, so a key
+    could reach the report, be added to the suite's own list of expected
+    keys, and stay undocumented with everything green. `provenance.template`
+    arrived that way and this is what would have caught it.
+
+    Asked of both shapes, because the block is not the same in both: a
+    run against this project's own packs carries three keys and a run
+    against a supplied template carries four, and the page has to
+    describe the union or it describes neither.
+    """
+    plain = set(_report()["provenance"])
+    documented = _documented_keys(SECTIONS["provenance"])
+    assert plain <= documented, (
+        "the page does not describe %s" % sorted(plain - documented))
+
+    import json as _json
+    import pathlib as _pathlib
+    import tempfile
+
+    from aas_submodel_validate import runner
+
+    # From a real run, not a hand-written literal. The literal was the
+    # first spelling and it did not move when the code did: a sixth
+    # sub-field could ship undescribed with the whole suite green,
+    # measured, because this compared only the *names inside*
+    # `provenance` and built its widest case by hand.
+    root = _pathlib.Path(__file__).resolve().parents[1]
+    template = (root / "src" / "aas_submodel_validate" / "data" / "smt"
+                / "02003" / "2.0.1" / "template.json")
+    scratch = _pathlib.Path(tempfile.mkdtemp())
+    instance = scratch / "env.json"
+    instance.write_text(_json.dumps({"assetAdministrationShells": [],
+                                     "submodels": []}), encoding="utf-8")
+    emitted = runner.run(instance, template=template).as_dict()["provenance"]
+    assert set(emitted) == documented, (
+        "described %s, emitted %s" % (sorted(documented), sorted(emitted)))
+
+    # And one level down, which is where the new keys are. The row's
+    # prose names them in backticks; anything the report carries and the
+    # row does not name is a field nobody described.
+    row = [line for line in DOC.splitlines()
+           if line.startswith("| `template`")]
+    assert row, "the page no longer describes `provenance.template`"
+    described = set(re.findall(r"`([A-Za-z0-9_]+)`", row[0]))
+    missing = sorted(set(emitted["template"]) - described)
+    assert not missing, (
+        "`provenance.template` carries %s and the page names none of them"
+        % missing)
+
+
 def test_the_vocabularies_are_the_codes():
     """Three closed sets a consumer branches on, each read off its own
     row and compared as a set. A value added to the code and not here
@@ -136,3 +189,27 @@ def test_the_sample_is_a_report_of_the_shape_it_documents(tmp_path):
         shown = [f for f in sample["findings"] if f["severity"] == severity]
         assert sample["summary"][counter] == len(shown), counter
     assert sample["ok"] == (sample["summary"]["errors"] == 0)
+
+
+def test_the_notes_row_names_the_flag_that_writes_most_of_them():
+    """`notes` is described by example, and its examples predate the one
+    flag that fills it.
+
+    A `--template` run writes several here -- whether your template
+    judged anything, which submodel of the file the table came from,
+    which pack stood down and what that removed, whether a `--profile`
+    it overrode decided anything -- and the row named a profile that
+    matched nothing and `--allow-unmatched`. A consumer sizing the field
+    from this page would not expect the flag to speak here at all.
+
+    Asserted rather than left to a reading, because a row described by
+    example goes stale without any sentence in it becoming false, which
+    is the failure no proofreading catches.
+    """
+    row = [line for line in DOC.splitlines()
+           if line.startswith("| `notes` |")]
+    assert len(row) == 1, "expected one `notes` row, found %d" % len(row)
+    for named in ("--template", "provenance.template"):
+        assert named in row[0], (
+            "the notes row does not name %r, and a run given that flag "
+            "writes several notes: %s" % (named, row[0]))

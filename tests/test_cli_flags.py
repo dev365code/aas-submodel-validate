@@ -1,11 +1,15 @@
 """The flags a pipeline reaches for, each with its contract."""
 from __future__ import annotations
 
+import ast
 import copy
 import json
+import pathlib
+import re
 
 import pytest
 
+from aas_submodel_validate import cli
 from aas_submodel_validate.cli import EXIT_USAGE, main
 from aas_submodel_validate.registry import all_rules
 from builders import env_json, hd_env
@@ -804,3 +808,107 @@ def test_rules_does_not_answer_before_the_contradiction_is_caught(capsys):
     assert main(["--rules", "--strict-meta", "--meta", "error"]) == 0
     assert [line for line in capsys.readouterr().out.splitlines()
             if line.startswith("META")]
+
+
+#: The count sentence in `cli.py` and the names it enumerates, read back
+#: out of the comment that carries them.
+_TAKES_A_VALUE = re.compile(
+    r"(\w+) entries on this list take a value -- (.*?) -- and the other "
+    r"(\w+) were already safe")
+_NUMERALS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+             "six": 6, "seven": 7, "eight": 8, "nine": 9}
+
+
+def _flags_that_take_a_value():
+    """Every `add_argument` in `cli.py` that consumes the next word.
+
+    Read from the parser's own definitions, so this cannot be satisfied
+    by the sentence it checks agreeing with itself.
+    """
+    source = (pathlib.Path(cli.__file__)).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    valued = set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_argument"):
+            continue
+        names = [a.value for a in node.args
+                 if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+        action = None
+        for keyword in node.keywords:
+            if keyword.arg == "action" and isinstance(keyword.value, ast.Constant):
+                action = keyword.value.value
+        if action in ("store_true", "store_false", "store_const", "count",
+                      "version", "help"):
+            continue
+        valued.update(names)
+    return valued
+
+
+def _entries_of_the_ignored_list():
+    """The display names in `cli.py`'s `--rules would ignore ...` list."""
+    source = (pathlib.Path(cli.__file__)).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign)
+                and any(isinstance(t, ast.Name) and t.id == "ignored"
+                        for t in node.targets)):
+            pairs = node.value.generators[0].iter
+            return [element.elts[0].value for element in pairs.elts]
+    raise AssertionError("`ignored` is no longer a list comprehension over "
+                         "literal pairs; this gate reads it by shape")
+
+
+def test_the_list_that_refuses_rules_counts_its_own_value_taking_flags():
+    """A sentence about a list, held to the list and to the parser.
+
+    The comment beside `--template` says how many entries of the
+    `--rules` refusal list consume the next word, because that is what
+    decides whether reading an entry for truth is safe: an empty string
+    from an unset shell variable is falsy, and the flag was given. The
+    number has been wrong three times -- two, then three, and it is
+    four -- each time corrected by counting the list by eye, which is
+    the method that produced it.
+
+    So it is not counted by eye here. The entries come from the list
+    itself and whether each one takes a value comes from the
+    `add_argument` that defines it, and the sentence has to agree with
+    both. `-f/--format` is the one three readings missed.
+    """
+    valued = _flags_that_take_a_value()
+    entries = _entries_of_the_ignored_list()
+    assert entries, "the refusal list is empty"
+
+    def option(entry):
+        first = entry.split()[0]
+        return first if first.startswith("-") else "path"
+
+    takes = sorted(entry for entry in entries if option(entry) in valued)
+    assert "path" in valued, (
+        "the positional this gate calls `a path` is no longer defined as one")
+
+    source = (pathlib.Path(cli.__file__)).read_text(encoding="utf-8")
+    said = " ".join(line.split("#", 1)[1].strip()
+                    for line in source.splitlines()
+                    if line.strip().startswith("#"))
+    stated = _TAKES_A_VALUE.search(said)
+    assert stated, ("the sentence this gate holds is no longer in `cli.py`; "
+                    "if it was reworded, reword this with it")
+    counted, named, others = stated.groups()
+    assert _NUMERALS.get(counted.lower()) == len(takes), (
+        "the comment says %s entries take a value and %d do: %s"
+        % (counted.lower(), len(takes), takes))
+    assert _NUMERALS.get(others.lower()) == len(takes) - 1, (
+        "the comment says %s of them were already safe and there are %d "
+        "besides `--template`" % (others.lower(), len(takes) - 1))
+    # Both directions. Held one way only, a sentence that counted four
+    # and then named a fifth flag that takes no value read as careful
+    # and was wrong, which is the shape the three earlier miscounts had.
+    spelled = {option(entry) for entry in takes}
+    listed = set(re.findall(r"`(-[^`]+)`", named))
+    if "path" in named:
+        listed.add("path")
+    assert listed == spelled, (
+        "the sentence names %s and the entries that take a value are %s"
+        % (sorted(listed), sorted(spelled)))

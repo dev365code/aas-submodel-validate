@@ -61,6 +61,72 @@ Contact Information. A submodel of any other template is reported as not
 matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
+`--template FILE` is the other answer. Give it an IDTA-shaped template
+of your own and a table is generated from it at run time and the
+submodel judged against that. What that buys and what it does not:
+
+- It checks **what a template states** — which elements, of which kind, under which identifiers, how many of each, the `valueType` each declares, and a list's item type. That is what a generator
+  can read out of a template file and what a rule is made from.
+- One thing a generator reads and no rule is made from: an
+  `AllowedIdShort` pattern. The table carries it and the walk records an
+  element whose name does not match, but only a pack's own lint reports
+  that, and a table built at run time registers no lints. So a supplied
+  template's `AllowedIdShort` is read and not said — unless it cannot be
+  read at all, which is the template's defect rather than the file's and
+  is named in a note.
+- It does **not** bring the hand-written rules, which are readings of a
+  specification rather than of a template: the battery passport against
+  Regulation (EU) 2023/1542, `URIOfTheProduct` as an absolute URI, the
+  readings recorded in `docs/divergences.md`, the corpus that pins them.
+  Those exist per template and cannot be derived from one.
+- The report says so. `provenance.template` carries the file's hash and
+  `published: false`, and a line on the screen says the table came from
+  your file and is not a published IDTA template. **A verdict against a
+  template you supplied is not a statement about conformance to a
+  published one.**
+- Where your template claims an identifier one of the six packs also
+  answers for, yours answers and the pack stands down — the report says
+  which identifier that was.
+- The `TPL-E*` ids such a run uses are **not ids this project
+  publishes**. They are numbered by position in your template, so
+  editing it renumbers them: a pipeline suppressing one by id is
+  suppressing a position rather than a rule.
+- What a template marks as **open content** is a place it has left to
+  you, and nothing here judges it. An element the template identifies
+  *as* a marker draws no rule — whatever else it carries beside that,
+  which describes the placeholder rather than making it a requirement —
+  and neither does one identified by nothing but markers, which would
+  leave a rule with nothing to ask for. Either way your own content in
+  that place is not faulted for failing to be a placeholder. A marker is
+  also never one of the identifiers a rule answers to, so your element
+  under a marker cannot stand in for one the template actually asked
+  for.
+  An element identified as a marker that **also declares children** is
+  read the same way: the marker decides it and nothing under it draws a
+  rule, so a template that calls a place free content and then describes
+  what belongs in it is answered as free content only. If that leaves no
+  rule at all the run says so; if it leaves others standing, it does not.
+  No vendored template file has that shape.
+- Two qualifiers of **one type** on one element — a file the metamodel
+  forbids — are read as the later one: `ZeroToOne` written after `One`
+  leaves the element optional, the other order requires it, and the one
+  that lost is not reported.
+- An element a template declares and gives **no semanticId** is not a
+  rule. Elements are matched by identifier here and never by idShort, so
+  nothing in your file could answer such a row; asked as an obligation
+  it was an error no file could clear. The run says which elements those
+  were, and giving one a semanticId in the template turns it into a
+  rule. A list's item row is the exception and not an instance of this:
+  it is matched by its kind, which is how the published templates write
+  one.
+- An element a template declares **inside itself** — 02011 Hierarchical
+  Structures is the published case — is judged at its outermost
+  occurrence only. The table stops at the repeat so that it stays
+  finite, and this reader does not yet re-apply the scope at depth
+  (`docs/divergences.md` #48). The report names the identifier and
+  counts the nested copies it did not look inside, so the reach of the
+  check is on the page rather than in the silence.
+
 The generator reads a row's cardinality from one of three qualifier
 spellings -- the current `SMT/Cardinality`, the older `Multiplicity`, or a
 bare `Cardinality`, the same vocabulary (`One`, `ZeroToOne`, `OneToMany`,
@@ -99,4 +165,6 @@ the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
 One published template written in the `Multiplicity` spelling is still
 not vendored: **IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14
 mandatory), measured from the published template at the upstream pin.
-Until its table is added, a submodel of it draws `SMT-D1`.
+Until its table is added, a submodel of it draws `SMT-D1` — or can be
+judged with `--template` against the published template file, with the
+limits above.

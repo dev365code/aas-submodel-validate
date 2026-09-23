@@ -5,13 +5,14 @@ them asks whether it arrived, and correct-and-unusable is a real state: the
 walk here was quadratic once, correct the whole time, and what noticed was
 a person waiting.
 
-What this does **not** watch is worth saying first. `_qualify_repeats` in
-`tools/extract_smt_rules.py` counts occurrences inside a comprehension over
-the same list, which is quadratic in the row count and sits before its own
-early return. It is measured, it is real, and it is unreachable today
-because the generator runs at build time over small vendored templates --
-so no layer below times it. Generating a table from a caller's file would
-reach it, and that is when this file grows a third layer, not before.
+This file used to say that the generator was quadratic in the row count,
+that nothing timed it, and that a layer for it could wait until a caller's
+own file reached it. All three have moved. The count inside a comprehension
+over the same list is gone from `_qualify_repeats` (32,000 rows: 9.2s
+before, and the vendored tables are byte-for-byte what they were), the
+generator's core now lives in the package as `tablegen` rather than in
+`tools/`, and `--template` builds a table from a caller's file while the
+caller waits. So the layer that was deferred is here: `supplied_template`.
 
 **Seconds cannot be the budget.** A ceiling recorded on a laptop means
 nothing on a runner, and the same runner is slower under load than idle, so
@@ -91,10 +92,18 @@ YARDSTICK_FLOOR_SECONDS = 0.05
 #: cost history -- it grew per-element work when it started saying which
 #: element left rules unasked.
 #:
-#: A fifth joins them if template tables are ever generated at run time
-#: rather than at build time -- that is where the generator's quadratic
-#: lives, and nothing here times it today.
-LAYERS = ("cold_start", "corpus_pass", "scale", "rules_layer")
+#: `supplied_template` is one `--template` run: a table built from a
+#: caller's file, and then the walk against an input of many submodels
+#: that declare it. Nothing else here can see either half. The four
+#: above run against tables generated at build time from small vendored
+#: templates, so no build cost is in them -- and the walk they time asks
+#: its questions once per pack, where a supplied table asks them once
+#: per row. Both of those numbers belong to the caller, and the layer is
+#: wide in both directions because their product is the cost: deciding
+#: which submodels one table answers for, once per row instead of once,
+#: was 6.48 of a 9.53 second run at 9,900 rows and 500 submodels.
+LAYERS = ("cold_start", "corpus_pass", "scale", "rules_layer",
+          "supplied_template")
 
 #: A layer whose absolute time collapses has stopped doing its work, and a
 #: ratio cannot tell that from a fast machine. Moving `analyze`'s cache from
@@ -238,7 +247,7 @@ def _corpus():
 
     workspace = pathlib.Path(tempfile.mkdtemp(prefix="time-budget-"))
     atexit.register(shutil.rmtree, str(workspace), True)
-    return [path for _label, path in verdict_diff.build_corpus(workspace)]
+    return [case.path for case in verdict_diff.build_corpus(workspace)]
 
 
 def _wide_submodel(siblings: int = 3000):
@@ -275,6 +284,46 @@ def _wide_submodel(siblings: int = 3000):
                        "keys": [{"type": "GlobalReference",
                                  "value": dn_tables.TEMPLATE_SEMANTIC_ID}]},
         "submodelElements": elements}]}
+
+
+def _supplied_template(rows: int = 600, submodels: int = 120):
+    """A template of a caller's own, and an input that declares it.
+
+    Wide in both directions on purpose. Rows alone would time the table
+    being built and a walk over one submodel; submodels alone would time
+    a walk against a table of nothing. What has to stay visible is their
+    product, because that is what the run costs when a question with one
+    answer per table is asked once per row.
+
+    The identifier is this project's own example namespace and not a
+    published one: a template wearing an IDTA identifier would be taken
+    over from the pack that owns it, and then the layer would be timing
+    a stand-down.
+    """
+    sid = "https://example.com/time-budget/Supplied/1/0"
+
+    def reference(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    template = {"submodels": [{
+        "modelType": "Submodel", "id": sid, "idShort": "Supplied",
+        "kind": "Template", "semanticId": reference(sid),
+        "submodelElements": [
+            {"modelType": "Property", "idShort": "Row%05d" % index,
+             "semanticId": reference("urn:example:row%05d" % index),
+             "valueType": "xs:string",
+             "qualifiers": [{"type": "SMT/Cardinality",
+                             "valueType": "xs:string",
+                             "value": "ZeroToOne"}]}
+            for index in range(rows)]}]}
+
+    judged = {"submodels": [
+        {"modelType": "Submodel", "id": "urn:example:judged%04d" % index,
+         "idShort": "Judged%04d" % index, "kind": "Instance",
+         "semanticId": reference(sid), "submodelElements": []}
+        for index in range(submodels)]}
+    return template, judged
 
 
 def _rules_layer_input():
@@ -355,6 +404,11 @@ def measure() -> dict:
     atexit.register(shutil.rmtree, str(wide), True)
     wide_path = wide / "wide.json"
     wide_path.write_bytes(json.dumps(_wide_submodel()).encode("utf-8"))
+    template_document, judged_document = _supplied_template()
+    template_path = wide / "supplied-template.json"
+    template_path.write_bytes(json.dumps(template_document).encode("utf-8"))
+    judged_path = wide / "declares-it.json"
+    judged_path.write_bytes(json.dumps(judged_document).encode("utf-8"))
 
     def cold_start():
         # A whole invocation in a fresh interpreter, which is the only
@@ -368,6 +422,12 @@ def measure() -> dict:
 
     def scale():
         runner.run(wide_path)
+
+    def supplied_template():
+        # The table is built inside the timed call, not before it: a
+        # caller waits for that too, and `runner.run` holds no table
+        # across calls, so every repeat reads and walks the file again.
+        runner.run(judged_path, template=template_path)
 
     def corpus_pass():
         for path in corpus:
@@ -388,7 +448,8 @@ def measure() -> dict:
 
     rounds = _yardstick_rounds()
     bodies = {"cold_start": cold_start, "corpus_pass": corpus_pass,
-              "scale": scale, "rules_layer": rules_layer}
+              "scale": scale, "rules_layer": rules_layer,
+              "supplied_template": supplied_template}
     measured = {layer: _ratio_of(bodies[layer], rounds) for layer in LAYERS}
     return {
         # The unit from the pass each layer's figure came from, so a reader

@@ -317,6 +317,36 @@ TABLE = [
      "it -- measured: the static half passes this and the run fails it, "
      "which is the division of labour the two tests claim"),
 
+    ("template/the-flag-a-case-carries-reaches-the-reader",
+     "tools/verdict_diff.py",
+     '        argv += ["--template", str(case.template)]',
+     '        pass',
+     ["tests/test_verdict_diff.py::"
+      "test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved"],
+     "a case can carry a table and the comparison can drop it on the way to "
+     "the reader, and then the corpus looks like it covers the mode while "
+     "judging every one of those inputs with the packs instead"),
+
+    ("template/a-question-the-old-version-cannot-be-asked-is-not-a-move",
+     "tools/verdict_diff.py",
+     '    return case.template is None or _has_the_option(src, "--template")',
+     '    return True',
+     ["tests/test_verdict_diff.py::"
+      "test_the_count_leaves_out_what_the_old_version_was_never_asked"],
+     "a release that predates the option answers `unrecognized arguments` and "
+     "exits 64; counted as a verdict, every template case joins the moved "
+     "list the day the option ships and buries the one that moved"),
+
+    ("template/a-tree-with-no-reader-is-not-a-version",
+     "tools/verdict_diff.py",
+     '    if not (src / "aas_submodel_validate" / "cli.py").is_file():',
+     '    if False:',
+     ["tests/test_verdict_diff.py::"
+      "test_a_tree_with_no_reader_in_it_does_not_get_answered_by_the_machine"],
+     "PYTHONPATH is searched before site-packages, so a tree holding no "
+     "package lets an installed copy answer for it -- both sides become one "
+     "reader, every input agrees with itself, and the tool prints 0 moved"),
+
     ("rules/the-corpus-can-see-a-two-category-verdict",
      "tools/verdict_diff.py",
      'for seat, stated in enumerate(("ev", "lmt"))',
@@ -798,22 +828,6 @@ TABLE = [
      "unasked when two did. Measured before the fix on a file with two "
      "ContactInformation containers, each holding a drifted Phone: one "
      "record."),
-    ("generator/refusing-a-template-is-not-the-square-of-its-width",
-     "tools/extract_smt_rules.py",
-     "    seen = Counter(labels)\n"
-     "    if len(seen) != len(labels):\n"
-     "        duplicates = sorted(label for label, count in seen.items() if count > 1)",
-     "    if len(set(labels)) != len(labels):\n"
-     "        duplicates = sorted({label for label in labels if labels.count(label) > 1})",
-     ["tests/test_the_generator_scales_with_the_template.py::"
-      "test_refusing_a_template_is_not_the_square_of_its_width"],
-     "the row above made the common path linear and left this one alone, "
-     "which is worse than not having fixed either: the fast path was "
-     "already the one that worked, and the refusal -- the path a caller's "
-     "own template takes most -- stayed quadratic. Measured end to end "
-     "with the old spelling: 4,000 elements refused in 0.11s, 8,000 in "
-     "0.55s, 16,000 in 2.5s, 32,000 in 9.4s, on files of a few megabytes. "
-     "After: 32,000 in 0.20s and 128,000 in 1.2s."),
     ("model/a-rules-own-text-goes-through-the-same-funnel",
      "src/aas_submodel_validate/model.py",
      '        for name in ("title", "spec", "fix"):',
@@ -861,6 +875,335 @@ TABLE = [
      "arriving `--template` mode is what makes a table not a module, and "
      "a fallback that is only correct while nothing takes it is not "
      "correct."),
+    ("template/a-run-time-rule-goes-through-the-crash-funnel",
+     "src/aas_submodel_validate/runner.py",
+     "        rules_to_run = list(rules_to_run) + tablegen.rules_for(\n"
+     "            supplied[\"table\"], supplied[\"pack\"])",
+     "        tablegen.rules_for(supplied[\"table\"], supplied[\"pack\"])",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_submodel_judged_by_a_supplied_template_counts_as_judged"],
+     "`execute` is the only place here where a rule that raises becomes a "
+     "finding rather than a traceback, and it is handed `rules_to_run`. "
+     "Build the rules and drop them and a template the caller supplied is "
+     "read, accepted and then judged by nobody -- the run reports on the "
+     "packs alone and says nothing about the flag it was given."),
+    ("template/a-supplied-table-takes-the-identifier-over",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    if taken and tables.TEMPLATE_SEMANTIC_ID in taken \\\n"
+     "            and not getattr(tables, \"_supplied\", False):\n"
+     "        return []",
+     "    if False:\n"
+     "        return []",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_supplied_template_answers_instead_of_the_pack_not_as_well"],
+     "two tables for one identifier is one defect reported twice. Measured "
+     "with this removed: handing `--template` the very file 02003's pack "
+     "was generated from gives two errors where the pack alone gives one, "
+     "the same missing element under `TD-E01` and under `TPL-E01`. A build "
+     "counting errors then gets a number that depends on a flag rather "
+     "than on the file."),
+    ("template/a-run-time-id-stays-out-of-the-coverage-record",
+     "tests/conftest.py",
+     "                     and not finding.id.startswith(RUN_TIME_PREFIX))",
+     "                     )",
+     # The suite first: `--check` reads an observation the suite writes,
+     # and the harness cleans the tree before each row, so naming the
+     # tool alone gives a baseline that fails before any mutation.
+     ["tests/", "tools/rule_coverage.py --check"],
+     "`make exercised` asks whether every rule this project publishes "
+     "fired, against a baseline listing exactly those. An id that exists "
+     "because somebody passed a file is in neither list, so recording it "
+     "fails two of that gate's three comparisons at once. Measured: one "
+     "`--template` run in the suite turned it red with `TPL-E01` on both "
+     "lines."),
+    ("template/a-template-is-refused-rather-than-trusted",
+     "src/aas_submodel_validate/tablegen.py",
+     # The one inside `_rows`, which is the one that stops the walk. The
+     # check after it is a second reading of the same number, reached by
+     # a different path and kept for that reason -- so the anchor names
+     # the line above it rather than the bare condition, which now
+     # appears twice.
+     "    counter[0] += 1\n"
+     "    if counter[0] > MAX_TEMPLATE_ROWS:",
+     "    counter[0] += 1\n"
+     "    if False:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_template_above_the_bound_is_refused_without_being_built"],
+     "a template is not covered by the bound on the document being judged "
+     "-- they are different files, and forty-six megabytes of template "
+     "sits inside the sixty-four this reader advertises. What a generator "
+     "spends is decided by rows, and with this gone a caller's file "
+     "reaches the duplicate-label backstop at any width. Checked here "
+     "rather than after the walk because after it the bound stopped only "
+     "the second pass: measured, 300,000 rows were built in 2.2s and 282 "
+     "MiB before the refusal, and 0.06s and 10 MiB once the walk refuses "
+     "as it goes."),
+
+    ("template/an-open-content-marker-is-not-an-identity",
+     "src/aas_submodel_validate/tablegen.py",
+     "    return tuple(sorted(_declared_values(element) - skip_sids))",
+     "    return tuple(sorted(_declared_values(element)))",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_marker_beside_a_real_identity_does_not_become_one"],
+     "a marker says a place is open, not what belongs in it. Left among "
+     "a row's match values it is an identity like any other, and the "
+     "supplier's own element under that marker answers the row. "
+     "Measured: a template requiring one `urn:test:real`, a file holding "
+     "only the supplier's element -- `ok` true, no findings, the "
+     "required element absent. Across the packs 0 of 156 rows carried "
+     "one, because all 43 markers in the vendored templates are an "
+     "element's own semanticId; this is what a caller's template can do"),
+
+    ("template/a-table-of-no-rows-says-it-compared-nothing",
+     "src/aas_submodel_validate/runner.py",
+     '        if not supplied["table"].ROWS:',
+     "        if False:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_template_that_states_no_checkable_rule_says_so"],
+     "a submodel judged against a table of no rows is judged, so "
+     "`--require-all-judged` passes it and the run comes back `ok` at "
+     "exit 0 having compared nothing. The only trace was "
+     "`provenance.template.rows` at zero -- a field nobody reading the "
+     "screen sees, and the one number that would have told them"),
+
+    ("template/a-row-nothing-can-answer-is-not-an-obligation",
+     "src/aas_submodel_validate/tablegen.py",
+     "    unidentified = not match and not in_list",
+     "    unidentified = False",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_an_element_the_template_identifies_with_nothing_is_not_an_obligation"],
+     "matching is by identifier and never by idShort, so an element a "
+     "template declares with no semanticId has an empty match set and "
+     "nothing outside a list can answer it. As a mandatory row that was "
+     "an error no file could clear: measured, a file carrying an element "
+     "of exactly the name the template writes was told `found 0`, under "
+     "a remedy that ended \"with semanticId \" and stopped because there "
+     "was nothing to name"),
+
+    ("template/a-lists-item-row-is-matched-by-its-kind",
+     "src/aas_submodel_validate/tablegen.py",
+     "    unidentified = not match and not in_list",
+     "    unidentified = not match",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_list_item_with_no_identifier_of_its_own_keeps_its_obligation"],
+     "the other side of the line above, and the reason it is a line. A "
+     "`SubmodelElementList` names its item row by kind rather than by "
+     "identifier, which is how the published templates write one, so an "
+     "item carrying no semanticId is the ordinary case. Dropping the "
+     "obligation from every unidentified row takes those with it and a "
+     "list the template requires stops being required"),
+
+    ("template/what-the-template-calls-a-place-arbitrary-draws-no-row",
+     "src/aas_submodel_validate/tablegen.py",
+     '    return "/".join(keys) in markers',
+     "    return False",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_placeholder_that_also_names_something_is_still_a_placeholder"],
+     "a template's own placeholder generated a rule, and then the "
+     "manufacturer's element sitting under it was faulted for not being "
+     "the placeholder -- the outcome `docs/divergences.md` #19 names in "
+     "advance. What the element carries *beside* the marker describes "
+     "the placeholder and does not make the place a requirement: read as "
+     "\"every identifier must be a marker\", a placeholder that named a "
+     "unit alongside became a mandatory row and a conformant file "
+     "reported `found 0`"),
+
+    ("template/a-marker-elsewhere-does-not-take-a-subtree-with-it",
+     "src/aas_submodel_validate/tablegen.py",
+     '    return "/".join(keys) in markers',
+     '    return "/".join(keys) in markers or (\n'
+     "        bool(_declared_values(element))\n"
+     "        and not (_declared_values(element) - markers))",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_marker_somewhere_other_than_the_elements_own_id_does_not_hide_a_subtree"],
+     "read as \"every identifier this element declares is a marker\", a "
+     "container with no semanticId of its own and a marker in a "
+     "supplemental was dropped and every row beneath it went with it. "
+     "Measured on a template whose `Box` holds a mandatory `Inner`: a "
+     "file missing `Inner` went from an error to `ok` at exit 0, and no "
+     "sentence anywhere said a subtree had been skipped. A conformance "
+     "reader going quiet is the one direction with no second opinion"),
+
+    ("template/a-numbering-suffix-is-run-before-it-is-shipped",
+     "src/aas_submodel_validate/tablegen.py",
+     "            re.compile(pattern)\n"
+     "        except re.error:\n"
+     "            return None",
+     "            pass\n"
+     "        except re.error:\n"
+     "            return None",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_numbering_suffix_that_is_not_a_repeat_is_read_as_unreadable",
+      "tests/test_a_template_a_caller_supplied.py::"
+      "test_an_unreadable_naming_suggestion_does_not_take_the_verdict_with_it"],
+     "the bracket branch keeps IDTA's suffix as a program, so a template "
+     "can hand this reader a program that does not build: `\\d{3,2}` asks "
+     "for at least three and at most two. Of the spellings the pattern "
+     "admits, forty-five of a hundred and ten are that shape. Unbuilt "
+     "here, each one raised the first time its row ran, inside the funnel "
+     "-- so a defect in the caller's template was reported on every row "
+     "as \"the rule itself could not run\", under a remedy reading \"This "
+     "is a defect in the validator, not in your file\", and the run left "
+     "by 1 saying `judged 1 of 1` with no row evaluated. The value is a "
+     "naming suggestion, so it costs the row its pattern and a note, not "
+     "the verdict"),
+
+    ("engine/a-nested-copy-with-no-name-is-still-one-copy",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            here = _subject(where, child, index, shared)",
+     '            here = "%s/%s" % (where, child.id_short or "?")',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_nested_copies_with_no_name_of_their_own_are_counted_apart"],
+     "the note says how many nested copies of a self-containing row the "
+     "run did not enter, and `repeats_not_entered` deduplicates. A "
+     "`SubmodelElementList`'s children cannot carry an idShort -- the "
+     "metamodel forbids it, and that is where repeats sit -- so named "
+     "`?` they all became one string. Measured on three copies in one "
+     "list: \"did not look inside 1 nested copy below it (H/Node/Nodes/?)\". "
+     "One subtree reported for three, at a place with no name. The "
+     "fixture the count was first held against names every copy"),
+
+    ("cli/the-value-taking-flags-are-counted-not-recalled",
+     "src/aas_submodel_validate/cli.py",
+     "            # listing and left by 0. Four entries on this list take a",
+     "            # listing and left by 0. Three entries on this list take a",
+     ["tests/test_cli_flags.py::"
+      "test_the_list_that_refuses_rules_counts_its_own_value_taking_flags"],
+     "which entries of the `--rules` refusal list consume the next word "
+     "decides which of them can be read for truth, because an empty "
+     "string from an unset shell variable is falsy and the flag was "
+     "given. Counted by eye three times and wrong three times -- two, "
+     "then three, and `-f/--format` was in none of them. The canary "
+     "below is a comment nobody reads; this one is read, by a gate that "
+     "takes the entries from the list and asks each `add_argument` "
+     "whether it takes a value"),
+
+    ("engine/which-submodels-a-table-answers-for-is-decided-once",
+     "src/aas_submodel_validate/rules/engine.py",
+     # `analyze` is cached the same way three lines of code apart, so
+     # the anchor names the call that is this one.
+     "        cached = cache[tables.__name__] = _matched_submodels(ctx, tables)",
+     "        return _matched_submodels(ctx, tables)",
+     ["tests/test_engine_regressions.py::"
+      "test_which_submodels_a_table_answers_for_is_decided_once"],
+     "the verdict does not move, which is why this survived being "
+     "written: every rule of a table asked the same question and got "
+     "the same answer. What moves is what it costs, and both of its "
+     "numbers belong to the caller. Measured at the row bound, a "
+     "supplied table of 9,900 rows against 500 submodels spent 6.48 of "
+     "the run's 9.53 seconds re-deciding it; one input of the suite's "
+     "own drew 191 walks over the submodels"),
+
+    ("gates/a-table-built-at-run-time-is-timed",
+     "tools/time_budget.py",
+     'LAYERS = ("cold_start", "corpus_pass", "scale", "rules_layer",\n'
+     '          "supplied_template")',
+     'LAYERS = ("cold_start", "corpus_pass", "scale", "rules_layer")',
+     ["tests/test_the_run_stays_inside_its_time_budget.py::"
+      "test_a_table_built_at_run_time_is_timed"],
+     "the four layers before it run against tables generated at build "
+     "time, so neither the build nor a walk whose cost goes as rows "
+     "times submodels is in any of them. Measured: taking the "
+     "memoisation above back out moves this layer to 3.98x, and moved "
+     "nothing the other four measure"),
+
+    ("template/who-judged-is-one-question-with-two-answers",
+     "src/aas_submodel_validate/runner.py",
+     # The `else` losing its `if`, which is how this happened: a third
+     # note was written between the two halves and took the branch.
+     '        else:\n'
+     '            # Said, rather than left to a `provenance.template` a consumer',
+     '        if True:\n'
+     '            # Said, rather than left to a `provenance.template` a consumer',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_the_two_notes_about_who_judged_cannot_both_be_said"],
+     "one note says the supplied template made this verdict and the "
+     "other says nothing was judged against it. Written as one if/else "
+     "and then a third note was inserted between the halves, which "
+     "handed the else to the new condition -- every single-submodel "
+     "template that did answer then drew both sentences, and the whole "
+     "suite stayed green because nothing asked whether they could "
+     "appear together"),
+
+    ("template/a-profile-the-template-overrode-is-said",
+     "src/aas_submodel_validate/runner.py",
+     "    elif profile in rules.profiles.KEYS:",
+     "    elif False:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_profile_the_supplied_template_overrode_is_not_left_unsaid"],
+     "a supplied table takes an identifier from both sides of a profile "
+     "pair, so the flag is decided before it is read. The note for a "
+     "flag that chose nothing asks `Selection.chosen`, which knows "
+     "about the pair and not about the stand-down, so it was silent on "
+     "exactly the run where the flag was overridden"),
+
+    ("template/a-file-of-several-templates-says-so",
+     "src/aas_submodel_validate/runner.py",
+     '        if supplied["declared"] > 1:',
+     '        if False:',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_template_file_holding_more_than_one_template_says_so"],
+     "the table comes from the first submodel in the file and the rest "
+     "are not read. Without this a caller cannot tell 'your other "
+     "templates matched nothing' from 'your other templates were never "
+     "opened', and those ask opposite things of them"),
+
+    ("template/a-run-time-tables-rows-are-placed",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    kept = ctx.__dict__.get("_smt_tables") or {}',
+     "    kept = {}",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_run_time_table_places_its_rows_in_the_order_it_declares_them"],
+     "`rulesNotAsked` is 'in the order the tables declare them'. The "
+     "tables were recovered from `sys.modules`, which answers for the "
+     "six vendored packs and cannot answer for a `Table` -- its name is "
+     "a digest -- so every run-time id fell to the position kept for "
+     "rows nothing places and came back sorted by its own spelling. Ids "
+     "are padded to two digits, so past ninety-nine rows that is not "
+     "the template's order: `TPL-E100` before `TPL-E99`"),
+
+    ("runner/an-unreadable-path-is-a-report-not-an-exception",
+     "src/aas_submodel_validate/runner.py",
+     "    except UnreadablePath as exc:\n"
+     '        loaded = Loaded(path=str(path), form="unopened")',
+     "    except UnreadablePath as exc:\n"
+     "        raise exc",
+     ["tests/test_a_usage_error_exits_64.py::"
+      "test_an_unreadable_path_comes_back_as_a_report_and_is_not_raised"],
+     "one contract on exit 2 and not one per extension: the same "
+     "permission denial reached `.aasx` through the container reader as "
+     "an `X1` finding with a JSON document behind it while `.json` and "
+     "`.xml` raised and printed nothing, so a pipeline parsing stdout "
+     "broke on two of three extensions for a condition none of them "
+     "caused. `cli` carried an `except` clause for the propagating "
+     "version that `trace` showed none of five unreadable shapes "
+     "reaches, and a mutation sending it to 64 survived the suite; the "
+     "clause is gone and this is what its absence rests on"),
+
+    ("gates/the-release-commits-numbers-are-read",
+     "tests/test_readme_front.py",
+     '    return heading.split(" —")[0].strip() == version',
+     "    return False",
+     ["tests/test_readme_front.py::"
+      "test_which_changelog_headings_are_checked_against_this_tree"],
+     "the entry's rule counts and byte bounds were checked while the "
+     "heading said `unreleased` and not after. This project dates the "
+     "heading and bumps the version in one commit, so the gate was off "
+     "for exactly the commit that publishes those numbers. Measured: "
+     "dating the heading, bumping the version and changing 219 to 218 "
+     "in one edit went green before this and red after"),
+
+    ("template/provenance-says-how-many-the-file-held",
+     "src/aas_submodel_validate/runner.py",
+     '                           "submodels": supplied["declared"]}',
+     '                           "submodels": 1}',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_provenance_says_how_many_templates_the_file_held"],
+     "the table is built from the first submodel in the file and the "
+     "rest are not read. `rows` and `semanticId` both describe that one "
+     "and read the same whether the file held one or five, so without "
+     "this field a program cannot tell a template of the caller's that "
+     "matched nothing from one this run never opened"),
 
 ]
 

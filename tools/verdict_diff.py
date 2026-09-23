@@ -35,10 +35,37 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "src/aas_submodel_validate/data/example/idta-02004-2.0.aasx"
 TEMPLATES = sorted((ROOT / "src/aas_submodel_validate/data/smt").rglob("template.json"))
+
+
+class Case(NamedTuple):
+    """One input, and what the reader is asked to judge it with.
+
+    A `(label, path)` pair can only ask one question: what does this
+    version say about this file, with no flag but the format. So the
+    release that introduced `--template` had no case for its own
+    headline mode, and this comparison would have reported `0 moved`
+    for anything that happened inside it -- the failure `_judge`'s
+    docstring describes, in the one place that wrote it down.
+
+    A third element rather than a field would have made every unpacking
+    site change again the next time something joins, and there is a
+    `--profile` waiting. A field means a consumer that does not care
+    never mentions it: the budget layer takes `case.path` and is done.
+
+    `template` is a path, not a bag of argv fragments, because two
+    consumers read it -- the comparison builds a command line from it
+    and a test hands it to `runner.run` -- and a bag would make one of
+    them parse what the other wrote.
+    """
+
+    label: str
+    path: object
+    template: object = None
 
 
 # -- the corpus ------------------------------------------------------------
@@ -99,6 +126,11 @@ HELD_SPELLINGS = [
     ("aasx/files/manual.pdf", "/aasx/files/manual.pdf\t", True),
 ]
 
+#: An identifier no pack answers for and none will: the corpus needs one
+#: to ask what a table the caller brought decides, and a real IDTA number
+#: would stop being unclaimed the day this project vendors it.
+UNVENDORED = "urn:example:verdict-diff:no-pack-answers-for-this"
+
 LANGUAGE_FOLDS = [("upper", str.upper), ("title", str.title), ("lower", str.lower)]
 DECLARED_ENCODINGS = ["utf-8", "iso-8859-1", "windows-1252", "utf-16", "us-ascii"]
 
@@ -130,12 +162,12 @@ def _rewrite_payload(members, change):
 
 
 def build_corpus(into: Path):
-    """(label, path) for everything both versions will be asked about."""
-    cases = [("the official example, untouched", EXAMPLE)]
+    """A `Case` for everything both versions will be asked about."""
+    cases = [Case("the official example, untouched", EXAMPLE)]
 
     for template in TEMPLATES:
         rel = template.relative_to(ROOT / "src/aas_submodel_validate/data/smt")
-        cases.append(("the vendored template %s" % rel.parent, template))
+        cases.append(Case("the vendored template %s" % rel.parent, template))
 
     base = _members(EXAMPLE)
 
@@ -145,7 +177,7 @@ def build_corpus(into: Path):
             return re.sub(r"<language>([^<]*)</language>",
                           lambda m: "<language>%s</language>" % fold(m.group(1)),
                           text).encode("utf-8")
-        cases.append(("language tags in %s case" % name,
+        cases.append(Case("language tags in %s case" % name,
                       _write(into / ("lang-%s.aasx" % name),
                              _rewrite_payload(base, change))))
 
@@ -155,7 +187,7 @@ def build_corpus(into: Path):
             text = re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", text)
             text = '<?xml version="1.0" encoding="%s"?>\n' % encoding + text
             return text.encode(encoding, "xmlcharrefreplace")
-        cases.append(("the payload declares %s" % encoding,
+        cases.append(Case("the payload declares %s" % encoding,
                       _write(into / ("enc-%s.aasx" % encoding),
                              _rewrite_payload(base, change))))
 
@@ -170,7 +202,7 @@ def build_corpus(into: Path):
         files = version["value"][-1]
         assert files["idShort"] == "DigitalFiles", files["idShort"]
         files["value"][0]["value"] = value
-        cases.append(("a File value of %r" % value,
+        cases.append(Case("a File value of %r" % value,
                       build_aasx(into / ("file-%02d.aasx" % index),
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[("aasx/files/manual.pdf", b"%PDF-1.4 ")])))
@@ -185,7 +217,7 @@ def build_corpus(into: Path):
         files = version["value"][-1]
         assert files["idShort"] == "DigitalFiles", files["idShort"]
         files["value"][0]["value"] = value
-        cases.append(("the archive holds %r and the File says %r" % (entry, value),
+        cases.append(Case("the archive holds %r and the File says %r" % (entry, value),
                       build_aasx(into / ("held-%02d.aasx" % index),
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[(entry, b"%PDF-1.4 ")])))
@@ -221,7 +253,7 @@ def build_corpus(into: Path):
         listed.pop("value", None)
         written = into / ("listtype-%s.json" % label)
         written.write_text(json.dumps(environment), encoding="utf-8")
-        cases.append(("a %s list declaring it holds File" % label, written))
+        cases.append(Case("a %s list declaring it holds File" % label, written))
 
     # A Digital Nameplate submodel. Nothing here carried one, so the
     # corpus could not see IDTA 02006 land: a version with no table for
@@ -232,7 +264,7 @@ def build_corpus(into: Path):
 
     nameplate = into / "nameplate-valid.json"
     nameplate.write_text(json.dumps(dn_env()), encoding="utf-8")
-    cases.append(("a valid Digital Nameplate submodel", nameplate))
+    cases.append(Case("a valid Digital Nameplate submodel", nameplate))
 
     relative = dn_env()
     for _submodel in relative["submodels"]:
@@ -241,7 +273,7 @@ def build_corpus(into: Path):
                 _element["value"] = "Model-1234/Serial-5678"
     relative_uri = into / "nameplate-relative-uri.json"
     relative_uri.write_text(json.dumps(relative), encoding="utf-8")
-    cases.append(("a Digital Nameplate whose URIOfTheProduct is relative",
+    cases.append(Case("a Digital Nameplate whose URIOfTheProduct is relative",
                   relative_uri))
 
     # A Carbon Footprint submodel. It wears an identifier 02023 and 02035-3
@@ -250,7 +282,7 @@ def build_corpus(into: Path):
     from builders import pcf_env  # noqa: E402
     carbon = into / "carbon-footprint-valid.json"
     carbon.write_text(json.dumps(pcf_env()), encoding="utf-8")
-    cases.append(("a valid Carbon Footprint submodel", carbon))
+    cases.append(Case("a valid Carbon Footprint submodel", carbon))
 
     # A Contact Information submodel. Nothing here carried one, so the
     # corpus could not see IDTA 02002 land: a version with no table for it
@@ -261,7 +293,7 @@ def build_corpus(into: Path):
     from builders import contact_env  # noqa: E402
     contact = into / "contact-information-valid.json"
     contact.write_text(json.dumps(contact_env()), encoding="utf-8")
-    cases.append(("a valid Contact Information submodel", contact))
+    cases.append(Case("a valid Contact Information submodel", contact))
 
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
@@ -286,7 +318,7 @@ def build_corpus(into: Path):
     _children.append(_twin)
     twins = into / "contact-information-two-of-one-name.json"
     twins.write_text(json.dumps(twinned), encoding="utf-8")
-    cases.append(("a Contact Information submodel with two elements of one name",
+    cases.append(Case("a Contact Information submodel with two elements of one name",
                   twins))
 
     # A battery passport that states its own category. `BAT-R8` withheld
@@ -329,7 +361,7 @@ def build_corpus(into: Path):
         # and the question here is the category, not the packaging.
         written = into / ("battery-%s.json" % category)
         written.write_text(json.dumps(environment), encoding="utf-8")
-        cases.append(("a battery passport declaring category %r" % category, written))
+        cases.append(Case("a battery passport declaring category %r" % category, written))
 
     # And one stating two of them. `BAT-R8` used to answer on whichever
     # category the walk reached first -- the same file with the two
@@ -368,7 +400,7 @@ def build_corpus(into: Path):
     written.write_text(json.dumps(
         {"assetAdministrationShells": [], "conceptDescriptions": [],
          "submodels": both}), encoding="utf-8")
-    cases.append(("a battery passport declaring two categories", written))
+    cases.append(Case("a battery passport declaring two categories", written))
 
     # And the shapes an aas-suppl relationship's target takes. The last
     # is the question the rule exists for and must not move; without it
@@ -395,7 +427,7 @@ def build_corpus(into: Path):
             ("a target with a leading space, the part present",
              {"suppl_verbatim": [" /aasx/files/manual.pdf"],
               "files": [("aasx/files/manual.pdf", b"%PDF-1.4 ")]})]:
-        cases.append(("an aas-suppl relationship: %s" % label,
+        cases.append(Case("an aas-suppl relationship: %s" % label,
                       build_aasx(into / ("suppl-%d.aasx" % len(cases)),
                                  payload=payload, **kwargs)))
 
@@ -408,10 +440,14 @@ def build_corpus(into: Path):
 
     from builders import hd_env as _hd_env
 
-    def _without_a_value(label):
-        """A required property present and carrying nothing."""
-        document = _json.loads(_json.dumps(_hd_env()))
+    def _value_removed(document, label):
+        """The same document with one required property carrying nothing.
 
+        The document is a parameter and the file name is the caller's,
+        because a second case wanted this shape and a helper that wrote
+        to `no-value-<label>.json` would have handed both cases one path
+        -- two rows judging one file, and a budget layer timing it twice.
+        """
         def strip(node):
             if isinstance(node, dict):
                 if node.get("idShort") == label and node.get("modelType") == "Property":
@@ -422,22 +458,22 @@ def build_corpus(into: Path):
                 return any(strip(v) for v in node)
             return False
         assert strip(document), label
-        target = into / ("no-value-%s.json" % label)
-        target.write_text(_json.dumps(document), "utf-8")
-        return target
+        return document
 
-    cases.append(("a required property present and carrying no value",
-                  _without_a_value("DocumentDomainId")))
+    no_value = into / "no-value-DocumentDomainId.json"
+    no_value.write_text(_json.dumps(_value_removed(_hd_env(), "DocumentDomainId")),
+                        "utf-8")
+    cases.append(Case("a required property present and carrying no value", no_value))
 
     deep = into / "deeply-nested.json"
     deep.write_text("[" * 200000 + "]" * 200000, "utf-8")
-    cases.append(("well-formed JSON this reader cannot build", deep))
+    cases.append(Case("well-formed JSON this reader cannot build", deep))
 
-    cases.append(("a path that is not there", into / "absent.json"))
+    cases.append(Case("a path that is not there", into / "absent.json"))
 
     a_directory = into / "directory.json"
     a_directory.mkdir(exist_ok=True)
-    cases.append(("a directory wearing a file's name", a_directory))
+    cases.append(Case("a directory wearing a file's name", a_directory))
 
     lzma_broken = into / "lzma-stream-damaged.aasx"
     import zipfile as _zipfile
@@ -451,7 +487,103 @@ def build_corpus(into: Path):
         biggest = max(archive.infolist(), key=lambda i: i.compress_size)
     raw[biggest.header_offset + 30 + len(biggest.filename) + biggest.compress_size - 4] ^= 0xFF
     lzma_broken.write_bytes(bytes(raw))
-    cases.append(("an LZMA member with a damaged stream", lzma_broken))
+    cases.append(Case("an LZMA member with a damaged stream", lzma_broken))
+
+    # -- judged with a table the caller brought ----------------------------
+    #
+    # Everything above is judged with this reader's own packs, which was
+    # every question there was to ask until a caller could hand in a
+    # table of their own. A mode with no case here is a mode this tool
+    # reports `0 moved` about forever, however much moves inside it.
+    #
+    # Four, not forty: every case is a pass in the time budget, and each
+    # of these asks something the others cannot. None of them can be
+    # compared against a release that predates the option -- `compare`
+    # says so by name, above its count -- so their first comparison is
+    # the one after this release, which is the point at which a corpus
+    # that did not hold them would have been silent about a year of
+    # changes to the mode.
+    from builders import env_json  # noqa: E402
+
+    def _a_table_of_our_own(path, identifier, child="SerialNumber"):
+        def ref(value):
+            return {"type": "GlobalReference",
+                    "keys": [{"type": "GlobalReference", "value": value}]}
+
+        path.write_text(json.dumps({"submodels": [{
+            "kind": "Template", "idShort": "SomethingNobodyVendored",
+            "id": "urn:example:verdict-diff:template",
+            "semanticId": ref(identifier),
+            "submodelElements": [{
+                "modelType": "Property", "idShort": child,
+                "semanticId": ref(identifier + "/" + child),
+                "valueType": "xs:string",
+                "qualifiers": [{"type": "SMT/Cardinality",
+                                "valueType": "xs:string", "value": "One"}]}]}]}),
+            encoding="utf-8")
+        return path
+
+    def _without_the_element(document, id_short):
+        """The same document with one element gone from its scope."""
+        def walk(node):
+            if isinstance(node, dict):
+                for key, value in list(node.items()):
+                    if isinstance(value, list):
+                        kept = [item for item in value
+                                if not (isinstance(item, dict)
+                                        and item.get("idShort") == id_short)]
+                        if len(kept) != len(value):
+                            node[key] = kept
+                            return True
+                    if walk(value):
+                        return True
+            elif isinstance(node, list):
+                return any(walk(item) for item in node)
+            return False
+        assert walk(document), id_short
+        return document
+
+    # A table this project vendors, handed back in by the caller. Both
+    # readers have one for this file and the question is which answers:
+    # measured, the pack stands down and the same missing element comes
+    # back as `TPL-E02` where the pack said `DN-E02`. An input that is
+    # merely conformant could not show that -- both answer nothing.
+    stand_down = into / "nameplate-for-a-table-handed-in.json"
+    stand_down.write_text(
+        json.dumps(_without_the_element(dn_env(), "ManufacturerName")), "utf-8")
+    cases.append(Case(
+        "a Digital Nameplate, judged by the vendored template handed in by hand",
+        stand_down,
+        template=ROOT / "src/aas_submodel_validate/data/smt/02006/3.0/template.json"))
+
+    # The mode's reason to exist: a table no pack has, over a file that
+    # declares it. Without the table this is `SMT-D1`, "nothing here
+    # wears an identifier I have a table for"; with it, a verdict.
+    ours = _a_table_of_our_own(into / "a-table-nobody-vendored.json", UNVENDORED)
+    declares_it = into / "declares-a-template-nobody-vendored.json"
+    declares_it.write_bytes(env_json(UNVENDORED))
+    cases.append(Case("a submodel judged by a table no pack has",
+                      declares_it, template=ours))
+
+    # A supplied table that matches nothing, over a file with a defect
+    # in it. The packs must go on answering: this row is the one that
+    # goes quiet if a table standing down ever takes a file's own pack
+    # with it, and quiet is the direction nothing downstream reports.
+    beside_the_point = into / "handover-beside-a-table-that-matches-nothing.json"
+    beside_the_point.write_text(json.dumps(_value_removed(_hd_env(), "DocumentDomainId")),
+                                "utf-8")
+    cases.append(Case("a defect beside a supplied table that matches nothing",
+                      beside_the_point, template=ours))
+
+    # A table that is not one. Not a verdict but an exit code, which is
+    # what a build tool tells apart from "found something": this mode
+    # refuses at 2 and the corpus is where that stays measured.
+    not_a_table = into / "a-supplied-table-that-is-not-one.json"
+    not_a_table.write_text('{"hello": "world"}', encoding="utf-8")
+    judged_anyway = into / "handover-beside-a-table-that-is-not-one.json"
+    judged_anyway.write_text(json.dumps(_hd_env()), encoding="utf-8")
+    cases.append(Case("a supplied table that is not a template at all",
+                      judged_anyway, template=not_a_table))
 
     return cases
 
@@ -464,7 +596,7 @@ def build_corpus(into: Path):
 _PATIENCE = 120
 
 
-def _judge(src: Path, target: Path):
+def _judge(src: Path, case: Case):
     """One version's verdict on one input: ids, severities, exit code --
     and what it did not ask.
 
@@ -479,9 +611,16 @@ def _judge(src: Path, target: Path):
     the key was added, which is true and buries the one whose verdict
     actually moved. An instrument that reports everything reports
     nothing."""
+    argv = [sys.executable, "-m", "aas_submodel_validate", str(case.path), "-f", "json"]
+    if case.template is not None:
+        # The whole point of the case carrying it. A flag built here from
+        # a list this function keeps would be a second place to state
+        # what the corpus asks, and the two would drift the first time
+        # one of them gained an entry.
+        argv += ["--template", str(case.template)]
     try:
         run = subprocess.run(
-            [sys.executable, "-m", "aas_submodel_validate", str(target), "-f", "json"],
+            argv,
             capture_output=True, text=True, timeout=_PATIENCE,
             env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
                  "PYTHONIOENCODING": "utf-8"})
@@ -520,6 +659,74 @@ def _judge(src: Path, target: Path):
     if not_asked is not None:
         not_asked = tuple(not_asked)
     return (tuple(ours), relayed, run.returncode, not_asked)
+
+
+def _must_hold_a_reader(src: Path) -> Path:
+    """`src` is a tree this comparison is about to import a reader from.
+
+    `PYTHONPATH` is searched before site-packages, so a tree holding the
+    package answers for it. A tree *not* holding it answers nothing and
+    the question goes to whatever is installed on the machine -- and
+    this project is installed on the machine that wrote this. Then both
+    sides of the comparison are the same reader, every input agrees with
+    itself, and the tool prints `0 moved` in the most convincing way it
+    knows: an archive of a tag that predates the `src/` layout does this
+    without a word.
+    """
+    if not (src / "aas_submodel_validate" / "cli.py").is_file():
+        raise RuntimeError(
+            "%s holds no reader to ask -- an installed copy would answer in "
+            "place of the version meant, and agree with itself" % src)
+    return src
+
+
+#: One answer per source tree and option, because the question costs a
+#: whole interpreter and does not change between inputs.
+_OPTIONS: dict = {}
+
+
+def _has_the_option(src: Path, option: str) -> bool:
+    """Whether the version in `src` offers the option a case wants.
+
+    Asked of the version rather than read off its number. A case judged
+    with `--template` cannot be compared against a release that predates
+    the flag: measured, v0.4.1 answers `unrecognized arguments` and exits
+    64, which is not a verdict on anything. Counting that as a verdict
+    that moved would put every such case in the moved list on the day the
+    option landed -- true, and it buries whatever actually moved, which
+    is the mistake this file already made once over `rulesNotAsked`.
+
+    A probe that fails is not an absence. If the reader will not run, or
+    prints no usage at all, this stops instead of answering False for
+    every option -- False here empties the comparison quietly, and an
+    instrument that goes silent when its own probe breaks is the failure
+    this whole file is written against.
+    """
+    key = (str(src), option)
+    if key not in _OPTIONS:
+        _must_hold_a_reader(src)
+        asked = subprocess.run(
+            [sys.executable, "-m", "aas_submodel_validate", "--help"],
+            capture_output=True, text=True, timeout=_PATIENCE,
+            env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
+                 "PYTHONIOENCODING": "utf-8"})
+        if asked.returncode != 0 or "usage:" not in asked.stdout:
+            raise RuntimeError(
+                "could not ask the version in %s which options it has "
+                "(exit %d): %s" % (src, asked.returncode,
+                                   (asked.stderr or asked.stdout).strip()[:200]))
+        _OPTIONS[key] = option in asked.stdout
+    return _OPTIONS[key]
+
+
+def _comparable(src: Path, case: Case) -> bool:
+    """Whether the version in `src` can be asked this case at all.
+
+    The one place a case's field is turned into the option it needs, so
+    that adding a field means adding it here and not in each of the two
+    readers.
+    """
+    return case.template is None or _has_the_option(src, "--template")
 
 
 def _verdict_of(judged):
@@ -576,59 +783,114 @@ def main(argv=None):
         archive = subprocess.run(["git", "-C", str(ROOT), "archive", tag],
                                  capture_output=True, check=True)
         subprocess.run(["tar", "-x", "-C", str(old)], input=archive.stdout, check=True)
+        # Before a single input is judged, because the answer to "did
+        # that tag lay its package out this way" is not one to find out
+        # from a column of zeroes.
+        _must_hold_a_reader(old / "src")
 
         corpus = build_corpus(workspace)
-        print("%s -> working tree, over %d inputs\n" % (tag, len(corpus)))
-
-        moved = 0
-        gained_the_key, reshaped = 0, 0
-        for label, target in corpus:
-            before = _judge(old / "src", Path(target))
-            after = _judge(ROOT / "src", Path(target))
-            # Counted apart, and stated once at the end. A key one
-            # version does not have is a change of shape, and if it is
-            # folded into "judged differently" every input moves the day
-            # it lands.
-            if len(before) > 3 and len(after) > 3:
-                if before[3] is None and after[3] is not None:
-                    gained_the_key += 1
-                elif before[3] != after[3]:
-                    reshaped += 1
-            if _verdict_of(before) == _verdict_of(after):
-                continue
-            moved += 1
-            print("  %s" % label)
-            print("      %-14s %s" % (tag, _describe(before)))
-            print("      %-14s %s" % ("working tree", _describe(after)))
-            gone = sorted(set(before[0]) - set(after[0]))
-            new = sorted(set(after[0]) - set(before[0]))
-            # Named with the element, because a finding can be the same
-            # rule at the same severity and still be about a different
-            # element -- which is the whole reason the subject is compared
-            # at all. Without it this prints "no longer drawn: CI-E02"
-            # directly above "newly drawn: CI-E02" and leaves a reader to
-            # guess what moved.
-            if gone:
-                print("      no longer drawn: %s" % ", ".join(_named(f) for f in gone))
-            if new:
-                print("      newly drawn:     %s" % ", ".join(_named(f) for f in new))
-            print()
-
-        print("%d of %d inputs are judged differently." % (moved, len(corpus)))
-        if gained_the_key:
-            print("%d of %d gained `summary.rulesNotAsked`, which is additive and "
-                  "moves no verdict -- a consumer that does not read the key sees "
-                  "what it saw before." % (gained_the_key, len(corpus)))
-        if reshaped:
-            print("%d of %d report a different `summary.rulesNotAsked` between two "
-                  "versions that both have it. That is not a verdict either, and it "
-                  "is the one place a reader learns a rule stopped being put."
-                  % (reshaped, len(corpus)))
-        print("Every one of them belongs in the CHANGELOG, and the ones whose "
-              "exit code falls belong there twice: a pipeline that is red on "
-              "them today goes quiet, and nothing downstream reports that.")
+        compare(tag, old / "src", corpus)
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
+
+
+def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
+    """Run both readers over the corpus, print what moved, and return the
+    counts behind the sentences.
+
+    Returned as well as printed because those sentences get copied into
+    a release note: "0 of 61" is an arithmetic claim about a
+    denominator, and until this came out of `main` nothing could ask it
+    anything. The corpus is a parameter for the same reason -- a
+    measurement of the summary that had to build all sixty-one inputs
+    and run two readers over each would not be run.
+    """
+    new_src = new_src or (ROOT / "src")
+    # How many carry a table, said in the header rather than in a
+    # caveat at the bottom. The caveat that stood there -- "no case
+    # here is judged with --template" -- was true and was written to be
+    # deleted by whoever made it false; this is the same fact in the
+    # form a reader can use, and it goes back to being a caveat by
+    # itself if the count ever returns to zero.
+    with_a_table = sum(1 for case in corpus if case.template is not None)
+    print("%s -> working tree, over %d inputs%s\n"
+          % (tag, len(corpus),
+             ", %d of them judged with a table the caller supplied"
+             % with_a_table if with_a_table else
+             " -- none of them judged with a table the caller supplied"))
+
+    moved = 0
+    gained_the_key, reshaped = 0, 0
+    unanswerable = []
+    for case in corpus:
+        if not _comparable(old_src, case):
+            # Judged by the working tree all the same. The comparison
+            # has nothing to say about it, but a case that stopped
+            # being judgeable at all is worth seeing on the way past.
+            unanswerable.append((case, _judge(new_src, case)))
+            continue
+        before = _judge(old_src, case)
+        after = _judge(new_src, case)
+        # Counted apart, and stated once at the end. A key one
+        # version does not have is a change of shape, and if it is
+        # folded into "judged differently" every input moves the day
+        # it lands.
+        if len(before) > 3 and len(after) > 3:
+            if before[3] is None and after[3] is not None:
+                gained_the_key += 1
+            elif before[3] != after[3]:
+                reshaped += 1
+        if _verdict_of(before) == _verdict_of(after):
+            continue
+        moved += 1
+        print("  %s" % case.label)
+        print("      %-14s %s" % (tag, _describe(before)))
+        print("      %-14s %s" % ("working tree", _describe(after)))
+        gone = sorted(set(before[0]) - set(after[0]))
+        new = sorted(set(after[0]) - set(before[0]))
+        # Named with the element, because a finding can be the same
+        # rule at the same severity and still be about a different
+        # element -- which is the whole reason the subject is compared
+        # at all. Without it this prints "no longer drawn: CI-E02"
+        # directly above "newly drawn: CI-E02" and leaves a reader to
+        # guess what moved.
+        if gone:
+            print("      no longer drawn: %s" % ", ".join(_named(f) for f in gone))
+        if new:
+            print("      newly drawn:     %s" % ", ".join(_named(f) for f in new))
+        print()
+
+    if unanswerable:
+        # Above the count and not below it, because the count's
+        # denominator is what this changes. A reader who takes "0 of
+        # 65" and learns afterwards that four of them were never
+        # asked has already quoted the first number.
+        print("%d of %d are asked with an option %s does not have, so there "
+              "is no earlier verdict for them to move from. They are not in "
+              "the count below. What the working tree says about them:"
+              % (len(unanswerable), len(corpus), tag))
+        for case, after in unanswerable:
+            print("  %s" % case.label)
+            print("      %-14s %s" % ("working tree", _describe(after)))
+        print()
+
+    compared = len(corpus) - len(unanswerable)
+    print("%d of %d inputs are judged differently." % (moved, compared))
+    if gained_the_key:
+        print("%d of %d gained `summary.rulesNotAsked`, which is additive and "
+              "moves no verdict -- a consumer that does not read the key sees "
+              "what it saw before." % (gained_the_key, compared))
+    if reshaped:
+        print("%d of %d report a different `summary.rulesNotAsked` between two "
+              "versions that both have it. That is not a verdict either, and it "
+              "is the one place a reader learns a rule stopped being put."
+              % (reshaped, compared))
+    print("Every one of them belongs in the CHANGELOG, and the ones whose "
+          "exit code falls belong there twice: a pipeline that is red on "
+          "them today goes quiet, and nothing downstream reports that.")
+    return {"moved": moved, "compared": compared,
+            "unanswerable": len(unanswerable),
+            "gained_the_key": gained_the_key, "reshaped": reshaped}
 
 
 if __name__ == "__main__":

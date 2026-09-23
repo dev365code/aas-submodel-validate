@@ -328,6 +328,11 @@ class Report:
     #: none to read. A report that says a file failed and does not say
     #: which bytes it read is an assertion about a filename.
     input_sha256: Optional[str] = None
+    #: Where the rule table came from, when it did not come from here.
+    #: Absent for a run against the packs this project vendored, so a
+    #: reader who sees it knows the verdict was made against a file the
+    #: caller supplied and not against a published IDTA template.
+    template: Optional[dict] = None
     #: How much of the input was looked at. Not a fraction of the rules
     #: -- most of those are about other templates and their silence means
     #: nothing -- but of the submodels the file actually holds. An
@@ -369,11 +374,11 @@ class Report:
             # shape: a key that appears later is a schema change, and a
             # key that is always `null` is a promise somebody can build
             # against.
-            "provenance": {
+            "provenance": dict({
                 "inputSha256": self.input_sha256,
                 "engine": None,
                 "envelope": None,
-            },
+            }, **({"template": self.template} if self.template else {})),
             # The shape's number and the producer's are different numbers.
             # A consumer that finds a defect in a report needs to say which
             # build wrote it, and `schemaVersion` cannot answer that.
