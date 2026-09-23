@@ -524,8 +524,8 @@ def test_a_published_number_does_not_move_with_a_flag(tmp_path):
     answers", and the rules a supplied table makes are deliberately not
     registered.
 
-    Measured: counted from the rules actually run it is 221 with no flag
-    and 247 with a twenty-six row template -- the second figure being
+    Measured: counted from the rules actually run it is 232 with no flag
+    and 258 with a twenty-six row template -- the second figure being
     whatever that file declares. A build reading that number gets one
     that depends on a caller's argument. (Three fixed figures stood here
     and all three went stale, so what is written down is the shape.) The template's
@@ -1765,7 +1765,7 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
     against 26 for 02023, and every one of those extra rows was an
     open-content placeholder the pack drops.
 
-    Asked of all six rather than of the one that failed, because the
+    Asked of all seven rather than of the one that failed, because the
     difference was a list the two readers kept separately.
     """
     from aas_submodel_validate.rules import (
@@ -2223,6 +2223,123 @@ def test_a_template_that_contains_itself_is_judged_at_every_depth(tmp_path):
         missing, [(f.id, f.violation.subject, f.violation.message)
                   for f in report.findings])
     assert not [n for n in report.notes if "nested cop" in n], report.notes
+
+
+def _tree_template(tmp_path, inner, name="tree-tpl.json"):
+    """A template whose `Node` holds `Name` and the nested `Node` given."""
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string", "value": value}
+
+    node = {"modelType": "SubmodelElementCollection", "idShort": "Node",
+            "semanticId": sid("urn:test:node"), "qualifiers": [card("One")],
+            "value": [{"modelType": "Property", "idShort": "Name",
+                       "semanticId": sid("urn:test:name"), "valueType": "xs:string",
+                       "qualifiers": [card("One")]}, inner(sid, card)]}
+    template = tmp_path / name
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:tree", "idShort": "H",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [node]}]}).encode("utf-8"))
+    return template, sid
+
+
+def _tree_file(tmp_path, sid, first_children, name="tree.json"):
+    document = tmp_path / name
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:t", "idShort": "H",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [{"modelType": "SubmodelElementCollection",
+                              "idShort": "Node", "semanticId": sid("urn:test:node"),
+                              "value": first_children}]}]}).encode("utf-8"))
+    return document
+
+
+def _name(sid):
+    return {"modelType": "Property", "idShort": "Name", "semanticId": sid("urn:test:name"),
+            "valueType": "xs:string", "value": "v"}
+
+
+def test_a_copy_the_template_bounds_is_counted_against_its_own_bound(tmp_path):
+    """The nested `Node` is `ZeroToOne` where the outer one is `One`: the
+    copy's row carries the template's bound, not the 0..* an assumption
+    would give, and two copies in one node are one too many."""
+    template, sid = _tree_template(tmp_path, lambda sid, card: {
+        "modelType": "SubmodelElementCollection", "idShort": "Node",
+        "semanticId": sid("urn:test:node"), "qualifiers": [card("ZeroToOne")], "value": []})
+    copy = {"modelType": "SubmodelElementCollection", "semanticId": sid("urn:test:node"),
+            "value": [_name(sid)]}
+    document = _tree_file(tmp_path, sid, [_name(sid), dict(copy, idShort="A"),
+                                          dict(copy, idShort="B")])
+    report = runner.run(document, template=template)
+    said = [f.violation.message for f in report.findings if f.violation.subject == "H/Node"]
+    assert any("at most one" in m and "found 2" in m for m in said), said
+
+
+def test_a_copy_written_with_content_is_judged_as_written(tmp_path):
+    """The nested `Node` declares `Extra` and not `Name`. Given the outer
+    rows, a file built as the template writes it was told its copy lacked
+    `Name`, and a copy lacking the `Extra` the template asks for passed."""
+    template, sid = _tree_template(tmp_path, lambda sid, card: {
+        "modelType": "SubmodelElementCollection", "idShort": "Node",
+        "semanticId": sid("urn:test:node"), "qualifiers": [card("ZeroToMany")],
+        "value": [{"modelType": "Property", "idShort": "Extra",
+                   "semanticId": sid("urn:test:extra"), "valueType": "xs:string",
+                   "qualifiers": [card("One")]}]})
+    extra = {"modelType": "Property", "idShort": "Extra", "semanticId": sid("urn:test:extra"),
+             "valueType": "xs:string", "value": "x"}
+    as_written = _tree_file(tmp_path, sid, [_name(sid), {
+        "modelType": "SubmodelElementCollection", "idShort": "Node2",
+        "semanticId": sid("urn:test:node"), "value": [extra]}])
+    assert runner.run(as_written, template=template).findings == []
+    without = _tree_file(tmp_path, sid, [_name(sid), {
+        "modelType": "SubmodelElementCollection", "idShort": "Node2",
+        "semanticId": sid("urn:test:node"), "value": [_name(sid)]}], name="without.json")
+    said = [(f.violation.subject, f.violation.message)
+            for f in runner.run(without, template=template).findings]
+    assert any(subject == "H/Node/Node2" and "'Extra'" in message
+               for subject, message in said), said
+
+
+def test_a_mandatory_copy_is_not_charged_to_the_file(tmp_path):
+    """A nested `Node` the template makes `One` needs one inside every
+    copy, which no finite file has; a tree with `Name` everywhere drew an
+    error at its bottom. It is judged as optional, and the note says why."""
+    template, sid = _tree_template(tmp_path, lambda sid, card: {
+        "modelType": "SubmodelElementCollection", "idShort": "Node",
+        "semanticId": sid("urn:test:node"), "qualifiers": [card("One")], "value": []})
+    deepest = {"modelType": "SubmodelElementCollection", "idShort": "Node3",
+               "semanticId": sid("urn:test:node"), "value": [_name(sid)]}
+    document = _tree_file(tmp_path, sid, [_name(sid), {
+        "modelType": "SubmodelElementCollection", "idShort": "Node2",
+        "semanticId": sid("urn:test:node"), "value": [_name(sid), deepest]}])
+    report = runner.run(document, template=template)
+    assert report.findings == [], [(f.id, f.violation.subject, f.violation.message)
+                                   for f in report.findings]
+    assert any("mandatory" in note and "no finite file" in note for note in report.notes), \
+        report.notes
+
+
+def test_a_copy_below_a_copy_the_walk_missed_is_counted_too(tmp_path):
+    """A copy the walk did not reach hides the copies inside it: the count
+    walks the whole chain, and the note names the identifier it is about."""
+    document, template = _self_containing_list(tmp_path, copies=1)
+    data = json.loads(document.read_text("utf-8"))
+    nodes = data["submodels"][0]["submodelElements"][0]["value"][1]["value"]
+    nodes[0]["value"].append({"modelType": "SubmodelElementCollection", "idShort": "Deep",
+                              "semanticId": {"type": "ExternalReference", "keys": [
+                                  {"type": "GlobalReference", "value": "urn:test:node"}]},
+                              "value": []})
+    document.write_text(json.dumps(data), "utf-8")
+    note = next(n for n in runner.run(document, template=template).notes if "nested cop" in n)
+    assert "2 nested copies" in note, note
+    assert "H/Node/Nodes/[0]/Deep" in note, note
+    assert "urn:test:node" in note, note
 
 
 def _self_containing_list(tmp_path, copies=3):

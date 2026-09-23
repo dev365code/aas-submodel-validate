@@ -47,10 +47,10 @@ Where it stands, template by template:
 - IDTA 02011 Hierarchical Structures — done
 - IDTA 02007 Software Nameplate — not yet
 
-Before 1.0: the two templates named last, by name rather than by count. A
+Before 1.0: the template named last, by name rather than by count. A
 count can be met by whichever templates are easiest; a name says which
-documents a reader can bring. After those two, which templates come next
-is decided by what people bring (the README's roadmap).
+documents a reader can bring. After it, which templates come next is
+decided by what people bring (the README's roadmap).
 
 ## Explanation
 

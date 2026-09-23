@@ -504,6 +504,18 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                    "it" if len(unidentified) == 1 else "each of them",
                    "it" if len(unidentified) == 1 else "they",
                    "s" if len(unidentified) == 1 else ""))
+        # A copy of an element inside itself the template makes mandatory:
+        # every copy would need a copy of its own, and no finite file has
+        # that many. Judged as optional, and said.
+        endless = [row["label"] for row in supplied["table"].ROWS if row.get("endless")]
+        if endless:
+            report.notes.append(
+                "the template you supplied makes a copy of an element inside "
+                "itself mandatory (%s): every copy would need a copy of its "
+                "own, which no finite file has, so this run judges %s as "
+                "optional." % (", ".join(endless[:NAMED_IN_A_NOTE])
+                               + ("" if len(endless) <= NAMED_IN_A_NOTE else ", and more"),
+                               "it" if len(endless) == 1 else "them"))
         # A qualifier of the caller's this reader could not read. Said
         # once, in a note, and nothing about the file changes: the value
         # feeds one `info` rule whose own remedy calls it tidiness
@@ -754,8 +766,8 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # and `docs/report-schema.md` says this number is "every rule
     # registered in this build ... the number does not move when a
     # different template answers". Counted from the rules actually run
-    # it moves with the caller's file instead: measured here, 221 with
-    # no flag and 247 with a twenty-six row template, and the second
+    # it moves with the caller's file instead: measured here, 232 with
+    # no flag and 258 with a twenty-six row template, and the second
     # figure is whatever that file happens to declare. A published
     # number that depends on an argument is not a property of the
     # build. This comment carried three fixed figures and every one went

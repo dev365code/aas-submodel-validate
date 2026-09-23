@@ -127,3 +127,28 @@ def test_a_node_needs_no_node_of_its_own(tmp_path):
     entry = _entry(env)
     entry["statements"] = [e for e in entry["statements"] if e.get("idShort") != "Gearbox"]
     assert set(_ids(tmp_path, env)) == set()
+
+
+def test_what_the_walk_could_not_reach_in_a_bill_is_said(tmp_path):
+    """A collection wearing Node's identifier three levels down is a node
+    of the wrong kind, reported at its place; the node inside it is
+    reached by nothing, so what it carries goes unjudged -- and the note
+    says so, naming that node and not the one already reported."""
+    env = copy.deepcopy(hs_env())
+    shaft = _named(_named(_entry(env)["statements"], "Gearbox")["statements"], "Shaft")
+    shaft["statements"].append({
+        "idShort": "Bolt", "modelType": "SubmodelElementCollection",
+        "semanticId": _sid(HS + "Node/1/0"),
+        "value": [{"idShort": "Washer", "modelType": "Entity",
+                   "semanticId": _sid(HS + "Node/1/0"),
+                   "entityType": "SelfManagedEntity", "globalAssetId": "urn:example:asset:washer",
+                   "statements": [{"idShort": "BulkCount", "modelType": "Property",
+                                   "valueType": "xs:string", "value": "many",
+                                   "semanticId": _sid(HS + "BulkCount/1/0")}]}]})
+    report = _run(tmp_path, env)
+    assert [f.violation.subject.rsplit("/", 1)[-1] for f in report.findings
+            if f.id == "HS-E03"] == ["Bolt"]
+    assert not [f for f in report.findings if f.id == "HS-E07"]
+    [note] = [n for n in report.notes if "nested cop" in n]
+    assert "Shaft/Bolt/Washer" in note and "Shaft/Bolt," not in note, note
+    assert "Shaft/Bolt)" not in note, note

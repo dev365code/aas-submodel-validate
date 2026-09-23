@@ -20,7 +20,7 @@ source it renders, and the `--check` that proves a table matches its
 generator byte for byte. Those are build-time and belong to the build.
 
 The functions below are the ones that were here, unchanged, so that the
-six vendored tables regenerate to the same bytes. The one difference is
+seven vendored tables regenerate to the same bytes. The one difference is
 `DuplicateLabel`: the generator used to raise `SystemExit` with a
 sentence, which is a build tool's way of leaving by 1, and a run-time
 caller owes 2 — "could not judge the input" — instead. The exception
@@ -341,6 +341,15 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
         if _card_type in qualifiers:
             card = CARDINALITY.get(qualifiers[_card_type], (0, None))
             break
+    # A copy the template makes mandatory makes every copy need one of its
+    # own, and no finite file has that many: a tree three deep with
+    # everything in place drew an error at the bottom, for the file. The
+    # lower bound is dropped before the remedy is written from it, and the
+    # template's defect is said instead, the way a mandatory row nothing
+    # can answer is.
+    endless = card[0] if repeats and card[0] > 0 else None
+    if endless:
+        card = (0, card[1])
     examples = [value for key, value in qualifiers.items()
                 if key in pack["example_types"]]
     example = " | ".join(examples) if examples else None
@@ -380,9 +389,21 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
     for child in sub_elements:
         if not (isinstance(child, dict) and "modelType" in child):
             continue
+        # Written empty, too. A repeat the template writes with content of
+        # its own is that content, spelled out at that level: a nested
+        # `Node` declaring `Extra` asks for `Extra` there and not for what
+        # the outer `Node` holds. Given the outer rows instead, it was told
+        # to carry the outer `Name` and never asked for the `Extra` it
+        # declares. Only a repeat written with nothing inside it -- which
+        # is how 02011 writes one -- leaves the template's shape to be
+        # carried down.
         copies = (my_sid and _primary_sid(child) == my_sid
                   and child["modelType"] == element["modelType"]
-                  and element["modelType"] in ("Entity", "SubmodelElementCollection"))
+                  and element["modelType"] in ("Entity", "SubmodelElementCollection")
+                  and not any(isinstance(item, dict) and "modelType" in item
+                              for key in ("value", "statements")
+                              for item in (child.get(key) if isinstance(child.get(key), list)
+                                           else ())))
         child_row = _rows(child, label, row_id, counter, pack,
                           in_list=element["modelType"] == "SubmodelElementList",
                           repeats=my_sid if copies else None)
@@ -431,6 +452,8 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
     }
     if repeats:
         row["recurses"] = repeats
+    if endless:
+        row["endless"] = endless
     if unidentified:
         row["unidentified"] = True
     if declares_idshort and allowed_idshort is None:

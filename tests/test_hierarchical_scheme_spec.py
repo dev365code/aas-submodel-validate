@@ -74,16 +74,47 @@ def test_a_self_containing_entity_gives_its_copy_a_marked_row():
             "statements": [{"idShort": "Node", "modelType": "Entity",
                             "semanticId": _sid("urn:x:Node"),
                             "qualifiers": [{"type": "SMT/Cardinality",
-                                            "value": "ZeroToMany"}],
-                            "statements": [{"idShort": "Deeper", "modelType": "Property",
-                                            "semanticId": _sid("urn:x:Deeper")}]}]}
+                                            "value": "ZeroToOne"}]}]}
     row = _row(node)
     assert not row.get("recurses")
     assert row["card"] == (1, None)
     [copy] = [child for child in row["children"] if child["sid"] == "urn:x:Node"]
     assert copy.get("recurses") == "urn:x:Node"
-    assert copy["card"] == (0, None)          # the template's, not assumed
+    # The template's, and not the 0..* an assumption would have given --
+    # which is why the fixture says ZeroToOne: with ZeroToMany here the
+    # assertion held for a generator that read nothing.
+    assert copy["card"] == (0, 1)
     assert copy["children"] == ()             # not expanded
+
+
+def test_a_repeat_written_with_content_is_that_content():
+    """A nested Node the template writes with an element of its own asks
+    for that element there, not for what the outer Node holds; it is an
+    ordinary row, expanded as written, and not a copy."""
+    node = {"idShort": "Node", "modelType": "Entity", "semanticId": _sid("urn:x:Node"),
+            "statements": [
+                {"idShort": "Name", "modelType": "Property", "semanticId": _sid("urn:x:Name"),
+                 "qualifiers": [{"type": "SMT/Cardinality", "value": "One"}]},
+                {"idShort": "Node", "modelType": "Entity", "semanticId": _sid("urn:x:Node"),
+                 "statements": [{"idShort": "Extra", "modelType": "Property",
+                                 "semanticId": _sid("urn:x:Extra"),
+                                 "qualifiers": [{"type": "SMT/Cardinality",
+                                                 "value": "One"}]}]}]}
+    [inner] = [child for child in _row(node)["children"] if child["sid"] == "urn:x:Node"]
+    assert not inner.get("recurses")
+    assert [child["sid"] for child in inner["children"]] == ["urn:x:Extra"]
+
+
+def test_a_mandatory_copy_is_judged_as_optional_and_marked():
+    """Every copy needing a copy of its own is more copies than any file
+    has. The lower bound goes, the upper stays, and the row says why."""
+    node = {"idShort": "Node", "modelType": "Entity", "semanticId": _sid("urn:x:Node"),
+            "statements": [{"idShort": "Node", "modelType": "Entity",
+                            "semanticId": _sid("urn:x:Node"),
+                            "qualifiers": [{"type": "SMT/Cardinality", "value": "One"}]}]}
+    [copy] = _row(node)["children"]
+    assert copy.get("recurses") == "urn:x:Node"
+    assert copy["card"] == (0, 1) and copy.get("endless") == 1
 
 
 def test_the_02011_table_is_one_row_per_template_element():
@@ -172,6 +203,13 @@ def test_only_entity_and_collection_self_containment_is_marked():
                            "semanticId": _sid("urn:x:N")}]}
         [copy] = g._rows(el, "", None, [0], pack)["children"]
         assert copy.get("recurses") == "urn:x:N", kind
+    # Same identifier, another kind: an Entity holding a collection that
+    # wears its identifier is not holding a copy of itself.
+    mixed = {"idShort": "N", "modelType": "Entity", "semanticId": _sid("urn:x:N"),
+             "statements": [{"idShort": "N", "modelType": "SubmodelElementCollection",
+                             "semanticId": _sid("urn:x:N")}]}
+    assert all(child.get("recurses") is None
+               for child in g._rows(mixed, "", None, [0], pack)["children"])
     are = {"idShort": "R", "modelType": "AnnotatedRelationshipElement",
            "semanticId": _sid("urn:x:R"),
            "value": [{"idShort": "R", "modelType": "AnnotatedRelationshipElement",

@@ -163,9 +163,10 @@ submodel judged against that. What that buys and what it does not:
   stops at the repeat so that it stays finite, the repeat is a row of its
   own at the cardinality the template gives it, and the walk gives each
   nested copy the rows of the element it copies (`docs/divergences.md`
-  #48). Only an element repeating its own parent is read that way; one
-  repeating an ancestor further up is not a shape any published template
-  uses, and is judged as the table spells it.
+  #48). Only a repeat of its own parent, written with nothing inside it,
+  is read that way: a repeat the template writes with content is judged as
+  written, and one repeating an ancestor further up is out of scope and
+  judged as the table spells it.
 
 The generator reads a row's cardinality from one of three qualifier
 spellings -- the current `SMT/Cardinality`, the older `Multiplicity`, or a
@@ -206,8 +207,9 @@ IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.1 is a
 tree: a `Node` holds `Node`s of its own identifier, to any depth, and the
 pack judges every level of it -- the entry node and its nodes by count
 and kind, the three relationships by kind, `BulkCount` and `ArcheType`
-by `valueType`. Its pack is generated rows only, and three things are
-left unchecked. A `RelationshipElement`'s two ends are not read: the
+by `valueType`. Its pack is generated rows only, and among what is left
+unchecked: a node's `entityType` and `globalAssetId` are not read, and a
+`RelationshipElement`'s two ends are not either: the
 template gives both as `https://admin-shell.io/SMT/General/IntentionallyEmpty`,
 which constrains nothing, so whether `HasPart` points at a part -- or at
 anything that exists -- is not asked (`docs/divergences.md` #56).

@@ -1,6 +1,6 @@
 | Axis | Now | 1.0 condition |
 |---|---|---|
-| Coverage | 2004, 2003, 2035-2, 2006, 2023, 2002, 2011 | + 02007 |
+| Coverage | 2004, 2003, 2035-2, 2006, 2023, 2002, 2011 | + 2007 |
 | Explanation | what is wrong, remedy, requirement | + evidence, the line in the file |
 | Report contract | schemaVersion, exit codes, schema page | + a golden report |
 | Entrances | command line, single file | + Python library, GitHub Action, browser |

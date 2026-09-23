@@ -139,7 +139,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=20637d44" alt="Coverage: 2004, 2003, 2035-2, 2006, 2023, 2002, 2011; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=28f28689" alt="Coverage: 2004, 2003, 2035-2, 2006, 2023, 2002, 2011; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*

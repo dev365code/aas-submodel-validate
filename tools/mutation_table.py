@@ -1629,6 +1629,27 @@ TABLE = [
      ['tests/test_hierarchical_scheme_spec.py::test_a_self_containing_entity_gives_its_copy_a_marked_row'],
      "02011's nested Node is 0..* where the Node holding it is 1..*; marked as a copy it is walked at any depth, and unmarked it is an ordinary row that stops the walk one level down"),
 
+    ('hs/a-copy-below-a-missed-copy-is-counted',
+     'src/aas_submodel_validate/rules/engine.py',
+     '                found.append((here, sorted(carried)[0]))\n',
+     '                found.append((here, sorted(carried)[0]))\n                continue\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_a_copy_below_a_copy_the_walk_missed_is_counted_too'],
+     'a copy the walk did not reach hides the copies inside it from the walk too; counting only the first of a chain reported one copy of two'),
+
+    ('hs/a-bill-says-what-the-walk-missed',
+     'src/aas_submodel_validate/rules/engine.py',
+     '        if copied:\n            per["not_entered"] = _copies_not_reached(\n',
+     '        if copied and False:\n            per["not_entered"] = _copies_not_reached(\n',
+     ['tests/test_generated_rules_hs.py::test_what_the_walk_could_not_reach_in_a_bill_is_said'],
+     "a node inside a collection wearing Node's identifier three levels down is reached by nothing, and what it carries went unjudged with nothing said"),
+
+    ('tablegen/a-copy-reads-its-own-cardinality',
+     'src/aas_submodel_validate/tablegen.py',
+     '    endless = card[0] if repeats and card[0] > 0 else None\n',
+     '    card = (0, None) if repeats else card\n    endless = card[0] if repeats and card[0] > 0 else None\n',
+     ['tests/test_hierarchical_scheme_spec.py::test_a_self_containing_entity_gives_its_copy_a_marked_row'],
+     "the nested copy's bound is the template's -- ZeroToOne in the test -- and a generator assuming 0..* passed the test that claimed it read it"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

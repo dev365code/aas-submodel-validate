@@ -65,12 +65,17 @@ read, because the template leaves them unconstrained; `docs/scope.md`
 names that and the rest of what this pack does not check.
 
 The same walk serves a template supplied with `--template`: an element
-the template declares inside itself is judged at every depth where the
-template puts one. Such a run used to judge the outermost occurrence and
-say in a note that it had not looked inside the copies; a file whose
-nested copies break the template -- clean before -- now draws those
-findings and leaves by 1. The note remains for a copy sitting somewhere
-the template does not put one, which the walk does not reach.
+the template declares directly inside itself, and writes with nothing
+inside that copy, is judged at every depth where the template puts one.
+Such a run used to judge the outermost occurrence and say in a note that
+it had not looked inside the copies; a file whose nested copies break the
+template -- clean before -- now draws those findings and leaves by 1. A
+copy the template writes with content of its own is judged as written, a
+copy it makes mandatory -- which no finite file could satisfy -- is judged
+as optional and said in a note, and a repeat through another element (a
+node, a list, a node) is not followed. The note that remains is for a copy
+sitting somewhere the template does not put one, which the walk does not
+reach.
 
 It is 232 rules, 189 generated from the vendored official template files,
 across seven template packs. What this reader takes in is
