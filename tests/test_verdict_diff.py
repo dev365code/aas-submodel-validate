@@ -265,19 +265,34 @@ def test_the_comparison_says_what_it_does_not_cover(corpus):
 
 @pytest.fixture(scope="module")
 def released_tree(tmp_path_factory):
-    """The tree of the tag this comparison runs against by default.
+    """The tree of the tag this comparison runs against by default, or a
+    skip that says which of the three reasons applied.
 
     Taken out of git rather than installed, the way the tool takes it --
     0.08s measured, which is what makes asking the real released reader
     affordable here instead of a stand-in built to answer the way this
     test wants.
+
+    The three reasons are not hypothetical; the first version of this
+    asserted instead of skipping and went red in two places at once.
+    An unpacked sdist has no `.git` and `git tag` exits 128 there, and a
+    checkout made at depth 1 has the history but none of the tags, which
+    is what the matrix does. `make check` runs with `-rs`, so a skip
+    here is printed with its reason rather than counted.
     """
     import subprocess
 
-    tag = subprocess.run(["git", "-C", str(ROOT), "tag", "--sort=-v:refname"],
-                         capture_output=True, text=True, check=True)
+    try:
+        tag = subprocess.run(["git", "-C", str(ROOT), "tag", "--sort=-v:refname"],
+                             capture_output=True, text=True)
+    except OSError:
+        pytest.skip("git is not available")
+    if tag.returncode != 0:
+        pytest.skip("not a git checkout (an unpacked sdist is not one)")
     latest = tag.stdout.split("\n", 1)[0].strip()
-    assert latest, "no tag to compare against"
+    if not latest:
+        pytest.skip("this checkout carries no tags, so there is no released "
+                    "reader here to ask; a clone made at depth 1 looks like this")
     into = tmp_path_factory.mktemp("released")
     archive = subprocess.run(["git", "-C", str(ROOT), "archive", latest],
                              capture_output=True, check=True)
