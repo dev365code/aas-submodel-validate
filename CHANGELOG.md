@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 — unreleased
+## 0.6.0 — 2026-09-24
 
 Who should take this release: anyone whose packages name files, and
 anyone who needs to know what a run did *not* look at.
