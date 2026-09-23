@@ -77,6 +77,13 @@ jobs:
         # still says what the picture shows; this one only asks whether
         # the committed bytes are the ones the generator writes.
         run: python tools/gen_door.py --check
+      - name: the capabilities picture is the one its data draws
+        # The picture under "Where it stands", its summary page, and the
+        # README's stamp, alt text and 1.0 paragraph all come from
+        # docs/capabilities.json. This asks whether the committed files are
+        # what the generator writes, and whether every file the data cites
+        # as evidence still says what it is cited for.
+        run: python tools/capabilities_svg.py docs/capabilities.json --check
 
   test:
     name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}

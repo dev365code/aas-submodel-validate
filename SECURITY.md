@@ -37,8 +37,9 @@ refuses to read, it does not judge, and the report says so; where
 nothing could be judged, the run leaves by the could-not-run exit code
 rather than reporting a verdict it does not have. Validation performs no network access.
 
-A security fix that shipped in a release has a GitHub security advisory on
-this repository, naming the versions it reaches and the release that fixes it:
+From 0.3.0 on, a security fix that ships in a release has a GitHub
+security advisory on this repository, naming the versions it reaches and the
+release that fixes it, and one earlier fix has one as well:
 
 - [GHSA-m8g8-xjhr-x529](https://github.com/dev365code/aas-submodel-validate/security/advisories/GHSA-m8g8-xjhr-x529):
   a DTD refused at any smaller size could be processed in an oversized UTF-16
@@ -46,3 +47,9 @@ this repository, naming the versions it reaches and the release that fixes it:
 - [GHSA-8w4g-mg5q-c4m4](https://github.com/dev365code/aas-submodel-validate/security/advisories/GHSA-8w4g-mg5q-c4m4):
   a control sequence in a file-supplied `idShort` reached the terminal
   through the summary line. 0.4.0 to 0.5.1; fixed in 0.6.0.
+
+Two earlier repairs have a changelog entry only, and no advisory: 0.1.3,
+where an LZMA member with one byte changed crashed the reader with nothing
+on its output, and four thousand submodels in 5.4 MB took minutes of CPU;
+and 0.2.0, where an archive naming one part twice was read past the
+duplicate and could pass as complete.
