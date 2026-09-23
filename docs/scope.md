@@ -101,6 +101,16 @@ submodel judged against that. What that buys and what it does not:
   also never one of the identifiers a rule answers to, so your element
   under a marker cannot stand in for one the template actually asked
   for.
+  An element identified as a marker that **also declares children** is
+  read the same way: the marker decides it and nothing under it draws a
+  rule, so a template that calls a place free content and then describes
+  what belongs in it is answered as free content only. If that leaves no
+  rule at all the run says so; if it leaves others standing, it does not.
+  No vendored template file has that shape.
+- Two qualifiers of **one type** on one element — a file the metamodel
+  forbids — are read as the later one: `ZeroToOne` written after `One`
+  leaves the element optional, the other order requires it, and the one
+  that lost is not reported.
 - An element a template declares and gives **no semanticId** is not a
   rule. Elements are matched by identifier here and never by idShort, so
   nothing in your file could answer such a row; asked as an obligation

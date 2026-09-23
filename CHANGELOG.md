@@ -66,7 +66,11 @@ is a naming suggestion — the rule reporting one belongs to a pack, at
 `info`, and a table built from your file registers no lints — so
 refusing the template over it would throw away the answer you asked
 for, mandatory elements and all. A value that does not claim IDTA's
-spelling is a name, and an element is matched against it as written. The row bound is separate from the bound on the
+spelling is a name, and an element is matched against it as written. Where one element carries two qualifiers
+of the same type — which the metamodel forbids — the later is the one read:
+measured, `SMT/Cardinality` `ZeroToOne` written after `One` leaves that
+element optional and the other order requires it, and nothing reports that
+the first was dropped. The row bound is separate from the bound on the
 document being judged because they are different files: forty-six
 megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
@@ -92,7 +96,14 @@ to ask for. Either way your own content in that place is not faulted for
 failing to be a placeholder. And a marker is never one of the
 identifiers a row answers to: without that, an element of yours sitting
 under a marker satisfied a row the template meant for something else,
-and a file missing the element that row requires was called fine.
+and a file missing the element that row requires was called fine. One shape
+is read this way and is worth saying plainly: an element identified as a
+marker that also declares children of its own. The marker decides the
+element, so nothing under it draws a row — a template that calls a place
+free content and then describes what must be inside it is answered as free
+content only. Where a whole template reads that way the note below says the
+table came out empty; where such an element sits beside rows that do stand,
+nothing says so. None of the vendored template files has that shape.
 
 **A template that states no rule this reader can check says so.** Every
 element open content, or none of them identified, and the table has no
@@ -142,6 +153,17 @@ It matters most under `--template`, where a table makes one rule per row
 and both numbers are yours: measured, a template of 9,900 rows against
 500 submodels spent 6.48 of the run's 9.53 seconds deciding the same
 thing over again.
+
+**What moves for a run that does not pass `--template`: nothing.**
+`verdict` Measured against 0.4.1 across the corpus, none of the
+sixty-one inputs that both versions can be asked about is judged
+differently. Four more are judged with a table supplied on the command
+line; 0.4.1 has no such option and answers them `unrecognized
+arguments` at exit 64, so there is no earlier verdict for those four to
+move from and they are named beside that count rather than folded into
+it. The corpus gained them for this release, because a comparison with
+no case for the mode a release is named after reports that nothing
+moved in it however much does.
 
 ## 0.4.1 — 2026-09-21
 
