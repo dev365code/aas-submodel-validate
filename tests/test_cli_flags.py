@@ -902,8 +902,13 @@ def test_the_list_that_refuses_rules_counts_its_own_value_taking_flags():
     assert _NUMERALS.get(others.lower()) == len(takes) - 1, (
         "the comment says %s of them were already safe and there are %d "
         "besides `--template`" % (others.lower(), len(takes) - 1))
-    for entry in takes:
-        spelling = option(entry)
-        assert spelling in named or entry in named, (
-            "%s takes a value and the sentence does not name it: %r"
-            % (spelling, named))
+    # Both directions. Held one way only, a sentence that counted four
+    # and then named a fifth flag that takes no value read as careful
+    # and was wrong, which is the shape the three earlier miscounts had.
+    spelled = {option(entry) for entry in takes}
+    listed = set(re.findall(r"`(-[^`]+)`", named))
+    if "path" in named:
+        listed.add("path")
+    assert listed == spelled, (
+        "the sentence names %s and the entries that take a value are %s"
+        % (sorted(listed), sorted(spelled)))

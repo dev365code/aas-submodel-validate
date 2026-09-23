@@ -54,11 +54,18 @@ number that depended on the flag rather than on the file.
 A template that is not a template, is not JSON, cannot be read, is above
 the byte bound, or declares more than ten thousand rows is refused at
 exit 2 — "could not judge the input", the same code every other
-unreadable input gets. So is one whose `AllowedIdShort` claims IDTA's
-numbering spelling and is not a repeat: `Name[\d{3,2}]` asks for at
-least three digits and at most two, and the refusal quotes the value so
-you can find it. A value that does not claim that spelling is a name,
-and an element is matched against it as written. The row bound is separate from the bound on the
+unreadable input gets.
+
+An `AllowedIdShort` this reader cannot read is **not** one of those.
+`Name[\d{3,2}]` asks for at least three digits and at most two, and a
+qualifier of that type carrying no value at all is a legal file; either
+way that row keeps no naming pattern, a note names the rows and quotes
+the values, and every other verdict on your file stands. That qualifier
+is a naming suggestion — the rule reporting one belongs to a pack, at
+`info`, and a table built from your file registers no lints — so
+refusing the template over it would throw away the answer you asked
+for, mandatory elements and all. A value that does not claim IDTA's
+spelling is a name, and an element is matched against it as written. The row bound is separate from the bound on the
 document being judged because they are different files: forty-six
 megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
@@ -75,8 +82,12 @@ and read the same either way.
 answers for one.** The two markers IDTA publishes for this are read, and
 so are the three narrower spellings the vendored template files carry —
 wherever the template declares them, as an element's own identifier or
-beside one. An element whose identifiers are nothing but markers
-generates no row, so your own content under it is not faulted for
+beside one. An element the template identifies *as* a marker
+generates no row, whatever else it carries beside that — a unit, a
+preferred type, a pointer to what the free content is about, none of
+which turn the place into a requirement — and neither does one
+identified by nothing but markers, which would leave a row with nothing
+to ask for. Either way your own content in that place is not faulted for
 failing to be a placeholder. And a marker is never one of the
 identifiers a row answers to: without that, an element of yours sitting
 under a marker satisfied a row the template meant for something else,

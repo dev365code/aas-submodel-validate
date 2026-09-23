@@ -911,7 +911,7 @@ TABLE = [
 
     ("template/an-open-content-marker-is-not-an-identity",
      "src/aas_submodel_validate/tablegen.py",
-     "    return tuple(sorted(_declared_values(element) - markers))",
+     "    return tuple(sorted(_declared_values(element) - skip_sids))",
      "    return tuple(sorted(_declared_values(element)))",
      ["tests/test_a_template_a_caller_supplied.py::"
       "test_a_marker_beside_a_real_identity_does_not_become_one"],
@@ -924,34 +924,49 @@ TABLE = [
      "one, because all 43 markers in the vendored templates are an "
      "element's own semanticId; this is what a caller's template can do"),
 
-    ("template/an-open-content-placeholder-draws-no-row",
+    ("template/what-the-template-calls-a-place-arbitrary-draws-no-row",
      "src/aas_submodel_validate/tablegen.py",
-     "    declared = _declared_values(element)\n"
-     '    if declared and not (declared - pack["skip_sids"]):',
-     "    declared = _declared_values(element)\n"
-     "    if False:",
+     '    if "/".join(keys) in markers:\n'
+     "        return True",
+     "    if False:\n"
+     "        return True",
      ["tests/test_a_template_a_caller_supplied.py::"
-      "test_open_content_a_template_declares_draws_nothing",
-      "tests/test_a_template_a_caller_supplied.py::"
-      "test_a_marker_is_recognised_in_the_comparison_form"],
+      "test_a_placeholder_that_also_names_something_is_still_a_placeholder"],
      "a template's own placeholder generated a rule, and then the "
      "manufacturer's element sitting under it was faulted for not being "
      "the placeholder -- the outcome `docs/divergences.md` #19 names in "
-     "advance. Read from every identifier the element declares and not "
-     "its semanticId alone: declared in a supplemental, the placeholder "
-     "kept a row whose match set was empty, so its cardinality could "
-     "never be met"),
+     "advance. What the element carries *beside* the marker describes "
+     "the placeholder and does not make the place a requirement: read as "
+     "\"every identifier must be a marker\", a placeholder that named a "
+     "unit alongside became a mandatory row and a conformant file "
+     "reported `found 0`"),
+
+    ("template/a-place-with-nothing-left-to-ask-for-draws-no-row",
+     "src/aas_submodel_validate/tablegen.py",
+     "    return bool(declared) and not (declared - markers)",
+     "    return False",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_placeholder_declared_only_in_a_supplemental_draws_no_row"],
+     "markers are not identities and the match set drops them, so an "
+     "element carrying nothing else has an empty one -- and a mandatory "
+     "row built on that can be satisfied by nothing at all. Read as "
+     "\"only the element's own semanticId counts\", a placeholder that "
+     "declared itself open in a supplemental kept exactly such a row, and "
+     "the file was told to provide an element the template never "
+     "identified"),
 
     ("template/a-numbering-suffix-is-run-before-it-is-shipped",
      "src/aas_submodel_validate/tablegen.py",
      "            re.compile(pattern)\n"
-     "        except re.error as exc:",
+     "        except re.error:\n"
+     "            return None",
      "            pass\n"
-     "        except re.error as exc:",
+     "        except re.error:\n"
+     "            return None",
      ["tests/test_a_template_a_caller_supplied.py::"
-      "test_a_numbering_suffix_that_is_not_a_repeat_is_refused_with_the_template",
+      "test_a_numbering_suffix_that_is_not_a_repeat_is_read_as_unreadable",
       "tests/test_a_template_a_caller_supplied.py::"
-      "test_a_template_whose_suffix_cannot_run_names_the_qualifier"],
+      "test_an_unreadable_naming_suggestion_does_not_take_the_verdict_with_it"],
      "the bracket branch keeps IDTA's suffix as a program, so a template "
      "can hand this reader a program that does not build: `\\d{3,2}` asks "
      "for at least three and at most two. Of the spellings the pattern "
@@ -960,8 +975,9 @@ TABLE = [
      "-- so a defect in the caller's template was reported on every row "
      "as \"the rule itself could not run\", under a remedy reading \"This "
      "is a defect in the validator, not in your file\", and the run left "
-     "by 1 saying `judged 1 of 1` with no row evaluated. Two repairs "
-     "before this one each escaped a name and left the suffix"),
+     "by 1 saying `judged 1 of 1` with no row evaluated. The value is a "
+     "naming suggestion, so it costs the row its pattern and a note, not "
+     "the verdict"),
 
     ("engine/a-nested-copy-with-no-name-is-still-one-copy",
      "src/aas_submodel_validate/rules/engine.py",

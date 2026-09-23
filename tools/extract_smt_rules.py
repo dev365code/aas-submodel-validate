@@ -294,6 +294,23 @@ def generate(pack) -> str:
         # somebody else owes the code that means "could not judge this
         # input" and that is not this caller.
         raise SystemExit("%s: %s" % (pack["output"].name, clash)) from None
+    # A vendored template whose own qualifier this reader cannot read is
+    # this project's problem and not a user's, so the build tool stops
+    # rather than emitting a table with the value quietly dropped. A
+    # caller's template gets the opposite treatment -- a note and the
+    # rest of the verdict -- because there nobody here can fix the file.
+    unreadable = [(row["label"], row["allowed_idshort_unreadable"])
+                  for row in tablegen._flatten(built["tree"], [])
+                  if "allowed_idshort_unreadable" in row]
+    if unreadable:
+        raise SystemExit(
+            "%s: AllowedIdShort cannot be read on %s; IDTA's spelling is "
+            "`Name[\\d{2,3}]`, lower bound first"
+            % (pack["output"].name,
+               # The value as the template spells it. `%r` doubles the
+               # backslash, and whoever reads this is about to look for
+               # the string in a vendored file.
+               ", ".join("%s (`%s`)" % pair for pair in unreadable)))
     tree = built["tree"]
     submodel_sid = built["submodel_sid"]
     submodel_sid_type = built["submodel_sid_type"]

@@ -1523,6 +1523,96 @@ def test_a_marker_beside_a_real_identity_does_not_become_one(tmp_path):
         % [f.violation.message for f in report.findings])
 
 
+def _marker_placeholder(tmp_path, own, supplemental, name):
+    """A one-row template whose only element is a placeholder, with the
+    marker in whichever position the caller names."""
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    element = {"modelType": "Property", "idShort": "AnyProp",
+               "valueType": "xs:string", "qualifiers": [card("One")]}
+    if own is not None:
+        element["semanticId"] = sid(own)
+    if supplemental is not None:
+        element["supplementalSemanticIds"] = [sid(supplemental)]
+
+    template = tmp_path / name
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:ph", "idShort": "P",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [element]}]}).encode("utf-8"))
+
+    document = tmp_path / ("doc-" + name)
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:doc", "idShort": "P",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": "MyOwn",
+            "semanticId": sid("urn:vendor:mine"), "valueType": "xs:string",
+            "value": "x"}]}]}).encode("utf-8"))
+    return document, template
+
+
+MARKER = "https://admin-shell.io/SMT/General/Arbitrary"
+
+
+def test_a_placeholder_that_also_names_something_is_still_a_placeholder(tmp_path):
+    """What the template calls the element decides, and what it carries
+    beside that describes it.
+
+    A placeholder may say more than "anything": a unit, a preferred
+    type, a link to what the free content is about. Read as "every
+    identifier has to be a marker", such an element stopped being open
+    content and became a mandatory row -- so the supplier's own element,
+    sitting in exactly the place the template left them, was reported
+    missing. `found 0` about a file that is fine is the outcome
+    `docs/divergences.md` #19 exists to prevent, arriving from the
+    repair meant to prevent it.
+    """
+    document, template = _marker_placeholder(
+        tmp_path, own=MARKER, supplemental="urn:vendor:unit", name="own.json")
+    built = runner._supplied_table(template)["table"]
+    assert not built.ROWS, (
+        "the template's own placeholder generated a row: %s"
+        % [row["label"] for row in built.ROWS])
+    report = runner.run(document, template=template)
+    assert report.ok and not report.findings, (
+        "the supplier's own element was faulted against a placeholder the "
+        "template says they may fill freely: %s"
+        % [(f.id, f.violation.message) for f in report.findings])
+
+
+def test_a_placeholder_declared_only_in_a_supplemental_draws_no_row(tmp_path):
+    """The other half, and the one a narrower reading missed.
+
+    Markers are not identities -- `_match_set` takes them out -- so an
+    element carrying nothing else has an empty match set, and a
+    mandatory row built on one can never be satisfied by anything. Read
+    as "only the element's own semanticId counts", this element kept
+    exactly that row, and the file was told to provide an element the
+    template had not identified.
+    """
+    document, template = _marker_placeholder(
+        tmp_path, own=None, supplemental=MARKER, name="supp.json")
+    built = runner._supplied_table(template)["table"]
+    assert not built.ROWS, (
+        "an element identified by nothing but a marker generated a row "
+        "that nothing can match: %s"
+        % [(row["label"], row["match"], row["card"]) for row in built.ROWS])
+    report = runner.run(document, template=template)
+    assert report.ok and not report.findings, (
+        "a row with no identity to ask for was still asked: %s"
+        % [(f.id, f.violation.message) for f in report.findings])
+
+
+
 def test_every_pack_skips_through_the_one_shared_set(tmp_path):
     """The generator and the run-time builder read one list.
 
@@ -1698,8 +1788,8 @@ def test_an_allowed_idshort_is_read_as_written(tmp_path):
         "%r matched an element the template did not name" % literal)
 
 
-def test_a_numbering_suffix_that_is_not_a_repeat_is_refused_with_the_template():
-    """The bracket branch reads IDTA's suffix as a program, and one
+def test_a_numbering_suffix_that_is_not_a_repeat_is_read_as_unreadable():
+    """The bracket branch keeps IDTA's suffix as a program, and one
     spelling of it is a program Python will not build.
 
     `_ALLOWED` admits `\\d{M}` and `\\d{M,N}` for any digits, and a
@@ -1711,16 +1801,9 @@ def test_a_numbering_suffix_that_is_not_a_repeat_is_refused_with_the_template():
     Of the spellings the pattern admits, the ones whose bounds run
     backwards do this, and they are not a small corner of the set.
 
-    A value that claims IDTA's numbering spelling and gets it wrong is
-    refused with the template -- `could not judge this input` -- for the
-    same reason a template too large or the wrong shape is. Reading it as
-    a literal name instead would be the other half of the same mistake:
-    no element can be called `A[\\d{3,2}]`, so every row would fault the
-    caller's file for a defect in the template.
-
     Compiled here rather than pattern-matched, so a spelling nobody
-    anticipated cannot reach a rule either: what this asks is whether
-    the string this function returns is one Python can run.
+    anticipated is answered too: what this asks is whether the string
+    this function returns is one Python can run.
     """
     from aas_submodel_validate import tablegen
 
@@ -1734,48 +1817,132 @@ def test_a_numbering_suffix_that_is_not_a_repeat_is_refused_with_the_template():
          else forwards).add(suffix)
     assert backwards and forwards, "this gate stopped telling the two apart"
 
-    refused = set()
+    unread = set()
     for suffix in suffixes:
-        raw = "A[%s]" % suffix
-        try:
-            pattern = tablegen._intended_pattern(raw)
-        except tablegen.TemplateRefused:
-            refused.add(suffix)
+        pattern = tablegen._intended_pattern("A[%s]" % suffix)
+        if pattern is None:
+            unread.add(suffix)
             continue
         re.compile(pattern)          # the walk's first act, brought forward
 
-    assert refused == backwards, (
+    assert unread == backwards, (
         "spellings this reader accepted and could not run: %s; spellings it "
-        "refused and could have run: %s"
-        % (sorted(backwards - refused), sorted(refused - backwards)))
+        "gave up on and could have run: %s"
+        % (sorted(backwards - unread), sorted(unread - backwards)))
     for suffix in sorted(forwards):
         assert tablegen._intended_pattern("A[%s]" % suffix) == \
             "^A(?:%s)?$" % suffix, suffix
 
 
-def test_a_template_whose_suffix_cannot_run_names_the_qualifier(tmp_path):
-    """What the reader says when it refuses, and which code it leaves by.
+def test_a_qualifier_carrying_no_string_is_not_a_traceback():
+    """`Qualifier.value` is optional in the metamodel.
 
-    The run that crashed per row left by 1 -- the code for a verdict
-    about a file that was read -- and said `judged 1 of 1` over a run in
-    which no row was evaluated. This owes 2, and the message owes the
-    value it could not read: the caller has to find it in their own
-    template, and `AllowedIdShort` is one qualifier among several on an
-    element among many.
+    So a qualifier declaring this type and no value at all is a legal
+    file, and one carrying a number or a boolean is a file this reader
+    should have an answer for. It had one answer for all three: the
+    regular-expression match raised `TypeError`, which the reader above
+    turned into "parses as JSON and is not shaped like an IDTA
+    template" -- a sentence about the whole file, naming no qualifier,
+    for something that is neither malformed nor fatal.
     """
-    from aas_submodel_validate import cli, tablegen
+    from aas_submodel_validate import tablegen
+
+    for value in (None, 123, True, [], {}):
+        assert tablegen._intended_pattern(value) is None, value
+
+
+def test_an_unreadable_naming_suggestion_does_not_take_the_verdict_with_it(tmp_path):
+    """What it costs to refuse, measured on a file that has a real defect.
+
+    The value feeds one rule, at `info`, whose own remedy reads "Any
+    unique idShort is legal; this is tidiness, not conformance" -- and a
+    table built at run time registers no lints, so under this flag
+    nothing reads it at all. Refused with the template, an unreadable
+    one threw away every MUST verdict on the file: the run left by 2
+    with no report, and the missing mandatory element went unmentioned.
+    Ten lines above it in the same function, an unreadable
+    `SMT/Cardinality` -- which decides whether an element is required at
+    all -- quietly defaults to `0..*` and the run leaves by 0.
+
+    So it is a note now, and the file is still judged.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def qualifier(kind, value, marker):
+        made = {"semanticId": sid(marker), "type": kind,
+                "valueType": "xs:string"}
+        if value is not None:
+            made["value"] = value
+        return made
+
+    def element(id_short, semantic, extra=()):
+        return {"modelType": "Property", "idShort": id_short,
+                "valueType": "xs:string", "semanticId": sid(semantic),
+                "qualifiers": [qualifier(
+                    "SMT/Cardinality", "One",
+                    "https://admin-shell.io/SubmodelTemplates/Cardinality/1/0"
+                )] + list(extra)}
+
+    unreadable = qualifier(
+        "AllowedIdShort", "Doc[\\d{3,2}]",
+        "https://admin-shell.io/SubmodelTemplates/AllowedIdShort/1/0")
+    template = tmp_path / "backwards.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:c", "idShort": "C",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [element("Doc", "urn:test:doc", [unreadable]),
+                             element("Needed", "urn:test:needed")]}]}
+    ).encode("utf-8"))
+
+    document = tmp_path / "doc.json"
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:i", "idShort": "C",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [{"modelType": "Property", "idShort": "Doc07",
+                              "semanticId": sid("urn:test:doc"),
+                              "valueType": "xs:string", "value": "v"}]}]}
+    ).encode("utf-8"))
+
+    report = runner.run(document, template=template)
+    missing = [f for f in report.findings if "'Needed'" in f.violation.message]
+    assert missing, (
+        "the file is missing a mandatory element and the run did not say "
+        "so: %s" % [(f.id, f.violation.message) for f in report.findings])
+    said = " ".join(report.notes)
+    assert "AllowedIdShort" in said and "Doc[\\d{3,2}]" in said, (
+        "nothing told the caller which qualifier could not be read: %r"
+        % report.notes)
+    assert not [f for f in report.findings
+                if "could not run" in f.violation.message], (
+        "a value in the caller's template was run as a pattern and the "
+        "crash was reported as ours")
+
+
+def test_a_vendored_template_this_reader_cannot_read_stops_the_build(tmp_path):
+    """The opposite answer, for the opposite reason.
+
+    A caller's template is theirs and this project cannot fix it, so an
+    unreadable qualifier is a note beside a verdict. A vendored one is
+    this project's, and a table that silently dropped the value would
+    ship the defect. The build tool stops and names the row.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "extract_smt_rules", ROOT / "tools" / "extract_smt_rules.py")
+    extract = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(extract)
 
     template = _template_with_idshort_rule(tmp_path, "A[\\d{3,2}]")
-    document = _instance_named(tmp_path, "A07")
-    with pytest.raises(tablegen.TemplateRefused) as refusal:
-        runner.run(document, template=template)
-    said = str(refusal.value)
-    assert "A[\\d{3,2}]" in said, said
-    assert "AllowedIdShort" in said, said
-
-    code = cli.main([str(document), "--template", str(template)])
-    assert code == cli.EXIT_ERROR, (
-        "a template this reader cannot build a table from left by %d" % code)
+    pack = {"prefix": "X-E", "citation": "a test", "item_names": {},
+            "example_types": (), "skip_sids": frozenset(),
+            "template": template, "output": tmp_path / "x_tables.py"}
+    with pytest.raises(SystemExit) as stopped:
+        extract.generate(pack)
+    assert "AllowedIdShort" in str(stopped.value), stopped.value
+    assert "A[\\d{3,2}]" in str(stopped.value), stopped.value
 
 
 def _self_containing(tmp_path):

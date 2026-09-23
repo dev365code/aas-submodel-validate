@@ -8,9 +8,8 @@ command-line usage error -- an unknown option, a missing argument, a
 value outside the choices, a second path, or two flags that contradict --
 exits 64 (`EX_USAGE`) and writes no report, because no input was read.
 And a `--template` file this reader refuses -- unreadable, not JSON, not
-shaped like a template, over either bound, or carrying an
-`AllowedIdShort` whose numbering suffix is not a repeat -- leaves at 2
-with no report either: the file that would have been judged was readable, nothing was
+shaped like a template, over either bound -- leaves at 2 with no report
+either: the file that would have been judged was readable, nothing was
 written about it, and the template's own digest is recorded nowhere.
 
 A usage error exited 2 before 0.4.0; 2 no longer covers it. Exit 2

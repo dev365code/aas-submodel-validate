@@ -457,6 +457,34 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                            # and a sentence is not something a consumer
                            # should have to match on.
                            "submodels": supplied["declared"]}
+        # A qualifier of the caller's this reader could not read. Said
+        # once, in a note, and nothing about the file changes: the value
+        # feeds one `info` rule whose own remedy calls it tidiness
+        # rather than conformance, and a run-time table registers no
+        # lints, so under this flag nothing reads it at all. Refusing
+        # the template over it threw away every verdict on the file --
+        # including the errors it had -- over a suggestion.
+        unreadable = [(row["label"], row["allowed_idshort_unreadable"])
+                      for row in supplied["table"].ROWS
+                      if "allowed_idshort_unreadable" in row]
+        if unreadable:
+            named = unreadable[:NAMED_IN_A_NOTE]
+            report.notes.append(
+                "the template you supplied states an AllowedIdShort this "
+                "reader cannot read on %d of its rows (%s). IDTA's spelling "
+                "is `Name[\\d{2,3}]`, lower bound first. Nothing else about "
+                "the verdict changes: that qualifier is a naming "
+                "suggestion, and a table built from your file reports none."
+                % (len(unreadable),
+                   ", ".join(
+                       "%s: `%s`" % (label, value) if isinstance(value, str)
+                       # A qualifier of this type carrying no string is
+                       # a legal file -- `Qualifier.value` is optional --
+                       # and quoting `None` back would send the caller
+                       # looking for that word in their template.
+                       else "%s: no value" % label
+                       for label, value in named)
+                   + ("" if len(named) == len(unreadable) else ", and more")))
     # Held rather than discarded: the walk's own record of which rows it
     # considered lives on the context, and `not_asked` is the difference
     # between that and the tables. Built inline before, so the one thing

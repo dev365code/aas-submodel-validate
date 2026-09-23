@@ -130,13 +130,24 @@ def _intended_pattern(raw):
     vendored templates, every `AllowedIdShort` uses the bracket
     spelling above, so escaping the rest moves no pack.
 
-    A value that claims the bracket spelling and gets it wrong is
-    refused with the template rather than read as a name: `A[\\d{3,2}]`
-    asks for a repeat of at least three and at most two, and no element
-    can be called that either. Refusing says the template cannot be
-    read, which is true; reading it as a name would fault the caller's
-    file for it, which is not.
+    Returns `None` where the value cannot be read at all: one that
+    claims the bracket spelling and gets it wrong (`A[\\d{3,2}]` asks for
+    a repeat of at least three and at most two), or one that is not a
+    string (`Qualifier.value` is optional in the metamodel, so a
+    qualifier declaring this type and no value is a legal file). The
+    caller says so and carries on.
+
+    Not refused with the template, which is what the first repair did.
+    This value feeds one rule, `info`, whose own remedy reads "Any
+    unique idShort is legal; this is tidiness, not conformance" -- and a
+    run-time table registers no lints at all, so under `--template`
+    nothing reads it. Refusing threw away every MUST verdict on the file
+    over a suggestion, while an unreadable `SMT/Cardinality` -- which
+    decides whether an element is required -- quietly defaults to `0..*`
+    ten lines above. The proportion was upside down.
     """
+    if not isinstance(raw, str):
+        return None
     matched = _ALLOWED.match(raw)
     if matched:
         # The name is escaped here too. The first repair reached the
@@ -158,15 +169,8 @@ def _intended_pattern(raw):
             # anticipated, which is the half the two repairs before this
             # one each left standing.
             re.compile(pattern)
-        except re.error as exc:
-            raise TemplateRefused(
-                # The value as the template spells it, not as Python
-                # spells it: `%r` doubles the backslash, and the caller
-                # is looking for this string in their own file.
-                "an AllowedIdShort qualifier reads `%s`, and its numbering "
-                "suffix is not a repeat this reader can run (%s). IDTA's "
-                "spelling is `Name[\\d{2,3}]`, lower bound first."
-                % (raw, exc)) from exc
+        except re.error:
+            return None
         return pattern
     return "^%s$" % re.escape(raw)
 
@@ -190,10 +194,10 @@ def _values_of(reference):
 def _declared_values(element):
     """Every identifier the template gives this element, folded.
 
-    One reading, because two questions are asked of it: whether the
-    element is open content, and what its row answers to. Asked
-    separately they disagreed -- the skip read the element's own
-    semanticId and this read its supplementals too.
+    What a row answers to is drawn from this, and so is half of the
+    open-content question. The other half reads the element's own
+    semanticId alone, which is a different question and is asked
+    separately in `_is_open_content`.
     """
     values = set()
     if element.get("semanticId"):
@@ -203,9 +207,55 @@ def _declared_values(element):
     return values
 
 
-def _match_set(element, markers):
+def _is_open_content(element, markers):
+    """Whether the template has left this place to the supplier.
+
+    Two questions, not one, and reading only either of them was measured
+    wrong in a different direction.
+
+    The first is what the template calls the element. Its *own*
+    semanticId being a marker is the template saying "anything may go
+    here", and what it carries beside that describes the placeholder --
+    a unit, a preferred type -- without turning the place into a
+    requirement. Read as "every identifier must be a marker", a
+    placeholder that named a unit alongside became a mandatory row, and
+    the supplier's own element sitting in that place was reported
+    missing: `found 0` about a file that is fine, which is the outcome
+    `docs/divergences.md` #19 exists to prevent.
+
+    The second is whether anything is left to ask for. Markers are not
+    identities -- `_match_set` removes them -- so an element identified
+    by nothing else has an empty match set, and a row built on one can
+    never be satisfied. Read as "only the element's own semanticId
+    counts", a placeholder that declared itself open in a supplemental
+    got exactly such a row.
+
+    Folded on both sides: `_values_of` folds every other reference in
+    this file, and unfolded, a marker written with a trailing space was
+    not skipped while the same value matched on the instance side.
+    """
+    keys = [normalize(key["value"])
+            for key in element.get("semanticId", {}).get("keys", [])]
+    if "/".join(keys) in markers:
+        return True
+    declared = _declared_values(element)
+    # `declared` empty is not open content: an element with no identifier
+    # at all is how a list's sole item row is written, and inside a list
+    # such an element is matched by kind (`_matches_row`).
+    return bool(declared) and not (declared - markers)
+
+
+def _match_set(element, skip_sids):
     """The identifiers a row answers to: what the template declares,
-    less the open-content markers.
+    less the pack's open-content markers.
+
+    The argument is the pack's own list and not the module constant, so
+    that the two questions asked of that list -- is this place open, and
+    what does its row answer to -- cannot be asked of two different
+    lists. Named for what arrives rather than for what it holds: a pack
+    that put a real identifier in its skip list would have that
+    identifier disappear from every match set, and a parameter called
+    `markers` hides that from anyone reading the call.
 
     A marker says a place is open, not what belongs in it. Left in, it
     was an identity like any other: an element that carried a real
@@ -221,7 +271,7 @@ def _match_set(element, markers):
     semanticId and those elements never reach here. This is about what a
     caller's template can do.
     """
-    return tuple(sorted(_declared_values(element) - markers))
+    return tuple(sorted(_declared_values(element) - skip_sids))
 
 
 def _primary_sid(element):
@@ -250,18 +300,7 @@ def _rows(element, parent_label, parent_id, counter, pack):
     describes open content rather than an obligation (see `skip_sids`).
     The check comes before the counter so skipped subtrees leave no gap in
     the numbering and no trace in a sibling template's table."""
-    #: An element whose identifiers are nothing but open-content markers
-    #: is the template saying "anything may go here", and a row for it
-    #: fires against the supplier's own content
-    #: (`docs/divergences.md` #19).
-    #:
-    #: Asked of every identifier rather than of the element's own
-    #: semanticId alone. The narrower reading let an element declare
-    #: itself open content in a supplemental and keep its row -- a row
-    #: whose match set was then empty, so its cardinality could never be
-    #: met and a conformant file was faulted for it.
-    declared = _declared_values(element)
-    if declared and not (declared - pack["skip_sids"]):
+    if _is_open_content(element, pack["skip_sids"]):
         return None
     label = element.get("idShort") \
         or pack["item_names"].get(parent_label, parent_label + "Item")
@@ -337,6 +376,15 @@ def _rows(element, parent_label, parent_id, counter, pack):
         child_row = _rows(child, label, row_id, counter, pack)
         if child_row is not None:
             children.append(child_row)
+    #: Read before the row is built so the row can carry the fact. A
+    #: value that cannot be read leaves the pattern unset and the raw
+    #: text on the row, where the caller who supplied the template is
+    #: told about it once. `in` rather than truth: `Qualifier.value` is
+    #: optional, so a qualifier of this type with no value at all is a
+    #: legal file and is a value this cannot read, not an absence.
+    declares_idshort = "AllowedIdShort" in qualifiers
+    allowed_idshort = (_intended_pattern(qualifiers["AllowedIdShort"])
+                       if declares_idshort else None)
     row = {
         "id": row_id,
         "label": label,
@@ -350,14 +398,19 @@ def _rows(element, parent_label, parent_id, counter, pack):
         "card": card,
         "value_type": element.get("valueType"),
         "list_type": element.get("typeValueListElement"),
-        "allowed_idshort": (_intended_pattern(qualifiers["AllowedIdShort"])
-                           if "AllowedIdShort" in qualifiers else None),
+        "allowed_idshort": allowed_idshort,
         "example": example,
         "fix": fix,
         "children": tuple(children),
     }
     if recurses is not None:
         row["recurses"] = recurses
+    if declares_idshort and allowed_idshort is None:
+        # Present only where there is something to say, so a row built
+        # from a template that reads cleanly is the row it always was --
+        # which is what lets the generated tables and the run-time ones
+        # be compared key for key.
+        row["allowed_idshort_unreadable"] = qualifiers["AllowedIdShort"]
     return row
 
 
