@@ -344,6 +344,24 @@ def unmatched_elements(ctx) -> List:
             for (subject, seen), (unasked, resembles) in sorted(best.items())]
 
 
+#: Digits inside a subject sort by value, not by spelling.
+_RUN_OF_DIGITS = re.compile(r"(\d+)")
+
+
+def _in_path_order(record):
+    """A sort key that reads `[2]` as two rather than as the text "2".
+
+    Positions are how an unnamed element is addressed, so a scope of
+    twelve sorts `[0] [10] [11] [1] ...` by string. The caller prints
+    the first few of these as a place to start looking, and the first
+    few were the wrong few.
+    """
+    subject, identifier = record
+    parts = _RUN_OF_DIGITS.split(subject)
+    return ([(int(part), "") if index % 2 else (-1, part)
+             for index, part in enumerate(parts)], identifier)
+
+
 def repeats_not_entered(ctx) -> List:
     """(subject, identifier) for every nested copy of a self-containing
     row this run did not walk into, deduplicated and in path order."""
@@ -351,7 +369,7 @@ def repeats_not_entered(ctx) -> List:
     seen = set()
     for analysis in analysed.values():
         seen.update(analysis.get("not_entered", ()))
-    return sorted(seen)
+    return sorted(seen, key=_in_path_order)
 
 
 def rows_not_reached(ctx) -> List[str]:

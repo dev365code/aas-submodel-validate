@@ -924,12 +924,49 @@ TABLE = [
      "one, because all 43 markers in the vendored templates are an "
      "element's own semanticId; this is what a caller's template can do"),
 
+    ("template/a-table-of-no-rows-says-it-compared-nothing",
+     "src/aas_submodel_validate/runner.py",
+     '        if not supplied["table"].ROWS:',
+     "        if False:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_template_that_states_no_checkable_rule_says_so"],
+     "a submodel judged against a table of no rows is judged, so "
+     "`--require-all-judged` passes it and the run comes back `ok` at "
+     "exit 0 having compared nothing. The only trace was "
+     "`provenance.template.rows` at zero -- a field nobody reading the "
+     "screen sees, and the one number that would have told them"),
+
+    ("template/a-row-nothing-can-answer-is-not-an-obligation",
+     "src/aas_submodel_validate/tablegen.py",
+     "    unidentified = not match and not in_list",
+     "    unidentified = False",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_an_element_the_template_identifies_with_nothing_is_not_an_obligation"],
+     "matching is by identifier and never by idShort, so an element a "
+     "template declares with no semanticId has an empty match set and "
+     "nothing outside a list can answer it. As a mandatory row that was "
+     "an error no file could clear: measured, a file carrying an element "
+     "of exactly the name the template writes was told `found 0`, under "
+     "a remedy that ended \"with semanticId \" and stopped because there "
+     "was nothing to name"),
+
+    ("template/a-lists-item-row-is-matched-by-its-kind",
+     "src/aas_submodel_validate/tablegen.py",
+     "    unidentified = not match and not in_list",
+     "    unidentified = not match",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_list_item_with_no_identifier_of_its_own_keeps_its_obligation"],
+     "the other side of the line above, and the reason it is a line. A "
+     "`SubmodelElementList` names its item row by kind rather than by "
+     "identifier, which is how the published templates write one, so an "
+     "item carrying no semanticId is the ordinary case. Dropping the "
+     "obligation from every unidentified row takes those with it and a "
+     "list the template requires stops being required"),
+
     ("template/what-the-template-calls-a-place-arbitrary-draws-no-row",
      "src/aas_submodel_validate/tablegen.py",
-     '    if "/".join(keys) in markers:\n'
-     "        return True",
-     "    if False:\n"
-     "        return True",
+     '    return "/".join(keys) in markers',
+     "    return False",
      ["tests/test_a_template_a_caller_supplied.py::"
       "test_a_placeholder_that_also_names_something_is_still_a_placeholder"],
      "a template's own placeholder generated a rule, and then the "
@@ -941,19 +978,21 @@ TABLE = [
      "unit alongside became a mandatory row and a conformant file "
      "reported `found 0`"),
 
-    ("template/a-place-with-nothing-left-to-ask-for-draws-no-row",
+    ("template/a-marker-elsewhere-does-not-take-a-subtree-with-it",
      "src/aas_submodel_validate/tablegen.py",
-     "    return bool(declared) and not (declared - markers)",
-     "    return False",
+     '    return "/".join(keys) in markers',
+     '    return "/".join(keys) in markers or (\n'
+     "        bool(_declared_values(element))\n"
+     "        and not (_declared_values(element) - markers))",
      ["tests/test_a_template_a_caller_supplied.py::"
-      "test_a_placeholder_declared_only_in_a_supplemental_draws_no_row"],
-     "markers are not identities and the match set drops them, so an "
-     "element carrying nothing else has an empty one -- and a mandatory "
-     "row built on that can be satisfied by nothing at all. Read as "
-     "\"only the element's own semanticId counts\", a placeholder that "
-     "declared itself open in a supplemental kept exactly such a row, and "
-     "the file was told to provide an element the template never "
-     "identified"),
+      "test_a_marker_somewhere_other_than_the_elements_own_id_does_not_hide_a_subtree"],
+     "read as \"every identifier this element declares is a marker\", a "
+     "container with no semanticId of its own and a marker in a "
+     "supplemental was dropped and every row beneath it went with it. "
+     "Measured on a template whose `Box` holds a mandatory `Inner`: a "
+     "file missing `Inner` went from an error to `ok` at exit 0, and no "
+     "sentence anywhere said a subtree had been skipped. A conformance "
+     "reader going quiet is the one direction with no second opinion"),
 
     ("template/a-numbering-suffix-is-run-before-it-is-shipped",
      "src/aas_submodel_validate/tablegen.py",

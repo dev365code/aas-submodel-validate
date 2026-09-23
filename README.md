@@ -465,7 +465,9 @@ template states — elements, kinds, identifiers, how many of each, the
 hand-written rules, which are readings of a specification
 and cannot be derived from a template. An `AllowedIdShort` pattern sits
 between the two: the table carries it, and the lint that reports one
-belongs to a pack, so a supplied table reads it and says nothing. The report says the table was
+belongs to a pack, so a supplied table reads it and says nothing — one
+it cannot read at all is named in a note, since that is the template's
+defect and not the file's. The report says the table was
 yours, and a verdict against a template you supplied is not a statement
 about conformance to a published IDTA one.
 
@@ -511,9 +513,12 @@ upgrading.
 
 What has not moved is the report. `schemaVersion` is 1; keys are added
 without moving it, and nothing has been renamed or removed under it. No
-rule id has been renamed or reused — the ids of the last release are
-written down in the test suite and checked against every build, because
-a rule id is a citation somebody else made. Vendored IDTA template files
+rule id this project publishes has been renamed or reused — the ids of
+the last release are written down in the test suite and checked against
+every build, because a rule id is a citation somebody else made. The
+`TPL-E*` ids a table built from your own template uses are not among
+them: they are numbered by position in your file, so a change to your
+template renumbers them, and nothing here promises otherwise. Vendored IDTA template files
 are pinned by commit and verified by hash on every run of the suite, so
 an upstream change cannot arrive silently.
 

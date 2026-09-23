@@ -902,6 +902,23 @@ def test_a_supplied_table_reads_an_idshort_pattern_and_says_nothing(tmp_path):
         "say it is read and not said are owed the item back: %s"
         % [(f.id, f.violation.message) for f in report.findings])
 
+    # The other half of what those sentences now say. A pattern this
+    # reader cannot read at all is named in a note, because there it is
+    # the template that went wrong and not the file -- and it is still
+    # not a finding, so the verdict the caller asked for stands. Held
+    # here beside the readable case: this gate ran only the readable one
+    # while the same value was refusing whole templates, and stayed
+    # green through it.
+    unreadable = _template_with_idshort_rule(
+        tmp_path, "Beta[\\d{3,2}]", name="unreadable.json")
+    refused = runner.run(document, template=unreadable)
+    assert not refused.findings, (
+        "an unreadable naming suggestion became a finding about the file: "
+        "%s" % [(f.id, f.violation.message) for f in refused.findings])
+    assert any("AllowedIdShort" in note for note in refused.notes), (
+        "a pattern this reader could not read was dropped in silence: %r"
+        % refused.notes)
+
     # And the drift *is* seen -- so what the sentences describe is a
     # reporting gap and not a reading one, which is what they claim.
     table = runner_module._supplied_table(template)["table"]
@@ -1589,28 +1606,90 @@ def test_a_placeholder_that_also_names_something_is_still_a_placeholder(tmp_path
         % [(f.id, f.violation.message) for f in report.findings])
 
 
-def test_a_placeholder_declared_only_in_a_supplemental_draws_no_row(tmp_path):
-    """The other half, and the one a narrower reading missed.
+def test_a_template_that_states_no_checkable_rule_says_so(tmp_path):
+    """A pass that compared nothing looks exactly like a pass.
 
-    Markers are not identities -- `_match_set` takes them out -- so an
-    element carrying nothing else has an empty match set, and a
-    mandatory row built on one can never be satisfied by anything. Read
-    as "only the element's own semanticId counts", this element kept
-    exactly that row, and the file was told to provide an element the
-    template had not identified.
+    `--require-all-judged` counts submodels, and a submodel judged
+    against a table of no rows is judged. So a template whose every
+    element is open content came back `ok` at exit 0 having asked
+    nothing, and the only trace was `provenance.template.rows` at zero --
+    a field a person reading the screen never sees, and the one number
+    that would have told them.
     """
     document, template = _marker_placeholder(
-        tmp_path, own=None, supplemental=MARKER, name="supp.json")
+        tmp_path, own=MARKER, supplemental=None, name="all-open.json")
     built = runner._supplied_table(template)["table"]
-    assert not built.ROWS, (
-        "an element identified by nothing but a marker generated a row "
-        "that nothing can match: %s"
-        % [(row["label"], row["match"], row["card"]) for row in built.ROWS])
+    assert not built.ROWS, [row["label"] for row in built.ROWS]
     report = runner.run(document, template=template)
-    assert report.ok and not report.findings, (
-        "a row with no identity to ask for was still asked: %s"
-        % [(f.id, f.violation.message) for f in report.findings])
+    assert report.ok, report.findings
+    assert any("no rule this reader can check" in note
+               for note in report.notes), (
+        "a run that compared nothing came back a pass and said nothing "
+        "about it: %r" % report.notes)
 
+
+def test_a_marker_somewhere_other_than_the_elements_own_id_does_not_hide_a_subtree(tmp_path):
+    """Going quiet is the one direction with no second opinion.
+
+    The rule was once "every identifier this element declares is a
+    marker", and a container with no semanticId of its own and a marker
+    in a supplemental met it -- so the container was dropped and every
+    row beneath it with it. Measured on a template whose `Box` holds a
+    mandatory `Inner`: a file missing `Inner` went from an error to `ok`
+    at exit 0, and nothing on the page said a subtree had been skipped.
+
+    Such a container is still not an obligation -- markers are not
+    identities and nothing can answer a row with an empty match set --
+    but that is settled the way every other unanswerable row is: the
+    obligation is dropped, the rows underneath stay in the table, and
+    the run says which element the template failed to identify.
+    """
+    def sid(*values):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}
+                         for value in values]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    template = tmp_path / "hidden-subtree.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:h", "idShort": "S",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Box",
+            "supplementalSemanticIds": [sid(MARKER)],
+            "qualifiers": [card("One")],
+            "value": [{"modelType": "Property", "idShort": "Inner",
+                       "valueType": "xs:string",
+                       "semanticId": sid("urn:test:inner"),
+                       "qualifiers": [card("One")]}]}]}]}).encode("utf-8"))
+
+    built = runner._supplied_table(template)["table"]
+    labels = [row["label"] for row in built.ROWS]
+    assert "Inner" in labels, (
+        "the rows under an element the template did not identify were "
+        "dropped with it: %s" % labels)
+    box = built.BY_LABEL["Box"]
+    assert box["card"] == (0, None), (
+        "an element nothing can answer kept its obligation: %s"
+        % (box["card"],))
+
+    document = tmp_path / "no-inner.json"
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:d", "idShort": "S",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Box",
+            "semanticId": sid(MARKER), "value": []}]}]}).encode("utf-8"))
+    report = runner.run(document, template=template)
+    said = " ".join(report.notes)
+    assert "Box" in said and "no semanticId" in said, (
+        "a subtree went unexamined and the run said nothing: %r"
+        % report.notes)
 
 
 def test_every_pack_skips_through_the_one_shared_set(tmp_path):
@@ -1945,6 +2024,102 @@ def test_a_vendored_template_this_reader_cannot_read_stops_the_build(tmp_path):
     assert "A[\\d{3,2}]" in str(stopped.value), stopped.value
 
 
+def test_an_element_the_template_identifies_with_nothing_is_not_an_obligation(tmp_path):
+    """An error no file could clear, on a file that carries the element.
+
+    Matching here is by identifier and never by idShort -- that is the
+    walk's own rule and `_matches_row` says so. An element a template
+    declares with no semanticId therefore has an empty match set, and
+    outside a list nothing can answer it: a mandatory row on one
+    reported `found 0` against a file carrying an element of exactly the
+    name the template writes, under a remedy that ended "with semanticId
+    " and stopped, because there was nothing to name.
+
+    Inside a list it is a different element: a sole item row with no
+    identifier of its own is matched by its kind, which is how the
+    published templates write one, so that row keeps its obligation.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    template = tmp_path / "unidentified.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:u", "idShort": "U",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": "Nameless",
+            "valueType": "xs:string", "qualifiers": [card("One")]}]}]}
+    ).encode("utf-8"))
+
+    document = tmp_path / "carries-it.json"
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:d", "idShort": "U",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": "Nameless",
+            "valueType": "xs:string", "value": "v"}]}]}).encode("utf-8"))
+
+    report = runner.run(document, template=template)
+    assert report.ok and not report.findings, (
+        "the file carries the element the template names and was told it "
+        "does not: %s" % [(f.id, f.violation.message, f.violation.fix)
+                          for f in report.findings])
+    said = " ".join(report.notes)
+    assert "no semanticId" in said and "Nameless" in said, (
+        "the template asks for something it identifies with nothing and "
+        "the run said nothing about it: %r" % report.notes)
+
+
+def test_a_list_item_with_no_identifier_of_its_own_keeps_its_obligation(tmp_path):
+    """The other side of the same line, and the reason it is a line.
+
+    A `SubmodelElementList` names its item row by kind, not by
+    identifier -- the published templates write one that way -- so an
+    item carrying no semanticId is the ordinary case and not a template
+    defect. Dropping the obligation from every unidentified row would
+    have taken these with it.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    template = tmp_path / "list-item.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:l", "idShort": "L",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementList", "idShort": "Entries",
+            "semanticId": sid("urn:test:entries"),
+            "typeValueListElement": "Property",
+            "qualifiers": [card("One")],
+            "value": [{"modelType": "Property", "idShort": "Entry",
+                       "valueType": "xs:string",
+                       "qualifiers": [card("OneToMany")]}]}]}]}
+    ).encode("utf-8"))
+
+    built = runner._supplied_table(template)["table"]
+    item = [row for row in built.ROWS if row["label"] == "Entry"]
+    assert item, [row["label"] for row in built.ROWS]
+    assert item[0]["card"] == (1, None), (
+        "the item row lost the obligation the template states: %s"
+        % (item[0]["card"],))
+    assert not item[0].get("unidentified"), (
+        "a list's item row was read as a template defect")
+
+
 def _self_containing(tmp_path):
     """A template whose `Node` holds a `Node`, and a file three deep.
 
@@ -2130,6 +2305,17 @@ def test_a_note_names_the_first_few_copies_and_counts_all_of_them(tmp_path):
         "count carries the rest: %s" % (len(named), note))
     assert ", and more)" in note, (
         "the note stopped naming and did not say so: %s" % note)
+
+    # And the first few are the first few. Positions are how an unnamed
+    # element is addressed, and sorted as text a scope of twelve reads
+    # `[0] [10] [11]` -- so the three offered as a place to start
+    # looking were the wrong three. Twelve, because the defect is
+    # invisible below ten.
+    document, template = _self_containing_list(tmp_path, copies=12)
+    note = next(n for n in runner.run(document, template=template).notes
+                if "nested cop" in n)
+    assert "12 nested copies" in note, note
+    assert re.findall(r"H/Node/Nodes/\[(\d+)\]", note) == ["0", "1", "2"], note
 
 
 

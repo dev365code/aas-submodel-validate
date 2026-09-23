@@ -137,12 +137,21 @@ def test_a_template_far_above_the_row_bound_is_refused_before_anything_walks_it(
     """
     pack = _pack(tmp_path, ROWS)
     start = time.perf_counter()
-    with pytest.raises(tablegen.TemplateRefused) as refused:
+    # `SystemExit`, because this caller is the build tool. The core
+    # raises `TemplateRefused` so that a reader handed a file by
+    # somebody else can leave by the code that means "could not judge
+    # this input"; a build tool owes a sentence and a 1. `generate`
+    # caught only `DuplicateLabel` for that, which is a subclass -- so
+    # this refusal, its sibling, came out as twelve frames of traceback
+    # naming no pack.
+    with pytest.raises(SystemExit) as refused:
         generator.generate(pack)
     took = time.perf_counter() - start
     assert "rows" in str(refused.value), refused.value
     assert str(tablegen.MAX_TEMPLATE_ROWS) in str(refused.value), (
         "the refusal does not say what the bound is: %s" % refused.value)
+    assert pack["output"].name in str(refused.value), (
+        "the refusal does not say which pack it is about: %s" % refused.value)
     assert took < CEILING_SECONDS, (
         "refusing %d elements on the row bound took %.2fs" % (ROWS, took))
 

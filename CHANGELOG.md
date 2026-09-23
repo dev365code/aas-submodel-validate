@@ -30,7 +30,8 @@ elements, of which kind, under which identifiers, how many of each, the
 `valueType` each declares, and a list's item type. An `AllowedIdShort`
 pattern is read into the table and reported by nothing: the lint that
 reports one is a pack's, and a table built at run time registers no
-lints. What it does not bring is everything a pack carries besides its
+lints. One this reader cannot read is the exception and is named in a
+note, because there the template is what went wrong. What it does not bring is everything a pack carries besides its
 table — the hand-written rules, which are readings of a specification
 rather than of a template, the readings recorded in
 `docs/divergences.md`, and the corpus that pins them. Those exist per
@@ -92,6 +93,23 @@ failing to be a placeholder. And a marker is never one of the
 identifiers a row answers to: without that, an element of yours sitting
 under a marker satisfied a row the template meant for something else,
 and a file missing the element that row requires was called fine.
+
+**A template that states no rule this reader can check says so.** Every
+element open content, or none of them identified, and the table has no
+rows — a submodel judged against it is still judged, so the run came
+back `ok` at exit 0 having compared nothing, with the count only in
+`provenance.template.rows` where nobody reading the screen would find
+it. A note says it now, and a pass there says only what it means.
+
+**An element your template does not identify is reported, not
+enforced.** Elements are matched by identifier here and never by
+idShort, so a row for an element the template gives no `semanticId` is
+one nothing in your file can answer — asked as an obligation it was an
+error no file could clear, printed against a file that carried an
+element of exactly the name the template writes, under a remedy that
+ended `with semanticId ` and stopped. A note names those elements
+instead. A list's item row is matched by its kind and keeps whatever
+the template asks of it.
 
 **A template whose element holds a copy of itself says what it did not
 enter.** The table stops at the first copy so that it stays finite, and

@@ -457,6 +457,41 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                            # and a sentence is not something a consumer
                            # should have to match on.
                            "submodels": supplied["declared"]}
+        # A table with no rows in it. `--require-all-judged` counts
+        # submodels and this one was judged, so a template whose every
+        # element is open content -- or which identifies none of them --
+        # came back `ok` at exit 0 having asked nothing at all, with the
+        # count only in `provenance.template.rows` where a person
+        # reading the screen never sees it.
+        if not supplied["table"].ROWS:
+            report.notes.append(
+                "the template you supplied states no rule this reader can "
+                "check: every element it declares is open content or "
+                "carries no semanticId. Nothing in your file was compared "
+                "against it, and a pass here says only that.")
+        # An element the template asks for and identifies with nothing.
+        # Matching here is by identifier and never by idShort, so
+        # outside a list -- where a sole item row is matched by kind --
+        # no element can answer such a row. Stated rather than enforced:
+        # as an obligation it was an error no file could clear, and the
+        # remedy it printed ended "with semanticId " and nothing.
+        unidentified = [row["label"] for row in supplied["table"].ROWS
+                        if row.get("unidentified")]
+        if unidentified:
+            named = unidentified[:NAMED_IN_A_NOTE]
+            report.notes.append(
+                "the template you supplied describes %d element%s it gives "
+                "no semanticId (%s). Elements are matched by identifier "
+                "here and never by idShort, so nothing in your file can "
+                "answer for %s and this run did not ask. Give %s a "
+                "semanticId in the template and %s become%s a rule."
+                % (len(unidentified), "" if len(unidentified) == 1 else "s",
+                   ", ".join(named)
+                   + ("" if len(named) == len(unidentified) else ", and more"),
+                   "it" if len(unidentified) == 1 else "them",
+                   "it" if len(unidentified) == 1 else "each of them",
+                   "it" if len(unidentified) == 1 else "they",
+                   "s" if len(unidentified) == 1 else ""))
         # A qualifier of the caller's this reader could not read. Said
         # once, in a note, and nothing about the file changes: the value
         # feeds one `info` rule whose own remedy calls it tidiness

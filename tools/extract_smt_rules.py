@@ -288,12 +288,18 @@ def generate(pack) -> str:
     document = json.loads(pack["template"].read_text("utf-8-sig"))
     try:
         built = tablegen.build(document, pack)
-    except tablegen.DuplicateLabel as clash:
+    except tablegen.TemplateRefused as refused:
         # A build tool leaves by 1 with a sentence. The core raises
         # instead of exiting, because a caller handed a template by
         # somebody else owes the code that means "could not judge this
         # input" and that is not this caller.
-        raise SystemExit("%s: %s" % (pack["output"].name, clash)) from None
+        #
+        # The whole class, not `DuplicateLabel` alone. `DuplicateLabel`
+        # is a subclass, so naming it caught one refusal and let its
+        # siblings out as a traceback -- twelve frames, no pack named,
+        # for a re-vendored template above the row bound or carrying a
+        # qualifier this reader cannot build. Measured on both.
+        raise SystemExit("%s: %s" % (pack["output"].name, refused)) from None
     # A vendored template whose own qualifier this reader cannot read is
     # this project's problem and not a user's, so the build tool stops
     # rather than emitting a table with the value quietly dropped. A

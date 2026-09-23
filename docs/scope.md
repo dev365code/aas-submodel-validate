@@ -71,7 +71,9 @@ submodel judged against that. What that buys and what it does not:
   `AllowedIdShort` pattern. The table carries it and the walk records an
   element whose name does not match, but only a pack's own lint reports
   that, and a table built at run time registers no lints. So a supplied
-  template's `AllowedIdShort` is read and not said.
+  template's `AllowedIdShort` is read and not said — unless it cannot be
+  read at all, which is the template's defect rather than the file's and
+  is named in a note.
 - It does **not** bring the hand-written rules, which are readings of a
   specification rather than of a template: the battery passport against
   Regulation (EU) 2023/1542, `URIOfTheProduct` as an absolute URI, the
@@ -85,6 +87,10 @@ submodel judged against that. What that buys and what it does not:
 - Where your template claims an identifier one of the six packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
+- The `TPL-E*` ids such a run uses are **not ids this project
+  publishes**. They are numbered by position in your template, so
+  editing it renumbers them: a pipeline suppressing one by id is
+  suppressing a position rather than a rule.
 - What a template marks as **open content** is a place it has left to
   you, and nothing here judges it. An element the template identifies
   *as* a marker draws no rule — whatever else it carries beside that,
@@ -95,6 +101,14 @@ submodel judged against that. What that buys and what it does not:
   also never one of the identifiers a rule answers to, so your element
   under a marker cannot stand in for one the template actually asked
   for.
+- An element a template declares and gives **no semanticId** is not a
+  rule. Elements are matched by identifier here and never by idShort, so
+  nothing in your file could answer such a row; asked as an obligation
+  it was an error no file could clear. The run says which elements those
+  were, and giving one a semanticId in the template turns it into a
+  rule. A list's item row is the exception and not an instance of this:
+  it is matched by its kind, which is how the published templates write
+  one.
 - An element a template declares **inside itself** — 02011 Hierarchical
   Structures is the published case — is judged at its outermost
   occurrence only. The table stops at the repeat so that it stays

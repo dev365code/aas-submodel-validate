@@ -223,26 +223,32 @@ def _is_open_content(element, markers):
     missing: `found 0` about a file that is fine, which is the outcome
     `docs/divergences.md` #19 exists to prevent.
 
-    The second is whether anything is left to ask for. Markers are not
-    identities -- `_match_set` removes them -- so an element identified
-    by nothing else has an empty match set, and a row built on one can
-    never be satisfied. Read as "only the element's own semanticId
-    counts", a placeholder that declared itself open in a supplemental
-    got exactly such a row.
+    A marker anywhere *else* -- in a supplemental, with no semanticId of
+    the element's own -- does not reach this. It used to: the rule read
+    "every identifier this element declares is a marker", and a
+    container written that way was dropped with everything under it.
+    Measured on a template whose unnamed `Box` held a mandatory `Inner`:
+    a file missing `Inner` went from an error to `ok` at exit 0, because
+    the row that would have asked for it was never built. A conformance
+    reader going quiet is the one direction with no second opinion, and
+    no sentence here or in the published pages said the subtree went
+    too.
 
-    Folded on both sides: `_values_of` folds every other reference in
-    this file, and unfolded, a marker written with a trailing space was
-    not skipped while the same value matched on the instance side.
+    Such an element is still not an obligation -- markers are not
+    identities, `_match_set` removes them, and nothing can answer a row
+    with an empty match set. That is settled where every other
+    unanswerable row is settled, by dropping the obligation and saying
+    so, which keeps the rows underneath in the table and the reason on
+    the page.
+
+    Folded: `_values_of` folds every other reference in this file, and
+    unfolded, a marker written with a trailing space was not skipped
+    while the same value matched on the instance side. Joined first,
+    because a marker spelled across two keys is one identifier.
     """
     keys = [normalize(key["value"])
             for key in element.get("semanticId", {}).get("keys", [])]
-    if "/".join(keys) in markers:
-        return True
-    declared = _declared_values(element)
-    # `declared` empty is not open content: an element with no identifier
-    # at all is how a list's sole item row is written, and inside a list
-    # such an element is matched by kind (`_matches_row`).
-    return bool(declared) and not (declared - markers)
+    return "/".join(keys) in markers
 
 
 def _match_set(element, skip_sids):
@@ -295,7 +301,7 @@ def _cardinality_words(card):
     return "any number of"
 
 
-def _rows(element, parent_label, parent_id, counter, pack):
+def _rows(element, parent_label, parent_id, counter, pack, in_list=False):
     """One row, and its children's rows -- or None where the template
     describes open content rather than an obligation (see `skip_sids`).
     The check comes before the counter so skipped subtrees leave no gap in
@@ -373,9 +379,24 @@ def _rows(element, parent_label, parent_id, counter, pack):
                 and element["modelType"] in ("Entity", "SubmodelElementCollection")):
             recurses = my_sid
             continue
-        child_row = _rows(child, label, row_id, counter, pack)
+        child_row = _rows(child, label, row_id, counter, pack,
+                          in_list=element["modelType"] == "SubmodelElementList")
         if child_row is not None:
             children.append(child_row)
+    #: What this row answers to. An element the template identifies with
+    #: nothing has none, and matching never consults idShort -- so
+    #: outside a list, where a sole item row is matched by its kind
+    #: instead, no element can ever answer this row. A mandatory one was
+    #: then an error no file could clear: measured, a file carrying an
+    #: element of exactly the name the template writes was told
+    #: `found 0`, under a remedy ending "with semanticId " and nothing,
+    #: because there was nothing to name. The obligation is dropped and
+    #: the template's defect is said instead -- the file is not the
+    #: thing that is wrong.
+    match = _match_set(element, pack["skip_sids"])
+    unidentified = not match and not in_list
+    if unidentified:
+        card = (0, None)
     #: Read before the row is built so the row can carry the fact. A
     #: value that cannot be read leaves the pattern unset and the raw
     #: text on the row, where the caller who supplied the template is
@@ -392,7 +413,7 @@ def _rows(element, parent_label, parent_id, counter, pack):
         "kind": element["modelType"],
         # The same set the skip above read, so a pack cannot skip
         # through one list and match through another.
-        "match": _match_set(element, pack["skip_sids"]),
+        "match": match,
         "sid": my_sid,
         "sid_type": element.get("semanticId", {}).get("type"),
         "card": card,
@@ -405,6 +426,8 @@ def _rows(element, parent_label, parent_id, counter, pack):
     }
     if recurses is not None:
         row["recurses"] = recurses
+    if unidentified:
+        row["unidentified"] = True
     if declares_idshort and allowed_idshort is None:
         # Present only where there is something to say, so a row built
         # from a template that reads cleanly is the row it always was --
