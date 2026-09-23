@@ -34,10 +34,21 @@ unentered there went to `rulesNotAsked`, a section the file simply omits
 included, and the summary line named them as rules this run did not
 look inside. A Digital Nameplate whose serial number drifted reported
 the three rules of an asset-specific section it does not carry that
-way. Those rows are now what they are: a place not examined, in
-`scopeNotExamined` and on the summary line's clause about sections. The
-rows a near miss does resemble stay where they were. No verdict moves;
-`rulesNotAsked` gets shorter on such files.
+way. Those rows are now what they are: a place not examined, recorded
+in `scopeNotExamined` -- the summary line names such a place only where
+an element of its kind sits there. The rows a near miss does resemble
+stay where they were. No verdict moves; `rulesNotAsked` gets shorter on
+such files, and a pipeline that read a non-empty one as a sign of drift
+loses one case of it. In a pack that registers no near-miss lint (02006,
+02002, 02023), a drifted element that holds nothing, beside a section
+the file omits, was visible only through that misattribution. It is now
+as silent as the same drift beside a section the file carries has always
+been (`docs/divergences.md` #23).
+
+An element two tables walk -- a submodel carrying a pack's identifier and
+a supplied template's -- is now charged in `unmatchedElements` with the
+rules both tables lost there. It was charged with one table's, and the
+other's stayed in `rulesNotAsked` with no element beside them.
 
 It is still 221 rules, 178 generated from the vendored official template
 files, across six template packs. What this reader takes in is

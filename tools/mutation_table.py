@@ -1569,6 +1569,45 @@ TABLE = [
      "being asked: one near miss claimed every row its place left "
      "unentered, from 0.1.2 on"),
 
+    ("scope/a-drifted-leaf-claims-nothing",
+     "src/aas_submodel_validate/rules/engine.py",
+     '                result["lost_candidates"].extend(lost)\n\n\ndef _near_miss(',
+     '                result["lost_candidates"].extend(lost)\n'
+     '        result["lost_candidates"].extend(unentered)\n\n\ndef _near_miss(',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_near_miss_elsewhere_does_not_hide_the_place"],
+     "a Nameplate whose serial number drifted reported the three rules of "
+     "an asset-specific section it does not carry as rules the drift kept "
+     "from being asked -- a leaf resembles no row with anything beneath "
+     "it, so the first row's line is never reached on this shape"),
+
+    ("scope/a-row-a-sibling-entered-is-not-a-loss",
+     "src/aas_submodel_validate/rules/engine.py",
+     '            if claimed_by.get(row["id"]) or not row["children"]:\n'
+     '                continue\n'
+     '            grouped.setdefault(',
+     '            if not row["children"]:\n'
+     '                continue\n'
+     '            grouped.setdefault(',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_near_miss_of_a_row_its_sibling_entered_claims_nothing"],
+     "a drifted copy of a list beside the intact one was charged with three "
+     "optional sections beneath that row which neither list carries"),
+
+    ("unmatched/one-record-holds-every-tables-rules",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            for rule in unasked:\n"
+     "                if rule not in held:\n"
+     "                    held.append(rule)\n",
+     "            if len(unasked) > len(held):\n"
+     "                held[:] = list(unasked)\n",
+     ["tests/test_unmatched_coverage.py::"
+      "test_an_element_two_tables_walked_is_charged_with_both",
+      "tests/test_unmatched_coverage.py::"
+      "test_two_elements_printed_as_one_place_lose_no_rule"],
+     "a container two tables walked kept the larger of its two records, and "
+     "seven rules stood in rulesNotAsked with no element beside them"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

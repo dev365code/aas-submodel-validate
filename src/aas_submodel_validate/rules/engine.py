@@ -514,21 +514,30 @@ def unmatched_elements(ctx) -> List:
     not about the file, and it moves no verdict (`docs/divergences.md`
     #19, #23).
 
-    Deduplicated by element, keeping the largest loss recorded for it: the
-    same element is walked once per item of a list.
+    One record per element, holding every rule any table recorded it
+    losing. This kept the largest record and dropped the rest, which is
+    right only while one table walks the element: a submodel two tables
+    answer for -- a pack's identifier and a supplied template's, both on
+    it -- was charged with one table's rules, and the other's stayed in
+    `rulesNotAsked` with no element to look them up by. The row it
+    resembles is the one the largest record names.
     """
     from ..model import UnmatchedElement
 
     analysed = ctx.__dict__.get("_smt_analysis") or {}
-    best = {}
+    lost, resembled = {}, {}
     for analysis in analysed.values():
         for subject, seen, unasked, resembles in analysis.get("unmatched", ()):
-            previous = best.get((subject, seen))
-            if previous is None or len(unasked) > len(previous[0]):
-                best[(subject, seen)] = (unasked, resembles)
-    return [UnmatchedElement(subject=subject, seen=seen,
-                             unasked=unasked, resembles=resembles)
-            for (subject, seen), (unasked, resembles) in sorted(best.items())]
+            key = (subject, seen)
+            if key not in lost or len(unasked) > resembled[key][0]:
+                resembled[key] = (len(unasked), resembles)
+            held = lost.setdefault(key, [])
+            for rule in unasked:
+                if rule not in held:
+                    held.append(rule)
+    return [UnmatchedElement(subject=key[0], seen=key[1], unasked=tuple(lost[key]),
+                             resembles=resembled[key][1])
+            for key in sorted(lost)]
 
 
 #: Digits inside a subject sort by value, not by spelling.

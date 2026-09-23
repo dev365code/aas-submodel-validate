@@ -279,9 +279,10 @@ def render(report: Report, *, show_meta: bool = False,
         # Welding the whole count to one named element asserted a cause the
         # JSON denies: an optional container the file legitimately omits
         # used to leave its children in the total too, belonging to no
-        # element. No input reaches that since a near miss claims only the
-        # rows it resembles; the sentence still must not overclaim should a
-        # loss ever arrive without its element.
+        # element, and so did an element two tables walked. Neither does
+        # now, and the suite checks on every report that nothing does; the
+        # sentence still must not overclaim should a loss ever arrive
+        # without its element.
         who = "%s element is not one" % (
             "its" if len(report.not_asked) == 1 else "their")
         if report.unmatched:

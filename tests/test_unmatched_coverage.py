@@ -26,9 +26,12 @@ from __future__ import annotations
 
 import copy
 import json
+from pathlib import Path
 
 from aas_submodel_validate import runner
-from builders import contact_env
+from builders import contact_env, dn_env
+
+ROOT = Path(__file__).resolve().parents[1]
 
 #: A version-style drift on a container: the last character of an
 #: identifier, which is what a template version bump writes. The near-miss
@@ -47,10 +50,10 @@ SPEC_IPCOMMUNICATION = ("https://admin-shell.io/zvei/nameplate/1/0/"
                         "ContactInformations/ContactInformation/IPCommunication/")
 
 
-def _run(tmp_path, env, name="env.json"):
+def _run(tmp_path, env, name="env.json", **options):
     path = tmp_path / name
     path.write_bytes(json.dumps(env).encode("utf-8"))
-    return runner.run(path)
+    return runner.run(path, **options)
 
 
 def _exit(tmp_path, env, name="env.json"):
@@ -264,14 +267,14 @@ def test_the_terminal_does_not_charge_the_element_with_more_than_it_explains(tmp
 
     The count in the sentence is the run's total, and an element named
     beside it may account for only part of that; welding the two asserts
-    a cause the JSON denies. No input reaches that today. An optional
-    container the file omits used to put its children in the total, with
-    no element to charge them to -- this test's fixture was that shape --
-    until a near miss stopped claiming rows it does not resemble: every
-    rule a run leaves unasked now arrives with the element that explains
-    it, a near miss or an element of the wrong kind. The sentence must
-    still not overclaim should a loss arrive without one, so the case is
-    built by hand: one rule the named element does not explain."""
+    a cause the JSON denies. An optional container the file omits used to
+    put its children in the total, with no element to charge them to --
+    this test's fixture was that shape -- until a near miss stopped
+    claiming rows it does not resemble; an element two tables walked was
+    the other way in, until its record held both tables' rules. The suite
+    now checks on every report that each rule not asked arrives with its
+    element (`conftest.py`), so the case is built by hand: one rule the
+    named element does not explain."""
     from aas_submodel_validate.report import render
 
     env = copy.deepcopy(contact_env())
@@ -291,6 +294,64 @@ def test_the_terminal_does_not_charge_the_element_with_more_than_it_explains(tmp
             if "not asked" in text][0]
     assert "accounts for %d of them" % len(explained) in line, (
         "the sentence charges the element with the run's whole count: %r" % line)
+
+
+def test_an_element_two_tables_walked_is_charged_with_both(tmp_path):
+    """A submodel carrying a pack's identifier and a supplied template's
+    is walked by both tables, and one drifted container costs rules in
+    each. Its record kept the larger loss and dropped the other, so seven
+    rules stood in `rulesNotAsked` with no element beside them and the
+    line said the container accounted for seven of fourteen."""
+    import glob
+
+    source = glob.glob(str(ROOT / "src" / "aas_submodel_validate" / "data"
+                           / "smt" / "02006" / "3.0" / "*.json"))[0]
+    template = json.loads(Path(source).read_text(encoding="utf-8-sig"))
+    template["submodels"][0]["semanticId"]["keys"][0]["value"] = "urn:x:dn-copy"
+    supplied = tmp_path / "copy.json"
+    supplied.write_text(json.dumps(template), encoding="utf-8")
+    env = copy.deepcopy(dn_env())
+    submodel = env["submodels"][0]
+    submodel["semanticId"]["keys"].append(
+        {"type": "GlobalReference", "value": "urn:x:dn-copy"})
+    markings = next(e for e in submodel["submodelElements"]
+                    if e.get("idShort") == "Markings")
+    markings["semanticId"]["keys"][0]["value"] = "0112/2///61360_7#AAS006#002"
+    report = _run(tmp_path, env, template=str(supplied))
+    [record] = report.unmatched
+    assert set(record.unasked) == set(report.not_asked), (record.unasked, report.not_asked)
+    assert any(r.startswith("DN-") for r in record.unasked)
+    assert any(r.startswith("TPL-") for r in record.unasked)
+
+
+def test_two_elements_printed_as_one_place_lose_no_rule(tmp_path):
+    """A Property whose idShort is spelled like a position, `[1]`, beside an
+    unnamed collection at index 1: both print as `.../[1]`, and here both
+    carry one identifier. The record is keyed by those two, so one of them
+    was dropped with the rules it cost (#53 names why the place cannot be
+    told apart; losing the rules is what it no longer does)."""
+    phone = ("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
+             "ContactInformation/Phone")
+    drifted = "0173-1#02-AAQ834#004"      # Fax is ...#005
+
+    def ref(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    env = copy.deepcopy(contact_env())
+    kids = env["submodels"][0]["submodelElements"][0]["value"]
+    kids[:] = [c for c in kids if c.get("idShort") not in ("Phone", "Fax")]
+    kids[:0] = [
+        {"idShort": "[1]", "modelType": "Property", "valueType": "xs:string",
+         "value": "+49 69 1234", "semanticId": ref(phone),
+         "supplementalSemanticIds": [ref(drifted)]},
+        {"modelType": "SubmodelElementCollection", "semanticId": ref(drifted),
+         "value": [{"idShort": "FaxNumber", "modelType": "MultiLanguageProperty",
+                    "value": [{"language": "en", "text": "+49 69 5678"}]}]}]
+    report = _run(tmp_path, env)
+    explained = {rule for record in report.unmatched for rule in record.unasked}
+    assert report.not_asked and explained == set(report.not_asked), (
+        sorted(set(report.not_asked) - explained))
 
 
 def test_siblings_carrying_one_drift_are_one_loss_not_two(tmp_path):

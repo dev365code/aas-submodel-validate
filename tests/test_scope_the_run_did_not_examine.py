@@ -441,6 +441,29 @@ def test_a_near_miss_claims_only_the_rows_it_resembles(tmp_path):
                for record in summary["scopeNotExamined"]), summary["scopeNotExamined"]
 
 
+def test_a_near_miss_of_a_row_its_sibling_entered_claims_nothing(tmp_path):
+    """A second list one version suffix off, beside the intact one. The
+    intact list entered the row, so the drift kept nothing from being
+    asked -- and the optional sections beneath that row which neither list
+    carries are not the drift's doing either. Taking the entered row's
+    subtree anyway charged three of them to the drifted copy."""
+    from builders import hd_env
+
+    environment = hd_env()
+    document = environment["submodels"][0]["submodelElements"][0]["value"][0]
+    versions = next(element for element in document["value"]
+                    if element.get("idShort") == "DocumentVersions")
+    copy = json.loads(json.dumps(versions))
+    copy["idShort"] = "DocumentVersions2"
+    copy["semanticId"]["keys"][0]["value"] = "0173-1#02-ABI503#004"
+    document["value"].append(copy)
+    path = tmp_path / "beside.json"
+    path.write_text(json.dumps(environment), encoding="utf-8")
+    summary = runner.run(path).as_dict()["summary"]
+    assert summary["rulesNotAsked"] == [], summary["rulesNotAsked"]
+    assert summary["unmatchedElements"] == [], summary["unmatchedElements"]
+
+
 def test_a_drifted_place_beside_a_sibling_that_entered_it_is_recorded(tmp_path):
     """Rules put elsewhere in the submodel are taken off a place's record,
     so that a section one list item omits is not reported as unexamined

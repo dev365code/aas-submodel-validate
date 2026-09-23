@@ -234,6 +234,14 @@ def _observe_which_rules_fire():
                      and not finding.id.startswith(RUN_TIME_PREFIX))
         for finding in report.findings:
             _the_route_fits_the_subject(report, finding)
+        # Every rule a run leaves unasked arrives with the element that
+        # explains it: a near miss resembling its row, or an element of the
+        # wrong kind claiming it. The summary line keeps a sentence for a
+        # loss with no element, and this is what says no input reaches it.
+        explained = {rule for record in report.unmatched for rule in record.unasked}
+        assert set(report.not_asked) <= explained, (
+            "rules not asked with no element to explain them: %s"
+            % sorted(set(report.not_asked) - explained))
         return report
 
     runner.run = wrapped
