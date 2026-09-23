@@ -1,4 +1,4 @@
-"""The five runs `docs/scope.md` shows, run.
+"""The runs `docs/scope.md` shows, run.
 
 A page of worked examples is a page of claims. Each row there names an
 exit code and an `ok`, and the two that matter most are the pair that
@@ -8,13 +8,23 @@ reason `submodelsJudged` is in the report.
 from __future__ import annotations
 
 import json
+import pathlib
 
 from aas_submodel_validate import runner
 from aas_submodel_validate.cli import main
 from aas_submodel_validate.model import Severity
 from builders import dn_env
 
-PAGE = "docs/scope.md"
+#: Resolved from this file, not from wherever pytest was started.
+#: A bare relative path here raised `FileNotFoundError` when the suite
+#: was run from `tests/`, and sixty-one other places in this suite
+#: already take the root the same way.
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+PAGE = ROOT / "docs" / "scope.md"
+
+#: An identifier no pack answers for, so a supplied table is the only
+#: thing that could judge a submodel declaring it.
+OPEN_TEMPLATE_SID = "urn:test:states-no-rule"
 
 
 def _metamodel_complaint(tmp_path):
@@ -84,26 +94,143 @@ def test_a_refused_input_still_names_the_bytes_it_refused(tmp_path):
     assert "X1" in {f.id for f in report.findings}
 
 
-def test_a_usage_error_exits_64_and_writes_nothing(capsys):
-    import pytest
+def test_the_section_is_still_there_and_still_a_table():
+    """A guard, and only that.
 
-    with pytest.raises(SystemExit) as raised:
-        main(["--no-such-option"])
-    assert raised.value.code == 64, raised.value.code
-    assert not capsys.readouterr().out
-
-
-def test_the_page_says_the_five_this_tree_produces():
-    """The table's exit codes, against the rows above.
-
-    Held as the set of codes the page names, because the page is where a
-    reader learns which of them means "could not judge" rather than
-    "judged and failed".
+    This used to hold the claim: it looked for a heading and five
+    substrings, none of them a number, so the table's whole `exit`
+    column could be wrong -- or the tool's own exit codes could change
+    -- and it stayed green. Both were measured. The claim lives in
+    `test_every_row_of_the_table_is_run_and_says_what_it_claims` now,
+    which runs the page. What is left here is the thing that test needs
+    in order to run at all.
     """
-    import pathlib
-
-    page = pathlib.Path(PAGE).read_text("utf-8")
-    assert "## What a pass means, in five runs" in page
-    for phrase in ("`--strict-meta`", "`SMT-D1`", "`--allow-unmatched`",
-                   "submodelsJudged", "exits **64**"):
+    page = PAGE.read_text("utf-8")
+    assert "## What a pass means, run by run" in page
+    assert "| run | exit | `ok` | what it means |" in page
+    for phrase in ("submodelsJudged", "provenance.template.rows",
+                   "exits **64**"):
         assert phrase in page, phrase
+
+
+def _rows_of_the_page():
+    """The table, parsed out of the page: (label, exit, ok)."""
+    block = PAGE.read_text("utf-8").split(
+        "| run | exit | `ok` | what it means |", 1)[1]
+    block = block.split("\n\n", 1)[0]
+    rows = []
+    for line in block.split("\n"):
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 4 or set(cells[0]) <= set("-: "):
+            continue
+        rows.append((cells[0], cells[1], cells[2]))
+    return rows
+
+
+def _all_open_template(tmp_path):
+    """A template whose only element is open content, so it states no
+    rule this reader can check and its table comes out with no rows."""
+    def ref(value):
+        return {"type": "GlobalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    path = tmp_path / "all-open-template.json"
+    path.write_text(json.dumps({"submodels": [{
+        "kind": "Template", "idShort": "T", "id": "urn:t",
+        "semanticId": ref(OPEN_TEMPLATE_SID),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Free",
+            "semanticId": ref("https://admin-shell.io/SMT/General/Arbitrary"),
+            "qualifiers": [{"type": "SMT/Cardinality",
+                            "valueType": "xs:string", "value": "One"}],
+            "value": []}]}]}), encoding="utf-8")
+    return path
+
+
+def _declares_the_open_template(tmp_path):
+    from builders import env_json
+
+    path = tmp_path / "declares-open.json"
+    path.write_bytes(env_json(OPEN_TEMPLATE_SID))
+    return path
+
+
+def _not_a_template(tmp_path):
+    path = tmp_path / "not-a-template.json"
+    path.write_text('{"hello": "world"}', encoding="utf-8")
+    return path
+
+
+def _refused(tmp_path):
+    path = tmp_path / "refused.aasx"
+    path.write_bytes(b"not a zip at all")
+    return path
+
+
+def test_every_row_of_the_table_is_run_and_says_what_it_claims(tmp_path, capsys):
+    """The page is the fixture, not something restated in Python.
+
+    The table's `exit` column was asserted nowhere: six of the tests
+    above call `runner.run`, which returns a report and no exit code,
+    and the seventh looked for five substrings, none of them a number.
+    Measured, twice: setting every `exit` cell to 7 and flipping every
+    `ok` cell left this file green, and changing the tool's own
+    `EXIT_FINDINGS` and `EXIT_ERROR` left it green too. A claim nothing
+    reads drifts in either direction, and both directions had a way in.
+
+    So each row is looked up by its own words, run through `main` -- the
+    entrance a build uses -- and compared against what the page prints.
+    A row this file has no run for fails rather than passes: a claim
+    nobody can produce is the thing being guarded against.
+    """
+    argv_for = {
+        "a file whose only complaint is from the metamodel":
+            lambda: [str(_metamodel_complaint(tmp_path))],
+        "the same file with `--meta error`":
+            lambda: [str(_metamodel_complaint(tmp_path)), "--meta", "error"],
+        "a submodel of a template this build has no table for, and no `--template`":
+            lambda: [str(_unsupported(tmp_path))],
+        "the same with `--allow-unmatched`":
+            lambda: [str(_unsupported(tmp_path)), "--allow-unmatched"],
+        "the same again with `--require-all-judged`":
+            lambda: [str(_unsupported(tmp_path)), "--allow-unmatched",
+                     "--require-all-judged"],
+        "a supplied table that states no rule this reader can check":
+            lambda: [str(_declares_the_open_template(tmp_path)), "--template",
+                     str(_all_open_template(tmp_path)), "--require-all-judged"],
+        "an input this reader refuses to read":
+            lambda: [str(_refused(tmp_path))],
+        "a `--template` this reader refuses to read":
+            lambda: [str(_metamodel_complaint(tmp_path)), "--template",
+                     str(_not_a_template(tmp_path))],
+    }
+
+    rows = _rows_of_the_page()
+    assert rows, "the table did not parse"
+    unrunnable = [label for label, _exit, _ok in rows if label not in argv_for]
+    assert not unrunnable, (
+        "the page shows a run this file cannot produce: %s" % unrunnable)
+
+    for label, printed_exit, printed_ok in rows:
+        capsys.readouterr()
+        # `main` returns the code on the paths that produce a report and
+        # raises for a usage error, so both are read the same way here.
+        try:
+            code = main(argv_for[label]() + ["-f", "json"])
+        except SystemExit as left:              # pragma: no cover - usage only
+            code = left.code
+        written = capsys.readouterr().out
+        assert str(code) == printed_exit, (
+            "%r: the page says exit %s and the run left with %s"
+            % (label, printed_exit, code))
+        if printed_ok == "no report":
+            assert not written.strip(), (
+                "%r: the page says no report and the run wrote %d bytes"
+                % (label, len(written)))
+            continue
+        assert written.strip(), (
+            "%r: the page states `ok` %s and the run wrote no report"
+            % (label, printed_ok))
+        assert str(json.loads(written)["ok"]).lower() == printed_ok, (
+            "%r: the page says `ok` %s and the report says %s"
+            % (label, printed_ok, json.loads(written)["ok"]))

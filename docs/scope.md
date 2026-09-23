@@ -52,30 +52,44 @@ finding.
 Information for Use submodel and handing its iiRDS payload to
 iirds-validate, so the two standards' validators compose.
 
-## What a pass means, in five runs
+## What a pass means, run by run
 
-`ok` and the exit code answer one question — *did anything this build
-asked come back wrong* — and that is narrower than "this file is
-conformant". These are the five shapes a run comes back in, each with
-what it says and what it does not. No option below is new; they are the
-ones already there.
+`ok` and the exit code answer one question each, and neither is "this
+file is conformant". `ok` is *no finding at error severity*. The exit
+code is that, plus the flags that make other things fail the run -- so
+the two can part company, and one of the rows below is where they do.
+These are the shapes a run comes back in, each with what it says and
+what it does not. No option here is new; they are the ones already
+there.
 
 | run | exit | `ok` | what it means |
 |---|---|---|---|
-| a file whose only complaint is from the metamodel | 0 | true | one `META` warning, `judged 1 of 1`. The metamodel relay is a warning by default, so a file with a metamodel defect and no template defect passes |
-| the same file with `--strict-meta` | 1 | false | the same single `META`, promoted to an error. Nothing about the file changed; the policy did |
-| a submodel of a template this build has no table for | 1 | false | `SMT-D1`, `judged 0 of 1`. The file is not being called wrong — nothing here judged it |
-| the same with `--allow-unmatched` | 0 | true | no findings, and still `judged 0 of 1`. **This is a pass that judged nothing**, which is why the count is in the report and worth reading |
-| an input this reader refuses | 2 | — | a report naming the file, its digest, and the refusal (`X1` here), plus a line on stderr. 2 means "could not judge", not "judged and failed" |
+| a file whose only complaint is from the metamodel | 0 | true | one `META` warning, `judged 1 of 1`. The metamodel relay is a warning by default, so a metamodel defect alone passes |
+| the same file with `--meta error` | 1 | false | the same single `META`, promoted to an error. Nothing about the file changed; the policy did. (`--strict-meta` is the older spelling and still works) |
+| a submodel of a template this build has no table for, and no `--template` | 1 | false | `SMT-D1`, `judged 0 of 1`. The file is not being called wrong -- nothing here judged it |
+| the same with `--allow-unmatched` | 0 | true | no finding **from this run**, and still `judged 0 of 1`. **This is a pass that judged nothing** |
+| the same again with `--require-all-judged` | 1 | true | **`ok` is true and the run failed.** The flag fails on the count, not on a finding, so a build reading `.ok` alone goes green here. `-W` parts them the same way |
+| a supplied table that states no rule this reader can check | 0 | true | `judged 1 of 1` having compared **nothing**: every element the template declares is open content, so its table has no rows. `--require-all-judged` passes it, because the submodel *was* judged -- against nothing. `provenance.template.rows` is the number that says so, and a note says it in words |
+| an input this reader refuses to read | 2 | false | `X1`, and a report naming the file and the bytes it refused. `ok` is **false** here and that does not mean the file is wrong: `summary.judged` is false, and that is what tells a refusal from a failure. 2 means "could not judge", not "judged and failed" |
+| a `--template` this reader refuses to read | 2 | no report | the table could not be built, so there is no verdict to write and nothing is written. The reason goes to stderr |
 
-A usage error — an unknown option, a missing argument, two flags that
-contradict — exits **64** and writes no report, because no input was
+A path that was never opened -- a name that is not there, a device, a
+directory -- is also exit 2, with `X6` and no digest: `inputSha256` is
+`null` because there were no bytes to name. `docs/report-schema.md` is
+where the fields and their null cases are defined; this page shows the
+runs.
+
+A usage error -- an unknown option, a missing argument, flags that
+contradict -- exits **64** and writes no report, because no input was
 read.
 
-Two of those five are `ok: true` and only one of them judged anything.
-A build that gates on the exit code alone cannot tell them apart;
-`summary.submodelsJudged` is the number that can, and
-`--require-all-judged` turns the difference into an exit code.
+Three of these come back `ok: true` and only one of them judged
+anything against a rule. `summary.submodelsJudged` separates the first
+four; it does **not** separate the fifth, where a table with no rows
+judged a submodel against nothing. For that route the number is
+`provenance.template.rows`. A build that gates on the exit code alone
+cannot tell any of them apart, and one that gates on `.ok` alone misses
+the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 
