@@ -113,16 +113,18 @@ def test_the_relationship_question_and_the_value_question_are_both_asked(tmp_pat
 def test_the_relationship_remedy_does_not_undo_a_correct_declaration(tmp_path):
     """One missing part, both rules, and X4 offered two ways out as equals:
     add the part, or delete the relationship. Where a File value names the
-    part too, the second is wrong twice -- the File finding stands, and the
-    declaration it deletes was right. The File rule's remedy already
-    pointed at X4; X4's pointed nowhere back.
+    part too, deleting leaves it missing. The remedy now says what deleting
+    does and does not do, offers correcting a wrong name -- a name no part
+    can carry has no part to add -- and points back at the File rules,
+    whose remedy already pointed here.
     """
     report = runner.run(_package(tmp_path, "declared-too",
                                  suppl_targets=[LOGO, CE]))
     assert len(_missing_part(report)) == 2, _missing_part(report)
     (remedy,) = {f.fix for f in report.findings if f.id == "X4"}
-    assert "only if nothing in the model names" in remedy, remedy
-    assert "a File rule reports the same missing part" in remedy, remedy
+    assert "removes only the declaration" in remedy, remedy
+    assert "correct that name if it is wrong" in remedy, remedy
+    assert "File rules' question" in remedy, remedy
 
 
 def test_every_pack_with_a_file_row_asks(tmp_path):

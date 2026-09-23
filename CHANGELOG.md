@@ -32,21 +32,22 @@ bounded separately, at the same 64 MiB and additionally at ten thousand
 rows.
 
 **And the report says what the run did not open.** `summary` gains
-`scopeNotExamined`: one record per template row whose scope no element
-matched, the rules that went unasked with it, and -- as a separate fact,
-not a cause -- which elements of the kind that row asks for sat in the
-same scope matching no row. Before it, a container carrying an
-identifier the template does not name passed with every published number
-identical to a clean run, while the rule that would have checked inside
-it was never put to anything.
+`scopeNotExamined`: one record per place a template row was not entered,
+the rules that went unasked there, and -- as a separate fact, not a
+cause -- which elements of the kind that row asks for sat there matching
+no row. Before it, a container of the kind a row asks for, wearing an
+identifier the template does not name, passed with every published
+number identical to a clean run, while the rule that would have checked
+inside it was never put to anything.
 
 It names no culprit. A different identifier may be a legitimate vendor
 extension, and nothing tells that from a typo by looking, so
 `rulesNotAsked` and `unmatchedElements` keep their narrower triggers and
 this reports the reach of the check without the blame. Nothing here
 moves a verdict or an exit code, and the screen prints only the records
-that have an unplaceable element beside them -- the other kind is on
-nearly every clean run.
+that have such an element beside them, and none in a place the clause
+about rules not asked already covers -- the other kind is on nearly
+every clean run.
 
 ## 0.5.1 — 2026-09-23
 

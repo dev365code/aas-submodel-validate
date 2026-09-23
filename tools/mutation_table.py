@@ -349,41 +349,55 @@ TABLE = [
 
     ("scope/what-sat-there-is-named",
      "src/aas_submodel_validate/rules/engine.py",
-     "unclaimed=tuple(sorted(sat[(where, rule)])))",
-     "unclaimed=())",
+     "unclaimed=tuple(names[:UNCLAIMED_NAMED]),",
+     "unclaimed=(),",
      ["tests/test_scope_the_run_did_not_examine.py::"
       "test_what_sat_there_is_named_so_opposite_cases_differ"],
      "a row's own container under a drifted identifier and a row the file "
      "omits beside an unrelated container of the same kind write the same "
      "record, byte for byte, unless the record names what sat there"),
 
-    ("screen/a-rule-named-not-asked-is-not-counted-again",
+    ("screen/a-place-already-said-is-not-said-again",
      "src/aas_submodel_validate/report.py",
-     "    told = set(report.not_asked)",
-     "    told = set()",
+     "             and not record.explained]",
+     "             and True]",
      ["tests/test_scope_the_run_did_not_examine.py::"
-      "test_a_rule_the_line_named_as_not_asked_is_not_counted_again"],
+      "test_the_line_says_each_place_once",
+      "tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_place_the_near_miss_already_reported_is_not_counted_again"],
      "the bundled example printed one rule as not asked and then the same "
-     "rule as not examined, and a reader adds the two clauses"),
+     "rule, in the same place, as not examined, and a reader adds the two"),
+
+    ("screen/another-place-is-not-hidden-by-the-same-rule-id",
+     "src/aas_submodel_validate/report.py",
+     "             and not record.explained]",
+     "             and not set(record.unasked) & set(report.not_asked)]",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_the_line_says_each_place_once"],
+     "subtracting by id what the not-asked clause told about one place hid a "
+     "second submodel losing the same rule for another reason -- the screen "
+     "with and without it was identical"),
 
     ("screen/a-list-cut-short-says-so",
      "src/aas_submodel_validate/report.py",
-     'return ", ".join(shown) + (", and %d more" % rest if rest else "")',
+     'return ", ".join(shown) + (", and %d more" % rest if rest > 0 else "")',
      'return ", ".join(shown)',
      ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_names_are_cut_with_a_count_never_silently",
+      "tests/test_scope_the_run_did_not_examine.py::"
       "test_a_list_cut_short_says_how_many_it_left_out"],
      "three names and then silence reads as three names in all, on the one "
      "line a generated-only pack speaks on"),
 
     ("remedy/deleting-a-right-declaration-is-not-offered-as-an-equal",
      "src/aas_submodel_validate/rules/container.py",
-     '"relationship that names it only if nothing in the model names "',
-     '"relationship that names it, or whatever else the model names "',
+     '"aas-suppl relationship removes only the declaration: if a File "',
+     '"aas-suppl relationship is the other way out: if a File "',
      ["tests/test_a_file_a_model_points_at.py::"
       "test_the_relationship_remedy_does_not_undo_a_correct_declaration"],
      "one missing part draws X4 and a File rule, and X4 offered deleting the "
-     "relationship as an equal way out -- where a File value names the part "
-     "it leaves that finding standing and loses a declaration that was right"),
+     "relationship as an equal way out -- where a File value names the part, "
+     "deleting the declaration leaves the part missing"),
 
     ("cost/deciding-which-submodels-a-table-answers-for-is-not-skipped",
      "src/aas_submodel_validate/rules/engine.py",
@@ -406,6 +420,95 @@ TABLE = [
      "a memo keyed wrongly hands every table the first table's answer; it "
      "walks less, so the ceiling passes it, and the table this input is an "
      "instance of is never decided"),
+
+    ("scope/what-sat-there-is-in-path-order",
+     "src/aas_submodel_validate/rules/engine.py",
+     '        sitting = sorted(unplaced.get(row["kind"], ()), key=_sitting_order)',
+     '        sitting = list(unplaced.get(row["kind"], ()))',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_what_sat_there_is_in_path_order_and_bounded"],
+     "unsorted, the few a record names are whichever the file happened to "
+     "list first, and in another process another few"),
+
+    ("scope/how-many-sat-there-is-said",
+     "src/aas_submodel_validate/rules/engine.py",
+     "             tuple(sitting[:UNCLAIMED_NAMED]), len(sitting), bool(near_here)))",
+     "             tuple(sitting[:UNCLAIMED_NAMED]), len(sitting[:UNCLAIMED_NAMED]), "
+     "bool(near_here)))",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_what_sat_there_is_in_path_order_and_bounded"],
+     "a record names at most a few; without the count a reader takes the few "
+     "for all of them"),
+
+    ("scope/an-element-with-no-identifier-sits-there-too",
+     "src/aas_submodel_validate/rules/engine.py",
+     "        if index in claimed:\n            continue\n"
+     "        subject = _subject(path, element, index, shared)\n"
+     "        unplaced.setdefault(",
+     "        if index in claimed or not candidates:\n            continue\n"
+     "        subject = _subject(path, element, index, shared)\n"
+     "        unplaced.setdefault(",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_an_element_with_no_identifier_is_something_sitting_there"],
+     "no row can claim an element with no identifier; leaving it out made a "
+     "container missing its semanticId read as a section the file does not "
+     "carry, byte for byte"),
+
+    ("scope/seen-is-the-elements-own-identifier",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    own = key_values(element.semantic_id)\n    if own:",
+     "    own = ()\n    if own:",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_an_element_with_no_identifier_is_something_sitting_there"],
+     "the first spelling in sorted order let a supplemental identifier stand "
+     "in for the element's own"),
+
+    ("bound/what-sat-there-is-bounded",
+     "src/aas_submodel_validate/model.py",
+     "            (_bounded(subject), _bounded(seen)) for subject, seen in self.unclaimed))",
+     "            (subject, seen) for subject, seen in self.unclaimed))",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_long_name_sitting_there_does_not_grow_the_report"],
+     "a 200,000-character idShort made the summary line 200,892 characters, "
+     "with every test green"),
+
+    ("bound/the-place-is-bounded",
+     "src/aas_submodel_validate/model.py",
+     '        object.__setattr__(self, "where", _bounded(self.where))',
+     '        object.__setattr__(self, "where", self.where)',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_long_name_sitting_there_does_not_grow_the_report"],
+     "the place is built from the document's idShorts and was the one field "
+     "of the record outside the bound"),
+
+    ("corpus/the-case-only-the-scope-record-speaks-about-stays-that-case",
+     "tools/verdict_diff.py",
+     '    elsewhere["submodels"][0]["submodelElements"].append({',
+     "    [].append({",
+     ["tests/test_verdict_diff.py::"
+      "test_the_corpus_holds_a_case_only_the_scope_record_speaks_about"],
+     "the case becomes a plain clean document and the corpus stays 68 inputs, "
+     "so nothing else notices the instrument lost its case for the feature"),
+
+    ("diff/what-sat-there-is-compared",
+     "tools/verdict_diff.py",
+     '            (record.get("where"), record.get("rule"), record.get("because"),\n'
+     '             tuple((pair.get("subject"), pair.get("seen") or "")\n'
+     '                   for pair in record.get("unclaimedHere") or ()))',
+     '            (record.get("where"), record.get("rule"), record.get("because"))',
+     ["tests/test_verdict_diff.py::"
+      "test_two_records_that_differ_only_in_what_sat_there_are_two_answers"],
+     "the two opposite cases differ only in what sat there, and a key without "
+     "it reports the change between them as nothing moved"),
+
+    ("battery/the-category-reading-reaches-the-report",
+     "src/aas_submodel_validate/rules/battery.py",
+     "    return tuple(found)",
+     "    return ()",
+     ["tests/test_battery_rules.py::"
+      "test_the_category_is_read_a_bounded_number_of_times"],
+     "a reading that finds nothing is called as often as one that works, so a "
+     "floor on the count passed a category that was never found"),
 
     ("cost/where-the-files-are-is-not-asked-per-part",
      "src/aas_submodel_validate/container.py",

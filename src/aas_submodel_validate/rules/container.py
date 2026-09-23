@@ -164,15 +164,19 @@ def x6_the_path_can_be_opened(ctx):
 @rule("X4", kind="container", prio="SHOULD",
       title="declared supplementary parts exist",
       spec="IDTA 01005 (AASX, aas-suppl relationships)",
-      # Both halves of the old remedy were offered as equals, and where a
-      # File value names the same part the second is wrong twice: the File
-      # finding stands, and the declaration it deletes was right. The File
-      # rule's remedy pointed here; this one pointed nowhere.
-      fix="Add the missing part to the archive. Delete the aas-suppl "
-          "relationship that names it only if nothing in the model names "
-          "that part either: where a File value does, a File rule reports "
-          "the same missing part, and deleting the declaration leaves that "
-          "finding standing and loses a relationship that was right.")
+      # Deleting the relationship was offered as an equal way out, and
+      # where a File value names the same part it leaves the part missing.
+      # The next wording asserted the File rule always says so and that the
+      # declaration was right -- neither holds for a File no pack judges, a
+      # misspelt value, or a name no part can carry. This says what deleting
+      # does and does not do, and nothing it cannot know. The File rule's
+      # remedy points here; this one points back.
+      fix="Put the part in the archive under the name the relationship "
+          "gives, or correct that name if it is wrong. Deleting the "
+          "aas-suppl relationship removes only the declaration: if a File "
+          "value in the model names the same part, the part is still "
+          "missing. (Whether a File value names a part that is there is the "
+          "File rules' question, not this one's.)")
 def x4_supplementary_parts_exist(ctx):
     from ..container import SUPPL_REL, ContainerError
     container = ctx.loaded.container

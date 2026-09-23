@@ -36,9 +36,40 @@ from ..semantics import (
     candidate_values,
     edit_distance,
     element_candidate_values,
+    key_values,
     submodel_declares,
     version_stem,
 )
+
+#: How many of the elements sitting in an unopened scope one record names;
+#: `unclaimedHereCount` says how many there were. Every unentered row of a
+#: kind names every unplaced element of that kind beside it, so unbounded
+#: the list grows as rows times elements -- measured, a supplied template of
+#: a thousand optional rows against a thousand vendor containers wrote a
+#: 50 MB report where the same report without the lists is half a megabyte.
+UNCLAIMED_NAMED = 5
+
+
+def _identifier(element):
+    """The identifier an unplaced element carries, as a reader would look
+    for it: its own `semanticId`, keys joined as the matching joins them;
+    failing that the first of its supplemental ones; None if it has none.
+    Not the first spelling in sorted order, which is what this was -- a
+    supplemental that sorted early stood in for the element's own."""
+    own = key_values(element.semantic_id)
+    if own:
+        return "/".join(own)
+    others = sorted("/".join(key_values(reference)) for reference
+                    in getattr(element, "supplemental_semantic_ids", None) or []
+                    if key_values(reference))
+    return others[0] if others else None
+
+
+def _sitting_order(pair):
+    """Path order for (subject, identifier), with no identifier sorting
+    first rather than failing to compare."""
+    subject, seen = pair
+    return _in_path_order((subject, seen or ""))
 
 #: How a cardinality is said. The generator has its own copy of these
 #: words for the remedy; the two are compared row by row in
@@ -399,10 +430,10 @@ def _analyze(ctx, tables) -> Dict:
         # while `rulesNotAsked` on the same report was empty. Two keys
         # contradicting each other about one run.
         examined = []
-        for path, row_id, label, unasked, because, sitting in per["not_examined"]:
+        for path, row_id, label, unasked, because, *sat in per["not_examined"]:
             kept = tuple(rule_id for rule_id in unasked if rule_id not in asked_here)
             if kept:
-                examined.append((path, row_id, label, kept, because, sitting))
+                examined.append((path, row_id, label, kept, because, *sat))
         per["not_examined"] = examined
         for key in ("violations", "instances"):
             for row_id, entries in per[key].items():
@@ -469,13 +500,15 @@ def _in_path_order(record):
 
 
 def scope_not_examined(ctx) -> List:
-    """One record per row whose scope no walk in this run opened.
+    """One record per place a row was not entered, where its rules were
+    not put anywhere else in that submodel either.
 
-    Deduplicated by (where, row): a row is walked once per item of a
-    list, and a reader counting the list would read three items as three
-    times the loss. Where the same row is `absent` in one scope and has
-    a stranger beside it in another, the stranger wins -- it is the more
-    specific fact and the one a reader can act on.
+    Per place: `where` carries a list item's index, so each item of a list
+    is its own place and its own record. Two records share a key only when
+    two places print the same way -- an idShort spelled like a position,
+    `[1]`, beside the unnamed item at index 1 -- and then the one with a
+    stranger beside it wins, as the more specific fact, carrying both
+    places' strangers.
     """
     from ..model import NotExamined
 
@@ -483,19 +516,23 @@ def scope_not_examined(ctx) -> List:
     best = {}
     sat = {}
     for analysis in analysed.values():
-        for where, rule, label, unasked, because, sitting in analysis.get(
-                "not_examined", ()):
+        for (where, rule, label, unasked, because, sitting, count,
+             explained) in analysis.get("not_examined", ()):
             key = (where, rule)
             if key not in best or because == "unclaimed-element-present":
-                best[key] = (label, unasked, because)
-            # Every walk's strangers, not the last one's: the same row
-            # walked in each item of a list can have a different element
-            # sitting beside it in each.
-            sat.setdefault(key, set()).update(sitting)
-    return [NotExamined(where=where, rule=rule, label=label,
-                        unasked=unasked, because=because,
-                        unclaimed=tuple(sorted(sat[(where, rule)])))
-            for (where, rule), (label, unasked, because) in sorted(best.items())]
+                best[key] = (label, unasked, because, explained)
+            names, total = sat.get(key, ((), 0))
+            sat[key] = (set(names) | set(sitting), max(total, count))
+    out = []
+    for (where, rule), (label, unasked, because, explained) in sorted(best.items()):
+        names, total = sat[(where, rule)]
+        names = sorted(names, key=_sitting_order)
+        out.append(NotExamined(where=where, rule=rule, label=label,
+                               unasked=unasked, because=because,
+                               unclaimed=tuple(names[:UNCLAIMED_NAMED]),
+                               unclaimed_count=max(total, len(names)),
+                               explained=explained))
+    return out
 
 
 def repeats_not_entered(ctx) -> List:
@@ -970,16 +1007,20 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #: neighbour's loss, and being first alphabetically it was the element
     #: the terminal named.
     near_here = []
-    #: What sat here unplaced, by kind: each element no row claimed that
-    #: carries an identifier, as (subject, identifier) -- gathered in this
-    #: walk because it visits exactly that set with the subjects built.
+    #: What sat here unplaced, by kind: every element no row claimed, as
+    #: (subject, identifier). An element carrying no identifier at all is
+    #: in it too -- no row can claim one either, and leaving it out made a
+    #: container with its `semanticId` missing read as a section the file
+    #: does not carry, byte for byte.
     unplaced = {}
     for index, element, candidates, _main_empty in indexed:
-        if index in claimed or not candidates:
+        if index in claimed:
             continue
         subject = _subject(path, element, index, shared)
         unplaced.setdefault(type(element).__name__, []).append(
-            (subject, sorted(candidates)[0]))
+            (subject, _identifier(element)))
+        if not candidates:
+            continue
         for row in rows:
             near = _near_miss(candidates, row["match"])
             if near:
@@ -1032,16 +1073,24 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     # file legitimately omits beside an unrelated container of the same
     # kind -- produced byte-identical records, and the one fact that tells
     # them apart is what was sitting there. Named; still not blamed.
+    #
+    # `explained` says whether this place's loss is also in
+    # `rulesNotAsked`: it is exactly when a near miss fired here, because
+    # the branch below then hands every unentered row of this scope to
+    # that key. The screen needs it place by place -- that key is a set of
+    # ids across the whole run, and subtracting by id either hides another
+    # place losing the same rule or counts this place twice.
     for row in rows:
         if not row["children"] or claimed_by.get(row["id"]):
             continue
         lost = tuple(_descendant_ids(row))
         if not lost:
             continue
-        sitting = tuple(unplaced.get(row["kind"], ()))
+        sitting = sorted(unplaced.get(row["kind"], ()), key=_sitting_order)
         result["not_examined"].append(
             (path, row["id"], row["label"], lost,
-             "unclaimed-element-present" if sitting else "absent", sitting))
+             "unclaimed-element-present" if sitting else "absent",
+             tuple(sitting[:UNCLAIMED_NAMED]), len(sitting), bool(near_here)))
     # A loss is claimed only where something explains it, and that guard
     # stays: a row left unclaimed because the file legitimately does not
     # carry an optional element is not a loss anyone caused, and blaming a

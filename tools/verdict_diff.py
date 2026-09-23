@@ -713,8 +713,13 @@ def _judge(src: Path, case: Case):
     # same way and for the same reason: it fails no build.
     examined = summary.get("scopeNotExamined")
     if examined is not None:
+        # And what sat there: two records differing only in the element
+        # beside the row are the two opposite cases that field exists to
+        # tell apart, and a key without it reported them as nothing moved.
         examined = tuple(sorted(
-            (record.get("where"), record.get("rule"), record.get("because"))
+            (record.get("where"), record.get("rule"), record.get("because"),
+             tuple((pair.get("subject"), pair.get("seen") or "")
+                   for pair in record.get("unclaimedHere") or ()))
             for record in examined))
     return (tuple(ours), relayed, run.returncode, not_asked, examined)
 

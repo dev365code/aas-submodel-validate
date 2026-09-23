@@ -292,20 +292,23 @@ def test_what_sat_there_is_named_so_opposite_cases_differ(tmp_path):
     assert absent.because == "absent" and absent.as_dict()["unclaimedHere"] == []
 
 
-def test_a_rule_the_line_named_as_not_asked_is_not_counted_again(tmp_path):
-    """The two clauses of the summary line are one reach, said in two parts.
+def test_the_line_says_each_place_once(tmp_path):
+    """The two clauses of the summary line are one reach said in two parts,
+    and the first is keyed by rule id across the whole run while the
+    second is about places. Three ways that went wrong, each measured.
 
-    `rulesNotAsked` names the rules a reported defect explains and the
-    scope record lists every rule beneath a row nobody entered, so one
-    rule can be in both -- and on the bundled example it is. The line
-    said "1 rule not asked (HD-E38)" and then "1 rule not examined" about
-    that same rule, and a reader adds the two. Nor is one rule under two
-    scopes two rules: the records are per scope, the count is not.
+    Said twice: on the bundled example the line said "1 rule not asked
+    (HD-E38)" and then "1 rule not examined" about the same rule in the same
+    place. Hidden: subtracting what the first clause told *by id* made a
+    second submodel losing the same rule for an unrelated reason vanish from
+    the line -- the screen with and without it was identical. And a place is
+    a place: the same rule unopened in two submodels is two checks not made.
     """
     import copy
 
     from aas_submodel_validate.example import bundled_example
     from aas_submodel_validate.report import render
+    from builders import hd_env
 
     with bundled_example() as path:
         report = runner.run(str(path))
@@ -313,19 +316,87 @@ def test_a_rule_the_line_named_as_not_asked_is_not_counted_again(tmp_path):
     assert any("HD-E38" in record.unasked for record in report.not_examined)
     assert "not examined" not in render(report), render(report)
 
-    # One rule, in two scopes: two submodels of one name, each with the
-    # container drifted. Two records, one rule.
+    def entities(identifier, name):
+        return {"modelType": "SubmodelElementList", "idShort": name,
+                "semanticId": _sid(identifier), "typeValueListElement": "Entity",
+                "value": [{"modelType": "Entity", "entityType": "SelfManagedEntity",
+                           "globalAssetId": "urn:x:pump",
+                           "semanticId": _sid("https://admin-shell.io/vdi/2770/1/0/"
+                                              "EntityForDocumentation")}]}
+
+    environment = hd_env()
+    first = environment["submodels"][0]
+    second = copy.deepcopy(first)
+    first["id"], first["idShort"] = "urn:plant:a", "HandoverA"
+    second["id"], second["idShort"] = "urn:plant:b", "HandoverB"
+    first["submodelElements"].append(entities(
+        "https://admin-shell.io/vdi/2770/1/0/EntityForDocumentation", "Entites"))
+    second["submodelElements"].append(entities("urn:vendor:our-entities", "Entities"))
+    environment["submodels"] = [first, second]
+    both = tmp_path / "both.json"
+    both.write_text(json.dumps(environment), encoding="utf-8")
+    line = render(runner.run(both))
+    assert "1 rule not asked (HD-E38): HandoverA/Entites" in line, line
+    assert ("1 rule not examined in 1 place: Entities not opened, beside an "
+            "element no row describes (HandoverB/Entities)") in line, line
+
     drifted = json.loads(_instance(tmp_path, "one", [
         _box(sid="urn:test:box-but-different")]).read_text("utf-8"))
-    second = copy.deepcopy(drifted["submodels"][0])
-    second["id"] = "urn:test:box-too"
-    drifted["submodels"].append(second)
+    again = copy.deepcopy(drifted["submodels"][0])
+    again["id"] = "urn:test:box-too"
+    drifted["submodels"].append(again)
     twice = tmp_path / "twice.json"
     twice.write_text(json.dumps(drifted), encoding="utf-8")
-    report = runner.run(twice, template=_template(tmp_path))
-    assert len(report.not_examined) == 2, report.not_examined
-    line = render(report)
-    assert "1 rule not examined, under 1 section " in line, line
+    line = render(runner.run(twice, template=_template(tmp_path)))
+    assert "2 rules not examined in 2 places: Box not opened" in line, line
+
+
+def test_a_place_the_near_miss_already_reported_is_not_counted_again(tmp_path):
+    """Where a near miss fires, the walk hands every unentered row of that
+    scope to `rulesNotAsked` -- a row the file simply omits included. So a
+    record there, even one with an unrelated element of its kind beside
+    it, is already on the line once; subtracting only what the named
+    element accounted for printed it a second time."""
+    from aas_submodel_validate.report import render
+
+    def row(name, identifier, child):
+        return {"modelType": "SubmodelElementCollection", "idShort": name,
+                "semanticId": _sid(identifier), "qualifiers": [_card("ZeroToOne")],
+                "value": [{"modelType": "Property", "idShort": child,
+                           "semanticId": _sid(identifier + "/" + child),
+                           "valueType": "xs:string", "qualifiers": [_card("One")]}]}
+
+    template = tmp_path / "box-and-crate-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:bctpl", "idShort": "Plant",
+        "kind": "Template", "semanticId": _sid("urn:test:plant"),
+        "submodelElements": [row("Box", "https://example.com/ids/box", "Inside"),
+                             row("Crate", "https://example.com/ids/crate", "Slat")]}]}),
+        encoding="utf-8")
+    instance = tmp_path / "near-box.json"
+    instance.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:plant-1", "idShort": "Plant",
+        "semanticId": _sid("urn:test:plant"),
+        "submodelElements": [{"modelType": "SubmodelElementCollection",
+                              "idShort": "Box",
+                              "semanticId": _sid("https://example.com/ids/bux"),
+                              "value": []}]}]}), encoding="utf-8")
+    report = runner.run(instance, template=template)
+    assert report.not_asked, "the fixture no longer draws a near miss"
+    assert any(record.because == "unclaimed-element-present"
+               for record in report.not_examined), report.not_examined
+    assert "not examined" not in render(report), render(report)
+
+
+def test_names_are_cut_with_a_count_never_silently():
+    from aas_submodel_validate.report import _named_at_most
+
+    assert _named_at_most([]) == ""
+    assert _named_at_most(["a"]) == "a"
+    assert _named_at_most(["a", "b", "c"]) == "a, b, c"
+    assert _named_at_most(["a", "b", "c", "d", "e"]) == "a, b, c, and 2 more"
+    # A list already cut upstream, with how many there were.
+    assert _named_at_most(["a", "b", "c", "d", "e"], 12) == "a, b, c, and 9 more"
 
 
 def test_a_list_cut_short_says_how_many_it_left_out(tmp_path):
@@ -352,5 +423,91 @@ def test_a_list_cut_short_says_how_many_it_left_out(tmp_path):
     boxes = [_box(id_short="Box%d" % n, sid="urn:test:drift%d" % n)
              for n in range(1, 6)]
     line = render(runner.run(_instance(tmp_path, "five", boxes), template=template))
-    assert "(Box1, Box2, Box3, and 2 more; sitting there: " in line, line
-    assert "Boxes/Box3, and 2 more)" in line, line
+    assert ("5 rules not examined in 1 place: Box1, Box2, Box3, and 2 more not "
+            "opened, beside elements no row describes (Boxes/Box1, Boxes/Box2, "
+            "Boxes/Box3, and 2 more)") in line, line
+
+
+def _boxes(tmp_path, count, template_name):
+    """A template of `count` optional boxes, each holding one property."""
+    rows = [{"modelType": "SubmodelElementCollection", "idShort": "Box%d" % n,
+             "semanticId": _sid("urn:test:box%d" % n),
+             "qualifiers": [_card("ZeroToOne")],
+             "value": [{"modelType": "Property", "idShort": "Inside",
+                        "semanticId": _sid("urn:test:inside"),
+                        "valueType": "xs:string", "qualifiers": [_card("One")]}]}
+            for n in range(1, count + 1)]
+    template = tmp_path / template_name
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:manytpl", "idShort": "Boxes",
+        "kind": "Template", "semanticId": _sid("urn:test:boxes"),
+        "submodelElements": rows}]}), encoding="utf-8")
+    return template
+
+
+def test_what_sat_there_is_in_path_order_and_bounded(tmp_path):
+    """Every unopened row of a kind names every unplaced element of that
+    kind beside it, so the lists grow as rows times elements: measured, a
+    thousand optional rows against a thousand vendor containers wrote a
+    50 MB report. Each record names a few, in path order -- `[2]` before
+    `[10]`, and the same order in every process -- and says how many."""
+    from aas_submodel_validate.rules.engine import UNCLAIMED_NAMED
+
+    # Written in reverse, so that the file's own order is not path order
+    # and an unsorted list would keep the wrong five.
+    boxes = [_box(id_short="Box%d" % n, sid="urn:test:drift%d" % n)
+             for n in range(12, 0, -1)]
+    report = runner.run(_instance(tmp_path, "twelve", boxes),
+                        template=_boxes(tmp_path, 12, "twelve-template.json"))
+    record = report.not_examined[0].as_dict()
+    assert record["unclaimedHereCount"] == 12, record
+    assert [pair["subject"] for pair in record["unclaimedHere"]] == [
+        "Boxes/Box%d" % n for n in range(1, UNCLAIMED_NAMED + 1)], record
+
+
+def test_an_element_with_no_identifier_is_something_sitting_there(tmp_path):
+    """No row can claim an element that carries no identifier, so it is as
+    unplaced as one carrying the wrong one; leaving it out made a container
+    with its `semanticId` missing read as a section the file does not
+    carry. And `seen` is the element's own identifier, not whichever of its
+    spellings sorts first -- a supplemental stood in for it."""
+    bare = _box()
+    del bare["semanticId"]
+    (record,) = runner.run(_instance(tmp_path, "bare", [bare]),
+                           template=_template(tmp_path)).not_examined
+    assert record.because == "unclaimed-element-present", record
+    assert record.as_dict()["unclaimedHere"] == [{"subject": "Boxes/Box", "seen": None}]
+
+    both = _box(sid="urn:vendor:crate")
+    both["supplementalSemanticIds"] = [_sid("https://aaa.example/first/in/order")]
+    (record,) = runner.run(_instance(tmp_path, "both", [both]),
+                           template=_template(tmp_path)).not_examined
+    assert record.as_dict()["unclaimedHere"] == [
+        {"subject": "Boxes/Box", "seen": "urn:vendor:crate"}], record
+
+
+def test_a_long_name_sitting_there_does_not_grow_the_report(tmp_path):
+    """File-supplied text goes through one bound, and this record's place
+    and elements are file-supplied: a 200,000-character idShort made the
+    summary line 200,892 characters and the record as long, with every
+    test green."""
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS
+    from aas_submodel_validate.report import render
+
+    long_box = _box(id_short="B" * 200_000, sid="urn:test:box-but-different")
+    report = runner.run(_instance(tmp_path, "long", [long_box]),
+                        template=_template(tmp_path))
+    (record,) = report.not_examined
+    written = json.dumps(record.as_dict())
+    assert len(written) < 4 * MAX_REPORTED_CHARACTERS, len(written)
+    assert max(len(line) for line in render(report).splitlines()) < 4 * MAX_REPORTED_CHARACTERS
+
+    # And the place itself, which is built from the document's idShorts
+    # too and was not bounded at all.
+    deep = json.loads(_instance(tmp_path, "deep", [
+        _box(sid="urn:test:box-but-different")]).read_text("utf-8"))
+    deep["submodels"][0]["idShort"] = "S" * 200_000
+    path = tmp_path / "deep.json"
+    path.write_text(json.dumps(deep), encoding="utf-8")
+    (record,) = runner.run(path, template=_template(tmp_path)).not_examined
+    assert len(record.where) <= MAX_REPORTED_CHARACTERS, len(record.where)

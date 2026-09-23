@@ -114,12 +114,13 @@ NOTE_KEY = "note=something this run did, not a defect -- nothing to change"
 NAMED_AT_MOST = 3
 
 
-def _named_at_most(names) -> str:
+def _named_at_most(names, total=None) -> str:
     """The first `NAMED_AT_MOST` of `names`, then how many more -- a list
-    cut short says so, or a reader takes the three for the whole."""
+    cut short says so, or a reader takes the three for the whole. `total`
+    is how many there are when `names` is itself already cut."""
     shown = list(names[:NAMED_AT_MOST])
-    rest = len(names) - len(shown)
-    return ", ".join(shown) + (", and %d more" % rest if rest else "")
+    rest = (len(names) if total is None else total) - len(shown)
+    return ", ".join(shown) + (", and %d more" % rest if rest > 0 else "")
 
 
 def render(report: Report, *, show_meta: bool = False,
@@ -314,30 +315,41 @@ def render(report: Report, *, show_meta: bool = False,
     #: says the one a person can act on. Same rule the line above it
     #: follows: speak where there is something to say.
     #
-    # The rest of that reach, and only the rest: a rule the clause above
-    # already named as not asked is not counted again. It was -- the
-    # bundled example printed "1 rule not asked (HD-E38)" and then "1 rule
-    # not examined" about that same rule, and a reader adds the two.
-    # Counted as distinct ids for the same reason: a row walked in two
-    # scopes lists its rules in both records, and summing them per record
-    # is the arithmetic the schema page says means nothing.
-    told = set(report.not_asked)
-    sat = [record for record in report.not_examined
-           if record.because == "unclaimed-element-present"
-           and set(record.unasked) - told]
-    if sat:
-        lost = len({rule for record in sat for rule in record.unasked} - told)
-        sections = sorted({record.label for record in sat})
-        # And what was sitting there, which on a pack with no near-miss
-        # lint is the only place the element is named at all.
-        sitting = sorted({subject for record in sat
-                          for subject, _seen in record.unclaimed})
-        examined = ("; %d rule%s not examined, under %d section%s carrying an "
-                    "element no row describes (%s; sitting there: %s) -- not a "
-                    "defect, and not checked either; -f json lists them"
-                    % (lost, "" if lost == 1 else "s", len(sections),
-                       "" if len(sections) == 1 else "s",
-                       _named_at_most(sections), _named_at_most(sitting)))
+    # The rest of that reach, place by place. The clause above is keyed by
+    # rule id across the whole run, so this cannot subtract by id: a rule
+    # told there about one place says nothing about another place losing
+    # the same rule -- measured, a second submodel's vendor list vanished
+    # from the line -- while a place whose loss the walk also sent to
+    # `rulesNotAsked` is said once, above (the bundled example's
+    # `Entities`). `explained` is that fact, carried from the walk.
+    #
+    # Counted per place: the same rule unopened in two places is two
+    # checks not made, and the line says how many places.
+    from .rules.engine import _sitting_order
+
+    shown = [record for record in report.not_examined
+             if record.because == "unclaimed-element-present"
+             and not record.explained]
+    if shown:
+        lost = sum(len(record.unasked) for record in shown)
+        places = len({record.where for record in shown})
+        sections = sorted({record.label for record in shown})
+        # The elements that sat there, from the records shown and no
+        # others, in path order. Each record names at most a few and says
+        # how many; two records naming the same list are one list.
+        lists = {(record.where, record.unclaimed): record.unclaimed_count
+                 for record in shown}
+        sitting = [subject for subject, _seen in sorted(
+            {pair for record in shown for pair in record.unclaimed},
+            key=_sitting_order)]
+        total = sum(lists.values())
+        examined = ("; %d rule%s not examined in %d place%s: %s not opened, "
+                    "beside %s no row describes (%s) -- not a defect, and not "
+                    "checked either; -f json lists them"
+                    % (lost, "" if lost == 1 else "s", places,
+                       "" if places == 1 else "s", _named_at_most(sections),
+                       "an element" if total == 1 else "elements",
+                       _named_at_most(sitting, total)))
     judged = ""
     specified = ""
     if report.submodels_specified:

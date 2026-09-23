@@ -289,11 +289,16 @@ class NotExamined:
         legitimate extension (`docs/divergences.md` #19) and there is no
         way to tell that from a typo by looking (#22, #23).
 
-    `unclaimed` names what was sitting there: each element of the kind
-    the row asks for that matched no row, as (subject, identifier).
-    Empty exactly when `because` is `absent`. Without it a drifted
-    container and a legitimately omitted one beside an unrelated
+    `unclaimed` names what was sitting there: elements of the kind the
+    row asks for that matched no row, with or without an identifier, as
+    (subject, identifier-or-None), in path order and at most
+    `rules.engine.UNCLAIMED_NAMED` of them; `unclaimed_count` is how many
+    there were. Empty exactly when `because` is `absent`. Without it a
+    drifted container and a legitimately omitted one beside an unrelated
     container of the same kind wrote the same record, byte for byte.
+
+    `explained` is not written out: it says this place's loss is also in
+    `rulesNotAsked`, which the screen needs so as to say it once.
     """
 
     where: str
@@ -302,10 +307,15 @@ class NotExamined:
     unasked: tuple
     because: str
     unclaimed: tuple = ()
+    unclaimed_count: int = 0
+    explained: bool = False
 
     def __post_init__(self):
-        # File-supplied text, through the same funnel as `Unmatched`:
-        # both halves of each pair come out of the document.
+        # File-supplied text, through the same funnel as `Unmatched`: the
+        # place is built from the document's idShorts, the label from the
+        # template's, and both halves of each pair come out of the document.
+        object.__setattr__(self, "where", _bounded(self.where))
+        object.__setattr__(self, "label", _bounded(self.label))
         object.__setattr__(self, "unclaimed", tuple(
             (_bounded(subject), _bounded(seen)) for subject, seen in self.unclaimed))
 
@@ -314,7 +324,8 @@ class NotExamined:
                 "rulesNotAskedHere": list(self.unasked),
                 "because": self.because,
                 "unclaimedHere": [{"subject": subject, "seen": seen}
-                                  for subject, seen in self.unclaimed]}
+                                  for subject, seen in self.unclaimed],
+                "unclaimedHereCount": self.unclaimed_count}
 
 
 @dataclass

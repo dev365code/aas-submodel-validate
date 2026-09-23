@@ -1224,15 +1224,13 @@ def test_the_category_is_read_a_bounded_number_of_times(tmp_path, monkeypatch):
     monkeypatch.setattr(battery, "declared_category",
                         lambda submodels: (calls.append(1), real(submodels))[1])
 
-    notes = []
-
     def measure(count):
         calls.clear()
         payload = _env(*[_submodel("PC%d" % i, PRODUCT_CONDITION,
                                    [_collection("E%d" % k, "urn:x:%d" % k)
                                     for k in range(4)])
                          for i in range(count)])
-        notes.append(_run(tmp_path, payload).notes)
+        _run(tmp_path, payload)
         return len(calls)
 
     small, large = measure(8), measure(64)
@@ -1243,15 +1241,15 @@ def test_the_category_is_read_a_bounded_number_of_times(tmp_path, monkeypatch):
     # And bounded, not merely equal: two runs that both read it a
     # thousand times would satisfy the line above.
     assert large <= 4, large
-    # And not zero, which both lines above allow: a file whose category
-    # is never read is judged without the rows it settles. What the
-    # reading is for shows in the report, so that is asked too -- the
-    # note saying how much of this table waits on a category the file
-    # does not settle.
+    # And not zero, which both lines above allow -- and not merely called:
+    # a reading that finds nothing is called just as often, and on this
+    # input, which declares no category, it prints the same note. So a
+    # file that does declare one is asked too, and the rows its category
+    # settles must reach the report.
     assert large >= 1, large
-    for said in notes:
-        assert any("turn on a battery category this file does not settle"
-                   in note for note in said), said
+    conditional = {row["element_id_short"]
+                   for row in battery_tables.CONDITIONAL_ON_CATEGORY}
+    assert _r8_subjects(_run(tmp_path, _passport("ev"))) & conditional
 
 
 def test_no_clause_line_names_one_provision_twice(tmp_path):

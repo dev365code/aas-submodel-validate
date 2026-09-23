@@ -530,6 +530,65 @@ def test_the_count_leaves_out_what_the_old_version_was_never_asked(
         assert "does not have" not in printed, printed
 
 
+def test_the_corpus_holds_a_case_only_the_scope_record_speaks_about(corpus):
+    """The case `scopeNotExamined` was built for: a container no row names,
+    where nothing else in the report says a word. Held here because nothing
+    else noticed when it stopped being that case -- the corpus count stays
+    the same, and every corpus-wide test passes a plain clean document."""
+    (case,) = [case for case in corpus
+               if case.label == "a Handover list wearing an identifier no row names"]
+    report = runner.run(str(case.path))
+    assert not report.findings and not report.not_asked, (
+        sorted(f.id for f in report.findings), report.not_asked)
+    assert [pair[0] for record in report.not_examined
+            if record.because == "unclaimed-element-present"
+            for pair in record.unclaimed] == ["HandoverDocumentation/Entities"]
+
+
+def test_two_records_that_differ_only_in_what_sat_there_are_two_answers(tmp_path):
+    """A row's own container under a drifted identifier, and a row the file
+    omits beside an unrelated container of the same kind: the one field
+    that tells them apart is `unclaimedHere`, and a comparison keyed
+    without it reported the change between them as nothing moved."""
+    def ref(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    card = {"semanticId": ref("https://admin-shell.io/SubmodelTemplates/"
+                              "Cardinality/1/0"),
+            "type": "SMT/Cardinality", "valueType": "xs:string"}
+    template = tmp_path / "box-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:boxtpl", "idShort": "Boxes",
+        "kind": "Template", "semanticId": ref("urn:test:boxes"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Box",
+            "semanticId": ref("urn:test:box"),
+            "qualifiers": [dict(card, value="ZeroToOne")],
+            "value": [{"modelType": "Property", "idShort": "Inside",
+                       "semanticId": ref("urn:test:inside"),
+                       "valueType": "xs:string",
+                       "qualifiers": [dict(card, value="One")]}]}]}]}),
+        encoding="utf-8")
+
+    def judged(name, element):
+        path = tmp_path / ("%s.json" % name)
+        path.write_text(json.dumps({"submodels": [{
+            "modelType": "Submodel", "id": "urn:test:box", "idShort": "Boxes",
+            "semanticId": ref("urn:test:boxes"),
+            "submodelElements": [element]}]}), encoding="utf-8")
+        return verdict_diff._judge(ROOT / "src", verdict_diff.Case(
+            name, path, template=template))
+
+    own = judged("own", {"modelType": "SubmodelElementCollection", "idShort": "Box",
+                         "semanticId": ref("urn:test:box-but-different"), "value": []})
+    beside = judged("beside", {"modelType": "SubmodelElementCollection",
+                               "idShort": "OurOwnBox",
+                               "semanticId": ref("urn:vendor:ourbox"), "value": []})
+    assert verdict_diff._verdict_of(own) == verdict_diff._verdict_of(beside)
+    assert own[4] != beside[4], (own[4], beside[4])
+
+
 def test_every_case_that_carries_a_table_is_judged_with_it(corpus):
     """A case can name a table the reader never opens.
 

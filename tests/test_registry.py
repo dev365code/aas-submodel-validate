@@ -533,11 +533,12 @@ REMEDIES = {
         "the extension decides the format (.json as AAS JSON, otherwise "
         "AAS XML).",
     "X4":
-        "Add the missing part to the archive. Delete the aas-suppl "
-        "relationship that names it only if nothing in the model names "
-        "that part either: where a File value does, a File rule reports "
-        "the same missing part, and deleting the declaration leaves that "
-        "finding standing and loses a relationship that was right.",
+        "Put the part in the archive under the name the relationship "
+        "gives, or correct that name if it is wrong. Deleting the "
+        "aas-suppl relationship removes only the declaration: if a File "
+        "value in the model names the same part, the part is still "
+        "missing. (Whether a File value names a part that is there is the "
+        "File rules' question, not this one's.)",
     "X6":
         "Check the path and what the account running this may read. "
         "Nothing was opened, so nothing here is a statement about a "
