@@ -112,7 +112,7 @@ ADDED_SINCE_V1_PROVENANCE = set()
 #: consumer that ignores it is not ignoring a verdict. Promote at the
 #: release that ships it.
 ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified", "rulesNotAsked",
-                          "unmatchedElements"}
+                          "unmatchedElements", "scopeNotExamined"}
 #: `meta` joins `strictMeta` rather than replacing it: a 0.1.0 reader
 #: parses the boolean and keeps working, and the boolean is derived from
 #: the level so the two cannot disagree. Promote at the release that
@@ -173,7 +173,8 @@ def test_the_summary_counts_what_it_says_it_counts():
                                    "submodelsJudged": 0,
                                    "submodelsSpecified": 0,
                                    "rulesNotAsked": [],
-                                   "unmatchedElements": []}
+                                   "unmatchedElements": [],
+                                   "scopeNotExamined": []}
 
 
 def test_the_report_says_what_was_asked_of_it():

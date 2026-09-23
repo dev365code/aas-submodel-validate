@@ -631,7 +631,7 @@ def _judge(src: Path, case: Case):
         # was such an input: until 0.4.1, a named pipe made the reader
         # wait for a writer that never came. The corpus is built on disk
         # and holds no pipe today, which is luck rather than a guarantee.
-        return ((), 0, -1, None, "gave no answer in %ds" % _PATIENCE)
+        return ((), 0, -1, None, None, "gave no answer in %ds" % _PATIENCE)
     try:
         report = json.loads(run.stdout)
     except ValueError:
@@ -642,7 +642,7 @@ def _judge(src: Path, case: Case):
         # because 0.1.3 is the change that gives exit 2 a report. An
         # instrument that cannot compare "said nothing" with "said
         # something" is no instrument for a change of exactly that kind.
-        return ((), 0, run.returncode, None, "no report")
+        return ((), 0, run.returncode, None, None, "no report")
     # The subject too. A finding names an element, and the name is what a
     # consumer suppressing a known finding matches on -- so a change that
     # renames one is a change that reaches them. It was left out, and the
@@ -658,7 +658,18 @@ def _judge(src: Path, case: Case):
     not_asked = summary.get("rulesNotAsked")
     if not_asked is not None:
         not_asked = tuple(not_asked)
-    return (tuple(ours), relayed, run.returncode, not_asked)
+    # And the other statement of reach. `scopeNotExamined` reports what
+    # the run did not open where nothing explains it, so it moves on
+    # exactly the inputs `rulesNotAsked` stays silent about -- which is
+    # to say, an instrument holding only the second cannot see the
+    # change that introduced the first. Reported as a shape change the
+    # same way and for the same reason: it fails no build.
+    examined = summary.get("scopeNotExamined")
+    if examined is not None:
+        examined = tuple(sorted(
+            (record.get("where"), record.get("rule"), record.get("because"))
+            for record in examined))
+    return (tuple(ours), relayed, run.returncode, not_asked, examined)
 
 
 def _must_hold_a_reader(src: Path) -> Path:
@@ -735,7 +746,7 @@ def _verdict_of(judged):
     # The marker counts. "Said nothing at exit 2" and "said one thing at
     # exit 2" are different answers to a consumer parsing stdout, and
     # comparing only the first three fields calls them the same.
-    return judged[:3] + judged[4:]
+    return judged[:3] + judged[5:]
 
 
 def _named(finding):
@@ -745,9 +756,9 @@ def _named(finding):
 
 
 def _describe(verdict):
-    if len(verdict) > 4:
+    if len(verdict) > 5:
         return "did not produce a report (exit %d)" % verdict[2]
-    ours, relayed, code, not_asked = verdict
+    ours, relayed, code, not_asked, _examined = verdict
     counts = {}
     for _rule, severity, _subject in ours:
         counts[severity] = counts.get(severity, 0) + 1
@@ -831,6 +842,7 @@ def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
 
     moved = 0
     gained_the_key, reshaped = 0, 0
+    gained_scope, moved_scope = 0, 0
     unanswerable = []
     for case in corpus:
         if not _comparable(old_src, case):
@@ -850,6 +862,11 @@ def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
                 gained_the_key += 1
             elif before[3] != after[3]:
                 reshaped += 1
+        if before[4] != after[4]:
+            if before[4] is None:
+                gained_scope += 1
+            else:
+                moved_scope += 1
         if _verdict_of(before) == _verdict_of(after):
             continue
         moved += 1
@@ -890,6 +907,16 @@ def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
         print("%d of %d gained `summary.rulesNotAsked`, which is additive and "
               "moves no verdict -- a consumer that does not read the key sees "
               "what it saw before." % (gained_the_key, compared))
+    if gained_scope:
+        print("%d of %d gained `summary.scopeNotExamined`, which is "
+              "additive and moves no verdict -- a consumer that does not "
+              "read the key sees what it saw before."
+              % (gained_scope, compared))
+    if moved_scope:
+        print("%d of %d report a different `summary.scopeNotExamined` "
+              "between two versions that both have it. Not a verdict "
+              "either, and the one place a reader learns the run stopped "
+              "opening a scope it used to open." % (moved_scope, compared))
     if reshaped:
         print("%d of %d report a different `summary.rulesNotAsked` between two "
               "versions that both have it. That is not a verdict either, and it "
@@ -900,7 +927,8 @@ def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
           "them today goes quiet, and nothing downstream reports that.")
     return {"moved": moved, "compared": compared,
             "unanswerable": len(unanswerable),
-            "gained_the_key": gained_the_key, "reshaped": reshaped}
+            "gained_the_key": gained_the_key, "reshaped": reshaped,
+            "gained_scope": gained_scope, "moved_scope": moved_scope}
 
 
 if __name__ == "__main__":

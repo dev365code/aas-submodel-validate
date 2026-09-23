@@ -532,6 +532,7 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     report.findings = execute(rules_to_run, ctx)
     report.not_asked = rules.engine.rows_not_reached(ctx)
     report.unmatched = rules.engine.unmatched_elements(ctx)
+    report.not_examined = rules.engine.scope_not_examined(ctx)
     # The reach of the check, the way the battery coverage note reports
     # one: a note and not a finding, because nothing here says the file
     # is wrong -- only that this reader did not look.
