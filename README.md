@@ -136,6 +136,14 @@ Five of the 221, in the words the tool actually prints:
 
 Each of those five carries an `at`, a `saw` where there is evidence to show, the clause it reads from, and a sentence saying what to change.
 
+## Where it stands
+
+<a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=88a9a061" alt="Coverage: 02004, 02003, 02035-2, 02006, 02023, 02002; Explanation: what is wrong, remedy, specification; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory, own mutations, encodings; Upstream: pinned by commit" width="100%">
+</a>
+
+*Six things this tool holds itself to, measured on the code this page describes, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
+
 ## Where it sits
 
 ```mermaid
@@ -309,11 +317,13 @@ validator is that its answer today is the answer it gave when you signed
 off on it. Upgrade deliberately, read the CHANGELOG paragraph, and
 re-run your corpus.
 
-**1.0 means two things and no more**: the JSON report's schema is frozen
+**1.0 means two things**: the JSON report's schema is frozen
 under `schemaVersion: 1`, and this page states exactly which standards
 are covered and to what depth, so that "covered" stops being a word you
 have to read the source to size. It does not mean the template list is
 finished.
+
+Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02004 Handover Documentation · IDTA 02003 Technical Data · IDTA 02035-2 Digital Battery Passport, part 2 · IDTA 02006 Digital Nameplate · IDTA 02023 Carbon Footprint · IDTA 02002 Contact Information · IDTA 02011 Hierarchical Structures · IDTA 02007 Software Nameplate; Explanation: what is wrong, in one sentence · the evidence as read from the file · a remedy, for every rule · the specification each rule enforces · the line in the file; Report contract: schemaVersion in every report · a golden report held by a test · exit codes 0, 1, 2 and 64 under test · a field-by-field schema page; Entrances: command line · Python library · single file, nothing to install · GitHub Action · browser, nothing installed; Input safety: read budgets, per file and per run · a security fix ships with an advisory · tests verified against their own mutations · declared encodings read without loss; Upstream: upstream templates pinned by commit · checked for upstream change · one pin move shipped.
 
 ## When aas-submodel-validate is not the tool
 

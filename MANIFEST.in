@@ -11,6 +11,10 @@ include docs/scope.md
 include docs/time-budget.json
 include docs/assets/door.svg
 include docs/assets/verdict.svg
+include docs/capabilities.json
+include docs/capabilities.svg
+include docs/capabilities.md
+include docs/what-it-catches.md
 graft .github
 include Makefile MANIFEST.in
 include CONTRIBUTING.md SECURITY.md SUPPORT.md NOTICE THIRD_PARTY.md CHANGELOG.md
