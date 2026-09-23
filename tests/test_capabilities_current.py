@@ -22,6 +22,11 @@ What it holds:
      while an item is undone, a comparative or contrast aimed at someone else.
   9. evidence found only in an HTML comment, in README's "Where it stands" section, or in the 1.0
      paragraph does not hold: those are copies of the data, not the page vouching for it.
+ 10. the word lists themselves: comparatives and superlatives aimed past this tool are refused in
+     short text and in prose, and plain description ("more than 200 rules", "rather than") is not.
+What these gates do not see, and a repository adds its own test for: whether a detail-page line
+matches the data word for word, whether a quoted report output is what the tool prints, whether a
+"done" item is true beyond the quoted words.
 
 Per-repo settings: PACKAGE (import name) and, if the repo keeps the generator elsewhere, GENERATOR.
 """
@@ -184,8 +189,27 @@ def test_the_data_gates_refuse_what_a_reader_could_not_verify(tmp_path):
         undone = next(it["text"] for it in axes[k]["items"] if not it["done"])
         _refused(tmp_path, lambda d: d["axes"][k].__setitem__("target_text", "met"))          # not while undone
         _refused(tmp_path, lambda d: d["axes"][k].__setitem__("now_text", undone))            # undone is not now
-    for phrase in ("stricter than any other checker", "more rules than any checker", "unlike other validators"):
-        _refused(tmp_path, lambda d, phrase=phrase: d["axes"][0].__setitem__("now_text", phrase))
+    # the product name is refused before any structural check, so this reaches the word list itself
+    _refused(tmp_path, lambda d: d.__setitem__("product", "a checker stricter than any other"))
+    _refused(tmp_path, lambda d: d.__setitem__("product", "the most thorough checker"))
+
+
+COMPARING = ("stricter than any other checker", "more rules than any checker", "unlike other validators",
+             "the most thorough validator", "the strictest reading", "outperforms every reader",
+             "second to none", "the widest coverage of any validator", "compared with other tools",
+             "no other checker does this", "better than the reference")
+DESCRIBING = ("more than 200 rules", "re-measured on every release rather than promised",
+              "checked weekly for change", "the section of the specification it enforces",
+              "other than the manifest, nothing is read twice", "the report names the rule")
+
+
+def test_comparisons_and_superlatives_are_refused_and_plain_description_is_not():
+    gen = _gen()
+    for phrase in COMPARING:
+        assert gen.FORBIDDEN.search(phrase), f"short text should refuse {phrase!r}"
+        assert gen.FORBIDDEN_PROSE.search(phrase), f"prose should refuse {phrase!r}"
+    for phrase in DESCRIBING:
+        assert not gen.FORBIDDEN_PROSE.search(phrase), f"prose should allow {phrase!r}"
 
 
 def test_evidence_does_not_count_when_only_the_pictures_own_text_says_it(tmp_path):

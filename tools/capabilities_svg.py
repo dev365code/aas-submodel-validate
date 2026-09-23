@@ -15,25 +15,27 @@ Data file (public text only):
   "detail": "docs/what-it-catches.md",    # where the picture links to
   "axes": [                               # exactly six, in drawing order (top, then clockwise)
     {"key": "coverage", "label": "Coverage",
-     "now": 172, "target": 220,           # a measured count: ratio drawn = min(now / target, 1)
-     "now_text": "172 of 280 obligations covered",       # leads with now
-     "target_text": "at least 220 of 280 covered",       # leads with target
-     "evidence": [{"file": "docs/scope.md", "says": "Coverage of the standard is 172 of 280"}]},
+     "now": 40, "target": 60,             # a measured count: ratio drawn = min(now / target, 1)
+     "now_text": "40 of 80 obligations covered",         # leads with now
+     "target_text": "at least 60 of 80 covered",         # leads with target
+     "evidence": [{"file": "docs/scope.md", "says": "Coverage of the standard is 40 of 80"}]},
     {"key": "entrances", "label": "Entrances",
      "items": [                           # a checklist: now = items done, target = all items
        {"text": "command line", "done": true,
-        "evidence": {"file": "pyproject.toml", "says": "iirds = \"iirds_validate.cli:main\""}},
+        "evidence": {"file": "pyproject.toml", "says": "yourtool = \"your_project.cli:main\""}},
        {"text": "browser, nothing installed", "done": false}],   # undone items need no evidence
      "now_text": "command line",                          # pieces of done items ("none yet" if none)
      "target_text": "+ browser, nothing installed"}       # "+ " pieces of undone items ("met" if none)
   ]
 }
+The card also carries "as of <as_of>" in its corner, so a copy of the picture shown beside an older
+release's text still says which release it describes.
 An axis is either a count (now/target) or a checklist (items); never both. Evidence is a file in
 this repository plus the words that file says; `--check` and the test read the file and look for the
 words, so a done item cannot point at a file that does not say it. What the gates hold the words to:
   - a quote is at least three words, and never from a file generated from this data (the picture's
-    own files, the detail page) nor from README's own copy of it (the "Where it stands" section, the
-    1.0 paragraph, HTML comments);
+    own files, the detail page), nor from this generator or its test, nor from README's own copy of
+    it (the "Where it stands" section, the 1.0 paragraph, HTML comments);
   - for a count, now_text, target_text and one quote each LEAD with the number drawn or promised,
     as whole tokens (280 in "172 of 280" is not 28 and not 280 for now=172);
   - for a checklist, every comma-separated piece of now_text is part of a done item, target_text is
@@ -60,14 +62,23 @@ import sys
 from xml.sax.saxutils import escape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OWN_FILES = ("docs/capabilities.json", "docs/capabilities.svg", "docs/capabilities.md")
+_SELF = "/".join(os.path.relpath(os.path.abspath(__file__), ROOT).split(os.sep))
+# files whose words come from this data, or that are this machinery itself: none of them is evidence
+OWN_FILES = ("docs/capabilities.json", "docs/capabilities.svg", "docs/capabilities.md",
+             _SELF, "tests/test_capabilities_current.py")
 
 # A self-description, not a comparison. The short texts on the picture refuse these words outright,
-# and so is any comparative aimed at someone else ("stricter than any other ...", "more rules than X",
-# "unlike other validators"). "than" followed by a number ("more than 200 rules") describes this tool.
+# and so is any comparative or superlative aimed past this tool ("stricter than any other ...",
+# "more rules than X", "unlike other validators", "the most thorough", "second to none").
+# "than" followed by a number ("more than 200 rules") describes this tool and passes.
 COMPARATIVE = (r"(?<!rather )(?<!other )\bthan\b(?!\s+\d)|"
-               r"\b(?:unlike|versus|vs\.?|compared\s+(?:to|with)|competit\w*)\b|"
-               r"\bother\s+(?:validators?|tools?|checkers?|projects?|implementations?)\b|"
+               r"\b(?:unlike|versus|vs\.?|compared\s+(?:to|with)|competit\w*|outperform\w*)\b|"
+               r"\b(?:other|any\s+other|no\s+other|none\s+other)\s+(?:validators?|tools?|checkers?|readers?|projects?|implementations?)\b|"
+               r"\bof\s+any\s+(?:validators?|tools?|checkers?|readers?|projects?|implementations?)\b|"
+               r"\b(?:any|no)\s+other\b|\bsecond\s+to\s+none\b|"
+               r"\bmost\s+(?:thorough|complete|accurate|reliable|strict|precise|comprehensive|rigorous|careful|"
+               r"capable|advanced|robust|mature|efficient|powerful|extensive|detailed)\b|"
+               r"\b(?:strict|wid|broad|deep|rich|strong|safe|tough|full|tight|great)est\b|"
                r"\b(?:better|stricter|faster|stronger|safer|more\s+(?:accurate|complete|reliable|thorough))\b")
 FORBIDDEN = re.compile(
     r"\b(world|first|only|unique|best|leading|fastest|unmatched|superior|exhaustive(?:ly)?|"
@@ -155,7 +166,7 @@ def _evidence(where, ev, generated):
     if "\\" in raw or raw.startswith("/") or re.match(r"^[A-Za-z]:", raw):
         raise SystemExit(f"{where}: evidence {raw!r} must be a relative posix path inside the repository")
     # posixpath on purpose: os.path is ntpath on Windows, which would render backslashes into the
-    # committed summary (a spurious drift) and would let "..\\" past the check below (09-24, iiRDS).
+    # committed summary (a spurious drift) and would let "..\\" past the check below.
     path = posixpath.normpath(raw)
     if path == ".." or path.startswith("../"):
         raise SystemExit(f"{where}: evidence {raw!r} points outside the repository")
@@ -176,6 +187,7 @@ def load(path):
         if not data.get(k):
             raise SystemExit(f"missing {k}")
     _refuse("product", data["product"])
+    _refuse("as_of", str(data["as_of"]))
     # files whose words come from this data (or are copied from the picture) cannot be evidence for it
     generated = {f.casefold() for f in OWN_FILES} | {posixpath.normpath(data["detail"]).casefold()}
     axes = data["axes"]
@@ -331,7 +343,7 @@ def render_svg(data):
                f'role="img" aria-labelledby="t d">')
     out.append(f'<title id="t">{escape(title)}: six capability axes, what is checked now against the 1.0 condition</title>')
     desc = "; ".join(f"{ax['label']}: {ax['now_text']} (1.0: {ax['target_text']})" for ax in axes)
-    out.append(f'<desc id="d">{escape(desc)}</desc>')
+    out.append(f'<desc id="d">{escape(desc)}; as of {escape(str(data["as_of"]))}</desc>')
     out.append(f'<rect x="0.5" y="0.5" width="{W - 1}" height="{H - 1}" rx="10" fill="{BG}" stroke="{LINE}"/>')
     # rings (the outer ring is the 1.0 condition)
     for r in RINGS:
@@ -365,6 +377,10 @@ def render_svg(data):
     out.append(f'<text x="50" y="{ly}" font-family="{FONT}" font-size="11" fill="{INK2}">now</text>')
     out.append(f'<line x1="86" y1="{ly - 4}" x2="106" y2="{ly - 4}" stroke="{TARGET}" stroke-width="1.5"/>')
     out.append(f'<text x="112" y="{ly}" font-family="{FONT}" font-size="11" fill="{INK2}">1.0 condition</text>')
+    # the version this picture describes: a copy of the picture shown beside an older release's text
+    # (a package index keeps each release's page) still says which release it is about
+    out.append(f'<text x="{W - 24}" y="{ly}" text-anchor="end" font-family="{FONT}" font-size="11" fill="{INK2}">'
+               f'as of {escape(str(data["as_of"]))}</text>')
     # right panel: title, then one row per axis (label, what is checked now, the 1.0 condition)
     out.append(f'<text x="{PANEL_X}" y="40" font-family="{FONT}" font-size="16" font-weight="600" fill="{INK}">'
                f'{escape(title)}</text>')
