@@ -27,7 +27,7 @@ from pathlib import Path
 
 import pytest
 
-from aas_submodel_validate import runner
+from aas_submodel_validate import runner, tablegen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -62,7 +62,16 @@ def test_every_input_in_the_corpus_says_something_that_could_change(corpus):
         # template asked without it is a different question, and one
         # that would answer green here while the corpus measured
         # something nobody asked for.
-        report = runner.run(str(case.path), template=case.template)
+        try:
+            report = runner.run(str(case.path), template=case.template)
+        except tablegen.TemplateRefused:
+            # A table this reader will not read: exit 2 at the command
+            # line, where every other refusal in this corpus is a report
+            # with `complete` false. The asymmetry is the schema page's
+            # to settle and not this file's; what matters here is that
+            # "refused the table" is an answer a later version can give
+            # differently, so it is not the silence this looks for.
+            continue
         # A clean pass is a row with content: it moves the day a rule
         # wrongly starts firing on it, and several entries here are
         # exactly that. What cannot move is a refusal that says nothing,
@@ -80,10 +89,15 @@ def test_the_corpus_tells_inputs_apart(corpus):
     many distinct verdicts there should be -- that number moves
     whenever a rule does -- only that there is more than one.
     """
-    verdicts = {
-        tuple(sorted((f.id, str(f.severity)) for f
-                     in runner.run(str(case.path), template=case.template).findings))
-        for case in corpus}
+    verdicts = set()
+    for case in corpus:
+        try:
+            report = runner.run(str(case.path), template=case.template)
+        except tablegen.TemplateRefused:
+            verdicts.add(("the table was refused",))
+            continue
+        verdicts.add(tuple(sorted((f.id, str(f.severity))
+                                  for f in report.findings)))
     assert len(verdicts) > 1, "every input in the corpus is judged the same"
 
 
@@ -397,3 +411,56 @@ def test_the_count_leaves_out_what_the_old_version_was_never_asked(
     # printed, because a case that stopped being judgeable at all is
     # worth seeing even when there is nothing to compare it with.
     assert "a template no pack has" in printed
+
+
+def test_every_case_that_carries_a_table_is_judged_with_it(corpus):
+    """A case can name a table the reader never opens.
+
+    Then the corpus looks like it covers the mode while judging those
+    inputs with the packs, and the caveat that used to stand under the
+    count has been retired on a promise. So each carrier is asked
+    whether the table it names is the one the report says answered.
+    """
+    carriers = [case for case in corpus if case.template is not None]
+    assert len(carriers) == 4, [case.label for case in carriers]
+
+    for case in carriers:
+        try:
+            report = runner.run(str(case.path), template=case.template)
+        except tablegen.TemplateRefused:
+            # Refused, which is proof enough that it was read.
+            continue
+        assert report.template, case.label
+        assert report.template["path"] == str(case.template), case.label
+
+
+def test_the_table_a_case_carries_reaches_the_command_line(corpus):
+    """And that the reader answers from it.
+
+    `runner.run` above is the library entrance; this is the one the
+    comparison actually uses, and a `_judge` that built its argv without
+    the flag would leave every carrier judged by the packs while the
+    report above said otherwise.
+
+    The pairs are measured, and they are what makes these rows worth a
+    pass each: the same missing element comes back under a `TPL-E` id
+    with the table and a pack's id without it, so a change to which
+    reader answers is visible here as a change of rule id.
+    """
+    expected = {
+        "a submodel judged by a table no pack has": ("TPL-E01", "SMT-D1"),
+        "a Digital Nameplate, judged by the vendored template handed in by hand":
+            ("TPL-E02", "DN-E02"),
+    }
+    by_label = {case.label: case for case in corpus}
+    assert set(expected) <= set(by_label), sorted(by_label)
+
+    for label, (with_the_table, without_it) in expected.items():
+        case = by_label[label]
+        judged = verdict_diff._judge(ROOT / "src", case)
+        plain = verdict_diff._judge(ROOT / "src", case._replace(template=None))
+        assert {rule for rule, _severity, _subject in judged[0]} == {with_the_table}, (
+            label, judged)
+        assert {rule for rule, _severity, _subject in plain[0]} == {without_it}, (
+            label, plain)
+        assert verdict_diff._verdict_of(judged) != verdict_diff._verdict_of(plain)

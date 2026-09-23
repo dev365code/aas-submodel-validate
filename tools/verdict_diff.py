@@ -126,6 +126,11 @@ HELD_SPELLINGS = [
     ("aasx/files/manual.pdf", "/aasx/files/manual.pdf\t", True),
 ]
 
+#: An identifier no pack answers for and none will: the corpus needs one
+#: to ask what a table the caller brought decides, and a real IDTA number
+#: would stop being unclaimed the day this project vendors it.
+UNVENDORED = "urn:example:verdict-diff:no-pack-answers-for-this"
+
 LANGUAGE_FOLDS = [("upper", str.upper), ("title", str.title), ("lower", str.lower)]
 DECLARED_ENCODINGS = ["utf-8", "iso-8859-1", "windows-1252", "utf-16", "us-ascii"]
 
@@ -435,10 +440,14 @@ def build_corpus(into: Path):
 
     from builders import hd_env as _hd_env
 
-    def _without_a_value(label):
-        """A required property present and carrying nothing."""
-        document = _json.loads(_json.dumps(_hd_env()))
+    def _value_removed(document, label):
+        """The same document with one required property carrying nothing.
 
+        The document is a parameter and the file name is the caller's,
+        because a second case wanted this shape and a helper that wrote
+        to `no-value-<label>.json` would have handed both cases one path
+        -- two rows judging one file, and a budget layer timing it twice.
+        """
         def strip(node):
             if isinstance(node, dict):
                 if node.get("idShort") == label and node.get("modelType") == "Property":
@@ -449,12 +458,12 @@ def build_corpus(into: Path):
                 return any(strip(v) for v in node)
             return False
         assert strip(document), label
-        target = into / ("no-value-%s.json" % label)
-        target.write_text(_json.dumps(document), "utf-8")
-        return target
+        return document
 
-    cases.append(Case("a required property present and carrying no value",
-                  _without_a_value("DocumentDomainId")))
+    no_value = into / "no-value-DocumentDomainId.json"
+    no_value.write_text(_json.dumps(_value_removed(_hd_env(), "DocumentDomainId")),
+                        "utf-8")
+    cases.append(Case("a required property present and carrying no value", no_value))
 
     deep = into / "deeply-nested.json"
     deep.write_text("[" * 200000 + "]" * 200000, "utf-8")
@@ -479,6 +488,102 @@ def build_corpus(into: Path):
     raw[biggest.header_offset + 30 + len(biggest.filename) + biggest.compress_size - 4] ^= 0xFF
     lzma_broken.write_bytes(bytes(raw))
     cases.append(Case("an LZMA member with a damaged stream", lzma_broken))
+
+    # -- judged with a table the caller brought ----------------------------
+    #
+    # Everything above is judged with this reader's own packs, which was
+    # every question there was to ask until a caller could hand in a
+    # table of their own. A mode with no case here is a mode this tool
+    # reports `0 moved` about forever, however much moves inside it.
+    #
+    # Four, not forty: every case is a pass in the time budget, and each
+    # of these asks something the others cannot. None of them can be
+    # compared against a release that predates the option -- `compare`
+    # says so by name, above its count -- so their first comparison is
+    # the one after this release, which is the point at which a corpus
+    # that did not hold them would have been silent about a year of
+    # changes to the mode.
+    from builders import env_json  # noqa: E402
+
+    def _a_table_of_our_own(path, identifier, child="SerialNumber"):
+        def ref(value):
+            return {"type": "GlobalReference",
+                    "keys": [{"type": "GlobalReference", "value": value}]}
+
+        path.write_text(json.dumps({"submodels": [{
+            "kind": "Template", "idShort": "SomethingNobodyVendored",
+            "id": "urn:example:verdict-diff:template",
+            "semanticId": ref(identifier),
+            "submodelElements": [{
+                "modelType": "Property", "idShort": child,
+                "semanticId": ref(identifier + "/" + child),
+                "valueType": "xs:string",
+                "qualifiers": [{"type": "SMT/Cardinality",
+                                "valueType": "xs:string", "value": "One"}]}]}]}),
+            encoding="utf-8")
+        return path
+
+    def _without_the_element(document, id_short):
+        """The same document with one element gone from its scope."""
+        def walk(node):
+            if isinstance(node, dict):
+                for key, value in list(node.items()):
+                    if isinstance(value, list):
+                        kept = [item for item in value
+                                if not (isinstance(item, dict)
+                                        and item.get("idShort") == id_short)]
+                        if len(kept) != len(value):
+                            node[key] = kept
+                            return True
+                    if walk(value):
+                        return True
+            elif isinstance(node, list):
+                return any(walk(item) for item in node)
+            return False
+        assert walk(document), id_short
+        return document
+
+    # A table this project vendors, handed back in by the caller. Both
+    # readers have one for this file and the question is which answers:
+    # measured, the pack stands down and the same missing element comes
+    # back as `TPL-E02` where the pack said `DN-E02`. An input that is
+    # merely conformant could not show that -- both answer nothing.
+    stand_down = into / "nameplate-for-a-table-handed-in.json"
+    stand_down.write_text(
+        json.dumps(_without_the_element(dn_env(), "ManufacturerName")), "utf-8")
+    cases.append(Case(
+        "a Digital Nameplate, judged by the vendored template handed in by hand",
+        stand_down,
+        template=ROOT / "src/aas_submodel_validate/data/smt/02006/3.0/template.json"))
+
+    # The mode's reason to exist: a table no pack has, over a file that
+    # declares it. Without the table this is `SMT-D1`, "nothing here
+    # wears an identifier I have a table for"; with it, a verdict.
+    ours = _a_table_of_our_own(into / "a-table-nobody-vendored.json", UNVENDORED)
+    declares_it = into / "declares-a-template-nobody-vendored.json"
+    declares_it.write_bytes(env_json(UNVENDORED))
+    cases.append(Case("a submodel judged by a table no pack has",
+                      declares_it, template=ours))
+
+    # A supplied table that matches nothing, over a file with a defect
+    # in it. The packs must go on answering: this row is the one that
+    # goes quiet if a table standing down ever takes a file's own pack
+    # with it, and quiet is the direction nothing downstream reports.
+    beside_the_point = into / "handover-beside-a-table-that-matches-nothing.json"
+    beside_the_point.write_text(json.dumps(_value_removed(_hd_env(), "DocumentDomainId")),
+                                "utf-8")
+    cases.append(Case("a defect beside a supplied table that matches nothing",
+                      beside_the_point, template=ours))
+
+    # A table that is not one. Not a verdict but an exit code, which is
+    # what a build tool tells apart from "found something": this mode
+    # refuses at 2 and the corpus is where that stays measured.
+    not_a_table = into / "a-supplied-table-that-is-not-one.json"
+    not_a_table.write_text('{"hello": "world"}', encoding="utf-8")
+    judged_anyway = into / "handover-beside-a-table-that-is-not-one.json"
+    judged_anyway.write_text(json.dumps(_hd_env()), encoding="utf-8")
+    cases.append(Case("a supplied table that is not a template at all",
+                      judged_anyway, template=not_a_table))
 
     return cases
 
@@ -701,7 +806,18 @@ def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
     and run two readers over each would not be run.
     """
     new_src = new_src or (ROOT / "src")
-    print("%s -> working tree, over %d inputs\n" % (tag, len(corpus)))
+    # How many carry a table, said in the header rather than in a
+    # caveat at the bottom. The caveat that stood there -- "no case
+    # here is judged with --template" -- was true and was written to be
+    # deleted by whoever made it false; this is the same fact in the
+    # form a reader can use, and it goes back to being a caveat by
+    # itself if the count ever returns to zero.
+    with_a_table = sum(1 for case in corpus if case.template is not None)
+    print("%s -> working tree, over %d inputs%s\n"
+          % (tag, len(corpus),
+             ", %d of them judged with a table the caller supplied"
+             % with_a_table if with_a_table else
+             " -- none of them judged with a table the caller supplied"))
 
     moved = 0
     gained_the_key, reshaped = 0, 0
@@ -772,18 +888,6 @@ def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
     print("Every one of them belongs in the CHANGELOG, and the ones whose "
           "exit code falls belong there twice: a pipeline that is red on "
           "them today goes quiet, and nothing downstream reports that.")
-    # What the number does not cover, printed beside it rather than
-    # left to somebody's memory. `_judge` runs the tool with no flag
-    # but `-f json`, so a zero here is silent about every verdict
-    # `--template` decides -- and `_judge`'s own docstring is where
-    # this project wrote down that a zero from a comparison with no
-    # case for the change is the failure this tool exists to stop.
-    # A reader quoting the figure in a commit about that mode is
-    # quoting an instrument that was not pointed at it.
-    print("No case here is judged with --template: this compares the "
-          "tool's own packs. A zero above says nothing about a verdict "
-          "a supplied table decided.")
-
     return {"moved": moved, "compared": compared,
             "unanswerable": len(unanswerable),
             "gained_the_key": gained_the_key, "reshaped": reshaped}
