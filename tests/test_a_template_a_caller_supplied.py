@@ -1456,6 +1456,73 @@ def test_a_marker_is_recognised_in_the_comparison_form(tmp_path):
         "row on the template side: %s" % [r["label"] for r in built.ROWS])
 
 
+def test_a_marker_beside_a_real_identity_does_not_become_one(tmp_path):
+    """An open-content marker says a place is open, not what belongs in it.
+
+    The skip reads an element's own semanticId; the row's match set reads
+    that *and* its supplementals. So a template element that carries a
+    real identifier and marks itself open content beside it kept its row
+    -- and the marker went into the row's match values, where it is an
+    identity like any other. A supplier's arbitrary element then answered
+    a mandatory row it has nothing to do with.
+
+    Measured: a template demanding one `urn:test:real` Property, against
+    a file holding only the supplier's own element under the marker --
+    `ok` true, no findings, the required element absent. The verdict this
+    project exists to give, given backwards.
+
+    Zero of the 156 rows across the packs hold a marker in their match
+    set, because all 43 markers in the six vendored templates are an
+    element's own semanticId. This is what a caller's template can do.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    marker = "https://admin-shell.io/SMT/General/Arbitrary"
+    template = tmp_path / "supplemental-marker.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:sup", "idShort": "S",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [
+            {"modelType": "Property", "idShort": "Real",
+             "semanticId": sid("urn:test:real"), "valueType": "xs:string",
+             "supplementalSemanticIds": [sid(marker)],
+             "qualifiers": [card("One")]}]}]}).encode("utf-8"))
+
+    built = runner._supplied_table(template)["table"]
+    assert [row["label"] for row in built.ROWS] == ["Real"], (
+        "the element keeps its row: it has an identifier of its own, and "
+        "the marker beside it does not take that away: %s"
+        % [row["label"] for row in built.ROWS])
+    assert marker not in built.ROWS[0]["match"], (
+        "the row answers to the marker as though it were an identifier: %s"
+        % (built.ROWS[0]["match"],))
+
+    document = tmp_path / "suppliers-own.json"
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:i", "idShort": "S",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [
+            {"modelType": "Property", "idShort": "SomethingOfMine",
+             "semanticId": sid(marker), "valueType": "xs:string",
+             "value": "x"}]}]}).encode("utf-8"))
+    report = runner.run(document, template=template)
+    assert not report.ok, (
+        "the template requires one `urn:test:real` and the file has none; "
+        "the run said the file is fine")
+    assert any("Real" in finding.violation.message
+               for finding in report.findings), (
+        "nothing said which element is missing: %s"
+        % [f.violation.message for f in report.findings])
+
+
 def test_every_pack_skips_through_the_one_shared_set(tmp_path):
     """The generator and the run-time builder read one list.
 
@@ -1631,6 +1698,86 @@ def test_an_allowed_idshort_is_read_as_written(tmp_path):
         "%r matched an element the template did not name" % literal)
 
 
+def test_a_numbering_suffix_that_is_not_a_repeat_is_refused_with_the_template():
+    """The bracket branch reads IDTA's suffix as a program, and one
+    spelling of it is a program Python will not build.
+
+    `_ALLOWED` admits `\\d{M}` and `\\d{M,N}` for any digits, and a
+    minimum above its maximum is not a repeat: `\\d{3,2}` raises
+    `re.error` the first time the row is used. Nothing compiled it here,
+    so the failure arrived at walk time inside the funnel, which reported
+    every row of that table as "the rule itself could not run" under a
+    remedy reading "This is a defect in the validator, not in your file".
+    Of the spellings the pattern admits, the ones whose bounds run
+    backwards do this, and they are not a small corner of the set.
+
+    A value that claims IDTA's numbering spelling and gets it wrong is
+    refused with the template -- `could not judge this input` -- for the
+    same reason a template too large or the wrong shape is. Reading it as
+    a literal name instead would be the other half of the same mistake:
+    no element can be called `A[\\d{3,2}]`, so every row would fault the
+    caller's file for a defect in the template.
+
+    Compiled here rather than pattern-matched, so a spelling nobody
+    anticipated cannot reach a rule either: what this asks is whether
+    the string this function returns is one Python can run.
+    """
+    from aas_submodel_validate import tablegen
+
+    backwards, forwards = set(), set()
+    suffixes = ["\\d{%d}" % low for low in range(10)]
+    suffixes += ["\\d{%d,%d}" % (low, high)
+                 for low in range(10) for high in range(10)]
+    for suffix in suffixes:
+        bounds = [int(n) for n in re.findall(r"\d", suffix.replace("\\d", ""))]
+        (backwards if len(bounds) == 2 and bounds[0] > bounds[1]
+         else forwards).add(suffix)
+    assert backwards and forwards, "this gate stopped telling the two apart"
+
+    refused = set()
+    for suffix in suffixes:
+        raw = "A[%s]" % suffix
+        try:
+            pattern = tablegen._intended_pattern(raw)
+        except tablegen.TemplateRefused:
+            refused.add(suffix)
+            continue
+        re.compile(pattern)          # the walk's first act, brought forward
+
+    assert refused == backwards, (
+        "spellings this reader accepted and could not run: %s; spellings it "
+        "refused and could have run: %s"
+        % (sorted(backwards - refused), sorted(refused - backwards)))
+    for suffix in sorted(forwards):
+        assert tablegen._intended_pattern("A[%s]" % suffix) == \
+            "^A(?:%s)?$" % suffix, suffix
+
+
+def test_a_template_whose_suffix_cannot_run_names_the_qualifier(tmp_path):
+    """What the reader says when it refuses, and which code it leaves by.
+
+    The run that crashed per row left by 1 -- the code for a verdict
+    about a file that was read -- and said `judged 1 of 1` over a run in
+    which no row was evaluated. This owes 2, and the message owes the
+    value it could not read: the caller has to find it in their own
+    template, and `AllowedIdShort` is one qualifier among several on an
+    element among many.
+    """
+    from aas_submodel_validate import cli, tablegen
+
+    template = _template_with_idshort_rule(tmp_path, "A[\\d{3,2}]")
+    document = _instance_named(tmp_path, "A07")
+    with pytest.raises(tablegen.TemplateRefused) as refusal:
+        runner.run(document, template=template)
+    said = str(refusal.value)
+    assert "A[\\d{3,2}]" in said, said
+    assert "AllowedIdShort" in said, said
+
+    code = cli.main([str(document), "--template", str(template)])
+    assert code == cli.EXIT_ERROR, (
+        "a template this reader cannot build a table from left by %d" % code)
+
+
 def _self_containing(tmp_path):
     """A template whose `Node` holds a `Node`, and a file three deep.
 
@@ -1712,6 +1859,83 @@ def test_a_template_that_contains_itself_says_what_it_did_not_enter(tmp_path):
     # and passes.
     assert "2 nested copies" in said, said
     for where in ("H/Node/Node2", "H/Node/Node2/Node3"):
+        assert where in said, (where, said)
+
+
+def _self_containing_list(tmp_path):
+    """The same template, and a file whose nested copies sit in a list.
+
+    A `SubmodelElementList` names its items by position -- the metamodel
+    forbids its children an idShort -- so this is the ordinary shape for
+    repeats, not a corner of it.
+    """
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string",
+                "value": value}
+
+    inner = {"modelType": "SubmodelElementCollection", "idShort": "Node",
+             "semanticId": sid("urn:test:node"),
+             "qualifiers": [card("ZeroToMany")], "value": []}
+    node = {"modelType": "SubmodelElementCollection", "idShort": "Node",
+            "semanticId": sid("urn:test:node"), "qualifiers": [card("One")],
+            "value": [{"modelType": "Property", "idShort": "Name",
+                       "semanticId": sid("urn:test:name"),
+                       "valueType": "xs:string",
+                       "qualifiers": [card("One")]}, inner]}
+    template = tmp_path / "list-tpl.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:ltpl", "idShort": "H",
+        "kind": "Template", "semanticId": sid("urn:test:top"),
+        "submodelElements": [node]}]}).encode("utf-8"))
+
+    def copy():
+        return {"modelType": "SubmodelElementCollection",
+                "semanticId": sid("urn:test:node"), "value": []}
+
+    document = tmp_path / "list.json"
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:l", "idShort": "H",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Node",
+            "semanticId": sid("urn:test:node"),
+            "value": [{"modelType": "Property", "idShort": "Name",
+                       "semanticId": sid("urn:test:name"),
+                       "valueType": "xs:string", "value": "v"},
+                      {"modelType": "SubmodelElementList", "idShort": "Nodes",
+                       "semanticId": sid("urn:test:nodes"),
+                       "typeValueListElement": "SubmodelElementCollection",
+                       "value": [copy(), copy(), copy()]}]}]}]}).encode("utf-8"))
+    return document, template
+
+
+def test_nested_copies_with_no_name_of_their_own_are_counted_apart(tmp_path):
+    """Three unentered copies are three, and the note said one.
+
+    The fixture the count was first held against names every copy, and
+    a `SubmodelElementList`'s children cannot be named -- the metamodel
+    forbids it, so this is where repeats actually live. `_repeats_below`
+    spelled a nameless child `?`, the three siblings produced one string,
+    and `repeats_not_entered` deduplicates: the reader was told one
+    subtree went unexamined where three did, and told to look in a place
+    with no name.
+
+    The record keyed on a subject that two elements share is the defect
+    `docs/divergences.md` #53 already named and `_subject` already
+    repairs, by appending the position an unnamed element is addressed
+    by. This walk was written beside it and did not call it.
+    """
+    document, template = _self_containing_list(tmp_path)
+    report = runner.run(document, template=template)
+    said = " ".join(report.notes)
+    assert "3 nested copies" in said, said
+    for where in ("H/Node/Nodes/[0]", "H/Node/Nodes/[1]", "H/Node/Nodes/[2]"):
         assert where in said, (where, said)
 
 

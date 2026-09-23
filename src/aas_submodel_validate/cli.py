@@ -202,11 +202,19 @@ def main(argv: Optional[list] = None) -> int:
             # the one that carries the paragraph about why that is
             # wrong: `--template ""` is what a shell hands over from
             # `--template "$TPL"` with `TPL` unset, and it printed the
-            # listing and left by 0. Three entries on this list take a
-            # value -- a path, `--profile` and this one -- and the other
-            # two were already safe: the path by the same `is not None`
-            # the paragraph above is about, `--profile` by `choices`,
-            # which refuses an empty string before this runs.
+            # listing and left by 0. Four entries on this list take a
+            # value -- a path, `--profile`, `-f` and `--template` -- and
+            # the other three were already safe: the path by the same
+            # `is not None` the paragraph above is about, and `--profile`
+            # and `-f` by `choices`, which refuses an empty string before
+            # this runs.
+            #
+            # That count was written by eye three times and was wrong
+            # three times -- two, then three, and `-f` appeared in none
+            # of them. It is now held by a gate that reads the entries
+            # from this list and asks each `add_argument` whether it
+            # takes a value, so the sentence cannot be the only witness
+            # to its own number.
             ("--template", args.template is not None)) if given]
         if ignored:
             parser.error("--rules lists the rules and judges nothing, so it "

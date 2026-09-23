@@ -85,6 +85,13 @@ submodel judged against that. What that buys and what it does not:
 - Where your template claims an identifier one of the six packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
+- What a template marks as **open content** is a place it has left to
+  you, and nothing here judges it: an element whose identifiers are
+  nothing but the markers for that draws no rule, so your own content
+  under it is not faulted for failing to be a placeholder. A marker is
+  also never one of the identifiers a rule answers to, so your element
+  under a marker cannot stand in for one the template actually asked
+  for.
 - An element a template declares **inside itself** — 02011 Hierarchical
   Structures is the published case — is judged at its outermost
   occurrence only. The table stops at the repeat so that it stays

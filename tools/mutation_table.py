@@ -909,6 +909,90 @@ TABLE = [
      "MiB before the refusal, and 0.06s and 10 MiB once the walk refuses "
      "as it goes."),
 
+    ("template/an-open-content-marker-is-not-an-identity",
+     "src/aas_submodel_validate/tablegen.py",
+     "    return tuple(sorted(_declared_values(element) - markers))",
+     "    return tuple(sorted(_declared_values(element)))",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_marker_beside_a_real_identity_does_not_become_one"],
+     "a marker says a place is open, not what belongs in it. Left among "
+     "a row's match values it is an identity like any other, and the "
+     "supplier's own element under that marker answers the row. "
+     "Measured: a template requiring one `urn:test:real`, a file holding "
+     "only the supplier's element -- `ok` true, no findings, the "
+     "required element absent. Across the packs 0 of 156 rows carried "
+     "one, because all 43 markers in the vendored templates are an "
+     "element's own semanticId; this is what a caller's template can do"),
+
+    ("template/an-open-content-placeholder-draws-no-row",
+     "src/aas_submodel_validate/tablegen.py",
+     "    declared = _declared_values(element)\n"
+     '    if declared and not (declared - pack["skip_sids"]):',
+     "    declared = _declared_values(element)\n"
+     "    if False:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_open_content_a_template_declares_draws_nothing",
+      "tests/test_a_template_a_caller_supplied.py::"
+      "test_a_marker_is_recognised_in_the_comparison_form"],
+     "a template's own placeholder generated a rule, and then the "
+     "manufacturer's element sitting under it was faulted for not being "
+     "the placeholder -- the outcome `docs/divergences.md` #19 names in "
+     "advance. Read from every identifier the element declares and not "
+     "its semanticId alone: declared in a supplemental, the placeholder "
+     "kept a row whose match set was empty, so its cardinality could "
+     "never be met"),
+
+    ("template/a-numbering-suffix-is-run-before-it-is-shipped",
+     "src/aas_submodel_validate/tablegen.py",
+     "            re.compile(pattern)\n"
+     "        except re.error as exc:",
+     "            pass\n"
+     "        except re.error as exc:",
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_a_numbering_suffix_that_is_not_a_repeat_is_refused_with_the_template",
+      "tests/test_a_template_a_caller_supplied.py::"
+      "test_a_template_whose_suffix_cannot_run_names_the_qualifier"],
+     "the bracket branch keeps IDTA's suffix as a program, so a template "
+     "can hand this reader a program that does not build: `\\d{3,2}` asks "
+     "for at least three and at most two. Of the spellings the pattern "
+     "admits, forty-five of a hundred and ten are that shape. Unbuilt "
+     "here, each one raised the first time its row ran, inside the funnel "
+     "-- so a defect in the caller's template was reported on every row "
+     "as \"the rule itself could not run\", under a remedy reading \"This "
+     "is a defect in the validator, not in your file\", and the run left "
+     "by 1 saying `judged 1 of 1` with no row evaluated. Two repairs "
+     "before this one each escaped a name and left the suffix"),
+
+    ("engine/a-nested-copy-with-no-name-is-still-one-copy",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            here = _subject(where, child, index, shared)",
+     '            here = "%s/%s" % (where, child.id_short or "?")',
+     ["tests/test_a_template_a_caller_supplied.py::"
+      "test_nested_copies_with_no_name_of_their_own_are_counted_apart"],
+     "the note says how many nested copies of a self-containing row the "
+     "run did not enter, and `repeats_not_entered` deduplicates. A "
+     "`SubmodelElementList`'s children cannot carry an idShort -- the "
+     "metamodel forbids it, and that is where repeats sit -- so named "
+     "`?` they all became one string. Measured on three copies in one "
+     "list: \"did not look inside 1 nested copy below it (H/Node/Nodes/?)\". "
+     "One subtree reported for three, at a place with no name. The "
+     "fixture the count was first held against names every copy"),
+
+    ("cli/the-value-taking-flags-are-counted-not-recalled",
+     "src/aas_submodel_validate/cli.py",
+     "            # listing and left by 0. Four entries on this list take a",
+     "            # listing and left by 0. Three entries on this list take a",
+     ["tests/test_cli_flags.py::"
+      "test_the_list_that_refuses_rules_counts_its_own_value_taking_flags"],
+     "which entries of the `--rules` refusal list consume the next word "
+     "decides which of them can be read for truth, because an empty "
+     "string from an unset shell variable is falsy and the flag was "
+     "given. Counted by eye three times and wrong three times -- two, "
+     "then three, and `-f/--format` was in none of them. The canary "
+     "below is a comment nobody reads; this one is read, by a gate that "
+     "takes the entries from the list and asks each `add_argument` "
+     "whether it takes a value"),
+
     ("engine/which-submodels-a-table-answers-for-is-decided-once",
      "src/aas_submodel_validate/rules/engine.py",
      # `analyze` is cached the same way three lines of code apart, so

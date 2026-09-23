@@ -508,15 +508,28 @@ def _repeats_below(element, sid, subject):
     enter the first copy, so it would never meet the second. Measured on
     a file three deep, counting only the immediate ones reported one
     copy of two.
+
+    Named by `_subject`, which is what names every other record in this
+    module. Spelled `?` here instead, the children of a
+    `SubmodelElementList` -- which the metamodel forbids an idShort, and
+    which is where repeats actually sit -- all came out as one string,
+    and `repeats_not_entered` deduplicates: three unentered subtrees
+    were reported as one, at a place with no name. That is exactly the
+    merge `docs/divergences.md` #53 names and `_subject` was written to
+    stop, in a walk added beside it that did not call it.
     """
     found = []
-    stack = [(child, subject) for child in _sub_elements(element)]
+    stack = [(element, subject)]
     while stack:
-        child, where = stack.pop()
-        here = "%s/%s" % (where, child.id_short or "?")
-        if sid in element_candidate_values(child):
-            found.append((here, sid))
-        stack.extend((below, here) for below in _sub_elements(child))
+        parent, where = stack.pop()
+        children = _sub_elements(parent)
+        names = Counter(child.id_short for child in children if child.id_short)
+        shared = {name for name, count in names.items() if count > 1}
+        for index, child in enumerate(children):
+            here = _subject(where, child, index, shared)
+            if sid in element_candidate_values(child):
+                found.append((here, sid))
+            stack.append((child, here))
     return found
 
 

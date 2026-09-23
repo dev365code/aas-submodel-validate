@@ -129,6 +129,13 @@ def _intended_pattern(raw):
     saying the defect is this validator's. Measured across the six
     vendored templates, every `AllowedIdShort` uses the bracket
     spelling above, so escaping the rest moves no pack.
+
+    A value that claims the bracket spelling and gets it wrong is
+    refused with the template rather than read as a name: `A[\\d{3,2}]`
+    asks for a repeat of at least three and at most two, and no element
+    can be called that either. Refusing says the template cannot be
+    read, which is true; reading it as a name would fault the caller's
+    file for it, which is not.
     """
     matched = _ALLOWED.match(raw)
     if matched:
@@ -139,8 +146,28 @@ def _intended_pattern(raw):
         # does not compile, so every row of that table raised and the
         # funnel reported each as a defect in this validator. Both
         # halves of the defect lived on in one of its two branches.
-        return "^%s(?:%s)?$" % (re.escape(matched.group(1)),
-                                matched.group(2))
+        pattern = "^%s(?:%s)?$" % (re.escape(matched.group(1)),
+                                   matched.group(2))
+        try:
+            # What the walk does, brought forward to where the value is
+            # still identifiable. Escaping cannot reach the suffix --
+            # the suffix has to stay a program, that is what this branch
+            # is for -- so the only answer to "is this one Python can
+            # run" is to run it. Asking here rather than pattern-matching
+            # the bounds also answers it for a spelling nobody
+            # anticipated, which is the half the two repairs before this
+            # one each left standing.
+            re.compile(pattern)
+        except re.error as exc:
+            raise TemplateRefused(
+                # The value as the template spells it, not as Python
+                # spells it: `%r` doubles the backslash, and the caller
+                # is looking for this string in their own file.
+                "an AllowedIdShort qualifier reads `%s`, and its numbering "
+                "suffix is not a repeat this reader can run (%s). IDTA's "
+                "spelling is `Name[\\d{2,3}]`, lower bound first."
+                % (raw, exc)) from exc
+        return pattern
     return "^%s$" % re.escape(raw)
 
 
@@ -160,34 +187,45 @@ def _values_of(reference):
     return out
 
 
-def _match_set(element):
+def _declared_values(element):
+    """Every identifier the template gives this element, folded.
+
+    One reading, because two questions are asked of it: whether the
+    element is open content, and what its row answers to. Asked
+    separately they disagreed -- the skip read the element's own
+    semanticId and this read its supplementals too.
+    """
     values = set()
     if element.get("semanticId"):
         values |= _values_of(element["semanticId"])
     for supplemental in element.get("supplementalSemanticIds", []):
         values |= _values_of(supplemental)
-    return tuple(sorted(values))
+    return values
+
+
+def _match_set(element, markers):
+    """The identifiers a row answers to: what the template declares,
+    less the open-content markers.
+
+    A marker says a place is open, not what belongs in it. Left in, it
+    was an identity like any other: an element that carried a real
+    identifier and marked itself open content beside it kept its row and
+    also answered to the marker, so the supplier's own element under
+    that marker satisfied a mandatory row it has nothing to do with.
+    Measured -- a template requiring one `urn:test:real`, a file holding
+    only the supplier's element: `ok` true, no findings, the required
+    element absent.
+
+    0 of the 156 rows across the packs carried one, because all 43
+    markers in the six vendored templates are an element's own
+    semanticId and those elements never reach here. This is about what a
+    caller's template can do.
+    """
+    return tuple(sorted(_declared_values(element) - markers))
 
 
 def _primary_sid(element):
     keys = [key["value"] for key in element.get("semanticId", {}).get("keys", [])]
-    return "/".join(keys)
-
-
-def _folded_sid(element):
-    """`_primary_sid` in the comparison form, for the open-content check.
-
-    Folded there and not in `_primary_sid` itself: that one also supplies
-    the `sid` a row publishes and the text of its remedy, and folding it
-    rewrote a published sentence for an element whose identifier the
-    template spells as an ECLASS-CDP URL. What needed folding is the
-    comparison -- `_values_of` folds every other reference in this file,
-    and unfolded, a marker written with a trailing space was not skipped
-    and generated a rule while the same value on the instance side
-    matched.
-    """
-    keys = [normalize(key["value"])
-            for key in element.get("semanticId", {}).get("keys", [])]
     return "/".join(keys)
 
 
@@ -212,7 +250,18 @@ def _rows(element, parent_label, parent_id, counter, pack):
     describes open content rather than an obligation (see `skip_sids`).
     The check comes before the counter so skipped subtrees leave no gap in
     the numbering and no trace in a sibling template's table."""
-    if _folded_sid(element) in pack["skip_sids"]:
+    #: An element whose identifiers are nothing but open-content markers
+    #: is the template saying "anything may go here", and a row for it
+    #: fires against the supplier's own content
+    #: (`docs/divergences.md` #19).
+    #:
+    #: Asked of every identifier rather than of the element's own
+    #: semanticId alone. The narrower reading let an element declare
+    #: itself open content in a supplemental and keep its row -- a row
+    #: whose match set was then empty, so its cardinality could never be
+    #: met and a conformant file was faulted for it.
+    declared = _declared_values(element)
+    if declared and not (declared - pack["skip_sids"]):
         return None
     label = element.get("idShort") \
         or pack["item_names"].get(parent_label, parent_label + "Item")
@@ -293,7 +342,9 @@ def _rows(element, parent_label, parent_id, counter, pack):
         "label": label,
         "parent": parent_id,
         "kind": element["modelType"],
-        "match": _match_set(element),
+        # The same set the skip above read, so a pack cannot skip
+        # through one list and match through another.
+        "match": _match_set(element, pack["skip_sids"]),
         "sid": my_sid,
         "sid_type": element.get("semanticId", {}).get("type"),
         "card": card,

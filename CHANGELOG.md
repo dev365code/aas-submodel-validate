@@ -54,7 +54,11 @@ number that depended on the flag rather than on the file.
 A template that is not a template, is not JSON, cannot be read, is above
 the byte bound, or declares more than ten thousand rows is refused at
 exit 2 — "could not judge the input", the same code every other
-unreadable input gets. The row bound is separate from the bound on the
+unreadable input gets. So is one whose `AllowedIdShort` claims IDTA's
+numbering spelling and is not a repeat: `Name[\d{3,2}]` asks for at
+least three digits and at most two, and the refusal quotes the value so
+you can find it. A value that does not claim that spelling is a name,
+and an element is matched against it as written. The row bound is separate from the bound on the
 document being judged because they are different files: forty-six
 megabytes of template sits comfortably inside the sixty-four this reader
 advertises, and what a generator spends is decided by rows.
@@ -66,6 +70,24 @@ reader cannot tell "my other templates matched nothing" from "my other
 templates were never opened", and those ask opposite things of them:
 `rows` and `semanticId` both describe the submodel the table came from
 and read the same either way.
+
+**What a template marks as open content draws no rule, and never
+answers for one.** The two markers IDTA publishes for this are read, and
+so are the three narrower spellings the vendored template files carry —
+wherever the template declares them, as an element's own identifier or
+beside one. An element whose identifiers are nothing but markers
+generates no row, so your own content under it is not faulted for
+failing to be a placeholder. And a marker is never one of the
+identifiers a row answers to: without that, an element of yours sitting
+under a marker satisfied a row the template meant for something else,
+and a file missing the element that row requires was called fine.
+
+**A template whose element holds a copy of itself says what it did not
+enter.** The table stops at the first copy so that it stays finite, and
+a note reports how many nested copies below it went unexamined and where
+each one sits — by position inside a list, which is where repeats
+usually sit and where the metamodel gives them no name to be reported
+under. Nothing in that note is a statement about what those copies hold.
 
 `--profile` and `--template` together: your table takes the identifier
 from **both** sides of the pair, so the profile decides nothing, and the
