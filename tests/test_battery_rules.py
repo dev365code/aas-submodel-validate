@@ -1224,13 +1224,15 @@ def test_the_category_is_read_a_bounded_number_of_times(tmp_path, monkeypatch):
     monkeypatch.setattr(battery, "declared_category",
                         lambda submodels: (calls.append(1), real(submodels))[1])
 
+    notes = []
+
     def measure(count):
         calls.clear()
         payload = _env(*[_submodel("PC%d" % i, PRODUCT_CONDITION,
                                    [_collection("E%d" % k, "urn:x:%d" % k)
                                     for k in range(4)])
                          for i in range(count)])
-        _run(tmp_path, payload)
+        notes.append(_run(tmp_path, payload).notes)
         return len(calls)
 
     small, large = measure(8), measure(64)
@@ -1241,6 +1243,15 @@ def test_the_category_is_read_a_bounded_number_of_times(tmp_path, monkeypatch):
     # And bounded, not merely equal: two runs that both read it a
     # thousand times would satisfy the line above.
     assert large <= 4, large
+    # And not zero, which both lines above allow: a file whose category
+    # is never read is judged without the rows it settles. What the
+    # reading is for shows in the report, so that is asked too -- the
+    # note saying how much of this table waits on a category the file
+    # does not settle.
+    assert large >= 1, large
+    for said in notes:
+        assert any("turn on a battery category this file does not settle"
+                   in note for note in said), said
 
 
 def test_no_clause_line_names_one_provision_twice(tmp_path):

@@ -385,6 +385,28 @@ TABLE = [
      "relationship as an equal way out -- where a File value names the part "
      "it leaves that finding standing and loses a declaration that was right"),
 
+    ("cost/deciding-which-submodels-a-table-answers-for-is-not-skipped",
+     "src/aas_submodel_validate/rules/engine.py",
+     "cached = cache[tables.__name__] = _matched_submodels(ctx, tables)",
+     "cached = cache[tables.__name__] = []",
+     ["tests/test_engine_regressions.py::"
+      "test_which_submodels_a_table_answers_for_is_decided_once"],
+     "the floor under a ceiling: a memo that skips the deciding walks less, "
+     "not more, and a gate that only bounds the count from above passes it "
+     "while every generated table judges nothing"),
+
+    ("cost/each-table-gets-its-own-answer",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    cache = ctx.__dict__.setdefault("_smt_matched", {})\n'
+     "    cached = cache.get(tables.__name__)",
+     '    cache = ctx.__dict__.setdefault("_smt_matched", {})\n'
+     "    cached = next(iter(cache.values()), None)",
+     ["tests/test_engine_regressions.py::"
+      "test_which_submodels_a_table_answers_for_is_decided_once"],
+     "a memo keyed wrongly hands every table the first table's answer; it "
+     "walks less, so the ceiling passes it, and the table this input is an "
+     "instance of is never decided"),
+
     ("cost/where-the-files-are-is-not-asked-per-part",
      "src/aas_submodel_validate/container.py",
      "        if self._canonical is None:",
