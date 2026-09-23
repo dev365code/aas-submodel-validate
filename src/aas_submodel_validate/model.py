@@ -290,15 +290,12 @@ class NotExamined:
         way to tell that from a typo by looking (#22, #23).
 
     `unclaimed` names what was sitting there: elements of the kind the
-    row asks for that matched no row, with or without an identifier, as
-    (subject, identifier-or-None), in path order and at most
+    row asks for, carrying an identifier, that matched no row, as
+    (subject, identifier), in path order and at most
     `rules.engine.UNCLAIMED_NAMED` of them; `unclaimed_count` is how many
     there were. Empty exactly when `because` is `absent`. Without it a
     drifted container and a legitimately omitted one beside an unrelated
     container of the same kind wrote the same record, byte for byte.
-
-    `explained` is not written out: it says this place's loss is also in
-    `rulesNotAsked`, which the screen needs so as to say it once.
     """
 
     where: str
@@ -308,7 +305,6 @@ class NotExamined:
     because: str
     unclaimed: tuple = ()
     unclaimed_count: int = 0
-    explained: bool = False
 
     def __post_init__(self):
         # File-supplied text, through the same funnel as `Unmatched`: the

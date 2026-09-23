@@ -580,13 +580,19 @@ def test_two_records_that_differ_only_in_what_sat_there_are_two_answers(tmp_path
         return verdict_diff._judge(ROOT / "src", verdict_diff.Case(
             name, path, template=template))
 
-    own = judged("own", {"modelType": "SubmodelElementCollection", "idShort": "Box",
-                         "semanticId": ref("urn:test:box-but-different"), "value": []})
-    beside = judged("beside", {"modelType": "SubmodelElementCollection",
-                               "idShort": "OurOwnBox",
-                               "semanticId": ref("urn:vendor:ourbox"), "value": []})
+    def container(name, identifier):
+        return {"modelType": "SubmodelElementCollection", "idShort": name,
+                "semanticId": ref(identifier), "value": []}
+
+    own = judged("own", container("Box", "urn:test:box-but-different"))
+    beside = judged("beside", container("OurOwnBox", "urn:vendor:ourbox"))
     assert verdict_diff._verdict_of(own) == verdict_diff._verdict_of(beside)
     assert own[4] != beside[4], (own[4], beside[4])
+    # Each half of the pair on its own: the same place with another
+    # identifier, and the same identifier in another place.
+    assert own[4] != judged("own-v3", container("Box", "urn:test:box-v3"))[4]
+    assert own[4] != judged("moved", container(
+        "Crate", "urn:test:box-but-different"))[4]
 
 
 def test_every_case_that_carries_a_table_is_judged_with_it(corpus):

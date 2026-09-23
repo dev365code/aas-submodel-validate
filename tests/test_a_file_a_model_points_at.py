@@ -114,17 +114,15 @@ def test_the_relationship_remedy_does_not_undo_a_correct_declaration(tmp_path):
     """One missing part, both rules, and X4 offered two ways out as equals:
     add the part, or delete the relationship. Where a File value names the
     part too, deleting leaves it missing. The remedy now says what deleting
-    does and does not do, offers correcting a wrong name -- a name no part
-    can carry has no part to add -- and points back at the File rules,
-    whose remedy already pointed here.
+    does and does not do, and offers correcting the name first -- a name no
+    part can carry has no part to add.
     """
     report = runner.run(_package(tmp_path, "declared-too",
                                  suppl_targets=[LOGO, CE]))
     assert len(_missing_part(report)) == 2, _missing_part(report)
     (remedy,) = {f.fix for f in report.findings if f.id == "X4"}
     assert "removes only the declaration" in remedy, remedy
-    assert "correct that name if it is wrong" in remedy, remedy
-    assert "File rules' question" in remedy, remedy
+    assert remedy.startswith("Correct the relationship's target"), remedy
 
 
 def test_every_pack_with_a_file_row_asks(tmp_path):

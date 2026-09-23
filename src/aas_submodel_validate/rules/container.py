@@ -169,14 +169,13 @@ def x6_the_path_can_be_opened(ctx):
       # The next wording asserted the File rule always says so and that the
       # declaration was right -- neither holds for a File no pack judges, a
       # misspelt value, or a name no part can carry. This says what deleting
-      # does and does not do, and nothing it cannot know. The File rule's
-      # remedy points here; this one points back.
-      fix="Put the part in the archive under the name the relationship "
-          "gives, or correct that name if it is wrong. Deleting the "
-          "aas-suppl relationship removes only the declaration: if a File "
-          "value in the model names the same part, the part is still "
-          "missing. (Whether a File value names a part that is there is the "
-          "File rules' question, not this one's.)")
+      # does and does not do, puts correcting the name first -- a name no
+      # part can carry has only that way out, and a misspelt one beside the
+      # real part would be copied by the other -- and nothing it cannot know.
+      fix="Correct the relationship's target if it names the part wrongly, "
+          "or add the part under the name it gives. Deleting the aas-suppl "
+          "relationship removes only the declaration: if a File value in "
+          "the model names the same part, the part is still missing.")
 def x4_supplementary_parts_exist(ctx):
     from ..container import SUPPL_REL, ContainerError
     container = ctx.loaded.container

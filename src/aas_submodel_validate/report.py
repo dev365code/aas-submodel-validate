@@ -315,39 +315,38 @@ def render(report: Report, *, show_meta: bool = False,
     #: says the one a person can act on. Same rule the line above it
     #: follows: speak where there is something to say.
     #
-    # The rest of that reach, place by place. The clause above is keyed by
-    # rule id across the whole run, so this cannot subtract by id: a rule
-    # told there about one place says nothing about another place losing
-    # the same rule -- measured, a second submodel's vendor list vanished
-    # from the line -- while a place whose loss the walk also sent to
-    # `rulesNotAsked` is said once, above (the bundled example's
-    # `Entities`). `explained` is that fact, carried from the walk.
-    #
-    # Counted per place: the same rule unopened in two places is two
-    # checks not made, and the line says how many places.
-    from .rules.engine import _sitting_order
+    # Named, not counted. A count of rules here met the clause above, which
+    # counts rule ids across the whole run, in every way two such numbers
+    # can: the same rule said twice (the bundled example), one place hidden
+    # behind another place's id, a sum over places read as a number of
+    # rules. So this names the sections not opened and what sat beside
+    # them, and leaves counting rules to the clause above and to `-f json`.
+    # An element that clause already names or counts is not named again;
+    # every other one is, whatever else fired in the same place.
+    from .rules.engine import _in_path_order, _sitting_order
 
+    accounted = {record.subject for record in report.unmatched}
     shown = [record for record in report.not_examined
              if record.because == "unclaimed-element-present"
-             and not record.explained]
+             and not (record.unclaimed_count == len(record.unclaimed)
+                      and all(subject in accounted
+                              for subject, _seen in record.unclaimed))]
     if shown:
-        lost = sum(len(record.unasked) for record in shown)
-        places = len({record.where for record in shown})
-        sections = sorted({record.label for record in shown})
-        # The elements that sat there, from the records shown and no
-        # others, in path order. Each record names at most a few and says
-        # how many; two records naming the same list are one list.
+        sections = sorted({record.label for record in shown},
+                          key=lambda label: _in_path_order((label, "")))
+        # Each record names a few of what sat there and says how many; two
+        # records naming the same list at one place are one list.
         lists = {(record.where, record.unclaimed): record.unclaimed_count
                  for record in shown}
+        total = sum(lists.values())
         sitting = [subject for subject, _seen in sorted(
             {pair for record in shown for pair in record.unclaimed},
             key=_sitting_order)]
-        total = sum(lists.values())
-        examined = ("; %d rule%s not examined in %d place%s: %s not opened, "
-                    "beside %s no row describes (%s) -- not a defect, and not "
-                    "checked either; -f json lists them"
-                    % (lost, "" if lost == 1 else "s", places,
-                       "" if places == 1 else "s", _named_at_most(sections),
+        examined = ("; %d section%s not examined (%s), beside %s no row "
+                    "describes (%s) -- not a defect, and not checked either; "
+                    "-f json lists the rules"
+                    % (len(shown), "" if len(shown) == 1 else "s",
+                       _named_at_most(sections),
                        "an element" if total == 1 else "elements",
                        _named_at_most(sitting, total)))
     judged = ""
