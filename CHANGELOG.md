@@ -34,10 +34,11 @@ rows.
 **And the report says what the run did not open.** `summary` gains
 `scopeNotExamined`: one record per template row whose scope no element
 matched, the rules that went unasked with it, and -- as a separate fact,
-not a cause -- whether anything in that same scope matched no row at
-all. Before it, a container carrying an identifier the template does not
-name passed with every published number identical to a clean run, while
-the rule that would have checked inside it was never put to anything.
+not a cause -- which elements of the kind that row asks for sat in the
+same scope matching no row. Before it, a container carrying an
+identifier the template does not name passed with every published number
+identical to a clean run, while the rule that would have checked inside
+it was never put to anything.
 
 It names no culprit. A different identifier may be a legitimate vendor
 extension, and nothing tells that from a typo by looking, so

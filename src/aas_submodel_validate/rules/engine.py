@@ -399,10 +399,10 @@ def _analyze(ctx, tables) -> Dict:
         # while `rulesNotAsked` on the same report was empty. Two keys
         # contradicting each other about one run.
         examined = []
-        for path, row_id, label, unasked, because in per["not_examined"]:
+        for path, row_id, label, unasked, because, sitting in per["not_examined"]:
             kept = tuple(rule_id for rule_id in unasked if rule_id not in asked_here)
             if kept:
-                examined.append((path, row_id, label, kept, because))
+                examined.append((path, row_id, label, kept, because, sitting))
         per["not_examined"] = examined
         for key in ("violations", "instances"):
             for row_id, entries in per[key].items():
@@ -481,13 +481,20 @@ def scope_not_examined(ctx) -> List:
 
     analysed = ctx.__dict__.get("_smt_analysis") or {}
     best = {}
+    sat = {}
     for analysis in analysed.values():
-        for where, rule, label, unasked, because in analysis.get("not_examined", ()):
+        for where, rule, label, unasked, because, sitting in analysis.get(
+                "not_examined", ()):
             key = (where, rule)
             if key not in best or because == "unclaimed-element-present":
                 best[key] = (label, unasked, because)
+            # Every walk's strangers, not the last one's: the same row
+            # walked in each item of a list can have a different element
+            # sitting beside it in each.
+            sat.setdefault(key, set()).update(sitting)
     return [NotExamined(where=where, rule=rule, label=label,
-                        unasked=unasked, because=because)
+                        unasked=unasked, because=because,
+                        unclaimed=tuple(sorted(sat[(where, rule)])))
             for (where, rule), (label, unasked, because) in sorted(best.items())]
 
 
@@ -963,10 +970,16 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #: neighbour's loss, and being first alphabetically it was the element
     #: the terminal named.
     near_here = []
+    #: What sat here unplaced, by kind: each element no row claimed that
+    #: carries an identifier, as (subject, identifier) -- gathered in this
+    #: walk because it visits exactly that set with the subjects built.
+    unplaced = {}
     for index, element, candidates, _main_empty in indexed:
         if index in claimed or not candidates:
             continue
         subject = _subject(path, element, index, shared)
+        unplaced.setdefault(type(element).__name__, []).append(
+            (subject, sorted(candidates)[0]))
         for row in rows:
             near = _near_miss(candidates, row["match"])
             if near:
@@ -1009,23 +1022,26 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #
     # An element can only be sitting in a row's place if it is the kind
     # that row asks for. Anything else is an extension, which is #19's
-    # subject and not this one's. The kinds are collected rather than
-    # the subjects: the subjects were built with `_subject`, sorted, and
-    # then read as a truth value -- the same set the near-miss loop
-    # above had already walked, built a second time and thrown away.
-    unplaced_kinds = {type(element).__name__
-                      for index, element, candidates, _empty in indexed
-                      if index not in claimed and candidates}
+    # subject and not this one's. The elements come from the near-miss
+    # walk above, which visits exactly this set with each subject already
+    # built; an earlier version built them a second time here, sorted
+    # them, and read the result as a truth value.
+    #
+    # And *which* elements, not only whether any. Two opposite situations
+    # -- a row's own container under a drifted identifier, and a row the
+    # file legitimately omits beside an unrelated container of the same
+    # kind -- produced byte-identical records, and the one fact that tells
+    # them apart is what was sitting there. Named; still not blamed.
     for row in rows:
         if not row["children"] or claimed_by.get(row["id"]):
             continue
         lost = tuple(_descendant_ids(row))
         if not lost:
             continue
+        sitting = tuple(unplaced.get(row["kind"], ()))
         result["not_examined"].append(
             (path, row["id"], row["label"], lost,
-             "unclaimed-element-present" if row["kind"] in unplaced_kinds
-             else "absent"))
+             "unclaimed-element-present" if sitting else "absent", sitting))
     # A loss is claimed only where something explains it, and that guard
     # stays: a row left unclaimed because the file legitimately does not
     # carry an optional element is not a loss anyone caused, and blaming a

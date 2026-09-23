@@ -114,6 +114,14 @@ NOTE_KEY = "note=something this run did, not a defect -- nothing to change"
 NAMED_AT_MOST = 3
 
 
+def _named_at_most(names) -> str:
+    """The first `NAMED_AT_MOST` of `names`, then how many more -- a list
+    cut short says so, or a reader takes the three for the whole."""
+    shown = list(names[:NAMED_AT_MOST])
+    rest = len(names) - len(shown)
+    return ", ".join(shown) + (", and %d more" % rest if rest else "")
+
+
 def render(report: Report, *, show_meta: bool = False,
            failed: Optional[bool] = None) -> str:
     """The report as a person reads it.
@@ -305,16 +313,31 @@ def render(report: Report, *, show_meta: bool = False,
     #: carries both, which is where a pipeline reads them; the screen
     #: says the one a person can act on. Same rule the line above it
     #: follows: speak where there is something to say.
+    #
+    # The rest of that reach, and only the rest: a rule the clause above
+    # already named as not asked is not counted again. It was -- the
+    # bundled example printed "1 rule not asked (HD-E38)" and then "1 rule
+    # not examined" about that same rule, and a reader adds the two.
+    # Counted as distinct ids for the same reason: a row walked in two
+    # scopes lists its rules in both records, and summing them per record
+    # is the arithmetic the schema page says means nothing.
+    told = set(report.not_asked)
     sat = [record for record in report.not_examined
-           if record.because == "unclaimed-element-present"]
+           if record.because == "unclaimed-element-present"
+           and set(record.unasked) - told]
     if sat:
-        lost = sum(len(record.unasked) for record in sat)
+        lost = len({rule for record in sat for rule in record.unasked} - told)
+        sections = sorted({record.label for record in sat})
+        # And what was sitting there, which on a pack with no near-miss
+        # lint is the only place the element is named at all.
+        sitting = sorted({subject for record in sat
+                          for subject, _seen in record.unclaimed})
         examined = ("; %d rule%s not examined, under %d section%s carrying an "
-                    "element no row describes (%s) -- not a defect, and not "
-                    "checked either; -f json lists them"
-                    % (lost, "" if lost == 1 else "s", len(sat),
-                       "" if len(sat) == 1 else "s",
-                       ", ".join(sorted({record.label for record in sat})[:3])))
+                    "element no row describes (%s; sitting there: %s) -- not a "
+                    "defect, and not checked either; -f json lists them"
+                    % (lost, "" if lost == 1 else "s", len(sections),
+                       "" if len(sections) == 1 else "s",
+                       _named_at_most(sections), _named_at_most(sitting)))
     judged = ""
     specified = ""
     if report.submodels_specified:

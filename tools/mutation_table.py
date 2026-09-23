@@ -347,6 +347,34 @@ TABLE = [
      "package lets an installed copy answer for it -- both sides become one "
      "reader, every input agrees with itself, and the tool prints 0 moved"),
 
+    ("scope/what-sat-there-is-named",
+     "src/aas_submodel_validate/rules/engine.py",
+     "unclaimed=tuple(sorted(sat[(where, rule)])))",
+     "unclaimed=())",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_what_sat_there_is_named_so_opposite_cases_differ"],
+     "a row's own container under a drifted identifier and a row the file "
+     "omits beside an unrelated container of the same kind write the same "
+     "record, byte for byte, unless the record names what sat there"),
+
+    ("screen/a-rule-named-not-asked-is-not-counted-again",
+     "src/aas_submodel_validate/report.py",
+     "    told = set(report.not_asked)",
+     "    told = set()",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_rule_the_line_named_as_not_asked_is_not_counted_again"],
+     "the bundled example printed one rule as not asked and then the same "
+     "rule as not examined, and a reader adds the two clauses"),
+
+    ("screen/a-list-cut-short-says-so",
+     "src/aas_submodel_validate/report.py",
+     'return ", ".join(shown) + (", and %d more" % rest if rest else "")',
+     'return ", ".join(shown)',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_list_cut_short_says_how_many_it_left_out"],
+     "three names and then silence reads as three names in all, on the one "
+     "line a generated-only pack speaks on"),
+
     ("cost/where-the-files-are-is-not-asked-per-part",
      "src/aas_submodel_validate/container.py",
      "        if self._canonical is None:",

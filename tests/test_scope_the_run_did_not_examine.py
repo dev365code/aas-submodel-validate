@@ -258,3 +258,99 @@ def test_a_vendor_extension_does_not_make_a_conformant_file_speak(tmp_path):
         "a conformant file speaks because of one element the template never "
         "mentions:\n  without it: %s\n  with it:    %s"
         % (plain.split("\n")[-1][-120:], extended.split("\n")[-1][-160:]))
+
+
+def test_what_sat_there_is_named_so_opposite_cases_differ(tmp_path):
+    """Two situations that mean opposite things wrote one record.
+
+    A row's own container under a drifted identifier: the rules inside it
+    were never put, and the container is right there. A row the file
+    legitimately omits, beside an unrelated container of the same kind:
+    nothing that should have been checked went unchecked. Both are
+    `unclaimed-element-present` -- rightly, since neither names a cause
+    (`docs/divergences.md` #19) -- and until the record said which element
+    sat there, the two were equal as JSON, byte for byte.
+    """
+    drifted = runner.run(_instance(tmp_path, "drifted3",
+                                   [_box(sid="urn:test:box-but-different")]),
+                         template=_template(tmp_path))
+    beside = runner.run(_instance(tmp_path, "beside", [{
+        "modelType": "SubmodelElementCollection", "idShort": "OurOwnBox",
+        "semanticId": _sid("urn:vendor:ourbox"), "value": []}]),
+        template=_template(tmp_path))
+    (one,), (other,) = drifted.not_examined, beside.not_examined
+    assert one.because == other.because == "unclaimed-element-present"
+    assert one.as_dict() != other.as_dict()
+    assert one.as_dict()["unclaimedHere"] == [
+        {"subject": "Boxes/Box", "seen": "urn:test:box-but-different"}]
+    assert other.as_dict()["unclaimedHere"] == [
+        {"subject": "Boxes/OurOwnBox", "seen": "urn:vendor:ourbox"}]
+    # And nothing named where nothing sat: the two fields cannot disagree
+    # about whether anything was there.
+    (absent,) = runner.run(_instance(tmp_path, "absent3", []),
+                           template=_template(tmp_path)).not_examined
+    assert absent.because == "absent" and absent.as_dict()["unclaimedHere"] == []
+
+
+def test_a_rule_the_line_named_as_not_asked_is_not_counted_again(tmp_path):
+    """The two clauses of the summary line are one reach, said in two parts.
+
+    `rulesNotAsked` names the rules a reported defect explains and the
+    scope record lists every rule beneath a row nobody entered, so one
+    rule can be in both -- and on the bundled example it is. The line
+    said "1 rule not asked (HD-E38)" and then "1 rule not examined" about
+    that same rule, and a reader adds the two. Nor is one rule under two
+    scopes two rules: the records are per scope, the count is not.
+    """
+    import copy
+
+    from aas_submodel_validate.example import bundled_example
+    from aas_submodel_validate.report import render
+
+    with bundled_example() as path:
+        report = runner.run(str(path))
+    assert list(report.not_asked) == ["HD-E38"], report.not_asked
+    assert any("HD-E38" in record.unasked for record in report.not_examined)
+    assert "not examined" not in render(report), render(report)
+
+    # One rule, in two scopes: two submodels of one name, each with the
+    # container drifted. Two records, one rule.
+    drifted = json.loads(_instance(tmp_path, "one", [
+        _box(sid="urn:test:box-but-different")]).read_text("utf-8"))
+    second = copy.deepcopy(drifted["submodels"][0])
+    second["id"] = "urn:test:box-too"
+    drifted["submodels"].append(second)
+    twice = tmp_path / "twice.json"
+    twice.write_text(json.dumps(drifted), encoding="utf-8")
+    report = runner.run(twice, template=_template(tmp_path))
+    assert len(report.not_examined) == 2, report.not_examined
+    line = render(report)
+    assert "1 rule not examined, under 1 section " in line, line
+
+
+def test_a_list_cut_short_says_how_many_it_left_out(tmp_path):
+    """Three names and then silence reads as three names in all.
+
+    The clause beside it on the same line names three and counts the rest
+    ("and 2 more"); this one cut at three and said nothing, on the one
+    line a generated-only pack speaks on at all.
+    """
+    from aas_submodel_validate.report import render
+
+    rows = [{"modelType": "SubmodelElementCollection", "idShort": "Box%d" % n,
+             "semanticId": _sid("urn:test:box%d" % n),
+             "qualifiers": [_card("ZeroToOne")],
+             "value": [{"modelType": "Property", "idShort": "Inside",
+                        "semanticId": _sid("urn:test:inside"),
+                        "valueType": "xs:string", "qualifiers": [_card("One")]}]}
+            for n in range(1, 6)]
+    template = tmp_path / "five-boxes-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:fivetpl", "idShort": "Boxes",
+        "kind": "Template", "semanticId": _sid("urn:test:boxes"),
+        "submodelElements": rows}]}), encoding="utf-8")
+    boxes = [_box(id_short="Box%d" % n, sid="urn:test:drift%d" % n)
+             for n in range(1, 6)]
+    line = render(runner.run(_instance(tmp_path, "five", boxes), template=template))
+    assert "(Box1, Box2, Box3, and 2 more; sitting there: " in line, line
+    assert "Boxes/Box3, and 2 more)" in line, line
