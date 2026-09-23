@@ -84,10 +84,11 @@ and a file missing the element that row requires was called fine.
 
 **A template whose element holds a copy of itself says what it did not
 enter.** The table stops at the first copy so that it stays finite, and
-a note reports how many nested copies below it went unexamined and where
-each one sits — by position inside a list, which is where repeats
-usually sit and where the metamodel gives them no name to be reported
-under. Nothing in that note is a statement about what those copies hold.
+a note reports how many nested copies below it went unexamined and names
+the first few of them by where they sit — by position inside a list,
+which is where repeats usually sit and where the metamodel gives them no
+name to be reported under. The count is all of them; the naming stops,
+and the note says that it stopped. Nothing in that note is a statement about what those copies hold.
 
 `--profile` and `--template` together: your table takes the identifier
 from **both** sides of the pair, so the profile decides nothing, and the

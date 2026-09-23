@@ -1862,7 +1862,7 @@ def test_a_template_that_contains_itself_says_what_it_did_not_enter(tmp_path):
         assert where in said, (where, said)
 
 
-def _self_containing_list(tmp_path):
+def _self_containing_list(tmp_path, copies=3):
     """The same template, and a file whose nested copies sit in a list.
 
     A `SubmodelElementList` names its items by position -- the metamodel
@@ -1911,7 +1911,8 @@ def _self_containing_list(tmp_path):
                       {"modelType": "SubmodelElementList", "idShort": "Nodes",
                        "semanticId": sid("urn:test:nodes"),
                        "typeValueListElement": "SubmodelElementCollection",
-                       "value": [copy(), copy(), copy()]}]}]}]}).encode("utf-8"))
+                       "value": [copy() for _ in range(copies)]}]}]}]}
+        ).encode("utf-8"))
     return document, template
 
 
@@ -1937,6 +1938,32 @@ def test_nested_copies_with_no_name_of_their_own_are_counted_apart(tmp_path):
     assert "3 nested copies" in said, said
     for where in ("H/Node/Nodes/[0]", "H/Node/Nodes/[1]", "H/Node/Nodes/[2]"):
         assert where in said, (where, said)
+
+
+def test_a_note_names_the_first_few_copies_and_counts_all_of_them(tmp_path):
+    """The note is bounded, and the count is not.
+
+    A reader needs to know how much went unexamined and where to start
+    looking; a note that printed five hundred paths would be neither. So
+    the count is the whole number and the naming stops, and the note says
+    it stopped -- the published sentence beside this said the note names
+    where *each* copy sits, which is true only up to the bound.
+
+    Held here because the bound is invisible in the fixtures the count
+    was built on: two copies and three copies both fit inside it, so
+    removing the bound left every other gate green.
+    """
+    document, template = _self_containing_list(tmp_path, copies=5)
+    report = runner.run(document, template=template)
+    note = next(n for n in report.notes if "nested cop" in n)
+    assert "5 nested copies" in note, note
+    named = re.findall(r"H/Node/Nodes/\[\d+\]", note)
+    assert len(named) == 3, (
+        "the note named %d of five copies; the bound is three and the "
+        "count carries the rest: %s" % (len(named), note))
+    assert ", and more)" in note, (
+        "the note stopped naming and did not say so: %s" % note)
+
 
 
 def test_a_specification_that_declares_the_identifier_is_not_called_absent(tmp_path):

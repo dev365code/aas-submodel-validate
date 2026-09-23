@@ -305,6 +305,11 @@ def _digest(path, limit: int) -> str:
     return digest.hexdigest()
 
 
+#: How many places a note names before it stops and says so. The count a
+#: note carries is never bounded; this is about what a reader can read.
+NAMED_IN_A_NOTE = 3
+
+
 def _supplied_table(template):
     """The table a caller's own template describes, or a refusal.
 
@@ -469,6 +474,14 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # is wrong -- only that this reader did not look.
     repeats = rules.engine.repeats_not_entered(ctx)
     if repeats:
+        # How many are named, read once. Written as two literals -- the
+        # slice and the comparison that decides whether to say the naming
+        # stopped -- widening one left the other saying "and more" after
+        # a list that held everything. The count above is all of them;
+        # only the naming is bounded, because a note that printed five
+        # hundred paths would tell a reader neither how much went
+        # unexamined nor where to start.
+        named = repeats[:NAMED_IN_A_NOTE]
         report.notes.append(
             "the template you supplied describes an element that contains "
             "itself (%s); this reader judges the outermost occurrence and "
@@ -476,8 +489,8 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
             "here is a statement about what they hold."
             % (repeats[0][1], len(repeats),
                "y" if len(repeats) == 1 else "ies",
-               ", ".join(subject for subject, _ in repeats[:3])
-               + ("" if len(repeats) <= 3 else ", and more")))
+               ", ".join(subject for subject, _ in named)
+               + ("" if len(named) == len(repeats) else ", and more")))
     report.findings.extend(_meta_findings(loaded, strict_meta))
     if allow_unmatched:
         # The verdict that no template matched, and only that. A presence
