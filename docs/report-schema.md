@@ -25,7 +25,7 @@ needs to handle.
 ```json
 {
   "schemaVersion": 1,
-  "toolVersion": "0.4.1",
+  "toolVersion": "0.5.0",
   "provenance": {
     "inputSha256": "9f2c\u2026",
     "engine": null,
