@@ -35,10 +35,37 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "src/aas_submodel_validate/data/example/idta-02004-2.0.aasx"
 TEMPLATES = sorted((ROOT / "src/aas_submodel_validate/data/smt").rglob("template.json"))
+
+
+class Case(NamedTuple):
+    """One input, and what the reader is asked to judge it with.
+
+    A `(label, path)` pair can only ask one question: what does this
+    version say about this file, with no flag but the format. So the
+    release that introduced `--template` had no case for its own
+    headline mode, and this comparison would have reported `0 moved`
+    for anything that happened inside it -- the failure `_judge`'s
+    docstring describes, in the one place that wrote it down.
+
+    A third element rather than a field would have made every unpacking
+    site change again the next time something joins, and there is a
+    `--profile` waiting. A field means a consumer that does not care
+    never mentions it: the budget layer takes `case.path` and is done.
+
+    `template` is a path, not a bag of argv fragments, because two
+    consumers read it -- the comparison builds a command line from it
+    and a test hands it to `runner.run` -- and a bag would make one of
+    them parse what the other wrote.
+    """
+
+    label: str
+    path: object
+    template: object = None
 
 
 # -- the corpus ------------------------------------------------------------
@@ -130,12 +157,12 @@ def _rewrite_payload(members, change):
 
 
 def build_corpus(into: Path):
-    """(label, path) for everything both versions will be asked about."""
-    cases = [("the official example, untouched", EXAMPLE)]
+    """A `Case` for everything both versions will be asked about."""
+    cases = [Case("the official example, untouched", EXAMPLE)]
 
     for template in TEMPLATES:
         rel = template.relative_to(ROOT / "src/aas_submodel_validate/data/smt")
-        cases.append(("the vendored template %s" % rel.parent, template))
+        cases.append(Case("the vendored template %s" % rel.parent, template))
 
     base = _members(EXAMPLE)
 
@@ -145,7 +172,7 @@ def build_corpus(into: Path):
             return re.sub(r"<language>([^<]*)</language>",
                           lambda m: "<language>%s</language>" % fold(m.group(1)),
                           text).encode("utf-8")
-        cases.append(("language tags in %s case" % name,
+        cases.append(Case("language tags in %s case" % name,
                       _write(into / ("lang-%s.aasx" % name),
                              _rewrite_payload(base, change))))
 
@@ -155,7 +182,7 @@ def build_corpus(into: Path):
             text = re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", text)
             text = '<?xml version="1.0" encoding="%s"?>\n' % encoding + text
             return text.encode(encoding, "xmlcharrefreplace")
-        cases.append(("the payload declares %s" % encoding,
+        cases.append(Case("the payload declares %s" % encoding,
                       _write(into / ("enc-%s.aasx" % encoding),
                              _rewrite_payload(base, change))))
 
@@ -170,7 +197,7 @@ def build_corpus(into: Path):
         files = version["value"][-1]
         assert files["idShort"] == "DigitalFiles", files["idShort"]
         files["value"][0]["value"] = value
-        cases.append(("a File value of %r" % value,
+        cases.append(Case("a File value of %r" % value,
                       build_aasx(into / ("file-%02d.aasx" % index),
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[("aasx/files/manual.pdf", b"%PDF-1.4 ")])))
@@ -185,7 +212,7 @@ def build_corpus(into: Path):
         files = version["value"][-1]
         assert files["idShort"] == "DigitalFiles", files["idShort"]
         files["value"][0]["value"] = value
-        cases.append(("the archive holds %r and the File says %r" % (entry, value),
+        cases.append(Case("the archive holds %r and the File says %r" % (entry, value),
                       build_aasx(into / ("held-%02d.aasx" % index),
                                  payload=json.dumps(environment).encode("utf-8"),
                                  files=[(entry, b"%PDF-1.4 ")])))
@@ -221,7 +248,7 @@ def build_corpus(into: Path):
         listed.pop("value", None)
         written = into / ("listtype-%s.json" % label)
         written.write_text(json.dumps(environment), encoding="utf-8")
-        cases.append(("a %s list declaring it holds File" % label, written))
+        cases.append(Case("a %s list declaring it holds File" % label, written))
 
     # A Digital Nameplate submodel. Nothing here carried one, so the
     # corpus could not see IDTA 02006 land: a version with no table for
@@ -232,7 +259,7 @@ def build_corpus(into: Path):
 
     nameplate = into / "nameplate-valid.json"
     nameplate.write_text(json.dumps(dn_env()), encoding="utf-8")
-    cases.append(("a valid Digital Nameplate submodel", nameplate))
+    cases.append(Case("a valid Digital Nameplate submodel", nameplate))
 
     relative = dn_env()
     for _submodel in relative["submodels"]:
@@ -241,7 +268,7 @@ def build_corpus(into: Path):
                 _element["value"] = "Model-1234/Serial-5678"
     relative_uri = into / "nameplate-relative-uri.json"
     relative_uri.write_text(json.dumps(relative), encoding="utf-8")
-    cases.append(("a Digital Nameplate whose URIOfTheProduct is relative",
+    cases.append(Case("a Digital Nameplate whose URIOfTheProduct is relative",
                   relative_uri))
 
     # A Carbon Footprint submodel. It wears an identifier 02023 and 02035-3
@@ -250,7 +277,7 @@ def build_corpus(into: Path):
     from builders import pcf_env  # noqa: E402
     carbon = into / "carbon-footprint-valid.json"
     carbon.write_text(json.dumps(pcf_env()), encoding="utf-8")
-    cases.append(("a valid Carbon Footprint submodel", carbon))
+    cases.append(Case("a valid Carbon Footprint submodel", carbon))
 
     # A Contact Information submodel. Nothing here carried one, so the
     # corpus could not see IDTA 02002 land: a version with no table for it
@@ -261,7 +288,7 @@ def build_corpus(into: Path):
     from builders import contact_env  # noqa: E402
     contact = into / "contact-information-valid.json"
     contact.write_text(json.dumps(contact_env()), encoding="utf-8")
-    cases.append(("a valid Contact Information submodel", contact))
+    cases.append(Case("a valid Contact Information submodel", contact))
 
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
@@ -286,7 +313,7 @@ def build_corpus(into: Path):
     _children.append(_twin)
     twins = into / "contact-information-two-of-one-name.json"
     twins.write_text(json.dumps(twinned), encoding="utf-8")
-    cases.append(("a Contact Information submodel with two elements of one name",
+    cases.append(Case("a Contact Information submodel with two elements of one name",
                   twins))
 
     # A battery passport that states its own category. `BAT-R8` withheld
@@ -329,7 +356,7 @@ def build_corpus(into: Path):
         # and the question here is the category, not the packaging.
         written = into / ("battery-%s.json" % category)
         written.write_text(json.dumps(environment), encoding="utf-8")
-        cases.append(("a battery passport declaring category %r" % category, written))
+        cases.append(Case("a battery passport declaring category %r" % category, written))
 
     # And one stating two of them. `BAT-R8` used to answer on whichever
     # category the walk reached first -- the same file with the two
@@ -368,7 +395,7 @@ def build_corpus(into: Path):
     written.write_text(json.dumps(
         {"assetAdministrationShells": [], "conceptDescriptions": [],
          "submodels": both}), encoding="utf-8")
-    cases.append(("a battery passport declaring two categories", written))
+    cases.append(Case("a battery passport declaring two categories", written))
 
     # And the shapes an aas-suppl relationship's target takes. The last
     # is the question the rule exists for and must not move; without it
@@ -395,7 +422,7 @@ def build_corpus(into: Path):
             ("a target with a leading space, the part present",
              {"suppl_verbatim": [" /aasx/files/manual.pdf"],
               "files": [("aasx/files/manual.pdf", b"%PDF-1.4 ")]})]:
-        cases.append(("an aas-suppl relationship: %s" % label,
+        cases.append(Case("an aas-suppl relationship: %s" % label,
                       build_aasx(into / ("suppl-%d.aasx" % len(cases)),
                                  payload=payload, **kwargs)))
 
@@ -426,18 +453,18 @@ def build_corpus(into: Path):
         target.write_text(_json.dumps(document), "utf-8")
         return target
 
-    cases.append(("a required property present and carrying no value",
+    cases.append(Case("a required property present and carrying no value",
                   _without_a_value("DocumentDomainId")))
 
     deep = into / "deeply-nested.json"
     deep.write_text("[" * 200000 + "]" * 200000, "utf-8")
-    cases.append(("well-formed JSON this reader cannot build", deep))
+    cases.append(Case("well-formed JSON this reader cannot build", deep))
 
-    cases.append(("a path that is not there", into / "absent.json"))
+    cases.append(Case("a path that is not there", into / "absent.json"))
 
     a_directory = into / "directory.json"
     a_directory.mkdir(exist_ok=True)
-    cases.append(("a directory wearing a file's name", a_directory))
+    cases.append(Case("a directory wearing a file's name", a_directory))
 
     lzma_broken = into / "lzma-stream-damaged.aasx"
     import zipfile as _zipfile
@@ -451,7 +478,7 @@ def build_corpus(into: Path):
         biggest = max(archive.infolist(), key=lambda i: i.compress_size)
     raw[biggest.header_offset + 30 + len(biggest.filename) + biggest.compress_size - 4] ^= 0xFF
     lzma_broken.write_bytes(bytes(raw))
-    cases.append(("an LZMA member with a damaged stream", lzma_broken))
+    cases.append(Case("an LZMA member with a damaged stream", lzma_broken))
 
     return cases
 
@@ -464,7 +491,7 @@ def build_corpus(into: Path):
 _PATIENCE = 120
 
 
-def _judge(src: Path, target: Path):
+def _judge(src: Path, case: Case):
     """One version's verdict on one input: ids, severities, exit code --
     and what it did not ask.
 
@@ -479,9 +506,16 @@ def _judge(src: Path, target: Path):
     the key was added, which is true and buries the one whose verdict
     actually moved. An instrument that reports everything reports
     nothing."""
+    argv = [sys.executable, "-m", "aas_submodel_validate", str(case.path), "-f", "json"]
+    if case.template is not None:
+        # The whole point of the case carrying it. A flag built here from
+        # a list this function keeps would be a second place to state
+        # what the corpus asks, and the two would drift the first time
+        # one of them gained an entry.
+        argv += ["--template", str(case.template)]
     try:
         run = subprocess.run(
-            [sys.executable, "-m", "aas_submodel_validate", str(target), "-f", "json"],
+            argv,
             capture_output=True, text=True, timeout=_PATIENCE,
             env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
                  "PYTHONIOENCODING": "utf-8"})
@@ -582,9 +616,9 @@ def main(argv=None):
 
         moved = 0
         gained_the_key, reshaped = 0, 0
-        for label, target in corpus:
-            before = _judge(old / "src", Path(target))
-            after = _judge(ROOT / "src", Path(target))
+        for case in corpus:
+            before = _judge(old / "src", case)
+            after = _judge(ROOT / "src", case)
             # Counted apart, and stated once at the end. A key one
             # version does not have is a change of shape, and if it is
             # folded into "judged differently" every input moves the day
@@ -597,7 +631,7 @@ def main(argv=None):
             if _verdict_of(before) == _verdict_of(after):
                 continue
             moved += 1
-            print("  %s" % label)
+            print("  %s" % case.label)
             print("      %-14s %s" % (tag, _describe(before)))
             print("      %-14s %s" % ("working tree", _describe(after)))
             gone = sorted(set(before[0]) - set(after[0]))

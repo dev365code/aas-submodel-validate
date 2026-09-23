@@ -247,7 +247,7 @@ def _corpus():
 
     workspace = pathlib.Path(tempfile.mkdtemp(prefix="time-budget-"))
     atexit.register(shutil.rmtree, str(workspace), True)
-    return [path for _label, path in verdict_diff.build_corpus(workspace)]
+    return [case.path for case in verdict_diff.build_corpus(workspace)]
 
 
 def _wide_submodel(siblings: int = 3000):

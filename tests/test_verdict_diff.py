@@ -21,6 +21,7 @@ whether an answer of "nothing moved" would mean anything.
 from __future__ import annotations
 
 import json
+import pathlib
 import sys
 from pathlib import Path
 
@@ -56,14 +57,18 @@ def test_every_input_in_the_corpus_says_something_that_could_change(corpus):
     with a finding on it is a row that just did.
     """
     empty = []
-    for label, target in corpus:
-        report = runner.run(str(target))
+    for case in corpus:
+        # With whatever the case is judged with. A case carrying a
+        # template asked without it is a different question, and one
+        # that would answer green here while the corpus measured
+        # something nobody asked for.
+        report = runner.run(str(case.path), template=case.template)
         # A clean pass is a row with content: it moves the day a rule
         # wrongly starts firing on it, and several entries here are
         # exactly that. What cannot move is a refusal that says nothing,
         # which is what a refusal used to be.
         if not report.complete and not report.findings:
-            empty.append((label, "refused and said nothing"))
+            empty.append((case.label, "refused and said nothing"))
     assert not empty, empty
 
 
@@ -76,8 +81,9 @@ def test_the_corpus_tells_inputs_apart(corpus):
     whenever a rule does -- only that there is more than one.
     """
     verdicts = {
-        tuple(sorted((f.id, str(f.severity)) for f in runner.run(str(target)).findings))
-        for _label, target in corpus}
+        tuple(sorted((f.id, str(f.severity)) for f
+                     in runner.run(str(case.path), template=case.template).findings))
+        for case in corpus}
     assert len(verdicts) > 1, "every input in the corpus is judged the same"
 
 
@@ -91,10 +97,10 @@ def test_the_file_value_shapes_reach_the_rule_they_were_written_for(corpus):
     tool keeps printing a number.
     """
     drawn = set()
-    for label, target in corpus:
-        if not label.startswith("a File value"):
+    for case in corpus:
+        if not case.label.startswith("a File value"):
             continue
-        drawn |= {f.id for f in runner.run(str(target)).findings}
+        drawn |= {f.id for f in runner.run(str(case.path)).findings}
     assert "HD-D7" in drawn, sorted(drawn)
 
 
@@ -119,15 +125,15 @@ def test_the_held_spelling_inputs_hold_the_part_their_value_names(corpus):
 
     from aas_submodel_validate.container import AasxPackage
 
-    held = [(label, target) for label, target in corpus if label.startswith("the archive holds")]
+    held = [case for case in corpus if case.label.startswith("the archive holds")]
     assert len(held) == len(verdict_diff.HELD_SPELLINGS) == 4, held
 
-    for (entry, value, resolves), (label, target) in zip(verdict_diff.HELD_SPELLINGS, held):
-        with zipfile.ZipFile(str(target)) as archive:
-            assert entry in archive.namelist(), (label, archive.namelist())
-        with AasxPackage(str(target)) as package:
+    for (entry, value, resolves), case in zip(verdict_diff.HELD_SPELLINGS, held):
+        with zipfile.ZipFile(str(case.path)) as archive:
+            assert entry in archive.namelist(), (case.label, archive.namelist())
+        with AasxPackage(str(case.path)) as package:
             found = package.part(value)
-        assert found == (entry if resolves else None), (label, found)
+        assert found == (entry if resolves else None), (case.label, found)
     assert [r for _e, _v, r in verdict_diff.HELD_SPELLINGS].count(False) == 1, (
         "the row that must stay refused is what stops an over-eager fix"
     )
@@ -147,7 +153,8 @@ def test_the_corpus_holds_a_passport_that_states_two_categories(corpus):
     file has -- and then a difference could not be attributed.
     """
     seen = []
-    for _label, path in corpus:
+    for case in corpus:
+        path = pathlib.Path(case.path)
         if not path.name.endswith(".json"):
             continue
         try:
@@ -208,7 +215,7 @@ def _categories_stated(data):
     return tuple(found)
 
 
-def test_the_comparison_says_what_it_does_not_cover():
+def test_the_comparison_says_what_it_does_not_cover(corpus):
     """A zero is only worth the cases behind it, and this corpus has
     none for `--template`.
 
@@ -224,18 +231,19 @@ def test_the_comparison_says_what_it_does_not_cover():
     Add `--template` to the corpus and the sentence has to go, and this
     is what says so — a caveat nobody retires becomes a caveat nobody
     reads.
+
+    The fact is read from the corpus and not from the source text. The
+    first version of this cut `_judge`'s argv out of the file and looked
+    for the flag in it, which meant the gate answered a question about
+    spelling: build the list in a variable, or spread a case's flags
+    into it, and the caveat stays required while the corpus already
+    carries templates. Asking the corpus is asking the thing the
+    sentence is about.
     """
+    carried = [case.label for case in corpus if case.template is not None]
     source = (Path(verdict_diff.__file__)).read_text("utf-8")
-    # To the list's closing bracket, not to the first `)` -- which is
-    # `str(target)`'s, three arguments before `-f json`. Cut there, this
-    # read a fragment no flag could ever appear in, and adding
-    # `--template` to the call left it green. Measured.
-    invoked = source.split("subprocess.run(", 1)[1].split("]", 1)[0]
-    assert '"-f", "json"' in invoked, (
-        "this is not reading the argv the corpus is judged with: %r" % invoked)
-    covers_the_flag = "--template" in invoked
     warns = "No case here is judged with --template" in source
-    assert covers_the_flag != warns, (
-        "the corpus %s judged with --template and the summary %s say so"
-        % ("is" if covers_the_flag else "is not",
-           "does" if warns else "does not"))
+    assert bool(carried) != warns, (
+        "the corpus %s judged with --template (%d case(s)) and the summary "
+        "%s say so" % ("is" if carried else "is not", len(carried),
+                       "does" if warns else "does not"))
