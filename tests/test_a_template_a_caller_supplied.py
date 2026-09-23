@@ -1060,6 +1060,25 @@ def test_a_template_this_reader_cannot_open_is_a_refusal_not_a_traceback(tmp_pat
 
 # -- what the file held, and what was read out of it --------------------------
 
+def _declaring_it_as_a_specification(tmp_path):
+    """An input whose submodel declares 02004's identifier as a *template*.
+
+    `matched_submodels` reads `instances`, so a submodel marked
+    `kind: Template` is filtered out before any rule sees it: the
+    supplied table answers for nothing here, and the report says so in
+    its own sentence rather than the one about an identifier nobody
+    declares. That second sentence is the one the marker above missed.
+    """
+    from builders import hd_env
+
+    document = json.loads(json.dumps(hd_env()))
+    for submodel in document["submodels"]:
+        submodel["kind"] = "Template"
+    path = tmp_path / "declared-as-a-specification.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    return path
+
+
 def _two_template_file(tmp_path):
     """One file declaring two templates, which is a legal environment."""
     def ref(value):
@@ -1164,11 +1183,21 @@ def test_the_two_notes_about_who_judged_cannot_both_be_said(tmp_path):
                 / "02004" / "2.0.1" / "template.json")
 
     claimed = "judged against the template you supplied"
-    disowned = "nothing was judged against it"
+    # There are two sentences for "it answered nothing" -- one for an
+    # identifier nothing declares and one for an identifier declared by
+    # a specification rather than an instance -- and this read only the
+    # first of them. Measured: with the `else` handed to a new
+    # condition, a report drew the claiming note and the *second*
+    # disowning one together, and this test passed. What the two have in
+    # common is the clause, not the object of it.
+    disowned = "othing was judged against"
     for label, report in (
             ("it answered", runner.run(instance, template=vendored)),
             ("it answered nothing",
              runner.run(_unclaimed_instance(tmp_path), template=vendored)),
+            ("a specification declares it",
+             runner.run(_declaring_it_as_a_specification(tmp_path),
+                        template=vendored)),
             ("two templates in the file",
              runner.run(instance, template=_two_template_file(tmp_path)))):
         said = " ".join(report.notes)
