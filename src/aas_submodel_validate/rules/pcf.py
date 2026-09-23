@@ -48,7 +48,15 @@ for _row in pcf_tables.ROWS:
          title="'%s' as the template declares it (%s)"
                % (_row["label"], _row["sid"] or "by structure"),
          spec="%s, SMT/Cardinality qualifier" % pcf_tables.TEMPLATE_CITATION,
-         fix=_row["fix"])(_row_check(_row["id"]))
+         fix=_row["fix"],
+         # A generated row always speaks about an element inside a
+         # submodel of this document, so the route is the same for
+         # every one of them. The grade is not: one row reports a
+         # count, a kind, a list's item type, a valueType and a
+         # present element with no value, and those are not equally
+         # repairable, so each is graded where it is produced.
+         path=("document", "submodel", "element"),
+         )(_row_check(_row["id"]))
 
 
 # The one question in this file that is not a reading of this

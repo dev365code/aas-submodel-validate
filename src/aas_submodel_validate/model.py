@@ -118,6 +118,49 @@ def _bounded(text):
     return text[:MAX_REPORTED_CHARACTERS - len(marker)] + marker
 
 
+#: What it would take to repair a defect, which is not how loudly it is
+#: reported. A file can hold a loud defect nobody can repair -- a missing
+#: original -- beside a quiet one repaired by rewriting a string, so the
+#: two are separate axes and a tool that folds them into one promises
+#: repairs it cannot perform.
+#:
+#: 1  determined by the input alone
+#: 2  determined once a premise is confirmed
+#: 3  candidates exist and a person must choose
+#: 4  context or domain knowledge is needed
+#: 5  not recoverable without material or authority this run does not have
+#:
+#: The grade belongs to the VIOLATION and not to the rule. One generated
+#: row reports five different shapes -- a count, a kind, a list's item
+#: type, a valueType, a present element with no value -- and "one
+#: expected, none found" is a 5 where "one expected, three found" is a 3.
+#: This repository already learned the same thing about remedies and
+#: split those per violation; the grade follows them.
+FIXABILITY = (1, 2, 3, 4, 5)
+
+#: The route from the input to the kind of place a rule's findings name.
+#: `subject` is one string doing three jobs -- an idShort path, an
+#: identifier, a part name -- and nothing said which for a given rule, so
+#: a consumer had to know the rule to navigate to what it named.
+PATH_STEPS = ("document", "container", "part", "submodel", "element")
+
+
+def _graded(grade, reason, what):
+    """A grade is a claim, and a number nobody can check reads as a
+    measurement. Refused at the boundary, beside the duplicate id and the
+    missing remedy, rather than audited later."""
+    if grade is None:
+        return None
+    if grade not in FIXABILITY:
+        raise ValueError("%s has fixability %r; the scale is %s"
+                         % (what, grade, ", ".join(str(g) for g in FIXABILITY)))
+    if not reason:
+        raise ValueError("%s grades fixability %d and gives no reason; the "
+                         "grade is a claim about this code and has to say "
+                         "what makes it true" % (what, grade))
+    return grade
+
+
 @dataclass(frozen=True)
 class Violation:
     """One concrete thing that is wrong, produced by a rule."""
@@ -133,6 +176,13 @@ class Violation:
     #: reader `per` is what to cite, and a constant on the rule sent them
     #: to a provision no row had chosen.
     spec: Optional[str] = None
+    #: What repairing THIS instance would take, when the rule's own grade
+    #: is the wrong answer -- which is most of the time for a generated
+    #: row, because one row reports five different shapes. See
+    #: `FIXABILITY`.
+    fixability: Optional[int] = None
+    #: What makes that grade true of this code, in one sentence.
+    fixability_why: Optional[str] = None
     #: How loudly THIS instance is reported, when the rule's own priority
     #: is the wrong answer. One thing needs it: a rule that could not run
     #: at all. What the rule asks for stays true in the report and stays
@@ -163,8 +213,24 @@ class Rule:
     fn: Callable[..., Iterable[Violation]]
     #: One imperative sentence: what to change so this stops being reported.
     fix: Optional[str] = None
+    #: Where this rule's findings point, from the input inwards. `subject`
+    #: is one string doing three jobs and this says which job, per rule,
+    #: so a consumer can navigate without knowing the rule already.
+    path: tuple = ()
+    #: The grade, only for a rule whose violations are all one shape. A
+    #: rule that reports several shapes leaves this `None` and grades each
+    #: violation where it is produced -- see `FIXABILITY`.
+    fixability: Optional[int] = None
+    #: What makes that grade true of this code, in one sentence.
+    fixability_why: Optional[str] = None
 
     def __post_init__(self):
+        _graded(self.fixability, self.fixability_why, "rule %s" % self.id)
+        unknown = [step for step in self.path if step not in PATH_STEPS]
+        if unknown:
+            raise ValueError(
+                "rule %s points at %s; the route is built from %s"
+                % (self.id, ", ".join(unknown), ", ".join(PATH_STEPS)))
         # The same three lines `Violation` has, against the same bound and
         # for the same reason. A rule's text is authored here for the hand
         # rules and interpolated from the template's own strings for every
@@ -203,6 +269,26 @@ class Finding:
         return self.violation.fix or self.rule.fix
 
     @property
+    def fixability(self) -> Optional[int]:
+        """The violation's grade, and the rule's only where the rule has
+        one -- which it has only when all of its violations are one
+        shape. The same precedence `fix` and `severity` already use, for
+        the same reason: the instance knows what it produced."""
+        if self.violation.fixability is not None:
+            return self.violation.fixability
+        return self.rule.fixability
+
+    @property
+    def fixability_why(self) -> Optional[str]:
+        if self.violation.fixability is not None:
+            return self.violation.fixability_why
+        return self.rule.fixability_why
+
+    @property
+    def path(self) -> tuple:
+        return self.rule.path
+
+    @property
     def spec(self) -> str:
         return self.violation.spec or self.rule.spec
 
@@ -218,6 +304,12 @@ class Finding:
             "fix": self.fix,
             "title": self.rule.title,
             "spec": self.spec,
+            # Added beside the fields above, never in place of one:
+            # `schemaVersion` does not move for an addition, and a reader
+            # written against the older shape keeps every key it had.
+            "fixability": self.fixability,
+            "fixabilityWhy": self.fixability_why,
+            "path": list(self.path),
         }
 
 

@@ -118,7 +118,13 @@ ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified", "rulesNotAsked",
 #: the level so the two cannot disagree. Promote at the release that
 #: ships it.
 ADDED_SINCE_V1_OPTIONS = {"meta"}
-ADDED_SINCE_V1_FINDING = set()
+ADDED_SINCE_V1_FINDING = {
+    # What repairing this finding would take, on the five-step scale, and
+    # the sentence that makes the grade checkable; and where the rule's
+    # findings point. All three are additions a consumer that does not
+    # know them can ignore, which is why the version stays at 1.
+    "fixability", "fixabilityWhy", "path",
+}
 
 #: And this is everything the document carries today.
 REPORT_KEYS = V1_REQUIRED | ADDED_SINCE_V1

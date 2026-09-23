@@ -568,4 +568,10 @@ def install(prefix: str, tables, omit=(), inherits: str = None) -> None:
              title=title % "/".join(_file_labels(tables)) if "%s" in title else title,
              spec=spec if inherits is None
                   else "%s; %s inherits it (docs/divergences.md #26)" % (spec, inherits),
+             # Every rule in this family speaks about an element inside a
+             # submodel of the document being read. `-D7` is the one that
+             # also reaches into the package, and it says so.
+             path=(("document", "submodel", "element", "part")
+                   if suffix == "-D7" else
+                   ("document", "submodel", "element")),
              fix=fix)(make(tables))

@@ -49,7 +49,15 @@ for _row in td_tables.ROWS:
          spec="%s, SMT/Cardinality qualifier (unnamed list items: "
               "0..* per the PDF's element tables)"
               % td_tables.TEMPLATE_CITATION,
-         fix=_row["fix"])(_row_check(_row["id"]))
+         fix=_row["fix"],
+         # A generated row always speaks about an element inside a
+         # submodel of this document, so the route is the same for
+         # every one of them. The grade is not: one row reports a
+         # count, a kind, a list's item type, a valueType and a
+         # present element with no value, and those are not equally
+         # repairable, so each is graded where it is produced.
+         path=("document", "submodel", "element"),
+         )(_row_check(_row["id"]))
 
 
 # -- the hand rules: what a template file cannot express ---------------------
@@ -59,6 +67,7 @@ def _instances(ctx, label):
 
 
 @rule("TD-D1", kind="template", prio="MUST",
+     path=("document", "submodel", "element"),
       title="ValidDate is a calendar date",
       spec="IDTA 02003-2-0-1 §3.7 (FurtherInformation, xs:date)",
       fix="Write ValidDate as YYYY-MM-DD (xs:date), e.g. 2025-03-15.")
@@ -74,6 +83,7 @@ def td_d1_valid_date(ctx):
 
 
 @rule("TD-D2", kind="template", prio="MUST",
+     path=("document", "submodel", "element", "part"),
       title="files named by CompanyLogo/ImageFile exist in the container",
       spec="IDTA 02003-2-0-1 §3.2, §3.3; IDTA 01005 (AASX)",
       fix="Add the file to the .aasx under the name this File value "
@@ -94,6 +104,7 @@ def td_d2_files_exist(ctx):
 
 
 @rule("TD-D3", kind="template", prio="SHOULD",
+     path=("document", "submodel", "element"),
       title="ReferenceToTechnicalPropertyArea resolves to an element that exists",
       spec="IDTA 02003-2-0-1 §3.4, Table 6",
       fix="Add the element this reference names to the submodel, or "
@@ -119,6 +130,7 @@ def td_d3_area_references_resolve(ctx):
 
 
 @rule("TDL1", kind="lint", prio="SHOULD",
+     path=("document", "submodel", "element"),
       title="near-miss semantic identifiers are diagnosed, not ignored",
       spec="matching policy, docs/divergences.md",
       fix="Correct the semanticId to the template's spelling; a near-miss "
@@ -129,6 +141,7 @@ def tdl1_near_miss(ctx):
 
 
 @rule("TDL2", kind="lint", prio="MAY",
+     path=("document", "submodel", "element"),
       title="reference types match the template's",
       spec="IDTA 02003-2-0-1 Annex A",
       fix="Use the reference type the template declares here; the value "

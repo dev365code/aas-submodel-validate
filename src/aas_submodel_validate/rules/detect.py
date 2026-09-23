@@ -228,6 +228,15 @@ _REMEDY = ("If the submodel means one of the templates this tool has a table "
 
 
 @rule(RULE_ID, kind="template", prio="MUST",
+     # Names a submodel, by the identifier it declares: there is no
+     # element to point at, because no table was entered.
+     path=("document", "submodel"),
+     # The submodel declares an identifier this build has no table
+     # for. Nothing in the input says which published template was
+     # meant, and guessing one would judge the file against a
+     # specification its author did not choose.
+     fixability=4,
+     fixability_why=("which template was meant is not in the input; it is a fact about the sender's intent"),
       title="the input must contain a submodel this tool knows",
       spec="IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2",
       fix=_REMEDY)

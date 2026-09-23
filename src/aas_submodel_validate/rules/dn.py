@@ -40,7 +40,15 @@ for _row in dn_tables.ROWS:
          title="'%s' as the template declares it (%s)"
                % (_row["label"], _row["sid"] or "by structure"),
          spec="%s, SMT/Cardinality qualifier" % dn_tables.TEMPLATE_CITATION,
-         fix=_row["fix"])(_row_check(_row["id"]))
+         fix=_row["fix"],
+         # A generated row always speaks about an element inside a
+         # submodel of this document, so the route is the same for
+         # every one of them. The grade is not: one row reports a
+         # count, a kind, a list's item type, a valueType and a
+         # present element with no value, and those are not equally
+         # repairable, so each is graded where it is produced.
+         path=("document", "submodel", "element"),
+         )(_row_check(_row["id"]))
 
 
 # -- the hand rule: what the template file cannot express --------------------
@@ -52,6 +60,12 @@ _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:")
 
 
 @rule("DN-D1", kind="template", prio="MUST",
+     path=("document", "submodel", "element"),
+     # The value is present and is not an absolute URI. What the
+     # absolute form should be is a fact about the product this
+     # nameplate describes, not about the string.
+     fixability=4,
+     fixability_why=("the identifier's absolute form is a fact about the product and is not derivable from the value written here"),
       title="URIOfTheProduct is an absolute URI",
       spec="IDTA 02006-3-0 (URIOfTheProduct: 'unique global identification "
            "... using a URI'); RFC 3986 §3.1 (scheme)",

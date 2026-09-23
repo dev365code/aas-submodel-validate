@@ -44,6 +44,12 @@ def _bounds_remedy(form: str):
 
 
 @rule("X1", kind="container", prio="MUST",
+     # The package itself: there is no document yet to point into.
+     path=("container",),
+     # The bytes are not a readable package. Whether a good copy
+     # exists is a fact about where the file came from.
+     fixability=5,
+     fixability_why=("nothing in these bytes supplies the package that was meant to arrive"),
       title="the file must be a ZIP (OPC) container this reader can open",
       spec="ECMA-376 Part 2",
       fix="Re-create the .aasx with an AAS packaging tool: either what is on "
@@ -56,6 +62,7 @@ def x1_is_a_zip(ctx):
 
 
 @rule("X2", kind="container", prio="MUST",
+     path=("container", "part"),
       title="the OPC relationship chain must reach an aas-spec payload",
       spec="IDTA 01005 (AASX); ISO/IEC 29500-2 (OPC)",
       fix="Repair the chain: _rels/.rels names an aasx-origin part, whose own "
@@ -74,6 +81,7 @@ def x2_chain_resolves(ctx):
 
 
 @rule("X3", kind="container", prio="MUST",
+     path=("container", "part"),
       title="the payload must parse as an AAS environment",
       spec="IDTA 01001 (metamodel) and its published JSON/XML schemas",
       fix="Open the named document and fix the syntax its parser rejects; "
@@ -92,6 +100,13 @@ def x3_payload_parses(ctx):
 
 
 @rule("X5", kind="container", prio="MUST",
+     # A bound this reader sets, named against the part that met it.
+     path=("container", "part"),
+     # Nothing is wrong with the file: it is larger than this reader
+     # agreed to open. The remedy is a smaller input or another
+     # reader, and neither is a repair to the document.
+     fixability=1,
+     fixability_why=("the input is not malformed; it exceeds a bound this reader publishes, and the bound is the thing to change"),
       title="the input fits in what an offline reader will take in",
       spec="this project's own bounds -- see container.py",
       fix="This reader takes in no single document over %d MiB, and no "
@@ -128,6 +143,12 @@ def x5_within_the_readers_bounds(ctx):
 
 
 @rule("X6", kind="container", prio="MUST",
+     # The path the caller gave, before anything was opened.
+     path=("container",),
+     # There is nothing at the path. What was meant to be there is
+     # not a question this input can answer.
+     fixability=5,
+     fixability_why=("no bytes were read, so nothing in this run says what the path should have named"),
       title="the path names something this reader can open",
       spec="this project's own way in -- see loader.py",
       fix="Check the path and what the account running this may read. "
@@ -162,6 +183,7 @@ def x6_the_path_can_be_opened(ctx):
 
 
 @rule("X4", kind="container", prio="SHOULD",
+     path=("container", "part"),
       title="declared supplementary parts exist",
       spec="IDTA 01005 (AASX, aas-suppl relationships)",
       # Deleting the relationship was offered as an equal way out, and

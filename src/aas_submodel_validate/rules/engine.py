@@ -157,6 +157,13 @@ def file_part_violations(container, subject, value):
         yield Violation(
             "this File's value is not a part name",
             subject=subject,
+            # A spelling, and the package is right here to check the
+            # corrected one against -- which is the premise that has to
+            # hold before anything is rewritten.
+            fixability=2,
+            fixability_why=(
+                "the value is a malformed name and the package is here to "
+                "confirm the corrected spelling against"),
             # Which reason, not the stock one. Every value that failed
             # here was told it climbed out of the package -- including
             # `/aasx/files/`, which climbs nowhere and names a directory,
@@ -180,7 +187,14 @@ def file_part_violations(container, subject, value):
     # the container it read.
     elif container.part(value) is None:
         yield Violation("the container holds no part at this File's value",
-                        subject=subject, detail=value)
+                        subject=subject, detail=value,
+                        # The name is well formed and the file is not in
+                        # the package. The bytes are somewhere this run
+                        # cannot reach.
+                        fixability=5,
+                        fixability_why=(
+                            "the part is absent from the package and its "
+                            "bytes are not in this input"))
 
 
 def install_file_rule(rule_id: str, tables, citation: str, only=None):
@@ -239,7 +253,10 @@ def install_file_rule(rule_id: str, tables, citation: str, only=None):
           spec="%s; IDTA 01005 (AASX); docs/divergences.md #55" % citation,
           fix="Add the file to the .aasx under the name this File value "
               "gives, or correct the value's path. (Declaring an aas-suppl "
-              "relationship for it is X4's question, not this one's.)")
+              "relationship for it is X4's question, not this one's.)",
+          # The route HD-D7 declares for the same question: an element
+          # inside a submodel of the document, reaching into the package.
+          path=("document", "submodel", "element", "part"))
     def check(ctx):
         """Only answerable when the input *is* a container; an environment
         JSON names files this rule cannot see, and silence there is
@@ -817,6 +834,18 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 "the template expects %s '%s' here; found %d"
                 % (_KIND_WORDS.get((low, high), _UNCOUNTED), row["label"], count),
                 subject=path,
+                # Two defects wear one message and they are not equally
+                # repairable. Too few: the element is absent and its
+                # content is nowhere in this input, so nothing here can
+                # supply it. Too many: every copy is present and the
+                # repair is choosing which the template meant, which is
+                # a person's call and not this reader's.
+                fixability=5 if count < low else 3,
+                fixability_why=(
+                    "the missing element's content is not in this input"
+                    if count < low else
+                    "every copy is here; which one the template meant is a "
+                    "choice this reader must not make"),
                 detail=("elements: %s" % ", ".join(
                     _subject(path, e, i, shared) for i, e in matched)) if matched else None))
             # No `continue`: a wrong count must not silence the per-element
@@ -858,6 +887,15 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must be a %s" % (row["label"], row["kind"]),
                     subject=subject, detail="found a %s" % actual,
+                    # The template names the kind, so the target is
+                    # known; what is not known is what the content
+                    # means well enough to carry it across. A Property
+                    # holding free text and a Collection of named parts
+                    # are not the same information in two shapes.
+                    fixability=4,
+                    fixability_why=(
+                        "the kind is given by the template and the content is "
+                        "not; moving it across needs to know what it means"),
                     spec="%s, the element's declared modelType" % citation,
                     fix=remedy))
                 # Reported, and not recursed into -- so everything
@@ -912,6 +950,15 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                     "'%s' is declared to hold %s; the template holds %s"
                     % (row["label"], listed.value, row["list_type"]),
                     subject=subject, detail="typeValueListElement is %s" % listed.value,
+                    # The declaration disagrees with the template and
+                    # the template's answer is on the page. Confirm the
+                    # items really are that kind and the declaration
+                    # follows; that premise is what makes it a 2.
+                    fixability=2,
+                    fixability_why=(
+                        "the template states the item type; rewriting the "
+                        "declaration is determined once the items are "
+                        "confirmed to be of it"),
                     spec="%s, the list's declared typeValueListElement" % citation,
                     fix="Change this list's typeValueListElement from %s to "
                         "%s. This is about what the list says it will hold, "
@@ -923,6 +970,13 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must carry valueType %s" % (row["label"], row["value_type"]),
                     subject=subject, detail="found %s" % declared.value,
+                    # Same shape as the row above: the template states
+                    # the type, and the premise to confirm is that the
+                    # value as written is representable in it.
+                    fixability=2,
+                    fixability_why=(
+                        "the template states the valueType; the rewrite is "
+                        "determined once the value is confirmed to fit it"),
                     spec="%s, the element's declared valueType" % citation,
                     fix="Change this element's valueType from %s to %s. "
                         "The element itself is the right one; only the "
@@ -959,6 +1013,12 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' is required here and carries no value" % row["label"],
                     subject=subject,
+                    # The element is here and the value is not. Nothing
+                    # in this input says what it should have been.
+                    fixability=5,
+                    fixability_why=(
+                        "the value is absent from the input and nothing here "
+                        "supplies it"),
                     detail="the element is present and its value is absent",
                     fix="Give this '%s' a value. The element is the right "
                         "one and it is in the right place -- do not add "

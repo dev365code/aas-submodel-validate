@@ -198,6 +198,14 @@ def _marks_of(submodel) -> frozenset:
     return frozenset(said)
 
 @rule(RULE_ID, kind="template", prio="MAY",
+     # About the run rather than the file: two packs answer for one
+     # identifier and this says which answered.
+     path=("document", "submodel"),
+     # Nothing in the file is wrong; the reader chose. A caller
+     # changes it with `--profile`, which is the input to this run
+     # and not a repair to the document.
+     fixability=1,
+     fixability_why=("no change to the file is called for; the choice is this run's and `--profile` makes it"),
       title="the report names which of two templates sharing one identifier answered",
       spec="IDTA 02035-2 1.0 template, submodel supplementalSemanticIds; "
            "docs/divergences.md #26, #28",
