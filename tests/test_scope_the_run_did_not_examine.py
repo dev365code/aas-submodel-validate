@@ -139,3 +139,122 @@ def test_the_report_says_it_in_json_and_on_the_screen(tmp_path):
     assert document["summary"]["scopeNotExamined"][0]["because"] == \
         "unclaimed-element-present"
     assert "not examined" in render(report), render(report)
+
+
+def test_two_submodels_that_share_a_name_are_two_scopes(tmp_path):
+    """A submodel's `idShort` is not its identity: `id` is, and two
+    submodels may carry one name without breaking anything. AASd-022 is
+    about referables that are *not* identifiable, so a file like this
+    draws no metamodel finding and no warning of any kind.
+
+    The record is keyed by `where`, whose first segment is that name. So
+    two documents that each lost a scope were reported as one, and the
+    number a reader acts on came back halved -- silently, on a legal
+    file. Measured: the same two submodels with distinct names report
+    ten unexamined scopes and with one shared name report five.
+
+    The analyse loop keeps a record per submodel precisely so that one
+    document's answers cannot erase another's; the merge key gave that
+    back.
+    """
+    import copy
+
+    from builders import hd_env
+
+    def two(same_name):
+        environment = copy.deepcopy(hd_env())
+        first = environment["submodels"][0]
+        second = copy.deepcopy(first)
+        first["id"], second["id"] = "urn:plant:a", "urn:plant:b"
+        if not same_name:
+            first["idShort"] = first["idShort"] + "A"
+            second["idShort"] = second["idShort"] + "B"
+        for submodel in (first, second):
+            for element in submodel.get("submodelElements", []):
+                if element.get("idShort") == "Entities":
+                    element["idShort"] = "Entites"
+        environment["submodels"] = [first, second]
+        path = tmp_path / ("same.json" if same_name else "apart.json")
+        path.write_text(json.dumps(environment), encoding="utf-8")
+        return runner.run(str(path))
+
+    shared, apart = two(True), two(False)
+    assert [f for f in shared.findings if str(f.severity) == "error"] == []
+    assert len(shared.not_examined) == len(apart.not_examined), (
+        "two submodels sharing an idShort report %d unexamined scopes where "
+        "the same two under different names report %d -- the name is not the "
+        "identity and nothing in the report says anything merged"
+        % (len(shared.not_examined), len(apart.not_examined)))
+
+
+def test_a_rule_another_scope_asked_is_not_reported_unexamined(tmp_path):
+    """The same subtraction its two siblings get.
+
+    `analyze` takes a proposed loss back off when some other scope of the
+    same submodel asked that row -- a list walks its rows once per item,
+    and a row missed in the second item was entered in the first. Two
+    keys do that and this one did not, so a report named twenty-seven
+    rules as unexamined of which twenty-two had been asked, while
+    `summary.rulesNotAsked` on the very same report was empty. The two
+    keys contradicted each other about one run.
+    """
+    import copy
+
+    from aas_submodel_validate.rules import hd_tables
+    from builders import build_aasx, hd_env
+    from test_what_was_not_asked import MANUFACTURER, _considered, _find
+
+    environment = copy.deepcopy(hd_env())
+    documents = _find(environment, hd_tables.BY_LABEL["Documents"]["sid"])
+    full = documents["value"][0]
+    lean = copy.deepcopy({k: v for k, v in full.items() if k != "value"})
+    lean["idShort"] = "SecondDoc"
+    lean["value"] = [copy.deepcopy(full["value"][0]), copy.deepcopy(MANUFACTURER)]
+    documents["value"].append(lean)
+
+    path = build_aasx(tmp_path / "pair.aasx",
+                      payload=json.dumps(environment).encode("utf-8"),
+                      files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
+    report = runner.run(str(path))
+    named = set()
+    for record in report.not_examined:
+        named |= set(record.unasked)
+    overlap = sorted(named & _considered(path))
+    assert not overlap, (
+        "%d rules are reported as scopes this run did not examine, and these "
+        "%d of them were asked: %s" % (len(named), len(overlap), overlap))
+
+
+def test_a_vendor_extension_does_not_make_a_conformant_file_speak(tmp_path):
+    """`docs/divergences.md` #19: a manufacturer's own property passes
+    without comment, and a conformant file carrying one reports nothing
+    at all.
+
+    `because` was one boolean for a whole scope -- is anything here
+    unplaced -- and every unentered row beside it took that answer. So
+    one property the template never mentions flipped a row about a
+    section the file does not even have, and the terminal said the file
+    carried an element under a section that was not there. The file is
+    the same file; only the sentence changed.
+    """
+    import copy
+
+    from aas_submodel_validate import report as report_module
+    from builders import hd_env
+
+    def run(with_extension):
+        environment = copy.deepcopy(hd_env())
+        if with_extension:
+            environment["submodels"][0]["submodelElements"].append({
+                "modelType": "Property", "idShort": "AcmeNote",
+                "semanticId": _sid("urn:acme:note"),
+                "valueType": "xs:string", "value": "internal"})
+        path = tmp_path / ("extended.json" if with_extension else "plain.json")
+        path.write_text(json.dumps(environment), encoding="utf-8")
+        return report_module.render(runner.run(str(path))).strip()
+
+    plain, extended = run(False), run(True)
+    assert "not examined" not in extended, (
+        "a conformant file speaks because of one element the template never "
+        "mentions:\n  without it: %s\n  with it:    %s"
+        % (plain.split("\n")[-1][-120:], extended.split("\n")[-1][-160:]))

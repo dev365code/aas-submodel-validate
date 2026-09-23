@@ -267,8 +267,26 @@ def _analyze(ctx, tables) -> Dict:
         #: scope this walk never opened. See `model.NotExamined`.
         "not_examined": [],
     }
-    for submodel in matched_submodels(ctx, tables):
+    #: The idShorts that repeat among the submodels this table answers
+    #: for. A submodel's identity is its `id`; `idShort` is a label and
+    #: two submodels may legally carry one -- AASd-022 is about
+    #: referables that are *not* identifiable, so such a file draws no
+    #: finding and no warning. The record below is keyed by a path whose
+    #: first segment is that label, so two documents that each lost a
+    #: scope were reported as one and the number a reader acts on came
+    #: back halved, silently, on a legal file. Same policy as `_subject`
+    #: uses for siblings: a name that is its own keeps the path it had.
+    #: Counted over the label each submodel would be printed under, so
+    #: several unnamed ones are told apart as readily as several sharing
+    #: a name -- and a lone unnamed one keeps the `submodel` it has
+    #: always had, which a test pins.
+    named = Counter(submodel.id_short or "submodel"
+                    for submodel in matched_submodels(ctx, tables))
+    repeated = {name for name, count in named.items() if count > 1}
+    for seat, submodel in enumerate(matched_submodels(ctx, tables)):
         root = submodel.id_short or "submodel"
+        if root in repeated:
+            root = "%s[%d]" % (root, seat)
         reference = submodel.semantic_id
         expected = tables.TEMPLATE_SUBMODEL_SID_TYPE
         # One record per submodel, merged after. The walk used to write
@@ -302,6 +320,18 @@ def _analyze(ctx, tables) -> Dict:
             if kept:
                 survived.append((subject, seen, kept, resembles))
         per["unmatched"] = survived
+        # And the same again for the scopes. A list walks its rows once
+        # per item, so a row missed in the second item was entered in
+        # the first: without this the report named twenty-seven rules as
+        # scopes it never examined, twenty-two of which it had asked,
+        # while `rulesNotAsked` on the same report was empty. Two keys
+        # contradicting each other about one run.
+        examined = []
+        for path, row_id, label, unasked, because in per["not_examined"]:
+            kept = tuple(rule_id for rule_id in unasked if rule_id not in asked_here)
+            if kept:
+                examined.append((path, row_id, label, kept, because))
+        per["not_examined"] = examined
         for key in ("violations", "instances"):
             for row_id, entries in per[key].items():
                 result[key].setdefault(row_id, []).extend(entries)
@@ -864,10 +894,25 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     # `because` is a fact about the same scope and not a cause: an
     # element no row claimed may be a legitimate extension (#19) and
     # nothing here says which.
-    strangers = sorted(
-        _subject(path, element, index, shared)
-        for index, element, candidates, _empty in indexed
-        if index not in claimed and candidates)
+    # Which *kinds* went unplaced here, asked once and read per row.
+    # This was one boolean for the whole scope -- is anything here
+    # unplaced -- and every unentered row beside it took that answer. So
+    # one property the template never mentions flipped a row about a
+    # section the file does not even have, and the terminal said the
+    # file carried an element under a section that was not there. A
+    # conformant file carrying a manufacturer's own element reports
+    # nothing at all (`docs/divergences.md` #19) and that is the promise
+    # it broke.
+    #
+    # An element can only be sitting in a row's place if it is the kind
+    # that row asks for. Anything else is an extension, which is #19's
+    # subject and not this one's. The kinds are collected rather than
+    # the subjects: the subjects were built with `_subject`, sorted, and
+    # then read as a truth value -- the same set the near-miss loop
+    # above had already walked, built a second time and thrown away.
+    unplaced_kinds = {type(element).__name__
+                      for index, element, candidates, _empty in indexed
+                      if index not in claimed and candidates}
     for row in rows:
         if not row["children"] or claimed_by.get(row["id"]):
             continue
@@ -876,7 +921,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             continue
         result["not_examined"].append(
             (path, row["id"], row["label"], lost,
-             "unclaimed-element-present" if strangers else "absent"))
+             "unclaimed-element-present" if row["kind"] in unplaced_kinds
+             else "absent"))
     # A loss is claimed only where something explains it, and that guard
     # stays: a row left unclaimed because the file legitimately does not
     # carry an optional element is not a loss anyone caused, and blaming a
