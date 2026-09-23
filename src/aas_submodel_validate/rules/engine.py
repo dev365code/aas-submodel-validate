@@ -29,6 +29,7 @@ from __future__ import annotations
 import re
 import sys
 from collections import Counter
+from dataclasses import replace
 from typing import Dict, List
 
 from ..model import Violation
@@ -130,6 +131,35 @@ def analyze(ctx, tables) -> Dict:
     return cached
 
 
+#: What repairing a File value takes, by how many parts of the package
+#: carry the file name it ends in (`model.FIXABILITY`). The first version
+#: graded by branch -- "not a part name" 2, "no part at this value" 5 --
+#: and neither branch had looked: a value naming `/aasx/documents/` for a
+#: file the package holds in `/aasx/files/` was told its bytes were not in
+#: the input, and a value climbing out to a file nothing carries was told
+#: the package was there to confirm its spelling against.
+_FILE_GRADES = {
+    "directory": (4, "the value names a directory and no file; which file it "
+                     "means is for someone who knows the document to say"),
+    "one": (2, "one part of this package carries the file name this value ends "
+               "in; the corrected value is determined once that part is "
+               "confirmed to be the file meant"),
+    "several": (3, "several parts of this package carry the file name this "
+                   "value ends in; which one is meant is a person's choice"),
+    "none": (5, "no part of this package carries the file name this value ends "
+                "in; the file has to be supplied, or someone who knows the "
+                "document has to say which part it is"),
+}
+
+
+def _file_grade(container, value):
+    from ..container import file_name
+    if not file_name(value):
+        return _FILE_GRADES["directory"]
+    found = len(container.carrying(value))
+    return _FILE_GRADES["none" if not found else "one" if found == 1 else "several"]
+
+
 def file_part_violations(container, subject, value):
     """The two findings a File value can draw, for whichever rule asks.
 
@@ -154,16 +184,11 @@ def file_part_violations(container, subject, value):
         return              # empty names nothing; a scheme is somewhere else's
     problem = part_name_problem(folded)
     if problem is not None:
+        grade, why = _file_grade(container, folded)
         yield Violation(
             "this File's value is not a part name",
             subject=subject,
-            # A spelling, and the package is right here to check the
-            # corrected one against -- which is the premise that has to
-            # hold before anything is rewritten.
-            fixability=2,
-            fixability_why=(
-                "the value is a malformed name and the package is here to "
-                "confirm the corrected spelling against"),
+            fixability=grade, fixability_why=why,
             # Which reason, not the stock one. Every value that failed
             # here was told it climbed out of the package -- including
             # `/aasx/files/`, which climbs nowhere and names a directory,
@@ -186,15 +211,10 @@ def file_part_violations(container, subject, value):
     # string the file carries, is how the report came to disagree with
     # the container it read.
     elif container.part(value) is None:
+        grade, why = _file_grade(container, value)
         yield Violation("the container holds no part at this File's value",
                         subject=subject, detail=value,
-                        # The name is well formed and the file is not in
-                        # the package. The bytes are somewhere this run
-                        # cannot reach.
-                        fixability=5,
-                        fixability_why=(
-                            "the part is absent from the package and its "
-                            "bytes are not in this input"))
+                        fixability=grade, fixability_why=why)
 
 
 def install_file_rule(rule_id: str, tables, citation: str, only=None):
@@ -254,9 +274,9 @@ def install_file_rule(rule_id: str, tables, citation: str, only=None):
           fix="Add the file to the .aasx under the name this File value "
               "gives, or correct the value's path. (Declaring an aas-suppl "
               "relationship for it is X4's question, not this one's.)",
-          # The route HD-D7 declares for the same question: an element
-          # inside a submodel of the document, reaching into the package.
-          path=("document", "submodel", "element", "part"))
+          # The File element, as HD-D7's: the part it names is in
+          # `detail`, and the subject is where the value was written.
+          path=("document", "submodel", "element"))
     def check(ctx):
         """Only answerable when the input *is* a container; an environment
         JSON names files this rule cannot see, and silence there is
@@ -289,10 +309,10 @@ def near_miss_violations(ctx, tables):
 def reftype_violations(ctx, tables):
     """The reference-type lint, for whichever pack asks. Same pair."""
     from ..model import Violation
-    for subject, seen, expected in analyze(ctx, tables)["reftype_drift"]:
+    for subject, seen, expected, route in analyze(ctx, tables)["reftype_drift"]:
         yield Violation(
             "the reference type differs from the template's",
-            subject=subject,
+            subject=subject, path=route,
             detail="%s, where the template uses %s" % (seen, expected),
             fix=reftype_remedy(expected))
 
@@ -369,7 +389,10 @@ def _analyze(ctx, tables) -> Dict:
         "instances": {},       # row id -> [(subject path, element)]
         "near_misses": [],     # (subject path, seen value, expected value)
         "idshort_drift": [],   # (subject, id_short, pattern, is a list child)
-        "reftype_drift": [],   # (subject path, seen type, template type)
+        #: (subject, seen type, template type, route) -- the route
+        #: because the submodel's own reference is one of these, named
+        #: by the submodel's idShort, and the rest name elements.
+        "reftype_drift": [],
         #: Rule ids that were below a scope this walk did not enter,
         #: *proposed*. Not an answer on its own: the same row is walked
         #: once per item of a list, so a row missed in one item and
@@ -427,9 +450,10 @@ def _analyze(ctx, tables) -> Dict:
                "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
                "unmatched": [], "not_entered": [], "not_examined": []}
         if reference is not None and expected and reference.type.value != expected:
-            per["reftype_drift"].append((root, reference.type.value, expected))
+            per["reftype_drift"].append((root, reference.type.value, expected,
+                                         ("document", "submodel")))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
-               in_list=False, citation=tables.TEMPLATE_CITATION)
+               in_list=False, citation=tables.TEMPLATE_CITATION, top=True)
         asked_here = set(per["instances"])
         per["lost_candidates"] = [rule_id for rule_id in per["lost_candidates"]
                                   if rule_id not in asked_here]
@@ -787,8 +811,56 @@ def _sub_elements(element):
     return items
 
 
+#: What repairing a count finding takes (`model.FIXABILITY`). Each reason
+#: says what the walk found at the place the finding names; the walk
+#: does not look elsewhere, and where the element sits one level up the
+#: repair is easier than the grade says.
+_SURPLUS = (3, "every copy is present; which of them to keep is a person's "
+               "choice")
+_LIKE_ONE = (2, "one element here that no row claimed carries this row's idShort "
+                "or an identifier close to its own; the correction is "
+                "determined once it is confirmed to be the one meant")
+_LIKE_SEVERAL = (3, "several elements here that no row claimed carry this row's "
+                    "idShort or an identifier close to its own; which one is "
+                    "meant is a person's choice")
+_GIVEN_WHOLE = (2, "every row below this one is optional, so the template gives "
+                   "all it must hold; adding it is determined once no copy of it "
+                   "is confirmed to sit elsewhere in the file")
+_MISSING = (5, "nothing else here resembles the missing element, and what it "
+               "holds is content the template does not give")
+_CONTAINERS = ("SubmodelElementCollection", "SubmodelElementList")
+
+
+def _kind_grade(row, element, actual, item):
+    """What moving an element into the kind the template gives takes.
+
+    The template names the target kind; whether the content maps onto it
+    is the question. It does, mechanically, in two cases this walk can
+    see: an element of the kind the template gives a list's item, which
+    matched the list's row because the two share an identifier, is
+    wrapped; and a collection whose every child is of the list's item
+    kind becomes that list. Anything else -- a Property holding free text
+    where a MultiLanguageProperty belongs -- needs someone who knows what
+    it says."""
+    if item is not None:
+        return (2, "this element is of the kind the template gives the list's "
+                   "item, and the template gives the list around it; wrapping "
+                   "it is determined once it is confirmed to be the item and not "
+                   "the list")
+    if (row["kind"] == "SubmodelElementList" and actual == "SubmodelElementCollection"
+            and row.get("list_type")
+            and all(type(child).__name__ == row["list_type"]
+                    for child in _sub_elements(element))):
+        return (2, "every element inside is of the kind the template gives the "
+                   "list's items; the change is determined once they are "
+                   "confirmed to be those items")
+    return (4, "the template gives the kind and not how this element's content "
+               "maps onto it; carrying it across needs someone who knows what it "
+               "means")
+
+
 def _scope(rows, elements, path: str, result, in_list: bool,
-           citation: str) -> None:
+           citation: str, top: bool = False) -> None:
     indexed = [(index, element, element_candidate_values(element),
                 not candidate_values(element.semantic_id))
                for index, element in enumerate(elements)]
@@ -802,6 +874,13 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #: Per scope, not per run: the same row id appears in every item of a
     #: list, and a row that matched in one item has been entered.
     claimed_by = {}
+    #: (row, position in its violation list) for each "too few" finding
+    #: made here, graded once this scope knows what else sits in it --
+    #: which is only after the near-miss walk below.
+    short = []
+    #: What a finding naming this scope's own path names: the submodel,
+    #: at the top of the walk, and the element it has reached below.
+    here = ("document", "submodel") if top else None
 
     for row in rows:
         # One element belongs to at most one row: the first row it matches
@@ -830,24 +909,24 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         low, high = row["card"]
         count = len(matched)
         if count < low or (high is not None and count > high):
-            result["violations"].setdefault(row["id"], []).append(Violation(
+            found = result["violations"].setdefault(row["id"], [])
+            found.append(Violation(
                 "the template expects %s '%s' here; found %d"
                 % (_KIND_WORDS.get((low, high), _UNCOUNTED), row["label"], count),
-                subject=path,
+                subject=path, path=here,
                 # Two defects wear one message and they are not equally
-                # repairable. Too few: the element is absent and its
-                # content is nowhere in this input, so nothing here can
-                # supply it. Too many: every copy is present and the
-                # repair is choosing which the template meant, which is
-                # a person's call and not this reader's.
-                fixability=5 if count < low else 3,
-                fixability_why=(
-                    "the missing element's content is not in this input"
-                    if count < low else
-                    "every copy is here; which one the template meant is a "
-                    "choice this reader must not make"),
+                # repairable. Too many: every copy is present and the
+                # repair is choosing which to keep. Too few is graded
+                # below, by what else this scope turns out to hold: the
+                # first version called it a 5 -- the content is not in
+                # this input -- on a file whose element sat right here
+                # one version suffix off.
+                fixability=_SURPLUS[0] if count >= low else _MISSING[0],
+                fixability_why=_SURPLUS[1] if count >= low else _MISSING[1],
                 detail=("elements: %s" % ", ".join(
                     _subject(path, e, i, shared) for i, e in matched)) if matched else None))
+            if count < low:
+                short.append((row, len(found) - 1))
             # No `continue`: a wrong count must not silence the per-element
             # checks or the recursion. A misplaced element hiding a whole
             # subtree's real findings is the failure this validator exists
@@ -869,6 +948,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 # content: the reader ends with an empty list and the
                 # next run reports the item missing instead.
                 item = _shared_identifier_item(row, actual)
+                grade, why = _kind_grade(row, element, actual, item)
                 if item is not None:
                     remedy = ("Wrap this element in a %s named '%s' and "
                               "leave it inside as the list's item. The "
@@ -887,15 +967,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must be a %s" % (row["label"], row["kind"]),
                     subject=subject, detail="found a %s" % actual,
-                    # The template names the kind, so the target is
-                    # known; what is not known is what the content
-                    # means well enough to carry it across. A Property
-                    # holding free text and a Collection of named parts
-                    # are not the same information in two shapes.
-                    fixability=4,
-                    fixability_why=(
-                        "the kind is given by the template and the content is "
-                        "not; moving it across needs to know what it means"),
+                    fixability=grade, fixability_why=why,
                     spec="%s, the element's declared modelType" % citation,
                     fix=remedy))
                 # Reported, and not recursed into -- so everything
@@ -1013,12 +1085,12 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' is required here and carries no value" % row["label"],
                     subject=subject,
-                    # The element is here and the value is not. Nothing
-                    # in this input says what it should have been.
+                    # The element is here and the value is not, and the
+                    # template does not say what it is.
                     fixability=5,
                     fixability_why=(
-                        "the value is absent from the input and nothing here "
-                        "supplies it"),
+                        "the element is present and its value is not, and what "
+                        "the value is is not something the template gives"),
                     detail="the element is present and its value is absent",
                     fix="Give this '%s' a value. The element is the right "
                         "one and it is in the right place -- do not add "
@@ -1033,7 +1105,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             if row["sid_type"] and reference is not None \
                     and reference.type.value != row["sid_type"]:
                 result["reftype_drift"].append(
-                    (subject, reference.type.value, row["sid_type"]))
+                    (subject, reference.type.value, row["sid_type"], None))
             if row["children"]:
                 _scope(row["children"], _sub_elements(element),
                        subject, result,
@@ -1111,6 +1183,31 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["near_misses"].append((subject,) + near)
                 near_here.append((subject, near[0], near[1], row))
                 break
+
+    # What each "too few" finding here would take to repair, now that the
+    # scope is known. An element no row claimed that nearly carries the
+    # row's identifier, or carries its idShort, is what the repair would
+    # point at: one of them is a correction to confirm, several a choice.
+    # With none, a section whose every row below is optional is given
+    # whole by the template; anything else holds content it does not give.
+    if short:
+        loose = [(index, element) for index, element, _c, _m in indexed
+                 if index not in claimed]
+        for row, at in short:
+            like = {subject for subject, _seen, _expected, near in near_here
+                    if near is row}
+            like.update(_subject(path, element, index, shared)
+                        for index, element in loose
+                        if element.id_short and element.id_short == row["label"])
+            if like:
+                grade, why = _LIKE_ONE if len(like) == 1 else _LIKE_SEVERAL
+            elif (row["kind"] in _CONTAINERS
+                    and all(child["card"][0] == 0 for child in row["children"])):
+                grade, why = _GIVEN_WHOLE
+            else:
+                grade, why = _MISSING
+            found = result["violations"][row["id"]]
+            found[at] = replace(found[at], fixability=grade, fixability_why=why)
 
     # What this scope did not enter, and which element left it unentered.
     #

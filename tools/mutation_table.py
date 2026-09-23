@@ -1485,6 +1485,77 @@ TABLE = [
      "this field a program cannot tell a template of the caller's that "
      "matched nothing from one this run never opened"),
 
+    ("fixability/a-grade-is-refused-where-it-is-given",
+     "src/aas_submodel_validate/model.py",
+     '        _graded(self.fixability, self.fixability_why, "a violation")\n',
+     "",
+     ["tests/test_severity_and_fixability.py::"
+      "test_a_grade_is_a_whole_step_with_its_reason_or_nothing"],
+     "every grade this package gives is set on a violation, and the first "
+     "version refused a grade without a reason only on the rule: "
+     "`Violation('x', fixability=2)` went out with a null reason, and '5' "
+     "and 9 went out as given"),
+
+    ("fixability/a-drifted-copy-here-is-a-correction",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            like = {subject for subject, _seen, _expected, near in near_here\n"
+     "                    if near is row}\n",
+     "            like = set()\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_an_element_missing_beside_one_drifted_copy_is_a_2"],
+     "`found 0` was graded 5 -- the content is not in this input -- on a "
+     "file whose element sat at that very place one version suffix off, "
+     "with the near-miss lint saying so on the next line"),
+
+    ("fixability/a-file-value-is-graded-by-the-package",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    found = len(container.carrying(value))\n",
+     "    found = 0\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_a_file_value_is_graded_by_what_the_package_holds"],
+     "a File value naming /aasx/documents/manual.pdf for a file the package "
+     "holds in /aasx/files/ was told its bytes were not in the input, "
+     "because the grade was fixed per branch and no branch had looked"),
+
+    ("fixability/an-item-where-its-list-belongs-is-wrapped",
+     "src/aas_submodel_validate/rules/engine.py",
+     '        return (2, "this element is of the kind the template gives the list\'s "',
+     '        return (4, "this element is of the kind the template gives the list\'s "',
+     ["tests/test_severity_and_fixability.py::"
+      "test_an_item_standing_where_its_list_belongs_is_a_2"],
+     "a Language written as a bare Property was graded 4 -- moving it "
+     "needs to know what it means -- beside a remedy that wraps it, and "
+     "the walk had already told the two cases apart to write that remedy"),
+
+    ("path/a-count-at-the-top-names-the-submodel",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    here = ("document", "submodel") if top else None\n',
+     "    here = None\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_a_missing_section_the_template_fully_gives_is_a_2"],
+     "PCF-E01's subject is the submodel's idShort, CarbonFootprint, and the "
+     "route fixed per rule said it named an element"),
+
+    ("path/a-container-finding-says-file-or-part",
+     "src/aas_submodel_validate/rules/container.py",
+     "    if subject is None or subject != ctx.loaded.path:\n",
+     "    if True:\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_a_container_rule_says_whether_it_named_the_file_or_a_part"],
+     "X3 of a bare JSON document names the document's own path and X3 of a "
+     "package names a part, and a route fixed per rule said 'part' of both"),
+
+    ("path/no-subject-is-the-whole-input",
+     "src/aas_submodel_validate/model.py",
+     '            return ("container",) if self.rule.kind == "container" else ("document",)\n',
+     "            return self.rule.path\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_a_rule_that_could_not_run_claims_no_grade"],
+     "the report says a null subject means the document as a whole, and a "
+     "finding with none took its rule's route instead: SMT-D1, which never "
+     "names a subject, said it named a submodel, and a rule that could not "
+     "run said it named an element"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

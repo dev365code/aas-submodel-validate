@@ -375,12 +375,9 @@ def _carries(submodel, row) -> bool:
 
 @rule(R2_ID, kind="template", prio="SHOULD",
       # Two published templates claim one submodel identifier and
-      # this says which table answered for it.
+      # this says which table answered for it. No grade, for SMT-D2's
+      # reason: a caveat about the run asks nothing of the file.
       path=("document", "submodel"),
-      # A caveat about the run, not a defect in the file: nothing
-      # here asks the sender to change anything.
-      fixability=1,
-      fixability_why=("the file is not being asked to change; this names which of two tables answered"),
       title="a submodel identifier two published templates claim is named, not dismissed",
       spec="IDTA 02023 and IDTA 02035-3 publish one CarbonFootprint "
            "submodel semanticId; docs/divergences.md #36",

@@ -199,37 +199,45 @@ differ.
 | `detail` | string or null | Context — usually the value that was seen. |
 | `fix` | string | What to do about it — usually one imperative sentence: what to change so this stops being reported. Where this reader refused a document rather than judged it (past one of its bounds, past what this interpreter can build, or bytes that are cut short or not UTF-8), it says why and that nothing was judged, and asks for a change only where one is known. Every finding carries one. |
 | `title` | string | The rule's standing description, the same for every finding it produces. |
-| `fixability` | integer or null | What repairing **this** finding would take, on the five-step scale below. Not a severity: a file can hold a loud defect nobody can repair beside a quiet one repaired by rewriting a string, and folding the two into one number is how a tool comes to promise repairs it cannot perform. `null` where nothing has graded this shape yet -- which is an absence of a claim, not a claim that the defect is unfixable. Additive under `schemaVersion` 1. |
-| `fixabilityWhy` | string or null | One sentence saying what makes that grade true of this code. A grade with no reason reads as a measurement and cannot be checked, so the reason is required wherever a grade is given. |
-| `path` | array of string | Where this rule's findings point, from the input inwards: the steps are `document`, `container`, `part`, `submodel`, `element`. `subject` is one string doing three jobs -- a path of idShorts, an identifier, a part name -- and this says which job, per rule, so a consumer can navigate to what was named without knowing the rule already. Additive under `schemaVersion` 1. |
+| `fixability` | integer or null | What repairing **this** finding would take, on the five-step scale below. Not a severity: a file can hold a loud defect nobody can repair beside a quiet one repaired by rewriting a string, and folding the two into one number is how a tool comes to promise repairs it cannot perform. `null` where this reader makes no claim: a shape it has not graded, or a finding that asks nothing of the file -- which of two tables answered (`SMT-D2`, `BAT-R2`), a bound this reader sets (`X5`), an identifier of a template it has no table for (`SMT-D1`), a rule that could not run. An absence of a claim, not a claim that the defect is unfixable. Additive under `schemaVersion` 1. |
+| `fixabilityWhy` | string or null | One sentence saying what the reader found that makes that grade true: how many candidates it saw where it looked, or what the template does and does not give. Present exactly when `fixability` is -- a grade with no reason reads as a measurement nobody can check, and a reason with no grade is about nothing. |
+| `path` | array of string | What `subject` names, as one of five routes. `["document", "submodel", "element"]`: an element, by its path of idShorts (`BAT-R8` names an element that is absent by its idShort alone, having no place to give it). `["document", "submodel"]`: a submodel, by its idShort or identifier. `["container", "part"]`: a part of the package, by name. `["container"]` and `["document"]`: the package or the document the caller gave, by the path as given -- or, where `subject` is null, the package or the document as a whole. Per finding and not per rule, because one rule's subject can be either: `X3` names a bare JSON document's own path and the part of a package that would not parse. Empty only for a relayed `meta` finding, whose `subject` is the upstream library's own expression and can name a shell, a concept description or an attribute, which no route here spells. Additive under `schemaVersion` 1. |
 | `spec` | string | Where the requirement lives, and always present. It is prose, not a key: a template and section for most rules; a provision of the regulation for the rules that read one, built from the row being reported rather than fixed per rule; the OPC or AASX standard for the rules about the container; the metamodel standard and its schemas for the ones about what a document must be, and the metamodel constraints for the relayed `meta` channel; a pointer to this project's own documented bounds for the limits it puts on what it will read; for the lints and for the rule about two templates sharing an identifier, a pointer to `docs/divergences.md` for the reading being applied; and, for a table built from a template the caller supplied, the words "a template you supplied" and the field the row was read from — `the element's declared valueType`, `the list's declared typeValueListElement`, `the element's declared modelType`, or the cardinality qualifier. |
 
 ### What `fixability` means
 
-The steps are the ones this project already uses to talk about repair,
-and each is shown with a finding this reader actually produces.
+Five steps, from a repair the input settles on its own to one it cannot
+supply. Each is shown with a finding this reader produces, in the words
+it prints.
 
 | step | what it means | a finding of this reader's |
 |---|---|---|
-| 1 | determined by the input alone | `X5`: nothing is malformed, the input is larger than a bound this reader publishes -- the bound is the thing to change |
-| 2 | determined once a premise is confirmed | a generated row's `must carry valueType xs:string`: the template states the type, and the rewrite follows once the value is confirmed to fit it |
-| 3 | candidates exist and a person must choose | a generated row's `expects one, found three`: every copy is present and choosing which the template meant is not this reader's call |
-| 4 | context or domain knowledge is needed | `DN-D1`: the absolute form of `URIOfTheProduct` is a fact about the product, not about the string written here |
-| 5 | not recoverable without material or authority this run does not have | a generated row's `expects one, found none`, and `HD-D7`'s `the container holds no part at this File's value`: the content is not in this input |
+| 1 | determined by the input alone | none today: every repair this reader can see still rests on something a person has to confirm |
+| 2 | determined once a premise is confirmed | `HD-D7`'s `the container holds no part at this File's value` where one part of the package carries the file name the value ends in: the corrected value follows once that part is confirmed to be the file meant. And a generated row's `'Version' must carry valueType xs:string`: the template states the type, and the rewrite follows once the value is confirmed to fit it |
+| 3 | candidates exist and a person must choose | a generated row's `the template expects exactly one 'Version' here; found 2`: every copy is present, and which to keep is a person's call |
+| 4 | context or domain knowledge is needed | `DN-D1`'s `URIOfTheProduct is not an absolute URI` on a value with no scheme: which absolute URI identifies the product is a fact about the product, not about the string |
+| 5 | not recoverable without material or authority this run does not have | `the template expects exactly one 'Version' here; found 0` with nothing at that place resembling it, and `HD-D7` where no part of the package carries the file name at all |
 
 **The grade belongs to the finding, not to the rule.** One generated row
 reports five different shapes -- a count, a kind, a list's item type, a
 `valueType`, a present element carrying no value -- and they are not
-equally repairable: `expects one, found none` is a 5 where `expects one,
-found three` is a 3. A number attached to the rule would be wrong for
-all but one of them. This reader already learned that about remedies and
-splits those per finding for the same reason.
+equally repairable. One message can even be two grades: `found 0` beside
+an element that carries the row's idShort, or an identifier one version
+suffix off, is a 2, and with nothing like it there a 5.
+
+**A grade is judged from what the reader looked at**: the place the
+finding names, and for a File value the package it is in. It looks
+there for what could supply the repair -- one candidate is a 2, several
+a 3 -- and the reason says what it found. Content the file carries
+somewhere else, such as the same element one level up, is not searched
+for; where it exists, the repair is easier than the grade says, and
+never harder.
 
 A grade is not permission to rewrite a file. Step 1 changes its meaning
 the moment a signature or an external digest covers the bytes, and this
 reader writes prescriptions rather than repairs.
 
-Every text field of a finding — `message`, `subject`, `detail`, `fix`, `spec` — is bounded at 2000 characters. A report repeats what a file said, and a file can say a great deal: a 200 KB `File` value produced a 200,670-character report before the bound existed. Where a field was cut it says so and by how much (`... (198000 more characters, not shown)`), so a short value and a shortened one are never the same thing on the page. The bound sits far above anything this tool writes — the longest remedy it ships is 690 characters — so it can only ever cut what a file supplied.
+Every text field of a finding — `message`, `subject`, `detail`, `fix`, `spec`, `fixabilityWhy` — is bounded at 2000 characters. A report repeats what a file said, and a file can say a great deal: a 200 KB `File` value produced a 200,670-character report before the bound existed. Where a field was cut it says so and by how much (`... (198000 more characters, not shown)`), so a short value and a shortened one are never the same thing on the page. The bound sits far above anything this tool writes — the longest remedy it ships is 690 characters — so it can only ever cut what a file supplied.
 
 `kind` is `meta` for findings relayed from
 [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s

@@ -705,8 +705,14 @@ def rules_for(table, pack):
             yield from analyze(ctx, table)["violations"].get(row_id, ())
         return check
 
+    # The route every vendored pack's generated rows declare: a row names
+    # an element, or -- for a count at the top of the walk -- the
+    # submodel, which the finding itself says. Built without one, every
+    # finding a supplied template drew carried `path: []` beside the same
+    # row's `["document", "submodel", "element"]` from a vendored pack.
     return [Rule(id=row["id"], kind="template", prio="MUST",
                  title=_title_of(row),
                  spec="%s, SMT/Cardinality qualifier" % table.TEMPLATE_CITATION,
-                 fn=check_for(row["id"]), fix=row["fix"])
+                 fn=check_for(row["id"]), fix=row["fix"],
+                 path=("document", "submodel", "element"))
             for row in table.ROWS]

@@ -144,6 +144,40 @@ def _crashes_are_not_verdicts(request):
         _ALLOWS_RELAY_STOP = False
 
 
+#: The two routes that name the file the caller gave, or with no subject
+#: the whole of it.
+_THE_INPUT = (("container",), ("document",))
+
+
+def _the_route_fits_the_subject(report, finding) -> None:
+    """Every finding the suite produces says what its subject is, and the
+    subject's own spelling agrees.
+
+    Checked here, on every report, because the first version of `path`
+    was checked nowhere: routes were fixed per rule and nothing compared
+    them with a subject, so X3 said "part" of a bare JSON document's own
+    path and a count at the top of a submodel said "element" of the
+    submodel's name. An element is named by a path of idShorts, which
+    `_subject` always joins with `/` -- except `BAT-R8`'s, which names an
+    element that is absent by its idShort, having no place to give it. A
+    submodel is named by an idShort, which cannot hold one. A rule with
+    no route -- written for a test, or the relayed channel -- is not this
+    check's; tests say which rules those are."""
+    route, subject = finding.path, finding.violation.subject
+    if not route:
+        return
+    said = "%s says %s of %r" % (finding.id, "/".join(route), subject)
+    given = {report.path, str(Path(report.path))}
+    if subject is None or subject in given:
+        assert route in _THE_INPUT, said
+        return
+    assert route not in _THE_INPUT, said
+    if route[-1] == "submodel" and finding.rule.kind != "meta":
+        assert "/" not in subject, said
+    if route[-1] == "element" and finding.id != "BAT-R8":
+        assert "/" in subject, said
+
+
 @pytest.fixture(autouse=True, scope="session")
 def _observe_which_rules_fire():
     from aas_submodel_validate import runner
@@ -198,6 +232,8 @@ def _observe_which_rules_fire():
         FIRED.update(finding.id for finding in report.findings
                      if finding.violation.message != runner.COULD_NOT_RUN
                      and not finding.id.startswith(RUN_TIME_PREFIX))
+        for finding in report.findings:
+            _the_route_fits_the_subject(report, finding)
         return report
 
     runner.run = wrapped

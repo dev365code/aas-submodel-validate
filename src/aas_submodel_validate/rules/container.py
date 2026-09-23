@@ -29,6 +29,23 @@ _DIVIDES = ("An environment divides along its submodels, so fewer of them per "
             "divide, and a file that large cannot be checked here.")
 
 
+def _where(ctx, subject):
+    """What an X finding's subject names: the file the caller gave, or a
+    part inside it. The loader spells the first as the path it was given
+    and the second as the part's name, and one rule reports both -- X3 of
+    a bare JSON document names its path, X3 of a package names the part
+    that would not parse -- so a route fixed per rule was wrong for one of
+    them. Which file it was is the loader's own answer where it opened
+    one, and the extension it would have been opened by where it did not.
+    """
+    if subject is None or subject != ctx.loaded.path:
+        return None if subject is None else ("container", "part")
+    form = ctx.loaded.form
+    if form == "unopened":
+        form = "aasx" if subject.lower().endswith(".aasx") else "document"
+    return ("container",) if form == "aasx" else ("document",)
+
+
 def _bounds_remedy(form: str):
     """Built when the finding is, not when this module was imported.
 
@@ -44,12 +61,11 @@ def _bounds_remedy(form: str):
 
 
 @rule("X1", kind="container", prio="MUST",
-     # The package itself: there is no document yet to point into.
+     # The package, or the part in it that could not be read; each
+     # finding says which. No grade: an environment saved under .aasx
+     # is re-packaged from its own bytes and a truncated download is
+     # not, and this rule cannot tell the two apart.
      path=("container",),
-     # The bytes are not a readable package. Whether a good copy
-     # exists is a fact about where the file came from.
-     fixability=5,
-     fixability_why=("nothing in these bytes supplies the package that was meant to arrive"),
       title="the file must be a ZIP (OPC) container this reader can open",
       spec="ECMA-376 Part 2",
       fix="Re-create the .aasx with an AAS packaging tool: either what is on "
@@ -58,7 +74,8 @@ def _bounds_remedy(form: str):
 def x1_is_a_zip(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "zip":
-            yield Violation(error.message, subject=error.subject, detail=error.detail)
+            yield Violation(error.message, subject=error.subject, detail=error.detail,
+                            path=_where(ctx, error.subject))
 
 
 @rule("X2", kind="container", prio="MUST",
@@ -77,7 +94,8 @@ def x2_chain_resolves(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "chain":
             yield Violation(error.message, subject=error.subject,
-                            detail=error.detail, fix=error.fix)
+                            detail=error.detail, fix=error.fix,
+                            path=_where(ctx, error.subject))
 
 
 @rule("X3", kind="container", prio="MUST",
@@ -96,17 +114,16 @@ def x3_payload_parses(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "payload":
             yield Violation(error.message, subject=error.subject,
-                            detail=error.detail, fix=error.fix)
+                            detail=error.detail, fix=error.fix,
+                            path=_where(ctx, error.subject))
 
 
 @rule("X5", kind="container", prio="MUST",
-     # A bound this reader sets, named against the part that met it.
+     # A bound this reader sets, named against the file or the part
+     # that met it. No grade: nothing in the file is asked to change --
+     # the bound is this reader's -- and running out of memory is filed
+     # here too, where no published bound was crossed at all.
      path=("container", "part"),
-     # Nothing is wrong with the file: it is larger than this reader
-     # agreed to open. The remedy is a smaller input or another
-     # reader, and neither is a repair to the document.
-     fixability=1,
-     fixability_why=("the input is not malformed; it exceeds a bound this reader publishes, and the bound is the thing to change"),
       title="the input fits in what an offline reader will take in",
       spec="this project's own bounds -- see container.py",
       fix="This reader takes in no single document over %d MiB, and no "
@@ -139,16 +156,14 @@ def x5_within_the_readers_bounds(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "bounds":
             yield Violation(error.message, subject=error.subject, detail=error.detail,
-                            fix=error.fix or _bounds_remedy(ctx.loaded.form))
+                            fix=error.fix or _bounds_remedy(ctx.loaded.form),
+                            path=_where(ctx, error.subject))
 
 
 @rule("X6", kind="container", prio="MUST",
-     # The path the caller gave, before anything was opened.
+     # The path the caller gave, before anything was opened. No grade:
+     # there is no file here to repair, only a path to correct.
      path=("container",),
-     # There is nothing at the path. What was meant to be there is
-     # not a question this input can answer.
-     fixability=5,
-     fixability_why=("no bytes were read, so nothing in this run says what the path should have named"),
       title="the path names something this reader can open",
       spec="this project's own way in -- see loader.py",
       fix="Check the path and what the account running this may read. "
@@ -179,7 +194,8 @@ def x6_the_path_can_be_opened(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "access":
             yield Violation(error.message, subject=error.subject,
-                            detail=error.detail, fix=error.fix)
+                            detail=error.detail, fix=error.fix,
+                            path=_where(ctx, error.subject))
 
 
 @rule("X4", kind="container", prio="SHOULD",

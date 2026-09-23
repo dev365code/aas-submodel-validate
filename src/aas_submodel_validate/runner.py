@@ -155,16 +155,14 @@ def _meta_rule(strict: bool) -> Rule:
         title="the AAS metamodel, verified by aas-core3.0",
         spec="IDTA 01001 (metamodel constraints)",
         fn=lambda ctx: (),
-        # Relayed, so its subject is the upstream reader's spelling and
-        # not this one's -- `.submodels[0].submodel_elements[0]` where
-        # every other finding writes a path of idShorts. Saying where it
-        # points is the whole of what lets a consumer tell the two
-        # spellings apart without knowing which rule wrote which.
-        path=("document", "submodel", "element"),
-        # What repairing one takes is decided by the constraint that was
-        # broken, and this rule relays hundreds of them without reading
-        # any: grading them all alike would be a number about nothing.
-        # Each relayed finding carries its own or carries none.
+        # No route. The subject is the upstream reader's own expression
+        # -- `.concept_descriptions[10]`, `.asset_administration_shells[0]
+        # .id_short` -- and it names things no route here spells: a shell,
+        # a concept description, an attribute. `kind` is `meta` on every
+        # one of them, and that, not this, is what tells the spelling apart.
+        # No grade either: what repairing one takes is decided by the
+        # constraint that was broken, and this rule relays hundreds of
+        # them without reading any.
         fix=META_REMEDY)
 
 
@@ -223,6 +221,7 @@ def _meta_findings(loaded: Loaded, strict):
             # crash arrived as a folded warning and the run left by 0 --
             # quietly wrong, where the unisolated version had at least
             # been loudly wrong.
+            named = getattr(target, "id", None)
             yield Finding(_meta_rule("error"), Violation(
                 COULD_NOT_RUN,
                 # A bare submodel has an id and an Environment has not,
@@ -230,7 +229,10 @@ def _meta_findings(loaded: Loaded, strict):
                 # stays quiet where there is none. The remedy no longer
                 # promises the reader a name, which is what made the
                 # quiet case a broken instruction rather than a blank.
-                subject=getattr(target, "id", None),
+                subject=named,
+                # This reader's own words, not the upstream expression,
+                # so it can say what it named: the submodel, by its id.
+                path=("document", "submodel") if named is not None else None,
                 detail="%s: %s" % (type(exc).__name__, exc),
                 fix=RELAY_STOPPED))
 

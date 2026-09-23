@@ -19,8 +19,7 @@ _registry: Dict[str, Rule] = {}
 
 def rule(rule_id: str, *, kind: str, prio: str, title: str,
          spec: Optional[str] = None, fix: Optional[str] = None,
-         path: tuple = (), fixability: Optional[int] = None,
-         fixability_why: Optional[str] = None) -> Callable:
+         path: tuple = ()) -> Callable:
     def decorator(fn: Callable) -> Callable:
         if rule_id in _registry:
             raise ValueError("duplicate rule id: %s" % rule_id)
@@ -42,9 +41,7 @@ def rule(rule_id: str, *, kind: str, prio: str, title: str,
             raise ValueError("rule %s has priority %r; known priorities are %s"
                              % (rule_id, prio, ", ".join(sorted(PRIO_SEVERITY))))
         _registry[rule_id] = Rule(id=rule_id, kind=kind, prio=prio, title=title,
-                                  spec=spec, fn=fn, fix=fix, path=tuple(path),
-                                  fixability=fixability,
-                                  fixability_why=fixability_why)
+                                  spec=spec, fn=fn, fix=fix, path=tuple(path))
         return fn
     return decorator
 

@@ -83,7 +83,8 @@ def td_d1_valid_date(ctx):
 
 
 @rule("TD-D2", kind="template", prio="MUST",
-     path=("document", "submodel", "element", "part"),
+     # The File element; the part it names is in `detail`.
+     path=("document", "submodel", "element"),
       title="files named by CompanyLogo/ImageFile exist in the container",
       spec="IDTA 02003-2-0-1 §3.2, §3.3; IDTA 01005 (AASX)",
       fix="Add the file to the .aasx under the name this File value "

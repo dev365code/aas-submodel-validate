@@ -130,35 +130,71 @@ def _bounded(text):
 #: 4  context or domain knowledge is needed
 #: 5  not recoverable without material or authority this run does not have
 #:
-#: The grade belongs to the VIOLATION and not to the rule. One generated
-#: row reports five different shapes -- a count, a kind, a list's item
-#: type, a valueType, a present element with no value -- and "one
-#: expected, none found" is a 5 where "one expected, three found" is a 3.
-#: This repository already learned the same thing about remedies and
-#: split those per violation; the grade follows them.
+#: The grade belongs to the VIOLATION and not to the rule, and it is
+#: judged from what the reader looked at -- the place the finding names,
+#: and for a File value the package around it. The first version graded
+#: by message: "expected one, found none" was a 5, "the content is not in
+#: this input", on a file whose element sat at that very place one
+#: version suffix off, with the near-miss lint saying so a line later.
+#: So a grade looks for what could supply the repair where the reader
+#: stands, and says what it found: one candidate is a 2, several a 3,
+#: none a 5. Content the file carries somewhere the reader did not look
+#: -- the same element one level up -- is not searched for, and where it
+#: exists the repair is easier than the grade says. It is never harder.
+#:
+#: No grade (`None`) is an absence of a claim: a shape nobody has graded,
+#: or a finding that asks nothing of the file -- a notice of which table
+#: answered, a bound this reader sets, a rule that could not run.
 FIXABILITY = (1, 2, 3, 4, 5)
 
-#: The route from the input to the kind of place a rule's findings name.
-#: `subject` is one string doing three jobs -- an idShort path, an
-#: identifier, a part name -- and nothing said which for a given rule, so
-#: a consumer had to know the rule to navigate to what it named.
+#: What a finding's `subject` names, as the steps around it: `element`
+#: is an element, by its path of idShorts; `submodel` a submodel, by its
+#: idShort or identifier; `part` a part of a package, by name;
+#: `container` the package the caller gave and `document` the document
+#: they gave, by the path as given, or -- with no subject -- the package
+#: or the document as a whole. `subject` is one string doing all of those jobs, and a
+#: route fixed per rule was wrong wherever one rule's subject did more
+#: than one: X3 said "part" of a bare JSON document's own path.
 PATH_STEPS = ("document", "container", "part", "submodel", "element")
+
+#: Every route a finding can carry, and nothing else. Steps drawn from
+#: the vocabulary in any order said nothing a consumer could switch on --
+#: `("document", "element")` was accepted -- so the routes are a closed
+#: set, one per kind of thing a subject can be.
+ROUTES = (("document",), ("container",), ("container", "part"),
+          ("document", "submodel"), ("document", "submodel", "element"))
 
 
 def _graded(grade, reason, what):
     """A grade is a claim, and a number nobody can check reads as a
-    measurement. Refused at the boundary, beside the duplicate id and the
-    missing remedy, rather than audited later."""
+    measurement. Refused where the violation is built -- which is where
+    every grade this package gives is set -- rather than audited later.
+
+    Both or neither. A reason with no grade is a sentence about nothing,
+    and a grade must be a step of the scale and not something that
+    compares equal to one: `True == 1` and `2.0 == 2`."""
     if grade is None:
+        if reason is not None:
+            raise ValueError("%s gives a reason for fixability and no grade"
+                             % what)
         return None
-    if grade not in FIXABILITY:
+    if type(grade) is not int or grade not in FIXABILITY:
         raise ValueError("%s has fixability %r; the scale is %s"
                          % (what, grade, ", ".join(str(g) for g in FIXABILITY)))
-    if not reason:
+    if not isinstance(reason, str) or not reason.strip():
         raise ValueError("%s grades fixability %d and gives no reason; the "
-                         "grade is a claim about this code and has to say "
+                         "grade is a claim about the input and has to say "
                          "what makes it true" % (what, grade))
     return grade
+
+
+def _route(steps, what):
+    steps = tuple(steps)
+    if steps not in ROUTES:
+        raise ValueError("%s points at %s; a route is one of %s"
+                         % (what, "/".join(steps) or "nothing",
+                            ", ".join("/".join(r) for r in ROUTES)))
+    return steps
 
 
 @dataclass(frozen=True)
@@ -176,13 +212,6 @@ class Violation:
     #: reader `per` is what to cite, and a constant on the rule sent them
     #: to a provision no row had chosen.
     spec: Optional[str] = None
-    #: What repairing THIS instance would take, when the rule's own grade
-    #: is the wrong answer -- which is most of the time for a generated
-    #: row, because one row reports five different shapes. See
-    #: `FIXABILITY`.
-    fixability: Optional[int] = None
-    #: What makes that grade true of this code, in one sentence.
-    fixability_why: Optional[str] = None
     #: How loudly THIS instance is reported, when the rule's own priority
     #: is the wrong answer. One thing needs it: a rule that could not run
     #: at all. What the rule asks for stays true in the report and stays
@@ -190,17 +219,33 @@ class Violation:
     #: question, and for a check that did not happen the answer is no
     #: however little the check was asking for.
     severity: Optional[Severity] = None
+    #: What repairing THIS instance would take -- see `FIXABILITY`. Only
+    #: here, never on the rule: one generated row reports a count, a
+    #: kind, a list's item type, a valueType and an element with no value,
+    #: and a grade on a rule was inherited by the finding a crash of that
+    #: rule produced. After `severity`, which a caller may have been
+    #: passing by position.
+    fixability: Optional[int] = None
+    #: What the reader found that makes that grade true, in one sentence.
+    fixability_why: Optional[str] = None
+    #: What `subject` names, where the rule's route is the wrong answer
+    #: for this instance -- one of `ROUTES`.
+    path: Optional[tuple] = None
 
     def __post_init__(self):
         # Every field, not only the two that were found carrying a
         # value. A policy with an exception list is a policy somebody
         # has to remember, and the bound is far above anything this
         # project writes, so it costs the authored text nothing.
-        for name in ("message", "subject", "detail", "fix", "spec"):
+        for name in ("message", "subject", "detail", "fix", "spec",
+                     "fixability_why"):
             value = getattr(self, name)
             bounded = _bounded(value)
             if bounded is not value:
                 object.__setattr__(self, name, bounded)
+        _graded(self.fixability, self.fixability_why, "a violation")
+        if self.path is not None:
+            object.__setattr__(self, "path", _route(self.path, "a violation"))
 
 
 @dataclass(frozen=True)
@@ -213,24 +258,18 @@ class Rule:
     fn: Callable[..., Iterable[Violation]]
     #: One imperative sentence: what to change so this stops being reported.
     fix: Optional[str] = None
-    #: Where this rule's findings point, from the input inwards. `subject`
-    #: is one string doing three jobs and this says which job, per rule,
-    #: so a consumer can navigate without knowing the rule already.
+    #: What this rule's findings' `subject` names, where a violation
+    #: does not say otherwise -- one of `ROUTES`. There is no grade
+    #: beside it: grades are the violation's alone (`Violation.fixability`).
     path: tuple = ()
-    #: The grade, only for a rule whose violations are all one shape. A
-    #: rule that reports several shapes leaves this `None` and grades each
-    #: violation where it is produced -- see `FIXABILITY`.
-    fixability: Optional[int] = None
-    #: What makes that grade true of this code, in one sentence.
-    fixability_why: Optional[str] = None
 
     def __post_init__(self):
-        _graded(self.fixability, self.fixability_why, "rule %s" % self.id)
-        unknown = [step for step in self.path if step not in PATH_STEPS]
-        if unknown:
-            raise ValueError(
-                "rule %s points at %s; the route is built from %s"
-                % (self.id, ", ".join(unknown), ", ".join(PATH_STEPS)))
+        # Empty is allowed here and nowhere else: a rule written for a
+        # test need not say, and the relayed channel's subject is the
+        # upstream library's expression, which names things no route
+        # here spells. Every rule this package registers declares one.
+        if self.path:
+            object.__setattr__(self, "path", _route(self.path, "rule %s" % self.id))
         # The same three lines `Violation` has, against the same bound and
         # for the same reason. A rule's text is authored here for the hand
         # rules and interpolated from the template's own strings for every
@@ -270,22 +309,24 @@ class Finding:
 
     @property
     def fixability(self) -> Optional[int]:
-        """The violation's grade, and the rule's only where the rule has
-        one -- which it has only when all of its violations are one
-        shape. The same precedence `fix` and `severity` already use, for
-        the same reason: the instance knows what it produced."""
-        if self.violation.fixability is not None:
-            return self.violation.fixability
-        return self.rule.fixability
+        return self.violation.fixability
 
     @property
     def fixability_why(self) -> Optional[str]:
-        if self.violation.fixability is not None:
-            return self.violation.fixability_why
-        return self.rule.fixability_why
+        return self.violation.fixability_why
 
     @property
     def path(self) -> tuple:
+        """What `subject` names. With no subject, the whole of what was
+        read, which is what the report says a null subject means: the
+        package, for the container rules -- whose subject-less findings
+        are all about an archive that would not open or chain -- and the
+        document for everything else. Otherwise the violation's own route
+        where it gave one, and the rule's where it did not."""
+        if self.violation.subject is None:
+            return ("container",) if self.rule.kind == "container" else ("document",)
+        if self.violation.path is not None:
+            return self.violation.path
         return self.rule.path
 
     @property

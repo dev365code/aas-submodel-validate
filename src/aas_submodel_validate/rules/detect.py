@@ -182,8 +182,34 @@ def judged(ctx):
     return seen
 
 
+#: What repairing each answer below would take (`model.FIXABILITY`),
+#: beside the reason. One rule, four situations, and they are not one
+#: grade: an identifier one version suffix off names the template it
+#: means, an identifier of a template this tool has no table for asks
+#: nothing of the file at all -- the remedy says to leave it alone.
+_ONE_VERSION_OFF = (2, "the identifier differs from a template this tool has only "
+                       "in its version suffix; giving it that template's is "
+                       "determined once the submodel is confirmed to follow "
+                       "that version")
+_NAMED_AS_ONE = (2, "the submodel is named as a template this tool has; giving it "
+                    "that template's semanticId is determined once the name is "
+                    "confirmed to mean it")
+_NO_IDENTIFIER = (4, "no submodel declares a semanticId, and which template one "
+                     "means is the sender's to say")
+_NO_SUBMODEL = (5, "the input holds no submodel; what it was to carry has to "
+                   "come from whoever has it")
+
+
 def _nearest_miss(submodels) -> str:
     """Why nothing matched, in the most useful words available."""
+    return _diagnosed(submodels)[0]
+
+
+def _diagnosed(submodels):
+    """`_nearest_miss`'s sentence, and what repairing it would take, as
+    (detail, grade, reason) -- one walk, so the grade is always about
+    the situation the sentence describes. The grade is `None` where
+    nothing in the file is asked to change."""
     seen = []
     for submodel in submodels:
         for value in key_values(submodel.semantic_id):
@@ -196,19 +222,23 @@ def _nearest_miss(submodels) -> str:
                 # version suffix" from the first URI-style pack that landed.
                 if pack.stem and value.startswith(pack.stem) \
                         and value != pack.semantic_id:
-                    return ("found %s, which differs from the %s template's %s "
-                            "only in the ECLASS version suffix"
-                            % (value, pack.name, pack.semantic_id))
+                    return (("found %s, which differs from the %s template's %s "
+                             "only in the ECLASS version suffix"
+                             % (value, pack.name, pack.semantic_id),)
+                            + _ONE_VERSION_OFF)
         named = (getattr(submodel, "id_short", None) or "").lower()
         for pack in PACKS:
             if named == pack.id_short_hint:
-                return ("a submodel is *named* %s but its semanticId is %s -- "
-                        "matching goes by semanticId, never by name"
-                        % (submodel.id_short,
-                           ", ".join(key_values(submodel.semantic_id)) or "absent"))
+                return (("a submodel is *named* %s but its semanticId is %s -- "
+                         "matching goes by semanticId, never by name"
+                         % (submodel.id_short,
+                            ", ".join(key_values(submodel.semantic_id)) or "absent"),)
+                        + _NAMED_AS_ONE)
     if seen:
-        return "semanticId value(s): %s" % ", ".join(sorted(set(seen))[:3])
-    return "no submodel in the input declares any semanticId"
+        return ("semanticId value(s): %s" % ", ".join(sorted(set(seen))[:3]),
+                None, None)
+    return (("no submodel in the input declares any semanticId",)
+            + (_NO_IDENTIFIER if submodels else _NO_SUBMODEL))
 
 
 #: The remedy, and the sentence that keeps it from being wrong.
@@ -228,15 +258,11 @@ _REMEDY = ("If the submodel means one of the templates this tool has a table "
 
 
 @rule(RULE_ID, kind="template", prio="MUST",
-     # Names a submodel, by the identifier it declares: there is no
-     # element to point at, because no table was entered.
-     path=("document", "submodel"),
-     # The submodel declares an identifier this build has no table
-     # for. Nothing in the input says which published template was
-     # meant, and guessing one would judge the file against a
-     # specification its author did not choose.
-     fixability=4,
-     fixability_why=("which template was meant is not in the input; it is a fact about the sender's intent"),
+     # About the document as a whole: it names no subject, because what
+     # it reports is that no submodel here was judged. Each finding is
+     # graded by `_nearest_miss`, which knows which of four situations
+     # it is describing.
+     path=("document",),
       title="the input must contain a submodel this tool knows",
       spec="IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2",
       fix=_REMEDY)
@@ -263,6 +289,7 @@ def smt_d1_a_known_submodel_is_present(ctx):
     # on them (BAT-R2, BAT-R8), so a sentence claiming the tool does not
     # recognise them contradicts a finding two lines further down the
     # same report.
+    detail, grade, why = _diagnosed(instances(ctx.loaded))
     yield Violation("no submodel declares a semanticId this tool has a "
                     "template table for",
-                    detail=_nearest_miss(instances(ctx.loaded)))
+                    detail=detail, fixability=grade, fixability_why=why)

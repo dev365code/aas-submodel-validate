@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.7.0 — unreleased
+
+**A finding says what repairing it would take, and what its subject
+names.** Three keys join every finding, additive under `schemaVersion`
+1; no verdict, exit code or existing key moves.
+
+`fixability` is a step on a scale of five, from a repair the input
+settles on its own (1) to one it cannot supply (5), and `fixabilityWhy`
+is the sentence saying what the reader found that makes it true. It is
+graded per finding and not per rule, because one message can be two
+grades: `the template expects exactly one 'Version' here; found 0` is a
+2 beside an element one version suffix off, and a 5 with nothing like it
+there. A File value naming a part the package lacks is a 2, a 3 or a 5
+by how many parts carry the file name it ends in. The grade is judged
+from what the reader looked at -- the place the finding names, and the
+package around a File value -- so content the file carries somewhere
+else is not searched for, and where it exists the repair is easier than
+the grade says. It is null where no claim is made: a shape not graded
+yet, or a finding that asks nothing of the file, such as which of two
+tables answered, a bound this reader sets, or a rule that could not run.
+
+`path` says what `subject` names, as one of five routes: an element, a
+submodel, a part of the package, or the package or document the caller
+gave. It is per finding, since one rule can name either a bare JSON
+document's own path or a part inside a package. A relayed `meta`
+finding carries an empty one: its subject is the upstream library's own
+expression.
+
+It is still 221 rules, 178 generated from the vendored official template
+files, across six template packs. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.6.0 — 2026-09-24
 
 Who should take this release: anyone whose packages name files, and

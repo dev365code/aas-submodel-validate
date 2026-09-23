@@ -475,6 +475,16 @@ def ascii_folded(value: str) -> str:
     return value.translate(_ASCII_LOWER)
 
 
+def file_name(value: str) -> str:
+    """The last segment of a name, under either separator, decoded and
+    folded the way `AasxPackage.part` compares a whole name at its last
+    step -- so a part `part` would have called the same file is not
+    missed by a question about its file name. Empty for a name that ends
+    in a separator, which names a directory and no file."""
+    last = re.split(r"[/\\]", value.strip())[-1]
+    return ascii_folded(urllib.parse.unquote(last))
+
+
 def canonical_part_name(value: str):
     """The archive entry a part name refers to, or None if it names none.
 
@@ -778,6 +788,9 @@ class AasxPackage:
         #: The same index folded to ASCII lower case, for the last
         #: question `part` asks. Built only if something gets that far.
         self._folded = None
+        #: Entry names by their file name alone, for `carrying`. Built
+        #: only when a File value has named a part the archive lacks.
+        self._by_file_name = None
 
     # -- files ---------------------------------------------------------------
     def names(self) -> List[str]:
@@ -878,6 +891,29 @@ class AasxPackage:
                     index.setdefault(ascii_folded(key), name)
             self._folded = index
         return self._folded.get(ascii_folded(canonical))
+
+    def carrying(self, value: str) -> Tuple[str, ...]:
+        """The parts whose file name is the one `value` ends in, in the
+        archive's order: what a File value that resolves to no part could
+        have been meant to name. How many there are is what repairing
+        that value takes -- one part is a correction to confirm, several
+        are a choice, none means the file is not in the package under
+        that name (`model.FIXABILITY`).
+
+        Indexed once, on first need, like the two indexes `part` builds:
+        a package naming ten thousand missing files must not scan its
+        directory ten thousand times."""
+        wanted = file_name(value)
+        if not wanted:
+            return ()
+        if self._by_file_name is None:
+            index = {}
+            for name in self._zip.namelist():
+                key = file_name(name)
+                if key:
+                    index.setdefault(key, []).append(name)
+            self._by_file_name = {key: tuple(names) for key, names in index.items()}
+        return self._by_file_name.get(wanted, ())
 
     def read(self, name: str) -> bytes:
         if name not in self._names:

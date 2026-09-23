@@ -61,11 +61,6 @@ _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:")
 
 @rule("DN-D1", kind="template", prio="MUST",
      path=("document", "submodel", "element"),
-     # The value is present and is not an absolute URI. What the
-     # absolute form should be is a fact about the product this
-     # nameplate describes, not about the string.
-     fixability=4,
-     fixability_why=("the identifier's absolute form is a fact about the product and is not derivable from the value written here"),
       title="URIOfTheProduct is an absolute URI",
       spec="IDTA 02006-3-0 (URIOfTheProduct: 'unique global identification "
            "... using a URI'); RFC 3986 §3.1 (scheme)",
@@ -93,8 +88,21 @@ def dn_d1_uri_of_the_product_is_absolute(ctx):
         if value is None:
             continue  # absence is the generated row's finding, not this one's
         if not _SCHEME.match(value.strip()):
+            # Graded per value. An empty one is the identifier missing,
+            # which is what DN-E01 grades a value that is absent; a
+            # relative one carries most of an identifier, and which
+            # scheme completes it is not something it says.
+            grade, why = ((5, "the value is empty: the identifier is "
+                              "missing, and only whoever issued it can "
+                              "supply it")
+                          if not value.strip() else
+                          (4, "the value names no scheme, and which absolute "
+                              "URI identifies the product -- http or https, "
+                              "or another scheme altogether -- is not "
+                              "something the value settles"))
             yield Violation("URIOfTheProduct is not an absolute URI",
-                            subject=subject, detail="%r" % value)
+                            subject=subject, detail="%r" % value,
+                            fixability=grade, fixability_why=why)
 
 
 # The one question in this file that is not a reading of this
