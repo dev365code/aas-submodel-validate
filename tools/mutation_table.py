@@ -375,6 +375,16 @@ TABLE = [
      "three names and then silence reads as three names in all, on the one "
      "line a generated-only pack speaks on"),
 
+    ("remedy/deleting-a-right-declaration-is-not-offered-as-an-equal",
+     "src/aas_submodel_validate/rules/container.py",
+     '"relationship that names it only if nothing in the model names "',
+     '"relationship that names it, or whatever else the model names "',
+     ["tests/test_a_file_a_model_points_at.py::"
+      "test_the_relationship_remedy_does_not_undo_a_correct_declaration"],
+     "one missing part draws X4 and a File rule, and X4 offered deleting the "
+     "relationship as an equal way out -- where a File value names the part "
+     "it leaves that finding standing and loses a declaration that was right"),
+
     ("cost/where-the-files-are-is-not-asked-per-part",
      "src/aas_submodel_validate/container.py",
      "        if self._canonical is None:",
