@@ -8,8 +8,10 @@ on:
     # check` went red on all nine matrix rows the minute it merged, for
     # two reasons that were about where it had run and not about the
     # change. A branch that cannot be tested before it lands is a branch
-    # whose first real test is main's history.
-    branches: [main, "release/**", "wip/**"]
+    # whose first real test is main's history. `docs/**` for the same
+    # reason: a documentation unit carries generators and gates of its own,
+    # and one pushed under that name ran nothing until it reached main.
+    branches: [main, "release/**", "wip/**", "docs/**"]
   pull_request:
 
 permissions:
