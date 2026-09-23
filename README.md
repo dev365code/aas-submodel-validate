@@ -9,7 +9,7 @@
 
 &nbsp;**Apache-2.0**&nbsp;·&nbsp;**Python 3.9–3.13**&nbsp;·&nbsp;**Linux · macOS · Windows**&nbsp;·&nbsp;**zero network, by design**
 
-[Ten seconds](#ten-seconds) · [What it catches](#what-it-catches) · [Where it sits](#where-it-sits) · [Three doors](#three-doors-one-judgement) · [Honest coverage](#honest-coverage) · [Why trust the answer](#why-trust-the-answer) · [Roadmap](#roadmap) · [In your product](#using-this-validator-in-your-product)
+[Ten seconds](#ten-seconds) · [What it catches](#what-it-catches) · [Where it stands](#where-it-stands) · [Where it sits](#where-it-sits) · [Three doors](#three-doors-one-judgement) · [Honest coverage](#honest-coverage) · [Why trust the answer](#why-trust-the-answer) · [Roadmap](#roadmap) · [In your product](#using-this-validator-in-your-product)
 
 </div>
 
@@ -139,10 +139,10 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=88a9a061" alt="Coverage: 02004, 02003, 02035-2, 02006, 02023, 02002; Explanation: what is wrong, remedy, specification; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory, own mutations, encodings; Upstream: pinned by commit" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=ab626a64" alt="Coverage: 02004, 02003, 02035-2, 02006, 02023, 02002; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
 </a>
 
-*Six things this tool holds itself to, measured on the code this page describes, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
+*Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
 
 ## Where it sits
 
@@ -282,7 +282,7 @@ timeline
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
     Building : Deeper coverage of the six templates already supported
-    Planned : Further IDTA templates, chosen by what people bring
+    Planned : IDTA 02011 and 02007, then templates chosen by what people bring
             : The rest of the battery obligation index, once a rule can read a battery's category
             : An evidence bundle a reviewer can file — one command, report plus provenance
             : Cross-checks with neighbouring standards — VDI 2770, iiRDS
@@ -323,7 +323,9 @@ are covered and to what depth, so that "covered" stops being a word you
 have to read the source to size. It does not mean the template list is
 finished.
 
-Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02004 Handover Documentation · IDTA 02003 Technical Data · IDTA 02035-2 Digital Battery Passport, part 2 · IDTA 02006 Digital Nameplate · IDTA 02023 Carbon Footprint · IDTA 02002 Contact Information · IDTA 02011 Hierarchical Structures · IDTA 02007 Software Nameplate; Explanation: what is wrong, in one sentence · the evidence as read from the file · a remedy, for every rule · the specification each rule enforces · the line in the file; Report contract: schemaVersion in every report · a golden report held by a test · exit codes 0, 1, 2 and 64 under test · a field-by-field schema page; Entrances: command line · Python library · single file, nothing to install · GitHub Action · browser, nothing installed; Input safety: read budgets, per file and per run · a security fix ships with an advisory · tests verified against their own mutations · declared encodings read without loss; Upstream: upstream templates pinned by commit · checked for upstream change · one pin move shipped.
+That is what the number promises. What this project asks of itself before it uses the number is longer, and the picture under [Where it stands](#where-it-stands) draws it:
+
+Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02004 Handover Documentation · IDTA 02003 Technical Data · IDTA 02035-2 Digital Battery Passport, part 2 · IDTA 02006 Digital Nameplate · IDTA 02023 Carbon Footprint · IDTA 02002 Contact Information · IDTA 02011 Hierarchical Structures · IDTA 02007 Software Nameplate; Explanation: what is wrong, in one sentence · the evidence as read from the file · a remedy, for every rule · where each rule's requirement lives · the line in the file; Report contract: schemaVersion in every report · a golden report held by a test · exit codes 0, 1, 2 and 64 under test · a field-by-field schema page; Entrances: command line · Python library · single file, nothing to install · GitHub Action · browser, nothing installed; Input safety: read budgets, per file and per run · a security fix ships with an advisory · tests verified against their own mutations · declared encodings read without loss; Upstream: upstream templates pinned by commit · checked for upstream change · one pin move shipped.
 
 ## When aas-submodel-validate is not the tool
 

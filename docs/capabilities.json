@@ -12,7 +12,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "IDTA 02004 Handover Documentation"
+            "says": "Six official templates are given rule tables: IDTA 02004 Handover Documentation"
           }
         },
         {
@@ -20,7 +20,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "02003 Technical Data"
+            "says": "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data"
           }
         },
         {
@@ -28,7 +28,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "02035-2 Digital Battery Passport part 2"
+            "says": "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2"
           }
         },
         {
@@ -36,7 +36,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "02006 Digital Nameplate"
+            "says": "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate"
           }
         },
         {
@@ -44,7 +44,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "02023 Carbon Footprint"
+            "says": "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint"
           }
         },
         {
@@ -52,7 +52,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "02002 Contact Information"
+            "says": "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, and 02002 Contact Information"
           }
         },
         {
@@ -92,7 +92,7 @@
           }
         },
         {
-          "text": "the specification each rule enforces",
+          "text": "where each rule's requirement lives",
           "done": true,
           "evidence": {
             "file": "docs/report-schema.md",
@@ -104,7 +104,7 @@
           "done": false
         }
       ],
-      "now_text": "what is wrong, remedy, specification",
+      "now_text": "what is wrong, remedy, requirement",
       "target_text": "+ evidence, the line in the file"
     },
     {
@@ -127,8 +127,8 @@
           "text": "exit codes 0, 1, 2 and 64 under test",
           "done": true,
           "evidence": {
-            "file": "docs/scope.md",
-            "says": "exits **64** and writes no report"
+            "file": "tests/test_what_a_pass_means.py",
+            "says": "Each row there names an exit code and an `ok`"
           }
         },
         {
@@ -188,7 +188,7 @@
           "done": true,
           "evidence": {
             "file": "SECURITY.md",
-            "says": "one document at 64 MiB"
+            "says": "one document at 64 MiB, and a container's parts at 64 MiB each and 256 MiB together"
           }
         },
         {
@@ -196,28 +196,20 @@
           "done": true,
           "evidence": {
             "file": "SECURITY.md",
-            "says": "A security fix that shipped in a release has a GitHub security advisory"
+            "says": "From 0.3.0 on, a security fix that ships in a release has a GitHub security advisory"
           }
         },
         {
           "text": "tests verified against their own mutations",
-          "done": true,
-          "evidence": {
-            "file": "Makefile",
-            "says": "mutation that makes the mistake and checks a test fails"
-          }
+          "done": false
         },
         {
           "text": "declared encodings read without loss",
-          "done": true,
-          "evidence": {
-            "file": "tests/test_xml_encoding.py",
-            "says": "written in any encoding it declares"
-          }
+          "done": false
         }
       ],
-      "now_text": "read budgets, advisory, own mutations, encodings",
-      "target_text": "met"
+      "now_text": "read budgets, advisory",
+      "target_text": "+ own mutations, encodings"
     },
     {
       "key": "upstream",

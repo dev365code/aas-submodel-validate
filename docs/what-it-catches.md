@@ -5,8 +5,10 @@ on the front page. For each of its six axes: what a run shows, where the
 requirement comes from, and a command that reproduces it; then where the
 axis stands, item by item, and what this project asks of itself before it
 calls a release 1.0. Every item marked done names a file in this repository
-that says so, and `tests/test_capabilities_current.py` holds this page, the
-picture and [`docs/capabilities.json`](capabilities.json) to one another.
+and quotes what it says. The values are set by hand in
+[`docs/capabilities.json`](capabilities.json); the tests keep the picture
+drawn from them, this page's sections and item lines in step with them, and
+the outputs quoted here in step with the tool.
 
 Commands are written for an installed `smtv`; from a clone, run
 `PYTHONPATH=src python3 -m aas_submodel_validate` in its place.
@@ -48,7 +50,7 @@ Where it stands, template by template:
 Before 1.0: the two templates named last, by name rather than by count. A
 count can be met by whichever templates are easiest; a name says which
 documents a reader can bring. After those two, which templates come next
-is decided by what people bring ([`docs/scope.md`](scope.md)).
+is decided by what people bring (the README's roadmap).
 
 ## Explanation
 
@@ -64,19 +66,22 @@ warning HD-D10   no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition
 ```
 
 What is wrong, in one sentence; where, as a path of `idShort`s; what was
-read (`saw`); the requirement (`per`); and what to change (`fix`). Reproduce:
+read (`saw`); where the requirement lives (`per` -- a template's clause for
+most rules, this project's own documented bounds or matching policy for the
+few that are its own); and what to change (`fix`). Reproduce:
 `smtv --example`.
 
 - what is wrong, in one sentence — done
 - the evidence as read from the file — not yet
 - a remedy, for every rule — done
-- the specification each rule enforces — done
+- where each rule's requirement lives — done
 - the line in the file — not yet
 
 The evidence is not yet on every finding: on the bundled example all 87
 findings carry a place and a remedy, and 10 carry a `saw` line; the other
 77 are relayed metamodel findings, which name a path and no value (see the
-README). A finding names a path of `idShort`s, not a line of the file.
+README). A finding names a path of `idShort`s, not a line of the file --
+except a syntax error (`X3`), which carries the parser's line and column.
 
 Before 1.0: every finding shows what it read, and where in the file it read
 it.
@@ -96,9 +101,9 @@ its exit code and `ok` checked against what the page prints.
 - exit codes 0, 1, 2 and 64 under test — done
 - a field-by-field schema page — done
 
-Before 1.0: a golden report — a full report of a fixed input, committed and
-compared by a test — so that a change in shape fails a test before anyone
-has to remember to write it down.
+Before 1.0: a golden report — a full JSON report of a fixed input, values
+included, committed and compared by a test. The keys are held already, in
+both directions; what is not held is what they say.
 
 ## Entrances
 
@@ -106,7 +111,8 @@ has to remember to write it down.
 `aas-submodel-validate FILE`) and a single file that needs nothing but a
 Python: `python3 tools/build_zipapp.py` in a clone, then
 `python3 dist/smtv.pyz --example` prints the same verdict line as
-`smtv --example`.
+`smtv --example`. The README's three doors -- a terminal, a single file, a
+build -- are two of the five here: a build runs the command line.
 
 - command line — done
 - Python library — not yet
@@ -126,27 +132,34 @@ where it is, with nothing installed and nothing uploaded.
 **What it reads is bounded, and a refusal is not a verdict.** One document
 at 64 MiB, a container's parts at 64 MiB each and 256 MiB together; past a
 bound the input is refused, the report says so, and the run leaves by the
-could-not-run exit code (`SECURITY.md`). Reproduce:
-`python3 -m pytest tests/test_hostile_input.py -k oversized` in a clone.
+could-not-run exit code (`SECURITY.md`). The tests that hold the bounds
+are in `tests/test_hostile_input.py`; `-k oversized` runs two of them, for a
+part past its bound.
 
 **Names the file wrote are printed escaped.** An `idShort` carrying a
 control sequence is shown as its escape on every line of the text report,
 the summary line included — which before 0.6.0 it was not
 ([GHSA-8w4g-mg5q-c4m4](https://github.com/dev365code/aas-submodel-validate/security/advisories/GHSA-8w4g-mg5q-c4m4)).
-Reproduce:
-`python3 -m pytest tests/test_scope_the_run_did_not_examine.py -k escaped`.
+`python3 -m pytest tests/test_scope_the_run_did_not_examine.py -k escaped`
+runs the test that holds the summary line.
 
 - read budgets, per file and per run — done
 - a security fix ships with an advisory — done
-- tests verified against their own mutations — done
-- declared encodings read without loss — done
+- tests verified against their own mutations — not yet
+- declared encodings read without loss — not yet
 
-Each gate names the mistake it stops, and `make mutants` makes each mistake
-and checks a test fails (`tools/mutation_table.py` lists them). A document
-may be written in any encoding it declares, and `tests/test_xml_encoding.py`
-reads each one it has.
+From 0.3.0 on, a security fix that ships has an advisory; `SECURITY.md`
+names the two earlier repairs that have a changelog entry only. Each gate
+names the mistake it stops, and `make mutants` makes each mistake and checks
+a test fails (`tools/mutation_table.py` lists them) -- but not yet every
+one: two rows about a release that predates `--template` survive, because
+their tests can fail only against such a release and the last release has
+the option. XML in UTF-8, UTF-16
+and the single-byte encodings it declares is read and judged, but UTF-32 is
+refused, and a JSON document -- which declares no encoding -- is read as
+UTF-8.
 
-Before 1.0: met; kept met.
+Before 1.0: every row of the mutation table killed on the tree it ships with, and every encoding a document may declare, read without loss.
 
 ## Upstream
 
