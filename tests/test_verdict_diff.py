@@ -273,14 +273,30 @@ def released_tree(tmp_path_factory):
     affordable here instead of a stand-in built to answer the way this
     test wants.
 
-    The three reasons are not hypothetical; the first version of this
-    asserted instead of skipping and went red in two places at once.
-    An unpacked sdist has no `.git` and `git tag` exits 128 there, and a
-    checkout made at depth 1 has the history but none of the tags, which
-    is what the matrix does. `make check` runs with `-rs`, so a skip
-    here is printed with its reason rather than counted.
+    The reasons are not hypothetical; the first version of this asserted
+    instead of skipping and went red in two places at once. An unpacked
+    sdist has no `.git` and `git tag` exits 128 there, and a checkout
+    made at depth 1 has the history but none of the tags, which is what
+    the matrix does. `make check` runs with `-rs`, so a skip here is
+    printed with its reason rather than counted.
+
+    The newest tag is not the same thing as the released version. On the
+    job that publishes a release the tag being released is already there
+    and is the newest of all, so "the released reader" became the tree
+    under test, which has every option it has. Nothing before that job
+    reproduced the state — the suite, the clean clone and the interpreter
+    axes all ran on a tree with no tag of its own — and the release
+    stopped at its own gate. So: the newest tag *below this tree's
+    version*, and a tag whose name is not `vN.N.N` is not a release.
     """
+    import re
     import subprocess
+
+    from aas_submodel_validate import __version__
+
+    def numbers(name):
+        matched = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", name.strip())
+        return tuple(int(part) for part in matched.groups()) if matched else None
 
     try:
         tag = subprocess.run(["git", "-C", str(ROOT), "tag", "--sort=-v:refname"],
@@ -289,10 +305,14 @@ def released_tree(tmp_path_factory):
         pytest.skip("git is not available")
     if tag.returncode != 0:
         pytest.skip("not a git checkout (an unpacked sdist is not one)")
-    latest = tag.stdout.split("\n", 1)[0].strip()
-    if not latest:
-        pytest.skip("this checkout carries no tags, so there is no released "
-                    "reader here to ask; a clone made at depth 1 looks like this")
+    ours = numbers("v" + __version__)
+    earlier = [name for name in tag.stdout.split("\n")
+               if numbers(name) and (ours is None or numbers(name) < ours)]
+    if not earlier:
+        pytest.skip("this checkout carries no tag older than %s, so there is "
+                    "no earlier reader here to ask; a clone made at depth 1 "
+                    "and the first release both look like this" % __version__)
+    latest = max(earlier, key=numbers)
     into = tmp_path_factory.mktemp("released")
     archive = subprocess.run(["git", "-C", str(ROOT), "archive", latest],
                              capture_output=True, check=True)
@@ -341,17 +361,27 @@ def test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved(
     tag, old_src = released_tree
     case = _a_template_case(tmp_path)
 
-    # What the comparison would have had to work with, stated rather
-    # than assumed: not a verdict, and not one that could be compared.
-    before = verdict_diff._judge(old_src, case)
-    assert before[2] == 64 and before[-1] == "no report", (tag, before)
-    assert (verdict_diff._verdict_of(before)
-            != verdict_diff._verdict_of(verdict_diff._judge(ROOT / "src", case))), (
-        "the two answers are identical, so this case proves nothing")
-
+    # Asked of that reader rather than assumed from its number. Which
+    # release this runs against depends on where it runs, and a release
+    # that has the option is not a defect -- it is the day this case
+    # starts being compared like any other. Both worlds are asserted, so
+    # neither goes unchecked.
+    knows_it = verdict_diff._has_the_option(old_src, "--template")
     assert verdict_diff._comparable(ROOT / "src", case)
-    assert not verdict_diff._comparable(old_src, case), (
-        "%s has no --template and this says it can be asked one" % tag)
+    assert verdict_diff._comparable(old_src, case) is knows_it, tag
+
+    before = verdict_diff._judge(old_src, case)
+    if not knows_it:
+        # What the comparison would have had to work with, stated rather
+        # than assumed: not a verdict, and not one that could be compared.
+        assert before[2] == 64 and before[-1] == "no report", (tag, before)
+        assert (verdict_diff._verdict_of(before)
+                != verdict_diff._verdict_of(
+                    verdict_diff._judge(ROOT / "src", case))), (
+            "the two answers are identical, so this case proves nothing")
+    else:
+        assert before[2] != 64, (
+            "%s lists --template in its help and then refuses it" % tag)
     # And a case with no flag on it is asked of both, which is every
     # other row in the corpus.
     assert verdict_diff._comparable(old_src, verdict_diff.Case("plain", case.path))
@@ -414,14 +444,25 @@ def test_the_count_leaves_out_what_the_old_version_was_never_asked(
                                 verdict_diff.EXAMPLE),
               _a_template_case(tmp_path)]
 
+    # One if that reader predates the option, none if it has it. The
+    # count is read from the reader rather than fixed here: on the job
+    # that publishes a release, the release being published is a tag
+    # like any other and this ran against a tree that has every option
+    # the tree under test has.
+    aside = 0 if verdict_diff._has_the_option(old_src, "--template") else 1
+
     counts = verdict_diff.compare(tag, old_src, corpus)
     printed = capsys.readouterr().out
 
-    assert counts["unanswerable"] == 1, printed
-    assert counts["compared"] == len(corpus) - 1
+    assert counts["unanswerable"] == aside, printed
+    assert counts["compared"] == len(corpus) - aside
     assert ("%d of %d inputs are judged differently."
             % (counts["moved"], counts["compared"])) in printed
-    assert ("1 of 2 are asked with an option %s does not have" % tag) in printed
+    if aside:
+        assert ("%d of 2 are asked with an option %s does not have"
+                % (aside, tag)) in printed
+    else:
+        assert "does not have" not in printed, printed
     # Set aside, not dropped: what the working tree makes of it is
     # printed, because a case that stopped being judgeable at all is
     # worth seeing even when there is nothing to compare it with.
