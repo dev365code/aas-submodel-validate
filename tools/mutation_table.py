@@ -317,6 +317,20 @@ TABLE = [
      "it -- measured: the static half passes this and the run fails it, "
      "which is the division of labour the two tests claim"),
 
+    ("cost/where-the-files-are-is-not-asked-per-part",
+     "src/aas_submodel_validate/container.py",
+     "        if self._canonical is None:",
+     "        if True:",
+     ["tests/test_a_file_a_model_points_at.py::"
+      "test_asking_where_the_files_are_does_not_cost_elements_times_parts"],
+     "the rule that asks whether the files a model names are in the "
+     "container joins a document to the parts of a package, and the join "
+     "is linear only because the container indexes its names once. "
+     "Rebuilding the index per lookup changes no verdict at all -- "
+     "measured, ten more elements cost 930 more lookups in a package of "
+     "forty parts and 8,130 in one of four hundred, with every finding "
+     "identical and the rest of the suite green"),
+
     ("rules/the-corpus-can-see-a-two-category-verdict",
      "tools/verdict_diff.py",
      'for seat, stated in enumerate(("ev", "lmt"))',

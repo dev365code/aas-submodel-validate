@@ -257,3 +257,102 @@ def test_the_other_file_row_of_that_pack_still_asks(tmp_path):
     drawn = [finding for finding in runner.run(str(path)).findings
              if finding.rule.id == "PCF-D1"]
     assert drawn, "the pack stopped asking about the row that is an attachment"
+
+
+def test_asking_where_the_files_are_does_not_cost_elements_times_parts(
+        tmp_path, monkeypatch):
+    """This rule joins a document to the parts a container holds, and a
+    join is where this project has met a quadratic before.
+
+    It is linear today for a reason that lives somewhere else: the
+    container builds its name indexes once and answers from them. Remove
+    those guards and the work goes as elements times parts while every
+    verdict stays identical -- so nothing that reads findings notices,
+    and the suite stays green.
+
+    Counted, not timed: a stopwatch on a shared machine measures the
+    machine. The count that discriminates is not the total -- building
+    an index is linear in parts and that is fine -- but whether ONE MORE
+    ELEMENT costs more when the container holds more parts. Measured
+    here at two widths, that extra cost is the same number at forty
+    parts and at four hundred. Under a product it would grow with them.
+
+    Bounded below as well: the same runs must go on drawing their
+    findings, because a gate that only counts work is passed by doing
+    none, and a deleted rule would sail under any ceiling.
+    """
+    import json
+
+    from aas_submodel_validate import container as container_module
+    from builders import build_aasx, dn_env
+
+    def widened(markings):
+        """The nameplate with `markings` entries, each naming a file the
+        package does not hold -- so each one is an element this rule has
+        to ask the container about."""
+        document = json.loads(json.dumps(dn_env()))
+
+        def marks(node):
+            if isinstance(node, dict):
+                if node.get("idShort") == "Markings":
+                    first = node["value"][0]
+                    node["value"] = [json.loads(json.dumps(first))
+                                     for _ in range(markings)]
+                    for seat, entry in enumerate(node["value"]):
+                        def name(inner, seat=seat):
+                            if isinstance(inner, dict):
+                                if inner.get("modelType") == "File":
+                                    inner["value"] = "/aasx/files/gone-%d.png" % seat
+                                for child in inner.values():
+                                    name(child)
+                            elif isinstance(inner, list):
+                                for child in inner:
+                                    name(child)
+                        name(entry)
+                    return True
+                return any(marks(child) for child in node.values())
+            if isinstance(node, list):
+                return any(marks(child) for child in node)
+            return False
+
+        assert marks(document), "the fixture no longer has a Markings list"
+        return document
+
+    def asked(markings, parts):
+        document = widened(markings)
+        held = tuple(("aasx/files/filler-%04d.bin" % index, b"x")
+                     for index in range(parts))
+        path = build_aasx(tmp_path / ("cost-%d-%d.aasx" % (markings, parts)),
+                          payload=json.dumps(document).encode("utf-8"),
+                          files=held)
+        counted = []
+        real = container_module.canonical_part_name
+        monkeypatch.setattr(container_module, "canonical_part_name",
+                            lambda value: (counted.append(1), real(value))[1])
+        try:
+            report = runner.run(str(path))
+        finally:
+            monkeypatch.setattr(container_module, "canonical_part_name", real)
+        drawn = [finding for finding in report.findings
+                 if finding.rule.id == "DN-D2"]
+        return len(counted), len(drawn)
+
+    few_narrow, drawn_few_narrow = asked(2, 40)
+    many_narrow, drawn_many_narrow = asked(12, 40)
+    few_wide, drawn_few_wide = asked(2, 400)
+    many_wide, drawn_many_wide = asked(12, 400)
+
+    # Below: the work is still done and still reported, at both widths.
+    assert drawn_few_narrow and drawn_few_wide, (drawn_few_narrow, drawn_few_wide)
+    assert drawn_many_narrow > drawn_few_narrow, (drawn_few_narrow, drawn_many_narrow)
+    assert drawn_many_wide == drawn_many_narrow, (drawn_many_wide, drawn_many_narrow)
+
+    # Above: what ten more elements cost must not depend on how many
+    # parts the container holds.
+    at_forty = many_narrow - few_narrow
+    at_four_hundred = many_wide - few_wide
+    assert at_forty > 0, (few_narrow, many_narrow)
+    assert at_four_hundred <= at_forty * 2, (
+        "ten more elements cost %d more lookups in a package of forty parts "
+        "and %d in one of four hundred -- the join is growing with the "
+        "product of the two" % (at_forty, at_four_hundred))
