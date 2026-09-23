@@ -909,6 +909,19 @@ TABLE = [
      "MiB before the refusal, and 0.06s and 10 MiB once the walk refuses "
      "as it goes."),
 
+    ("docs/a-quoted-sentence-is-a-sentence-the-tool-prints",
+     "docs/what-it-catches.md",
+     "> `warning HD-D6    StatusValue is outside the vocabulary`",
+     "> `warning HD-D6    StatusValue is not in the vocabulary`",
+     ["tests/test_what_it_catches_page.py"],
+     "the page quotes the tool's own sentences beside the command that "
+     "prints them, and a quote is a claim about what somebody will see. "
+     "Prose has no compiler, so a page of them goes wrong one rule at a "
+     "time and the first reader to notice is outside this project. Every "
+     "case on it is materialised from the page -- the file it says to "
+     "paste, the command it says to run, the line it promises -- so a "
+     "reworded rule fails here instead"),
+
     ("template/an-open-content-marker-is-not-an-identity",
      "src/aas_submodel_validate/tablegen.py",
      "    return tuple(sorted(_declared_values(element) - markers))",

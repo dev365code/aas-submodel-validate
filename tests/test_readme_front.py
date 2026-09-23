@@ -1147,3 +1147,46 @@ def test_which_changelog_headings_are_checked_against_this_tree(heading, version
     is caught by the shape assertion rather than silently checked.
     """
     assert _numbers_are_this_trees(heading, version) is checked
+
+
+_PLANNED_TEMPLATES = re.compile(r"Planned : (.*?) — the two that would make "
+                                r"the supported set (\w+)")
+_SET_SIZES = {"seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11,
+              "twelve": 12}
+
+
+def test_the_templates_the_roadmap_names_are_not_ones_it_already_ships():
+    """A plan that names something already done stops being a plan.
+
+    The roadmap's Planned row names the templates that would complete the
+    supported set, and the vendored directory is what "supported" means:
+    one table per IDTA number under `data/smt`. Left unchecked, the day a
+    named template is vendored the page keeps offering it as future work
+    and the total it promises is one short of what shipped -- the same
+    drift a published count has taken here before, in a sentence nobody
+    recounts because nothing recounts it.
+
+    Read from the directory rather than from any number written down
+    beside it.
+    """
+    vendored = {path.name for path
+                in (ROOT / "src" / "aas_submodel_validate" / "data" / "smt").iterdir()
+                if path.is_dir()}
+    assert vendored, "no vendored templates found; this gate reads that directory"
+
+    stated = _PLANNED_TEMPLATES.search(README)
+    assert stated, ("the roadmap no longer names the templates it plans; if "
+                    "the row was reworded, reword this with it")
+    named, size = stated.groups()
+    planned = set(re.findall(r"\b(0\d{4}(?:-\d)?)\b", named))
+    assert planned, "the Planned row names no IDTA number: %r" % named
+
+    already = planned & vendored
+    assert not already, (
+        "the roadmap plans %s and this tree already ships %s"
+        % (sorted(already), sorted(already)))
+    assert _SET_SIZES.get(size.lower()) == len(vendored) + len(planned), (
+        "the roadmap says the set would be %s and it would be %d: %d "
+        "vendored plus %d planned"
+        % (size.lower(), len(vendored) + len(planned), len(vendored),
+           len(planned)))

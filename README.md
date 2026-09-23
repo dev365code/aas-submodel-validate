@@ -136,6 +136,8 @@ Five of the 219, in the words the tool actually prints:
 
 Each of those five carries an `at`, a `saw` where there is evidence to show, the clause it reads from, and a sentence saying what to change.
 
+The long version is [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md) — case by case, with the file to paste, the command to run, the sentence it prints and where that sentence is read from.
+
 ## Where it sits
 
 ```mermaid
@@ -274,7 +276,8 @@ timeline
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
     Building : Deeper coverage of the six templates already supported
-    Planned : Further IDTA templates, chosen by what people bring
+    Planned : IDTA 02011 Hierarchical Structures and 02007 Software Nameplate — the two that would make the supported set eight
+            : Further IDTA templates beyond those, chosen by what people bring
             : The rest of the battery obligation index, once a rule can read a battery's category
             : An evidence bundle a reviewer can file — one command, report plus provenance
             : Cross-checks with neighbouring standards — VDI 2770, iiRDS

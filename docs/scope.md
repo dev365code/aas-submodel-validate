@@ -135,9 +135,23 @@ unasked mandatory row to a finding. That is not specific to one edition of
 the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
 #23 record it.
 
-One published template written in the `Multiplicity` spelling is still
-not vendored: **IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14
-mandatory), measured from the published template at the upstream pin.
-Until its table is added, a submodel of it draws `SMT-D1` — or can be
-judged with `--template` against the published template file, with the
-limits above.
+Two published templates are named on the roadmap and both are still not
+vendored. Until a table is added for one, a submodel of it draws
+`SMT-D1` on a default run — or can be judged with `--template` against the published
+template file, with the limits above.
+
+**IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14 mandatory,
+measured from the published template at the upstream pin) states its
+cardinalities only in the older `Multiplicity` spelling. That spelling is
+read (`docs/divergences.md` #50), so what is missing for this one is the
+vendored table and the readings that go with it, not a way to read the
+file.
+
+**IDTA 02011 Hierarchical Structures** declares a `Node` that holds a
+`Node`, to any depth. What exists for it today is the reading rather than
+the table: a self-containing element is marked and its repeating child
+left unexpanded, so a generated table stays finite, and a run against
+such a template reports how many nested copies it did not enter and where
+each one sits. What is missing is the walk that re-applies the scope at
+depth, which `docs/divergences.md` #48 settles against the first such
+template vendored.

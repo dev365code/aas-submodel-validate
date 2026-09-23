@@ -9,6 +9,7 @@ include docs/report-schema.md
 include docs/rule-coverage.json
 include docs/scope.md
 include docs/time-budget.json
+include docs/what-it-catches.md
 include docs/assets/door.svg
 include docs/assets/verdict.svg
 graft .github
