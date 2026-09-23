@@ -517,12 +517,17 @@ def test_the_count_leaves_out_what_the_old_version_was_never_asked(
     if aside:
         assert ("%d of 2 are asked with an option %s does not have"
                 % (aside, tag)) in printed
+        # Set aside, not dropped: what the working tree makes of it is
+        # printed, because a case that stopped being judgeable at all is
+        # worth seeing even when there is nothing to compare it with.
+        assert "a template no pack has" in printed
     else:
+        # Compared like any other, so it is named only if it moved. This
+        # line stood outside the branch until the first tree whose
+        # released reader has the option -- the bump after the release
+        # that shipped it -- and failed there: "both worlds are
+        # asserted" had not yet been true of the second one.
         assert "does not have" not in printed, printed
-    # Set aside, not dropped: what the working tree makes of it is
-    # printed, because a case that stopped being judgeable at all is
-    # worth seeing even when there is nothing to compare it with.
-    assert "a template no pack has" in printed
 
 
 def test_every_case_that_carries_a_table_is_judged_with_it(corpus):
