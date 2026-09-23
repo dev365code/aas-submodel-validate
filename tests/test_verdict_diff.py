@@ -247,3 +247,153 @@ def test_the_comparison_says_what_it_does_not_cover(corpus):
         "the corpus %s judged with --template (%d case(s)) and the summary "
         "%s say so" % ("is" if carried else "is not", len(carried),
                        "does" if warns else "does not"))
+
+
+@pytest.fixture(scope="module")
+def released_tree(tmp_path_factory):
+    """The tree of the tag this comparison runs against by default.
+
+    Taken out of git rather than installed, the way the tool takes it --
+    0.08s measured, which is what makes asking the real released reader
+    affordable here instead of a stand-in built to answer the way this
+    test wants.
+    """
+    import subprocess
+
+    tag = subprocess.run(["git", "-C", str(ROOT), "tag", "--sort=-v:refname"],
+                         capture_output=True, text=True, check=True)
+    latest = tag.stdout.split("\n", 1)[0].strip()
+    assert latest, "no tag to compare against"
+    into = tmp_path_factory.mktemp("released")
+    archive = subprocess.run(["git", "-C", str(ROOT), "archive", latest],
+                             capture_output=True, check=True)
+    subprocess.run(["tar", "-x", "-C", str(into)], input=archive.stdout, check=True)
+    return latest, into / "src"
+
+
+def _a_template_case(tmp_path):
+    """An input and a table for it, the smallest pair that needs the flag."""
+    identifier = "urn:example:verdict-diff:no-pack-answers-for-this"
+
+    def ref(value):
+        return {"type": "GlobalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    from builders import env_json
+
+    template = tmp_path / "own-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "kind": "Template", "idShort": "SomethingNobodyVendored",
+        "id": "urn:example:verdict-diff:template",
+        "semanticId": ref(identifier),
+        "submodelElements": [{
+            "modelType": "Property", "idShort": "SerialNumber",
+            "semanticId": ref(identifier + "/SerialNumber"),
+            "valueType": "xs:string",
+            "qualifiers": [{"type": "SMT/Cardinality", "valueType": "xs:string",
+                            "value": "One"}]}]}]}), encoding="utf-8")
+    document = tmp_path / "declares-it.json"
+    document.write_bytes(env_json(identifier))
+    return verdict_diff.Case("a template no pack has", document, template=template)
+
+
+def test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved(
+        released_tree, tmp_path):
+    """`--template` is new, and new is not moved.
+
+    The released reader answers a case carrying it with `unrecognized
+    arguments` and exit 64 -- measured, not assumed. Compared as a
+    verdict that is a difference, and every template case would land in
+    the moved list the day the option shipped: true, useless, and it
+    buries the one input whose verdict actually changed. The same
+    mistake this file made over `rulesNotAsked`, which is why that one
+    is counted apart too.
+    """
+    tag, old_src = released_tree
+    case = _a_template_case(tmp_path)
+
+    # What the comparison would have had to work with, stated rather
+    # than assumed: not a verdict, and not one that could be compared.
+    before = verdict_diff._judge(old_src, case)
+    assert before[2] == 64 and before[-1] == "no report", (tag, before)
+    assert (verdict_diff._verdict_of(before)
+            != verdict_diff._verdict_of(verdict_diff._judge(ROOT / "src", case))), (
+        "the two answers are identical, so this case proves nothing")
+
+    assert verdict_diff._comparable(ROOT / "src", case)
+    assert not verdict_diff._comparable(old_src, case), (
+        "%s has no --template and this says it can be asked one" % tag)
+    # And a case with no flag on it is asked of both, which is every
+    # other row in the corpus.
+    assert verdict_diff._comparable(old_src, verdict_diff.Case("plain", case.path))
+
+
+def test_a_probe_that_cannot_run_is_not_an_option_that_is_absent(tmp_path):
+    """False here would empty the comparison and say nothing.
+
+    Every template case is set aside on the strength of this answer, so
+    a probe answering False when it simply could not run turns the whole
+    axis off quietly -- and a quiet instrument reading zero is what this
+    file exists to prevent. It stops instead.
+    """
+    holds_a_reader = tmp_path / "a-tree"
+    package = holds_a_reader / "aas_submodel_validate"
+    package.mkdir(parents=True)
+    (package / "cli.py").write_text("", encoding="utf-8")
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "__main__.py").write_text("raise SystemExit(3)", encoding="utf-8")
+
+    with pytest.raises(RuntimeError) as refused:
+        verdict_diff._has_the_option(holds_a_reader, "--template")
+    assert "which options it has" in str(refused.value)
+
+
+def test_a_tree_with_no_reader_in_it_does_not_get_answered_by_the_machine(tmp_path):
+    """The quieter half of the same failure, and this one is measured.
+
+    `PYTHONPATH` comes before site-packages, so a tree holding the
+    package answers for it -- and a tree that does not lets whatever is
+    installed answer instead. This project *is* installed on the machine
+    this was written on, so pointing the comparison at a tree with no
+    reader in it produced a confident `--help`, a real verdict on every
+    input, and both sides agreeing because both sides were the same
+    reader. `--against` a tag from before the `src/` layout is the way
+    somebody meets this, and it reads as "nothing moved".
+    """
+    empty = tmp_path / "no-package-here"
+    empty.mkdir()
+    with pytest.raises(RuntimeError) as refused:
+        verdict_diff._has_the_option(empty, "--template")
+    assert "holds no reader" in str(refused.value)
+
+
+def test_the_count_leaves_out_what_the_old_version_was_never_asked(
+        released_tree, tmp_path, capsys):
+    """The denominator is a claim, and it is the one that gets quoted.
+
+    "0 of 65 inputs are judged differently" over a corpus where four of
+    the sixty-five were never put to the old reader is a true sentence
+    that reads as a false one. So the cases nobody could ask are named
+    above the count, and taken out of it.
+
+    Measured through `compare` rather than read off the source, which is
+    why it is a parameter: a test that had to build all sixty-one inputs
+    and run two readers over each would be a test nobody runs.
+    """
+    tag, old_src = released_tree
+    corpus = [verdict_diff.Case("the official example, untouched",
+                                verdict_diff.EXAMPLE),
+              _a_template_case(tmp_path)]
+
+    counts = verdict_diff.compare(tag, old_src, corpus)
+    printed = capsys.readouterr().out
+
+    assert counts["unanswerable"] == 1, printed
+    assert counts["compared"] == len(corpus) - 1
+    assert ("%d of %d inputs are judged differently."
+            % (counts["moved"], counts["compared"])) in printed
+    assert ("1 of 2 are asked with an option %s does not have" % tag) in printed
+    # Set aside, not dropped: what the working tree makes of it is
+    # printed, because a case that stopped being judgeable at all is
+    # worth seeing even when there is nothing to compare it with.
+    assert "a template no pack has" in printed

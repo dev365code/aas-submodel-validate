@@ -317,6 +317,36 @@ TABLE = [
      "it -- measured: the static half passes this and the run fails it, "
      "which is the division of labour the two tests claim"),
 
+    ("template/the-flag-a-case-carries-reaches-the-reader",
+     "tools/verdict_diff.py",
+     '        argv += ["--template", str(case.template)]',
+     '        pass',
+     ["tests/test_verdict_diff.py::"
+      "test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved"],
+     "a case can carry a table and the comparison can drop it on the way to "
+     "the reader, and then the corpus looks like it covers the mode while "
+     "judging every one of those inputs with the packs instead"),
+
+    ("template/a-question-the-old-version-cannot-be-asked-is-not-a-move",
+     "tools/verdict_diff.py",
+     '    return case.template is None or _has_the_option(src, "--template")',
+     '    return True',
+     ["tests/test_verdict_diff.py::"
+      "test_the_count_leaves_out_what_the_old_version_was_never_asked"],
+     "a release that predates the option answers `unrecognized arguments` and "
+     "exits 64; counted as a verdict, every template case joins the moved "
+     "list the day the option ships and buries the one that moved"),
+
+    ("template/a-tree-with-no-reader-is-not-a-version",
+     "tools/verdict_diff.py",
+     '    if not (src / "aas_submodel_validate" / "cli.py").is_file():',
+     '    if False:',
+     ["tests/test_verdict_diff.py::"
+      "test_a_tree_with_no_reader_in_it_does_not_get_answered_by_the_machine"],
+     "PYTHONPATH is searched before site-packages, so a tree holding no "
+     "package lets an installed copy answer for it -- both sides become one "
+     "reader, every input agrees with itself, and the tool prints 0 moved"),
+
     ("rules/the-corpus-can-see-a-two-category-verdict",
      "tools/verdict_diff.py",
      'for seat, stated in enumerate(("ev", "lmt"))',

@@ -556,6 +556,74 @@ def _judge(src: Path, case: Case):
     return (tuple(ours), relayed, run.returncode, not_asked)
 
 
+def _must_hold_a_reader(src: Path) -> Path:
+    """`src` is a tree this comparison is about to import a reader from.
+
+    `PYTHONPATH` is searched before site-packages, so a tree holding the
+    package answers for it. A tree *not* holding it answers nothing and
+    the question goes to whatever is installed on the machine -- and
+    this project is installed on the machine that wrote this. Then both
+    sides of the comparison are the same reader, every input agrees with
+    itself, and the tool prints `0 moved` in the most convincing way it
+    knows: an archive of a tag that predates the `src/` layout does this
+    without a word.
+    """
+    if not (src / "aas_submodel_validate" / "cli.py").is_file():
+        raise RuntimeError(
+            "%s holds no reader to ask -- an installed copy would answer in "
+            "place of the version meant, and agree with itself" % src)
+    return src
+
+
+#: One answer per source tree and option, because the question costs a
+#: whole interpreter and does not change between inputs.
+_OPTIONS: dict = {}
+
+
+def _has_the_option(src: Path, option: str) -> bool:
+    """Whether the version in `src` offers the option a case wants.
+
+    Asked of the version rather than read off its number. A case judged
+    with `--template` cannot be compared against a release that predates
+    the flag: measured, v0.4.1 answers `unrecognized arguments` and exits
+    64, which is not a verdict on anything. Counting that as a verdict
+    that moved would put every such case in the moved list on the day the
+    option landed -- true, and it buries whatever actually moved, which
+    is the mistake this file already made once over `rulesNotAsked`.
+
+    A probe that fails is not an absence. If the reader will not run, or
+    prints no usage at all, this stops instead of answering False for
+    every option -- False here empties the comparison quietly, and an
+    instrument that goes silent when its own probe breaks is the failure
+    this whole file is written against.
+    """
+    key = (str(src), option)
+    if key not in _OPTIONS:
+        _must_hold_a_reader(src)
+        asked = subprocess.run(
+            [sys.executable, "-m", "aas_submodel_validate", "--help"],
+            capture_output=True, text=True, timeout=_PATIENCE,
+            env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
+                 "PYTHONIOENCODING": "utf-8"})
+        if asked.returncode != 0 or "usage:" not in asked.stdout:
+            raise RuntimeError(
+                "could not ask the version in %s which options it has "
+                "(exit %d): %s" % (src, asked.returncode,
+                                   (asked.stderr or asked.stdout).strip()[:200]))
+        _OPTIONS[key] = option in asked.stdout
+    return _OPTIONS[key]
+
+
+def _comparable(src: Path, case: Case) -> bool:
+    """Whether the version in `src` can be asked this case at all.
+
+    The one place a case's field is turned into the option it needs, so
+    that adding a field means adding it here and not in each of the two
+    readers.
+    """
+    return case.template is None or _has_the_option(src, "--template")
+
+
 def _verdict_of(judged):
     """The part a pipeline acts on. `rulesNotAsked` is deliberately not
     in here: it changes no exit code and fails no build."""
@@ -610,70 +678,115 @@ def main(argv=None):
         archive = subprocess.run(["git", "-C", str(ROOT), "archive", tag],
                                  capture_output=True, check=True)
         subprocess.run(["tar", "-x", "-C", str(old)], input=archive.stdout, check=True)
+        # Before a single input is judged, because the answer to "did
+        # that tag lay its package out this way" is not one to find out
+        # from a column of zeroes.
+        _must_hold_a_reader(old / "src")
 
         corpus = build_corpus(workspace)
-        print("%s -> working tree, over %d inputs\n" % (tag, len(corpus)))
-
-        moved = 0
-        gained_the_key, reshaped = 0, 0
-        for case in corpus:
-            before = _judge(old / "src", case)
-            after = _judge(ROOT / "src", case)
-            # Counted apart, and stated once at the end. A key one
-            # version does not have is a change of shape, and if it is
-            # folded into "judged differently" every input moves the day
-            # it lands.
-            if len(before) > 3 and len(after) > 3:
-                if before[3] is None and after[3] is not None:
-                    gained_the_key += 1
-                elif before[3] != after[3]:
-                    reshaped += 1
-            if _verdict_of(before) == _verdict_of(after):
-                continue
-            moved += 1
-            print("  %s" % case.label)
-            print("      %-14s %s" % (tag, _describe(before)))
-            print("      %-14s %s" % ("working tree", _describe(after)))
-            gone = sorted(set(before[0]) - set(after[0]))
-            new = sorted(set(after[0]) - set(before[0]))
-            # Named with the element, because a finding can be the same
-            # rule at the same severity and still be about a different
-            # element -- which is the whole reason the subject is compared
-            # at all. Without it this prints "no longer drawn: CI-E02"
-            # directly above "newly drawn: CI-E02" and leaves a reader to
-            # guess what moved.
-            if gone:
-                print("      no longer drawn: %s" % ", ".join(_named(f) for f in gone))
-            if new:
-                print("      newly drawn:     %s" % ", ".join(_named(f) for f in new))
-            print()
-
-        print("%d of %d inputs are judged differently." % (moved, len(corpus)))
-        if gained_the_key:
-            print("%d of %d gained `summary.rulesNotAsked`, which is additive and "
-                  "moves no verdict -- a consumer that does not read the key sees "
-                  "what it saw before." % (gained_the_key, len(corpus)))
-        if reshaped:
-            print("%d of %d report a different `summary.rulesNotAsked` between two "
-                  "versions that both have it. That is not a verdict either, and it "
-                  "is the one place a reader learns a rule stopped being put."
-                  % (reshaped, len(corpus)))
-        print("Every one of them belongs in the CHANGELOG, and the ones whose "
-              "exit code falls belong there twice: a pipeline that is red on "
-              "them today goes quiet, and nothing downstream reports that.")
-        # What the number does not cover, printed beside it rather than
-        # left to somebody's memory. `_judge` runs the tool with no flag
-        # but `-f json`, so a zero here is silent about every verdict
-        # `--template` decides -- and `_judge`'s own docstring is where
-        # this project wrote down that a zero from a comparison with no
-        # case for the change is the failure this tool exists to stop.
-        # A reader quoting the figure in a commit about that mode is
-        # quoting an instrument that was not pointed at it.
-        print("No case here is judged with --template: this compares the "
-              "tool's own packs. A zero above says nothing about a verdict "
-              "a supplied table decided.")
+        compare(tag, old / "src", corpus)
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
+
+
+def compare(tag: str, old_src: Path, corpus, new_src: Path = None) -> dict:
+    """Run both readers over the corpus, print what moved, and return the
+    counts behind the sentences.
+
+    Returned as well as printed because those sentences get copied into
+    a release note: "0 of 61" is an arithmetic claim about a
+    denominator, and until this came out of `main` nothing could ask it
+    anything. The corpus is a parameter for the same reason -- a
+    measurement of the summary that had to build all sixty-one inputs
+    and run two readers over each would not be run.
+    """
+    new_src = new_src or (ROOT / "src")
+    print("%s -> working tree, over %d inputs\n" % (tag, len(corpus)))
+
+    moved = 0
+    gained_the_key, reshaped = 0, 0
+    unanswerable = []
+    for case in corpus:
+        if not _comparable(old_src, case):
+            # Judged by the working tree all the same. The comparison
+            # has nothing to say about it, but a case that stopped
+            # being judgeable at all is worth seeing on the way past.
+            unanswerable.append((case, _judge(new_src, case)))
+            continue
+        before = _judge(old_src, case)
+        after = _judge(new_src, case)
+        # Counted apart, and stated once at the end. A key one
+        # version does not have is a change of shape, and if it is
+        # folded into "judged differently" every input moves the day
+        # it lands.
+        if len(before) > 3 and len(after) > 3:
+            if before[3] is None and after[3] is not None:
+                gained_the_key += 1
+            elif before[3] != after[3]:
+                reshaped += 1
+        if _verdict_of(before) == _verdict_of(after):
+            continue
+        moved += 1
+        print("  %s" % case.label)
+        print("      %-14s %s" % (tag, _describe(before)))
+        print("      %-14s %s" % ("working tree", _describe(after)))
+        gone = sorted(set(before[0]) - set(after[0]))
+        new = sorted(set(after[0]) - set(before[0]))
+        # Named with the element, because a finding can be the same
+        # rule at the same severity and still be about a different
+        # element -- which is the whole reason the subject is compared
+        # at all. Without it this prints "no longer drawn: CI-E02"
+        # directly above "newly drawn: CI-E02" and leaves a reader to
+        # guess what moved.
+        if gone:
+            print("      no longer drawn: %s" % ", ".join(_named(f) for f in gone))
+        if new:
+            print("      newly drawn:     %s" % ", ".join(_named(f) for f in new))
+        print()
+
+    if unanswerable:
+        # Above the count and not below it, because the count's
+        # denominator is what this changes. A reader who takes "0 of
+        # 65" and learns afterwards that four of them were never
+        # asked has already quoted the first number.
+        print("%d of %d are asked with an option %s does not have, so there "
+              "is no earlier verdict for them to move from. They are not in "
+              "the count below. What the working tree says about them:"
+              % (len(unanswerable), len(corpus), tag))
+        for case, after in unanswerable:
+            print("  %s" % case.label)
+            print("      %-14s %s" % ("working tree", _describe(after)))
+        print()
+
+    compared = len(corpus) - len(unanswerable)
+    print("%d of %d inputs are judged differently." % (moved, compared))
+    if gained_the_key:
+        print("%d of %d gained `summary.rulesNotAsked`, which is additive and "
+              "moves no verdict -- a consumer that does not read the key sees "
+              "what it saw before." % (gained_the_key, compared))
+    if reshaped:
+        print("%d of %d report a different `summary.rulesNotAsked` between two "
+              "versions that both have it. That is not a verdict either, and it "
+              "is the one place a reader learns a rule stopped being put."
+              % (reshaped, compared))
+    print("Every one of them belongs in the CHANGELOG, and the ones whose "
+          "exit code falls belong there twice: a pipeline that is red on "
+          "them today goes quiet, and nothing downstream reports that.")
+    # What the number does not cover, printed beside it rather than
+    # left to somebody's memory. `_judge` runs the tool with no flag
+    # but `-f json`, so a zero here is silent about every verdict
+    # `--template` decides -- and `_judge`'s own docstring is where
+    # this project wrote down that a zero from a comparison with no
+    # case for the change is the failure this tool exists to stop.
+    # A reader quoting the figure in a commit about that mode is
+    # quoting an instrument that was not pointed at it.
+    print("No case here is judged with --template: this compares the "
+          "tool's own packs. A zero above says nothing about a verdict "
+          "a supplied table decided.")
+
+    return {"moved": moved, "compared": compared,
+            "unanswerable": len(unanswerable),
+            "gained_the_key": gained_the_key, "reshaped": reshaped}
 
 
 if __name__ == "__main__":
