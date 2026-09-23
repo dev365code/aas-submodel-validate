@@ -448,12 +448,23 @@ def _analyze(ctx, tables) -> Dict:
         # second item was entered in the first.
         per = {"violations": {}, "instances": {}, "near_misses": [],
                "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
-               "unmatched": [], "not_entered": [], "not_examined": []}
+               "unmatched": [], "not_entered": [], "not_examined": [],
+               "reached": set()}
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected,
                                          ("document", "submodel")))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
                in_list=False, citation=tables.TEMPLATE_CITATION, top=True)
+        # Copies of a self-containing element the walk did not reach. Where
+        # the template puts one -- a Node directly inside a Node -- the walk
+        # gives it the copied element's rows; one sitting anywhere else,
+        # inside a container no row describes or beneath a copy of the
+        # wrong kind, was reached by nothing, and saying so is what keeps
+        # the reach of the check on the page (#48).
+        copied = {row["recurses"] for row in tables.ROWS if row.get("recurses")}
+        if copied:
+            per["not_entered"] = _copies_not_reached(
+                submodel.submodel_elements or [], root, copied, per["reached"])
         asked_here = set(per["instances"])
         per["lost_candidates"] = [rule_id for rule_id in per["lost_candidates"]
                                   if rule_id not in asked_here]
@@ -765,13 +776,14 @@ def _matches_row(candidates, main_empty: bool, kind_name: str, row, in_list: boo
     return in_list and main_empty and kind_name == row["kind"]
 
 
-def _repeats_below(element, sid, subject):
-    """Every descendant of `element` carrying `sid`, with where it sits.
+def _copies_not_reached(elements, root, copied, reached):
+    """Every element under `root` carrying one of the `copied` identifiers
+    that the walk did not reach, with where it sits.
 
-    The whole chain and not the immediate children: the walk does not
-    enter the first copy, so it would never meet the second. Measured on
-    a file three deep, counting only the immediate ones reported one
-    copy of two.
+    The whole tree and not the immediate children: a copy the walk did
+    not reach hides the copies inside it from the walk too. Measured on a
+    file three deep, counting only the immediate ones reported one copy
+    of two.
 
     Named by `_subject`, which is what names every other record in this
     module. Spelled `?` here instead, the children of a
@@ -783,17 +795,17 @@ def _repeats_below(element, sid, subject):
     stop, in a walk added beside it that did not call it.
     """
     found = []
-    stack = [(element, subject)]
+    stack = [(elements, root)]
     while stack:
-        parent, where = stack.pop()
-        children = _sub_elements(parent)
+        children, where = stack.pop()
         names = Counter(child.id_short for child in children if child.id_short)
         shared = {name for name, count in names.items() if count > 1}
         for index, child in enumerate(children):
             here = _subject(where, child, index, shared)
-            if sid in element_candidate_values(child):
-                found.append((here, sid))
-            stack.append((child, here))
+            carried = copied & element_candidate_values(child)
+            if carried and id(child) not in reached:
+                found.append((here, sorted(carried)[0]))
+            stack.append((_sub_elements(child), here))
     return found
 
 
@@ -869,7 +881,15 @@ def _kind_grade(row, element, actual, item):
 
 
 def _scope(rows, elements, path: str, result, in_list: bool,
-           citation: str, top: bool = False) -> None:
+           citation: str, top: bool = False, copied=None) -> None:
+    """Judge `elements` against `rows`, and recurse.
+
+    `copied` maps an identifier to the rows of the element that carries
+    it, for every element this walk is inside: what a row marked
+    `recurses` -- a nested copy of an element above it -- is given as its
+    own rows, at whatever depth the copy sits (docs/divergences.md #48).
+    The table stops one level down; an instance stops where it stops,
+    and the walk follows the instance."""
     indexed = [(index, element, element_candidate_values(element),
                 not candidate_values(element.semantic_id))
                for index, element in enumerate(elements)]
@@ -904,6 +924,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         claimed.update(index for index, _ in matched)
         if matched:
             claimed_by[row["id"]] = True
+            result["reached"].update(id(element) for _, element in matched)
 
         # Only kind-matching elements go into `instances`: a Property
         # wearing a File's id is a kind violation (reported below), not a
@@ -1115,22 +1136,20 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                     and reference.type.value != row["sid_type"]:
                 result["reftype_drift"].append(
                     (subject, reference.type.value, row["sid_type"], None))
-            if row["children"]:
-                _scope(row["children"], _sub_elements(element),
+            # A nested copy takes the rows of the element it copies. They
+            # were walked by nobody until 02011 was vendored and settled
+            # how (#48): the run said it had not entered the copies, which
+            # was true and left everything inside them unjudged.
+            below = (copied or {}).get(row["recurses"], ()) if row.get("recurses") \
+                else row["children"]
+            if below:
+                inside = dict(copied or {})
+                if row["sid"] and not row.get("recurses"):
+                    inside[row["sid"]] = row["children"]
+                _scope(below, _sub_elements(element),
                        subject, result,
                        in_list=(row["kind"] == "SubmodelElementList"),
-                       citation=citation)
-            # A row the table marked as containing itself. The repeating
-            # child was left unexpanded so the table stays finite
-            # (docs/divergences.md #48), and nothing here read the
-            # marker -- so an instance's nested copies were walked by
-            # nobody and the report said nothing at all. How to re-apply
-            # the scope is what #48 defers to the first vendored
-            # self-containing template; what cannot wait for that is
-            # saying the copies were not entered.
-            if row.get("recurses"):
-                result["not_entered"].extend(
-                    _repeats_below(element, row["recurses"], subject))
+                       citation=citation, copied=inside)
 
     # What this scope did not enter, and only where the reader has
     # already said something is wrong.

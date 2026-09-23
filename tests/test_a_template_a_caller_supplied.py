@@ -1773,12 +1773,14 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
         dbp_tables,
         dn_tables,
         hd_tables,
+        hs_tables,
         pcf_tables,
         td_tables,
     )
 
     packs = {"02002": contact_tables, "02003": td_tables, "02004": hd_tables,
-             "02006": dn_tables, "02023": pcf_tables, "02035-2": dbp_tables}
+             "02006": dn_tables, "02011": hs_tables, "02023": pcf_tables,
+             "02035-2": dbp_tables}
     data = pathlib.Path(runner.__file__).parent / "data" / "smt"
     seen = 0
     for document in sorted(data.glob("*/*/template.json")):
@@ -2199,40 +2201,28 @@ def _self_containing(tmp_path):
     return document, template
 
 
-def test_a_template_that_contains_itself_says_what_it_did_not_enter(tmp_path):
-    """Silence is the one answer this cannot give.
+def test_a_template_that_contains_itself_is_judged_at_every_depth(tmp_path):
+    """Silence is the one answer this cannot give, and a note is no longer
+    the answer either.
 
-    `tablegen` marks a self-containing element `recurses` and leaves its
-    repeating child unexpanded, so the table stays finite
-    (`docs/divergences.md` #48). Nothing read the marker: the walk
-    descends into `row["children"]`, the repeat is not among them, and an
-    instance's nested copies were judged by nobody. Measured on a file
-    three deep whose two inner copies each omit the template's own
-    mandatory element: no finding, no `rulesNotAsked`, no
-    `unmatchedElements`, `ok` true, exit 0.
-
-    What #48 defers is *how* to re-apply the scope -- the entry and
-    recursion cardinalities are settled against the first vendored
-    self-containing template, and none is vendored. `--template` is what
-    ended the other half of that premise, because a caller can hand one
-    over today. Until the walk re-applies the scope, the reach of the
-    check is a note, the way the battery coverage note is one: it
-    reports what was looked at, not a defect in the file.
+    The template's `Node` holds a `Node`; the file is three deep, and its
+    two inner copies each omit the template's own mandatory `Name`. The
+    first version judged the outermost occurrence and nothing below it --
+    no finding, `ok` true, exit 0 -- and then learned to say in a note
+    that it had not looked inside two copies. The nested `Node` is a row
+    of its own now, and the walk gives each copy the rows of the element
+    it copies (`docs/divergences.md` #48): both omissions are findings,
+    each at the copy that has it, and there is nothing left for the note
+    to say.
     """
     document, template = _self_containing(tmp_path)
     report = runner.run(document, template=template)
-    said = " ".join(report.notes)
-    assert "urn:test:node" in said, (
-        "the run did not enter two nested copies and said nothing about "
-        "them; notes were %r" % report.notes)
-    # The count and the names, not just the identifier. The note's whole
-    # purpose is to state the reach of the check, and asserting only that
-    # it mentions the identifier left the reach unheld: walking the
-    # immediate children instead of the chain reports one copy of two
-    # and passes.
-    assert "2 nested copies" in said, said
-    for where in ("H/Node/Node2", "H/Node/Node2/Node3"):
-        assert where in said, (where, said)
+    missing = sorted(f.violation.subject for f in report.findings
+                     if "'Name'" in f.violation.message)
+    assert missing == ["H/Node/Node2", "H/Node/Node2/Node3"], (
+        missing, [(f.id, f.violation.subject, f.violation.message)
+                  for f in report.findings])
+    assert not [n for n in report.notes if "nested cop" in n], report.notes
 
 
 def _self_containing_list(tmp_path, copies=3):

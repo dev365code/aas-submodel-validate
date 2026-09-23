@@ -44,7 +44,7 @@ Where it stands, template by template:
 - IDTA 02006 Digital Nameplate — done
 - IDTA 02023 Carbon Footprint — done
 - IDTA 02002 Contact Information — done
-- IDTA 02011 Hierarchical Structures — not yet
+- IDTA 02011 Hierarchical Structures — done
 - IDTA 02007 Software Nameplate — not yet
 
 Before 1.0: the two templates named last, by name rather than by count. A
@@ -166,7 +166,7 @@ Before 1.0: every row of the mutation table killed on the tree it ships with, an
 **The vendored templates are pinned and hash-checked.**
 
 ```
-vendored material matches its recorded hashes, and the trees hold nothing else (11 files, pin 11ef33531246)
+vendored material matches its recorded hashes, and the trees hold nothing else (12 files, pin 11ef33531246)
 ```
 
 Reproduce: `python3 tools/vendor_template.py --check` in a clone; CI runs it

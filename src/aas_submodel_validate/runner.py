@@ -558,11 +558,16 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
         # hundred paths would tell a reader neither how much went
         # unexamined nor where to start.
         named = repeats[:NAMED_IN_A_NOTE]
+        # Not "you supplied": 02011 is vendored and self-containing, and
+        # not "the outermost occurrence": a copy where the template puts
+        # one is judged at any depth now (#48). What is left for this note
+        # is a copy the walk did not reach -- inside a container no row
+        # describes, or beneath a copy of the wrong kind.
         report.notes.append(
-            "the template you supplied describes an element that contains "
-            "itself (%s); this reader judges the outermost occurrence and "
-            "did not look inside %d nested cop%s below it (%s). Nothing "
-            "here is a statement about what they hold."
+            "a template here describes an element that contains itself "
+            "(%s); this reader judges a copy where the template puts one, "
+            "and did not reach %d nested cop%s sitting elsewhere (%s). "
+            "Nothing here is a statement about what they hold."
             % (repeats[0][1], len(repeats),
                "y" if len(repeats) == 1 else "ies",
                ", ".join(subject for subject, _ in named)

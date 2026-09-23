@@ -1,6 +1,6 @@
 """What this project covers, and what it deliberately does not.
 
-Six templates are given rule tables. The generator reads a cardinality
+Seven templates are given rule tables. The generator reads a cardinality
 in any of three spellings -- `SMT/Cardinality`, the older `Multiplicity`,
 or a bare `Cardinality` (docs/divergences.md #20, #50) -- so a template
 written in the older spelling is judgeable once vendored. IDTA 02002
@@ -34,6 +34,7 @@ COVERED = {
     "https://admin-shell.io/idta/nameplate/3/0/Nameplate",             # 02006
     "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0",  # 02023
     "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations",    # 02002
+    "https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel",  # 02011
 }
 
 

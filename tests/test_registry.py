@@ -15,6 +15,7 @@ from aas_submodel_validate.rules import (
     engine,
     handover,
     hd_tables,
+    hs_tables,
     pcf_tables,
     profiles,
     td_tables,
@@ -223,7 +224,7 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #: truncated repr of 87 Rule objects names nothing. Widening the pattern
 #: without moving that assertion would have made the case it was widened
 #: for worse.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI)-E\d+$")
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI|HS)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -236,9 +237,9 @@ def test_every_generated_rule_stops_a_build():
     # count, which is the number this project quotes in its README.
     assert {rule.id for rule in generated} == {
         row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables,
-                                pcf_tables, contact_tables)
+                                pcf_tables, contact_tables, hs_tables)
         for row in tables.ROWS}
-    assert len(generated) == 178
+    assert len(generated) == 189
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -289,6 +290,7 @@ NAMESPACES = {
     r"PCF-E\d+": "IDTA 02023, generated from the template's rows",
     r"PCF-D\d+": "IDTA 02023, what the template file cannot say",
     r"CI-E\d+": "IDTA 02002, generated from the template's rows",
+    r"HS-E\d+": "IDTA 02011, generated from the template's rows",
 }
 
 
@@ -492,7 +494,9 @@ REMEDIES = {
         "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 "
         "for Carbon Footprint (IDTA 02023); "
         "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations "
-        "for Contact Information (IDTA 02002). If it means a template "
+        "for Contact Information (IDTA 02002); "
+        "https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel "
+        "for Hierarchical Structures (IDTA 02011). If it means a template "
         "this tool has no table for, "
         "leave the identifier alone -- it is doing its job, and this "
         "finding only says nothing here judged the submodel against a "

@@ -19,6 +19,9 @@ License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
     (IDTA 02023 1.0 Carbon Footprint template, unmodified)
   - aas_submodel_validate/data/smt/02002/1.0.1/template.json
     (IDTA 02002-1-0-1 Contact Information template, unmodified)
+  - aas_submodel_validate/data/smt/02011/1.1.1/template.json
+    (IDTA 02011-1-1-1 Hierarchical Structures enabling Bills of Material
+    template, unmodified)
   - aas_submodel_validate/data/example/idta-02004-2.0.aasx
     (IDTA 02004 2.0 Handover Documentation example package, unmodified
     -- defects and all, which is why it is worth shipping)

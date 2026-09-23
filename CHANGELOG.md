@@ -50,8 +50,30 @@ a supplied template's -- is now charged in `unmatchedElements` with the
 rules both tables lost there. It was charged with one table's, and the
 other's stayed in `rulesNotAsked` with no element beside them.
 
-It is still 221 rules, 178 generated from the vendored official template
-files, across six template packs. What this reader takes in is
+**IDTA 02011 Hierarchical Structures enabling Bills of Material is the
+seventh template pack.** A submodel of it was reported as not matched
+(`SMT-D1`) and left by 1; it is judged now against eleven rows generated
+from the vendored 1.1.1 template -- the entry node, its nodes, their three
+relationships, `BulkCount` and `ArcheType` -- and a conformant one leaves
+by 0. A pipeline that is red on such a file today goes quiet, and nothing
+downstream reports that, so it is said here. A bill of material is a
+tree: a `Node` holds `Node`s of its own identifier to any depth, the
+template writes that out one level down and stops, and the walk gives
+each nested node the rows of the node it copies, so a defect four levels
+down is judged as one at the first. A relationship's two ends are not
+read, because the template leaves them unconstrained; `docs/scope.md`
+names that and the rest of what this pack does not check.
+
+The same walk serves a template supplied with `--template`: an element
+the template declares inside itself is judged at every depth where the
+template puts one. Such a run used to judge the outermost occurrence and
+say in a note that it had not looked inside the copies; a file whose
+nested copies break the template -- clean before -- now draws those
+findings and leaves by 1. The note remains for a copy sitting somewhere
+the template does not put one, which the walk does not reach.
+
+It is 232 rules, 189 generated from the vendored official template files,
+across seven template packs. What this reader takes in is
 unchanged: one document at 64 MiB, a container's parts at 64 MiB each
 and 256 MiB together, and a container's directory of names at 16 MiB.
 

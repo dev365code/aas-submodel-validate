@@ -301,7 +301,8 @@ def _cardinality_words(card):
     return "any number of"
 
 
-def _rows(element, parent_label, parent_id, counter, pack, in_list=False):
+def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
+          repeats=None):
     """One row, and its children's rows -- or None where the template
     describes open content rather than an obligation (see `skip_sids`).
     The check comes before the counter so skipped subtrees leave no gap in
@@ -356,31 +357,35 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False):
     # of elements; only what declares a modelType is a child here.
     my_sid = _primary_sid(element)
     sub_elements = []
-    for _container in ("value", "statements"):
+    # A nested copy is not expanded: the walk gives it the rows of the
+    # element it copies, at whatever depth it sits (`repeats`, below).
+    for _container in (() if repeats else ("value", "statements")):
         _items = element.get(_container)
         if isinstance(_items, list):
             sub_elements.extend(_items)
     # A self-containing element -- an Entity or SubmodelElementCollection
     # whose own child repeats its semanticId (02011's Node holds a Node) --
-    # is a recursion point: mark it and leave the repeating child
-    # unexpanded, so the table stays finite (docs/divergences.md #48).
-    # Only these two kinds, the shapes the standard nests: a
-    # SubmodelElementList and its item share one identifier by design (#39)
-    # but are a list with one item kind, not self-containment, and no other
-    # kind reaches a child through `value`/`statements`. Direct
-    # self-containment only; indirect (A in B in A) is out of scope.
-    recurses = None
+    # gives that child a row of its own, as the template gives it an
+    # element of its own: its cardinality is the template's, which 02011
+    # makes 0..* inside a Node where the Node itself is 1..* inside the
+    # entry. The child's row is marked `recurses` and not expanded, so the
+    # table stays finite and the walk re-applies the copied element's rows
+    # to it at any depth (docs/divergences.md #48). Only these two kinds,
+    # the shapes the standard nests: a SubmodelElementList and its item
+    # share one identifier by design (#39) but are a list with one item
+    # kind, not self-containment, and no other kind reaches a child
+    # through `value`/`statements`. Direct self-containment only; indirect
+    # (A in B in A) is out of scope.
     children = []
     for child in sub_elements:
         if not (isinstance(child, dict) and "modelType" in child):
             continue
-        if (my_sid and _primary_sid(child) == my_sid
-                and child["modelType"] == element["modelType"]
-                and element["modelType"] in ("Entity", "SubmodelElementCollection")):
-            recurses = my_sid
-            continue
+        copies = (my_sid and _primary_sid(child) == my_sid
+                  and child["modelType"] == element["modelType"]
+                  and element["modelType"] in ("Entity", "SubmodelElementCollection"))
         child_row = _rows(child, label, row_id, counter, pack,
-                          in_list=element["modelType"] == "SubmodelElementList")
+                          in_list=element["modelType"] == "SubmodelElementList",
+                          repeats=my_sid if copies else None)
         if child_row is not None:
             children.append(child_row)
     #: What this row answers to. An element the template identifies with
@@ -424,8 +429,8 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False):
         "fix": fix,
         "children": tuple(children),
     }
-    if recurses is not None:
-        row["recurses"] = recurses
+    if repeats:
+        row["recurses"] = repeats
     if unidentified:
         row["unidentified"] = True
     if declares_idshort and allowed_idshort is None:

@@ -96,6 +96,12 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02002/1.0.1/template.json":
         "published/Contact Information/1/0/1/"
         "IDTA 02002-1-0-1_Template_ContactInformation.json",
+    # 02011's `Node` holds a `Node` of its own identifier, to any depth, and
+    # the template writes that out one level down and stops
+    # (docs/divergences.md #48). 1.1.1 is the newest edition at the pin.
+    "src/aas_submodel_validate/data/smt/02011/1.1.1/template.json":
+        "published/Hierarchical Structures enabling Bills of Material/1/1/1/"
+        "IDTA 02011-1-1-1_Template_HSEBoM.json",
 }
 
 

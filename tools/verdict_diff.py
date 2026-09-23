@@ -342,6 +342,29 @@ def build_corpus(into: Path):
     contact.write_text(json.dumps(contact_env()), encoding="utf-8")
     cases.append(Case("a valid Contact Information submodel", contact))
 
+    # A Hierarchical Structures submodel, and one whose defect sits below
+    # anything the template spells out. The first shows IDTA 02011 land --
+    # SMT-D1 and exit 1 without the table, judged and exit 0 with it; the
+    # second is what the table alone could not judge: a node four levels
+    # down, reached only because the walk gives a nested node the rows of
+    # the node it is in.
+    from builders import HS, _sid, hs_env  # noqa: E402
+    tree = into / "hierarchical-structures-valid.json"
+    tree.write_text(json.dumps(hs_env()), encoding="utf-8")
+    cases.append(Case("a valid Hierarchical Structures submodel", tree))
+    deep = hs_env()
+    shaft = deep["submodels"][0]["submodelElements"][0]["statements"][0]["statements"][0]
+    shaft["statements"].append({
+        "idShort": "Nut", "modelType": "Entity", "semanticId": _sid(HS + "Node/1/0"),
+        "entityType": "SelfManagedEntity", "globalAssetId": "urn:example:asset:nut",
+        "statements": [{"idShort": "BulkCount", "modelType": "Property",
+                        "valueType": "xs:string", "value": "four",
+                        "semanticId": _sid(HS + "BulkCount/1/0")}]})
+    deeper = into / "hierarchical-structures-deep-defect.json"
+    deeper.write_text(json.dumps(deep), encoding="utf-8")
+    cases.append(Case("a Hierarchical Structures node four levels down, "
+                      "carrying the wrong valueType", deeper))
+
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
     # refusing the file, so a file like this is judged -- and what it is

@@ -93,10 +93,10 @@ the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 
-Six official templates are given rule tables: IDTA 02004 Handover
+Seven official templates are given rule tables: IDTA 02004 Handover
 Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
-part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, and 02002
-Contact Information. A submodel of any other template is reported as not
+part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact
+Information, and 02011 Hierarchical Structures. A submodel of any other template is reported as not
 matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
@@ -123,7 +123,7 @@ submodel judged against that. What that buys and what it does not:
   your file and is not a published IDTA template. **A verdict against a
   template you supplied is not a statement about conformance to a
   published one.**
-- Where your template claims an identifier one of the six packs also
+- Where your template claims an identifier one of the seven packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
 - The `TPL-E*` ids such a run uses are **not ids this project
@@ -159,12 +159,13 @@ submodel judged against that. What that buys and what it does not:
   it is matched by its kind, which is how the published templates write
   one.
 - An element a template declares **inside itself** — 02011 Hierarchical
-  Structures is the published case — is judged at its outermost
-  occurrence only. The table stops at the repeat so that it stays
-  finite, and this reader does not yet re-apply the scope at depth
-  (`docs/divergences.md` #48). The report names the identifier and
-  counts the nested copies it did not look inside, so the reach of the
-  check is on the page rather than in the silence.
+  Structures is the published case — is judged at every depth. The table
+  stops at the repeat so that it stays finite, the repeat is a row of its
+  own at the cardinality the template gives it, and the walk gives each
+  nested copy the rows of the element it copies (`docs/divergences.md`
+  #48). Only an element repeating its own parent is read that way; one
+  repeating an ancestor further up is not a shape any published template
+  uses, and is judged as the table spells it.
 
 The generator reads a row's cardinality from one of three qualifier
 spellings -- the current `SMT/Cardinality`, the older `Multiplicity`, or a
@@ -200,6 +201,21 @@ near-miss lint and no reference-type lint at all. Nothing here promotes an
 unasked mandatory row to a finding. That is not specific to one edition of
 the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
 #23 record it.
+
+IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.1 is a
+tree: a `Node` holds `Node`s of its own identifier, to any depth, and the
+pack judges every level of it -- the entry node and its nodes by count
+and kind, the three relationships by kind, `BulkCount` and `ArcheType`
+by `valueType`. Its pack is generated rows only, and three things are
+left unchecked. A `RelationshipElement`'s two ends are not read: the
+template gives both as `https://admin-shell.io/SMT/General/IntentionallyEmpty`,
+which constrains nothing, so whether `HasPart` points at a part -- or at
+anything that exists -- is not asked (`docs/divergences.md` #56).
+`ArcheType` is not checked against the three words the template's form
+offers (`Full`, `OneDown`, `OneUp`), because a form's choices are an
+editor's convenience and not a stated constraint. And whether the tree the
+relationships draw agrees with the tree the nodes nest is a question this
+pack does not ask.
 
 One published template written in the `Multiplicity` spelling is still
 not vendored: **IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14

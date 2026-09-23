@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 178 rows is how one of them
+extracted, not hand-written: hand-copying 189 rows is how one of them
 silently goes stale. This sentence's number is pinned against the
 generator's own list of packs, and the README's beside it
 (`tests/test_readme_front.py`) -- pinned because it has been wrong
@@ -250,6 +250,22 @@ PACKS = (
         "prefix": "CI-E",
         "source": "IDTA 02002-1-0-1_Template_ContactInformation.json",
         "citation": "IDTA 02002-1-0-1 template",
+        "item_names": {},
+        "example_types": (),
+        "skip_sids": ARBITRARY,
+    },
+    # IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.1:
+    # eleven elements -- three Entities, six RelationshipElements, two
+    # Properties -- each with `SMT/Cardinality`. `Node` holds a `Node` of
+    # its own identifier, which the template writes out one level and the
+    # generator marks rather than expands again (#48). No list, so no item
+    # names; no open content.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02011/1.1.1/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/hs_tables.py",
+        "prefix": "HS-E",
+        "source": "IDTA 02011-1-1-1_Template_HSEBoM.json",
+        "citation": "IDTA 02011-1-1-1 template",
         "item_names": {},
         "example_types": (),
         "skip_sids": ARBITRARY,

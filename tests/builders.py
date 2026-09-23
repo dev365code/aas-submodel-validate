@@ -557,14 +557,22 @@ def _element_matches(element: dict, match_values) -> bool:
     return bool(candidate_values_from_dict(element.get("semanticId")) & set(match_values))
 
 
+def _children_of(element: dict):
+    """Where an element keeps its submodel elements, or None: a collection
+    or list in `value`, an Entity in `statements` (aas-core3)."""
+    key = {"SubmodelElementCollection": "value", "SubmodelElementList": "value",
+           "Entity": "statements"}.get(element.get("modelType"))
+    return key
+
+
 def _scopes(env: dict):
     """(container list, element) pairs over the whole environment."""
     def walk(container):
         for element in container:
             yield container, element
-            child = element.get("value")
-            if isinstance(child, list) and element.get("modelType") in (
-                    "SubmodelElementCollection", "SubmodelElementList"):
+            key = _children_of(element)
+            child = element.get(key) if key else None
+            if isinstance(child, list):
                 yield from walk(child)
     for submodel in env["submodels"]:
         yield from walk(submodel.get("submodelElements", []))
@@ -582,10 +590,11 @@ def strip_row(env: dict, row, tables) -> dict:
     if parent is None:
         containers = [env["submodels"][0]["submodelElements"]]
     else:
-        containers = [element["value"]
+        containers = [element[_children_of(element)]
                       for _container, element in _scopes(env)
                       if _element_matches(element, parent["match"])
-                      and isinstance(element.get("value"), list)]
+                      and _children_of(element)
+                      and isinstance(element.get(_children_of(element)), list)]
     for container in containers:
         for element in list(container):
             if _element_matches(element, row["match"]):
@@ -649,7 +658,7 @@ def inject(env: dict, parent_row, stubs, tables) -> dict:
         return env
     for _container, element in list(_scopes(env)):
         if _element_matches(element, parent_row["match"]):
-            element.setdefault("value", []).extend(stubs)
+            element.setdefault(_children_of(element) or "value", []).extend(stubs)
     return env
 
 
@@ -845,4 +854,66 @@ def contact_env() -> dict:
                                  "value": "https://admin-shell.io/zvei/"
                                           "nameplate/1/0/ContactInformations"}]},
         "submodelElements": [contact],
+    }]}
+
+
+# --- a fully conformant Hierarchical Structures instance ---------------------
+
+HS = "https://admin-shell.io/idta/HierarchicalStructures/"
+
+
+def _hs_ends(first, second):
+    """A relationship's two ends. The template gives both as
+    `.../SMT/General/IntentionallyEmpty` and constrains neither, so any
+    reference the metamodel accepts will do; these name the assets."""
+    return {"first": _sid(first), "second": _sid(second)}
+
+
+def _hs_node(id_short, asset, statements=()):
+    node = {"idShort": id_short, "modelType": "Entity",
+            "semanticId": _sid(HS + "Node/1/0"),
+            "entityType": "SelfManagedEntity", "globalAssetId": asset}
+    if statements:      # an empty list is a metamodel violation; absent is not
+        node["statements"] = list(statements)
+    return node
+
+
+def hs_env() -> dict:
+    """The golden fixture for IDTA 02011 1.1.1, written by hand for the
+    same reason the others are: a machine whose bill of material is three
+    levels deep -- the machine holds a gearbox and a motor, the gearbox
+    holds a shaft -- so a nested `Node` sits inside a `Node` inside the
+    entry, and every row the template makes mandatory is present at the
+    depth the template asks for it."""
+    shaft = _hs_node("Shaft", "urn:example:asset:shaft", [
+        {"idShort": "BulkCount", "modelType": "Property",
+         "valueType": "xs:unsignedLong", "value": "2",
+         "semanticId": _sid(HS + "BulkCount/1/0")}])
+    gearbox = _hs_node("Gearbox", "urn:example:asset:gearbox", [
+        shaft,
+        dict({"idShort": "HasPart", "modelType": "RelationshipElement",
+              "semanticId": _sid(HS + "HasPart/1/0")},
+             **_hs_ends("urn:example:asset:gearbox", "urn:example:asset:shaft"))])
+    motor = _hs_node("Motor", "urn:example:asset:motor")
+    entry = {"idShort": "EntryNode", "modelType": "Entity",
+             "semanticId": _sid(HS + "EntryNode/1/0"),
+             "entityType": "SelfManagedEntity",
+             "globalAssetId": "urn:example:asset:machine",
+             "statements": [
+                 gearbox, motor,
+                 dict({"idShort": "HasPart", "modelType": "RelationshipElement",
+                       "semanticId": _sid(HS + "HasPart/1/0")},
+                      **_hs_ends("urn:example:asset:machine",
+                                 "urn:example:asset:gearbox"))]}
+    return {"submodels": [{
+        "id": "urn:example:hierarchical-structures",
+        "idShort": "HierarchicalStructures", "modelType": "Submodel",
+        "semanticId": {"type": "ModelReference",
+                       "keys": [{"type": "Submodel",
+                                 "value": HS + "1/1/Submodel"}]},
+        "submodelElements": [
+            entry,
+            {"idShort": "ArcheType", "modelType": "Property",
+             "valueType": "xs:string", "value": "Full",
+             "semanticId": _sid(HS + "ArcheType/1/0")}],
     }]}

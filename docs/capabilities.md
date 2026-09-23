@@ -1,20 +1,20 @@
 | Axis | Now | 1.0 condition |
 |---|---|---|
-| Coverage | 02004, 02003, 02035-2, 02006, 02023, 02002 | + 02011, 02007 |
+| Coverage | 2004, 2003, 2035-2, 2006, 2023, 2002, 2011 | + 02007 |
 | Explanation | what is wrong, remedy, requirement | + evidence, the line in the file |
 | Report contract | schemaVersion, exit codes, schema page | + a golden report |
 | Entrances | command line, single file | + Python library, GitHub Action, browser |
 | Input safety | read budgets, advisory | + own mutations, encodings |
 | Upstream | pinned by commit | + checked for upstream change, one pin move shipped |
 
-**Coverage** — 6 of 8:
-- IDTA 02004 Handover Documentation — done (`docs/scope.md`: "Six official templates are given rule tables: IDTA 02004 Handover Documentation")
-- IDTA 02003 Technical Data — done (`docs/scope.md`: "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data")
-- IDTA 02035-2 Digital Battery Passport, part 2 — done (`docs/scope.md`: "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2")
-- IDTA 02006 Digital Nameplate — done (`docs/scope.md`: "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate")
-- IDTA 02023 Carbon Footprint — done (`docs/scope.md`: "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint")
-- IDTA 02002 Contact Information — done (`docs/scope.md`: "Six official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, and 02002 Contact Information")
-- IDTA 02011 Hierarchical Structures — not yet
+**Coverage** — 7 of 8:
+- IDTA 02004 Handover Documentation — done (`docs/scope.md`: "Seven official templates are given rule tables: IDTA 02004 Handover Documentation")
+- IDTA 02003 Technical Data — done (`docs/scope.md`: "Seven official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data")
+- IDTA 02035-2 Digital Battery Passport, part 2 — done (`docs/scope.md`: "Seven official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2")
+- IDTA 02006 Digital Nameplate — done (`docs/scope.md`: "Seven official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate")
+- IDTA 02023 Carbon Footprint — done (`docs/scope.md`: "Seven official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint")
+- IDTA 02002 Contact Information — done (`docs/scope.md`: "Seven official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information")
+- IDTA 02011 Hierarchical Structures — done (`docs/scope.md`: "Seven official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, and 02011 Hierarchical Structures")
 - IDTA 02007 Software Nameplate — not yet
 
 **Explanation** — 3 of 5:

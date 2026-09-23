@@ -1608,6 +1608,27 @@ TABLE = [
      "a container two tables walked kept the larger of its two records, and "
      "seven rules stood in rulesNotAsked with no element beside them"),
 
+    ('hs/a-nested-copy-takes-the-rows-it-copies',
+     'src/aas_submodel_validate/rules/engine.py',
+     '            below = (copied or {}).get(row["recurses"], ()) if row.get("recurses") \\\n',
+     '            below = () if row.get("recurses") \\\n',
+     ['tests/test_generated_rules_hs.py::test_a_defect_below_the_template_is_judged_where_it_is', 'tests/test_a_template_a_caller_supplied.py::test_a_template_that_contains_itself_is_judged_at_every_depth'],
+     'a node four levels down in a bill of material, carrying the wrong valueType, was judged by nobody: the table stops one level down, and until the walk gave a nested copy the rows of the element it copies, the run only said in a note that it had not looked'),
+
+    ('hs/a-copy-the-walk-reached-is-not-reported-missed',
+     'src/aas_submodel_validate/rules/engine.py',
+     '            if carried and id(child) not in reached:\n',
+     '            if carried:\n',
+     ['tests/test_generated_rules_hs.py::test_a_defect_below_the_template_is_judged_where_it_is'],
+     'every nested copy is found by the same walk that names the ones it did not reach; without the reached set the note says the run did not look inside copies it has just judged'),
+
+    ('tablegen/a-copy-is-a-row-at-its-own-cardinality',
+     'src/aas_submodel_validate/tablegen.py',
+     '                          repeats=my_sid if copies else None)\n',
+     '                          repeats=None)\n',
+     ['tests/test_hierarchical_scheme_spec.py::test_a_self_containing_entity_gives_its_copy_a_marked_row'],
+     "02011's nested Node is 0..* where the Node holding it is 1..*; marked as a copy it is walked at any depth, and unmarked it is an ordinary row that stops the walk one level down"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

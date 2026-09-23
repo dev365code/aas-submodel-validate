@@ -15,15 +15,14 @@ the #1 guard below: the generator must not mistake a `SubmodelElementList`
 and its item -- which share one identifier by design (#39) -- for
 self-containment.
 
-These tests encode the *one-row* model of a recursion point: the element
-whose own child repeats its semanticId carries the marker, and that child
-is left unexpanded. The design's alternative -- two rows, an entry edge at
-the outer cardinality and a recursion edge at `0..*`, with the marker on
-the inner -- is not settled, because no template that recurses is vendored
-and the two models cannot be told apart without one. When 02011
-Hierarchical Structures is vendored, that model is settled against the real
-file first, the basis recorded in docs/divergences.md #48, and these tests
-rewritten to match whichever model wins.
+These tests encode the *two-row* model of a recursion point, settled
+against 02011 Hierarchical Structures 1.1.1 once it was vendored
+(docs/divergences.md #48): the template gives the repeating child an
+element of its own with a cardinality of its own -- `Node` is 1..* inside
+the entry and its nested `Node` 0..* inside a `Node` -- so the child gets a
+row of its own, marked `recurses` and not expanded. The one-row model these
+tests held before, the outer element marked and the child dropped, lost
+that second cardinality: the walk would have had to assume one.
 """
 from __future__ import annotations
 
@@ -62,23 +61,41 @@ def test_the_generator_descends_an_entitys_statements():
     assert any(child["label"] == "Node" for child in _row(entry)["children"])
 
 
-def test_a_self_containing_entity_is_marked_recurses():
+def test_a_self_containing_entity_gives_its_copy_a_marked_row():
     """A Node (Entity) whose statements hold a Node of the same semanticId
-    is a recursion point: its row must carry a `recurses` marker naming the
-    repeated identifier, so the walk re-applies the Node rows at any depth
-    rather than the table expanding one level and stopping. The repeating
-    child is left unexpanded, so the row's children do not carry it."""
+    is a recursion point. The nested Node gets a row of its own, at the
+    cardinality the template gives it, marked `recurses` with the repeated
+    identifier so the walk re-applies the outer Node's rows to it at any
+    depth; the outer row carries no marker, and the copy is not expanded,
+    so the table stays finite."""
     node = {"idShort": "Node", "modelType": "Entity",
             "semanticId": _sid("urn:x:Node"),
             "qualifiers": [{"type": "SMT/Cardinality", "value": "OneToMany"}],
             "statements": [{"idShort": "Node", "modelType": "Entity",
                             "semanticId": _sid("urn:x:Node"),
                             "qualifiers": [{"type": "SMT/Cardinality",
-                                            "value": "ZeroToMany"}]}]}
+                                            "value": "ZeroToMany"}],
+                            "statements": [{"idShort": "Deeper", "modelType": "Property",
+                                            "semanticId": _sid("urn:x:Deeper")}]}]}
     row = _row(node)
-    assert row.get("recurses") == "urn:x:Node"
-    # the repeating child is not expanded into a row
-    assert all(child["label"] != "Node" for child in row["children"])
+    assert not row.get("recurses")
+    assert row["card"] == (1, None)
+    [copy] = [child for child in row["children"] if child["sid"] == "urn:x:Node"]
+    assert copy.get("recurses") == "urn:x:Node"
+    assert copy["card"] == (0, None)          # the template's, not assumed
+    assert copy["children"] == ()             # not expanded
+
+
+def test_the_02011_table_is_one_row_per_template_element():
+    """Measured on the vendored file: eleven elements, eleven rows. The
+    nested Node is the only row marked, and it is the one at 0..*."""
+    from aas_submodel_validate.rules import hs_tables  # noqa: E402
+
+    marked = [row for row in hs_tables.ROWS if row.get("recurses")]
+    assert len(hs_tables.ROWS) == 11
+    assert [(row["label"], row["card"]) for row in marked] == [("Node (Node)", (0, None))]
+    [outer] = [row for row in hs_tables.ROWS if row["label"] == "Node (EntryNode)"]
+    assert outer["card"] == (1, None) and not outer.get("recurses")
 
 
 def test_shared_identifier_list_rows_are_never_marked_recurses():
@@ -153,9 +170,12 @@ def test_only_entity_and_collection_self_containment_is_marked():
         el = {"idShort": "N", "modelType": kind, "semanticId": _sid("urn:x:N"),
               container: [{"idShort": "N", "modelType": kind,
                            "semanticId": _sid("urn:x:N")}]}
-        assert g._rows(el, "", None, [0], pack).get("recurses") == "urn:x:N", kind
+        [copy] = g._rows(el, "", None, [0], pack)["children"]
+        assert copy.get("recurses") == "urn:x:N", kind
     are = {"idShort": "R", "modelType": "AnnotatedRelationshipElement",
            "semanticId": _sid("urn:x:R"),
            "value": [{"idShort": "R", "modelType": "AnnotatedRelationshipElement",
                       "semanticId": _sid("urn:x:R")}]}
-    assert g._rows(are, "", None, [0], pack).get("recurses") is None
+    outer = g._rows(are, "", None, [0], pack)
+    assert outer.get("recurses") is None
+    assert all(child.get("recurses") is None for child in outer["children"])
