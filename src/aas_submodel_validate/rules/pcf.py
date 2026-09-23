@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from ..registry import rule
 from . import pcf_tables
-from .engine import analyze, matched_submodels
+from .engine import analyze, install_file_rule, matched_submodels
 
 #: The template's own identity -- one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = pcf_tables.TEMPLATE_SEMANTIC_ID
@@ -49,3 +49,17 @@ for _row in pcf_tables.ROWS:
                % (_row["label"], _row["sid"] or "by structure"),
          spec="%s, SMT/Cardinality qualifier" % pcf_tables.TEMPLATE_CITATION,
          fix=_row["fix"])(_row_check(_row["id"]))
+
+
+# The one question in this file that is not a reading of this
+# template: whether the files its File rows name are in the package.
+# The body is shared and was called from 02004's family alone, so a
+# package of this kind naming parts it does not hold was judged clean.
+# `ExplanatoryStatement` only. The other File row this template declares
+# is `PcfRuleOnlineReference`, which the vendored template describes as an
+# "Online PCF calculation methodology reference" -- the published method a
+# footprint was calculated by, which lives where its publisher put it. Asked
+# whether it is in the container, this rule faulted conformant files for
+# naming it the way such a reference is written (`docs/divergences.md` #55).
+install_file_rule("PCF-D1", pcf_tables, pcf_tables.TEMPLATE_CITATION,
+                  only=("ExplanatoryStatement",))

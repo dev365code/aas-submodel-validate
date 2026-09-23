@@ -150,6 +150,78 @@ def file_part_violations(container, subject, value):
                         subject=subject, detail=value)
 
 
+def install_file_rule(rule_id: str, tables, citation: str, only=None):
+    """Register, for `tables`, the question `file_part_violations` answers.
+
+    The body has been one since two packs' copies of it diverged in the
+    field. What stayed per pack was the *call*: 02004's family installs
+    it with the rest of its hand rules, and a pack outside that family
+    got it only if somebody remembered. Four tables declare File rows and
+    two asked, so a Digital Nameplate naming two images its package does
+    not carry was judged clean -- not because the rule was missing but
+    because nobody asked it on that pack's behalf.
+
+    The labels come from the table (`row["kind"] == "File"`), so a pack
+    whose template gains a File row gains the question with it.
+
+    `only` narrows that, because a File row is not always a file the
+    supplier packs. 02023 declares two and its own vendored description
+    calls one of them an "Online PCF calculation methodology reference"
+    -- a pointer to somebody else's published method. Asked of that row,
+    this rule made it a MUST that a standards body's PDF be inside the
+    supplier's package, and said so in a remedy borrowed from a pack
+    where it is true (`docs/divergences.md` #55). A pack that means
+    fewer than all of its File rows names the ones it means; a name that
+    is not a File row of that table is a mistake and says so here rather
+    than quietly asking nothing.
+    """
+    from ..registry import rule
+
+    declared = tuple(row["label"] for row in tables.ROWS
+                     if row["kind"] == "File")
+    if not declared:
+        raise ValueError(
+            "%s: this table declares no File row, so there is nothing for "
+            "this rule to navigate" % rule_id)
+    if only is None:
+        labels = declared
+    else:
+        unknown = [label for label in only if label not in declared]
+        if unknown:
+            raise ValueError(
+                "%s: %s is not a File row of this table, so narrowing the "
+                "rule to it would ask about nothing"
+                % (rule_id, ", ".join(unknown)))
+        labels = tuple(label for label in declared if label in only)
+
+    @rule(rule_id, kind="template", prio="MUST",
+          title="files named by %s exist in the container"
+                % ", ".join(labels),
+          # Which of a template's File rows are files the supplier packs
+          # is a reading of that template and not of a clause -- IDTA
+          # gives an attachment and a citation the same `modelType` --
+          # so the reading is cited where this project keeps its
+          # readings. `spec` promises "where the requirement lives", and
+          # a template file alone does not say where this one lives.
+          spec="%s; IDTA 01005 (AASX); docs/divergences.md #55" % citation,
+          fix="Add the file to the .aasx under the name this File value "
+              "gives, or correct the value's path. (Declaring an aas-suppl "
+              "relationship for it is X4's question, not this one's.)")
+    def check(ctx):
+        """Only answerable when the input *is* a container; an environment
+        JSON names files this rule cannot see, and silence there is
+        honesty rather than laxity."""
+        container = ctx.loaded.container
+        if container is None:
+            return
+        for label in labels:
+            for subject, element in instances_of(ctx, label, tables):
+                yield from file_part_violations(container, subject,
+                                                getattr(element, "value", None))
+
+    return check
+
+
 def near_miss_violations(ctx, tables):
     """The near-miss lint, for whichever pack asks.
 

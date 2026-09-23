@@ -73,7 +73,7 @@ def test_the_rule_counts_are_the_registrys():
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS))
-    assert len(all_rules()) == 219
+    assert len(all_rules()) == 221
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS),
             len(dn_tables.ROWS), len(pcf_tables.ROWS),
             len(contact_tables.ROWS)) == (38, 26, 22, 30, 26, 36)
@@ -133,7 +133,7 @@ def test_the_rule_counts_are_the_registrys():
                 break
     template_rules = (families["HD"] + families["TD"] + families["DBP"]
                       + families["DN"] + families["PCF"] + families["CI"])
-    assert template_rules == 209, families
+    assert template_rules == 211, families
     assert "%d of them across six IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2

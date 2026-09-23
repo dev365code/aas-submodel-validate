@@ -524,9 +524,11 @@ def test_a_published_number_does_not_move_with_a_flag(tmp_path):
     answers", and the rules a supplied table makes are deliberately not
     registered.
 
-    Measured: it went from 219 to 273 with the flag, and to 221 on a run
-    where the supplied template matched nothing at all. A build reading
-    that number gets one that depends on a caller's file. The template's
+    Measured: counted from the rules actually run it is 221 with no flag
+    and 247 with a twenty-six row template -- the second figure being
+    whatever that file declares. A build reading that number gets one
+    that depends on a caller's argument. (Three fixed figures stood here
+    and all three went stale, so what is written down is the shape.) The template's
     own contribution is already carried, in `provenance.template.rows`,
     which is where a reader who wants it should find it.
     """

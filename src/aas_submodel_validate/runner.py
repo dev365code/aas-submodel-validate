@@ -736,10 +736,15 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     # supplied contributes rules on purpose and registers none of them,
     # and `docs/report-schema.md` says this number is "every rule
     # registered in this build ... the number does not move when a
-    # different template answers". Counted from `rules_to_run` it went
-    # 219 to 273 with the flag, and to 221 on a run where the supplied
-    # template matched nothing -- a published number depending on a
-    # caller's file. What the template contributed is in
+    # different template answers". Counted from the rules actually run
+    # it moves with the caller's file instead: measured here, 221 with
+    # no flag and 247 with a twenty-six row template, and the second
+    # figure is whatever that file happens to declare. A published
+    # number that depends on an argument is not a property of the
+    # build. This comment carried three fixed figures and every one went
+    # stale -- two of them before the count last moved -- so it states
+    # the shape, which is what lasts.
+    # What the template contributed is in
     # `provenance.template.rows`, which is where a reader who wants it
     # should look.
     report.checked = len(all_rules())

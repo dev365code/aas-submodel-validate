@@ -15,7 +15,7 @@ import re
 from ..model import Violation
 from ..registry import rule
 from . import dn_tables
-from .engine import analyze, instances_of, matched_submodels
+from .engine import analyze, install_file_rule, instances_of, matched_submodels
 
 #: The template's own identity -- one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = dn_tables.TEMPLATE_SEMANTIC_ID
@@ -81,3 +81,10 @@ def dn_d1_uri_of_the_product_is_absolute(ctx):
         if not _SCHEME.match(value.strip()):
             yield Violation("URIOfTheProduct is not an absolute URI",
                             subject=subject, detail="%r" % value)
+
+
+# The one question in this file that is not a reading of this
+# template: whether the files its File rows name are in the package.
+# The body is shared and was called from 02004's family alone, so a
+# package of this kind naming parts it does not hold was judged clean.
+install_file_rule("DN-D2", dn_tables, dn_tables.TEMPLATE_CITATION)

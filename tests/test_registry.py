@@ -183,7 +183,7 @@ MUST_RULES = {
     "DBP2-D2", "DBP2-D3", "DBP2-D4", "DBP2-D7",
     "HD-D2", "HD-D3", "HD-D4", "HD-D7", "HD-D8",
     "SMT-D1", "TD-D1", "TD-D2", "X1", "X2", "X3", "X5", "X6",
-    "DN-D1",
+    "DN-D1", "DN-D2", "PCF-D1",
 }
 SHOULD_RULES = {
     "BAT-R2", "BAT-R8",
@@ -287,6 +287,7 @@ NAMESPACES = {
     r"DN-E\d+": "IDTA 02006, generated from the template's rows",
     r"DN-D\d+": "IDTA 02006, what the template file cannot say",
     r"PCF-E\d+": "IDTA 02023, generated from the template's rows",
+    r"PCF-D\d+": "IDTA 02023, what the template file cannot say",
     r"CI-E\d+": "IDTA 02002, generated from the template's rows",
 }
 
@@ -351,6 +352,14 @@ def test_every_declared_namespace_has_at_least_one_rule():
 #: that has stopped shipping is a thing to notice, not a thing to delete
 #: quietly, and HDL1's says the opposite of what it now ships.
 REMEDIES = {
+    "DN-D2":
+        "Add the file to the .aasx under the name this File value gives, "
+        "or correct the value's path. (Declaring an aas-suppl "
+        "relationship for it is X4's question, not this one's.)",
+    "PCF-D1":
+        "Add the file to the .aasx under the name this File value gives, "
+        "or correct the value's path. (Declaring an aas-suppl "
+        "relationship for it is X4's question, not this one's.)",
     "DN-D1":
         "Give URIOfTheProduct an absolute URI -- one with a scheme, e.g. "
         "https://example.com/model-1234/serial-5678. A relative reference "
