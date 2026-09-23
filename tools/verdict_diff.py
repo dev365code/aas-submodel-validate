@@ -771,13 +771,15 @@ def main(argv=None):
     tag = args.against
     if tag is None:
         # The newest tag, which is what "since the released version"
-        # means while a release is being prepared. Run *on* the commit a
-        # release is cut from, after its tag exists, that is this tree's
-        # own tag and the comparison is a tree with itself: zero moved,
-        # trivially. Pass `--against` there. The suite picks differently
-        # -- the newest release below this tree's version -- because a
-        # gate asking what an older reader says must not be handed this
-        # one (`tests/test_verdict_diff.py`, `released_tree`).
+        # means while a release is being prepared -- unless a tag went
+        # out and its release did not, and then the newest tag is a
+        # reader nobody has. Run *on* the commit a release is cut from,
+        # after its tag exists, that is this tree's own tag and the
+        # comparison is a tree with itself: zero moved, trivially. Pass
+        # `--against` in both places. The suite picks differently -- the
+        # newest release the CHANGELOG dates below this tree's version
+        # -- because a gate asking what an older reader says must not be
+        # handed this one (`tests/test_verdict_diff.py`, `released_tree`).
         tags = subprocess.run(["git", "-C", str(ROOT), "tag", "--sort=-v:refname"],
                               capture_output=True, text=True, check=True)
         tag = tags.stdout.split("\n", 1)[0].strip()

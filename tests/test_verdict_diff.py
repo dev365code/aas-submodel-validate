@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import sys
 from pathlib import Path
 
@@ -288,15 +289,17 @@ def released_tree(tmp_path_factory):
     axes all ran on a tree with no tag of its own — and the release
     stopped at its own gate. So: the newest tag *below this tree's
     version*, and a tag whose name is not `vN.N.N` is not a release.
+
+    Nor is every tag below the version a release. A tag is pushed before
+    the job that publishes from it runs, and a job that stops leaves the
+    tag behind in every clone that fetches tags; one version later it is
+    the newest tag below the tree, and a reader nobody was ever given.
+    So the tag must also be one the CHANGELOG dates
+    (`_the_released_reader`, and the table under it).
     """
-    import re
     import subprocess
 
     from aas_submodel_validate import __version__
-
-    def numbers(name):
-        matched = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", name.strip())
-        return tuple(int(part) for part in matched.groups()) if matched else None
 
     try:
         tag = subprocess.run(["git", "-C", str(ROOT), "tag", "--sort=-v:refname"],
@@ -305,19 +308,72 @@ def released_tree(tmp_path_factory):
         pytest.skip("git is not available")
     if tag.returncode != 0:
         pytest.skip("not a git checkout (an unpacked sdist is not one)")
-    ours = numbers("v" + __version__)
-    earlier = [name for name in tag.stdout.split("\n")
-               if numbers(name) and (ours is None or numbers(name) < ours)]
-    if not earlier:
-        pytest.skip("this checkout carries no tag older than %s, so there is "
-                    "no earlier reader here to ask; a clone made at depth 1 "
-                    "and the first release both look like this" % __version__)
-    latest = max(earlier, key=numbers)
+    latest = _the_released_reader(
+        tag.stdout.split("\n"), __version__,
+        (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"))
+    if latest is None:
+        pytest.skip("this checkout carries no tag older than %s that the "
+                    "CHANGELOG dates, so there is no earlier reader here to "
+                    "ask; a clone made at depth 1 and the first release both "
+                    "look like this" % __version__)
     into = tmp_path_factory.mktemp("released")
     archive = subprocess.run(["git", "-C", str(ROOT), "archive", latest],
                              capture_output=True, check=True)
     subprocess.run(["tar", "-x", "-C", str(into)], input=archive.stdout, check=True)
     return latest, into / "src"
+
+
+def _the_released_reader(tags, version, changelog):
+    """The newest `vN.N.N` tag below `version` that `changelog` dates.
+
+    None when there is none. Apart from the fixture so that the choice
+    is asserted by itself: every test handed the reader passes whichever
+    one it gets, because both worlds are asserted there, so a wrong
+    choice would not turn one of them red.
+    """
+    def numbers(name):
+        matched = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", name.strip())
+        return tuple(int(part) for part in matched.groups()) if matched else None
+
+    ours = numbers("v" + version)
+    dated = set(re.findall(r"^## (\d+\.\d+\.\d+) — \d{4}-\d{2}-\d{2}$",
+                           changelog, re.MULTILINE))
+    earlier = [name.strip() for name in tags
+               if numbers(name) and (ours is None or numbers(name) < ours)
+               and name.strip()[1:] in dated]
+    return max(earlier, key=numbers) if earlier else None
+
+
+@pytest.mark.parametrize("tags,version,headings,reader", [
+    # A tag pushed, its release never made, and the tree one version on.
+    # It is the newest tag below the version, and not a release.
+    (["v1.3.0", "v1.2.1", "v1.2.0"], "1.3.1",
+     ["1.3.1 — unreleased", "1.2.1 — 2026-01-02", "1.2.0 — 2026-01-01"],
+     "v1.2.1"),
+    # The job that publishes a release: the tree's own tag is there, and
+    # dated, and is not the reader before it.
+    (["v1.3.0", "v1.2.1"], "1.3.0",
+     ["1.3.0 — 2026-01-03", "1.2.1 — 2026-01-02"], "v1.2.1"),
+    # While one is prepared.
+    (["v1.2.1"], "1.3.0", ["1.3.0 — unreleased", "1.2.1 — 2026-01-02"],
+     "v1.2.1"),
+    # Newest by number, not by spelling.
+    (["v1.10.0", "v1.9.0"], "1.11.0",
+     ["1.10.0 — 2026-01-02", "1.9.0 — 2026-01-01"], "v1.10.0"),
+    # Names that are not releases of this package.
+    (["v1.3.0-rc1", "sdk-v2.0.0", "nightly", "v1.2.1"], "1.3.0",
+     ["1.3.0 — unreleased", "1.2.1 — 2026-01-02"], "v1.2.1"),
+    # No reader: a clone with no tags, a first release, and tags the
+    # CHANGELOG never dated.
+    ([], "1.3.0", ["1.3.0 — unreleased", "1.2.1 — 2026-01-02"], None),
+    (["v1.0.0"], "1.0.0", ["1.0.0 — 2026-01-01"], None),
+    (["v1.2.1"], "1.3.0", ["1.3.0 — unreleased"], None),
+])
+def test_the_reader_asked_is_the_newest_release_the_changelog_dates(
+        tags, version, headings, reader):
+    changelog = "# Changelog\n\n" + "".join("## %s\n\nText.\n\n" % heading
+                                           for heading in headings)
+    assert _the_released_reader(tags, version, changelog) == reader
 
 
 def _a_template_case(tmp_path):
