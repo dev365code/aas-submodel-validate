@@ -493,6 +493,13 @@ def unmatched_elements(ctx) -> List:
 #: Digits inside a subject sort by value, not by spelling.
 _RUN_OF_DIGITS = re.compile(r"(\d+)")
 
+#: How much of a subject the path order reads. A key is one tuple per run
+#: of digits, and every subject carries its whole path: measured, a root
+#: idShort alternating letters and digits cost about 9 MB per element
+#: sorted, so a half-megabyte file would outgrow a 16 GB machine. Past
+#: this the whole subject breaks the tie, as a string.
+_PATH_KEY_CHARACTERS = 2000
+
 
 def _in_path_order(record):
     """A sort key that reads `[2]` as two rather than as the text "2".
@@ -510,9 +517,10 @@ def _in_path_order(record):
     no two different names compare equal.
     """
     subject, identifier = record
-    parts = _RUN_OF_DIGITS.split(subject)
+    parts = _RUN_OF_DIGITS.split(subject[:_PATH_KEY_CHARACTERS])
     return ([(len(part.lstrip("0")), part.lstrip("0"), part) if index % 2
-             else (-1, part, "") for index, part in enumerate(parts)], identifier)
+             else (-1, part, "") for index, part in enumerate(parts)],
+            identifier, subject)
 
 
 def scope_not_examined(ctx) -> List:
@@ -1031,7 +1039,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #: speak, which `docs/divergences.md` #19 promises they do not.
     unplaced = {}
     for index, element, candidates, _main_empty in indexed:
-        if index in claimed or not candidates:
+        # A key that normalises to nothing is no identifier either.
+        if index in claimed or not any(candidates):
             continue
         subject = _subject(path, element, index, shared)
         unplaced.setdefault(type(element).__name__, []).append(

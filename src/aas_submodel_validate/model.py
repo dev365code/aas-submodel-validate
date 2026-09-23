@@ -311,7 +311,10 @@ class NotExamined:
         # place is built from the document's idShorts, the label from the
         # template's, and both halves of each pair come out of the document.
         object.__setattr__(self, "where", _bounded(self.where))
-        object.__setattr__(self, "label", _bounded(self.label))
+        # A supplied template's idShort is whatever its JSON says; a number
+        # there crashed the run on its way through the bound.
+        object.__setattr__(self, "label", _bounded(
+            self.label if self.label is None else str(self.label)))
         object.__setattr__(self, "unclaimed", tuple(
             (_bounded(subject), _bounded(seen)) for subject, seen in self.unclaimed))
 

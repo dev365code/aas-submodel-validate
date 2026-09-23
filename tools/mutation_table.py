@@ -447,15 +447,15 @@ TABLE = [
 
     ('screen/a-place-is-not-hidden-behind-another-places-rule-id',
      'src/aas_submodel_validate/report.py',
-     '    shown = [record for record in report.not_examined',
-     '    shown = [record for record in report.not_examined if not set(record.unasked) & set(report.not_asked)',
+     '        if record.because != "unclaimed-element-present":',
+     '        if record.because != "unclaimed-element-present" or set(record.unasked) & set(report.not_asked):',
      ['tests/test_scope_the_run_did_not_examine.py::test_the_line_says_each_place_once'],
      'subtracting by id what the not-asked clause told about one place hid a second submodel losing the same rule for another reason'),
 
     ('screen/a-near-miss-elsewhere-does-not-hide-the-place',
      'src/aas_submodel_validate/report.py',
-     '                              for subject, _seen in record.unclaimed))]',
-     '                              for subject, _seen in record.unclaimed)) and not report.not_asked]',
+     '        if left > 0:',
+     '        if left > 0 and not report.not_asked:',
      ['tests/test_scope_the_run_did_not_examine.py::test_a_near_miss_elsewhere_does_not_hide_the_place'],
      'a drifted leaf elsewhere in the place sends its rows to rulesNotAsked, and that clause names ids, not the section or what sat beside it'),
 
@@ -468,8 +468,8 @@ TABLE = [
 
     ('screen/two-lists-at-one-place-are-two-lists',
      'src/aas_submodel_validate/report.py',
-     '        lists = {(record.where, record.unclaimed): record.unclaimed_count',
-     '        lists = {record.where: record.unclaimed_count',
+     '        lists = {(record.where, fresh): left for record, fresh, left in shown}',
+     '        lists = {record.where: left for record, fresh, left in shown}',
      ['tests/test_scope_the_run_did_not_examine.py::test_two_lists_at_one_place_are_two_lists'],
      'two kinds unplaced at one place are two lists; keyed by place alone the line said one element for two'),
 
@@ -503,7 +503,7 @@ TABLE = [
 
     ('scope/an-element-with-no-identifier-is-not-counted',
      'src/aas_submodel_validate/rules/engine.py',
-     '        if index in claimed or not candidates:\n            continue\n        subject = _subject(path, element, index, shared)\n        unplaced.setdefault(',
+     '        if index in claimed or not any(candidates):\n            continue\n        subject = _subject(path, element, index, shared)\n        unplaced.setdefault(',
      '        if index in claimed:\n            continue\n        subject = _subject(path, element, index, shared)\n        unplaced.setdefault(',
      ['tests/test_scope_the_run_did_not_examine.py::test_an_element_with_no_identifier_is_not_counted_as_sitting_there'],
      "a container with no identifier is the commonest shape of a manufacturer's own, and counting it made conformant files speak"),
@@ -536,17 +536,10 @@ TABLE = [
      ['tests/test_scope_the_run_did_not_examine.py::test_a_drifted_place_beside_a_sibling_that_entered_it_is_recorded'],
      'rules a sibling item put were taken off a place with a drifted list in it, and the report was the one without the list'),
 
-    ('scope/path-order-compares-digits-as-text',
-     'src/aas_submodel_validate/rules/engine.py',
-     '    return ([(len(part.lstrip("0")), part.lstrip("0"), part) if index % 2',
-     '    return ([(int(part), "", part) if index % 2',
-     ['tests/test_scope_the_run_did_not_examine.py::test_the_path_order_compares_digits_without_converting_them'],
-     'int() refuses more than 4,300 digits on the interpreters CI runs, and one long submodel name made two rules unable to run'),
-
     ('bound/the-label-is-bounded',
      'src/aas_submodel_validate/model.py',
-     '        object.__setattr__(self, "label", _bounded(self.label))',
-     '        object.__setattr__(self, "label", self.label)',
+     '        object.__setattr__(self, "label", _bounded(',
+     '        object.__setattr__(self, "label", (',
      ['tests/test_scope_the_run_did_not_examine.py::test_a_long_name_sitting_there_does_not_grow_the_report'],
      "the label is a template's idShort, text somebody else wrote"),
 
@@ -577,6 +570,48 @@ TABLE = [
      '             tuple((pair.get("subject"),)',
      ['tests/test_verdict_diff.py::test_two_records_that_differ_only_in_what_sat_there_are_two_answers'],
      'the same place under another identifier is another answer'),
+
+    ('screen/element-by-element',
+     'src/aas_submodel_validate/report.py',
+     '        fresh = tuple(pair for pair in record.unclaimed if pair[0] not in accounted)',
+     '        fresh = tuple(record.unclaimed)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_mixed_place_names_only_what_the_line_has_not'],
+     "filtered record by record, a place holding a near-missed container and one of the supplier's own named the first twice"),
+
+    ('screen/sections-are-counted-as-sections',
+     'src/aas_submodel_validate/report.py',
+     '                    % (len(shown), "" if len(shown) == 1 else "s",',
+     '                    % (total, "" if total == 1 else "s",',
+     ['tests/test_scope_the_run_did_not_examine.py::test_the_line_counts_sections_and_elements_each_as_what_they_are'],
+     'one unopened row beside two containers printed as two sections'),
+
+    ('scope/a-blank-identifier-is-none',
+     'src/aas_submodel_validate/rules/engine.py',
+     '        if index in claimed or not any(candidates):',
+     '        if index in claimed or not candidates:',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_blank_identifier_is_no_identifier'],
+     'a key that normalises to nothing was counted as an identifier, and seen came out null'),
+
+    ('bound/a-numbered-label-does-not-crash',
+     'src/aas_submodel_validate/model.py',
+     '            self.label if self.label is None else str(self.label)))',
+     '            self.label))',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_template_row_numbered_rather_than_named_does_not_crash'],
+     "a supplied template's idShort given as a number crashed the run on its way through the bound: a traceback and exit 1"),
+
+    ('screen/names-on-the-line-are-escaped',
+     'src/aas_submodel_validate/report.py',
+     '                        _safe(unasked + examined),\n                        incomplete))',
+     '                        unasked + examined,\n                        incomplete))',
+     ['tests/test_scope_the_run_did_not_examine.py::test_names_on_the_summary_line_are_escaped'],
+     'a raw escape in an idShort cleared the screen and printed a fake ok line over a run with an error in it'),
+
+    ('scope/the-path-key-reads-a-bounded-prefix',
+     'src/aas_submodel_validate/rules/engine.py',
+     '    parts = _RUN_OF_DIGITS.split(subject[:_PATH_KEY_CHARACTERS])',
+     '    parts = _RUN_OF_DIGITS.split(subject)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_the_path_order_reads_a_bounded_prefix'],
+     'a key is one tuple per run of digits over a whole path; alternating letters and digits cost about 9 MB per element'),
 
     ("cost/where-the-files-are-is-not-asked-per-part",
      "src/aas_submodel_validate/container.py",

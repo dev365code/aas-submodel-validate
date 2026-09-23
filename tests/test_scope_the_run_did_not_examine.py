@@ -700,3 +700,121 @@ def test_a_long_name_sitting_there_does_not_grow_the_report(tmp_path):
         _box(sid="urn:vendor:" + "x" * 200_000)]),
         template=_template(tmp_path)).not_examined
     assert len(json.dumps(record.as_dict())) < 4 * MAX_REPORTED_CHARACTERS
+
+
+def _plant(tmp_path, rows):
+    """A template of optional collections `rows` = [(idShort, identifier)],
+    each holding one property, under a submodel `Plant`."""
+    template = tmp_path / "plant-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:planttpl", "idShort": "Plant",
+        "kind": "Template", "semanticId": _sid("urn:test:plant"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": name,
+            "semanticId": _sid(identifier), "qualifiers": [_card("ZeroToOne")],
+            "value": [{"modelType": "Property", "idShort": "Inside",
+                       "semanticId": _sid(identifier + "/Inside"),
+                       "valueType": "xs:string", "qualifiers": [_card("One")]}]}
+            for name, identifier in rows]}]}), encoding="utf-8")
+    return template
+
+
+def _in_plant(tmp_path, name, elements):
+    path = tmp_path / ("%s.json" % name)
+    path.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:plant-1", "idShort": "Plant",
+        "semanticId": _sid("urn:test:plant"), "submodelElements": elements}]}),
+        encoding="utf-8")
+    return path
+
+
+def _container(name, identifier):
+    return {"modelType": "SubmodelElementCollection", "idShort": name,
+            "semanticId": _sid(identifier), "value": []}
+
+
+def test_a_mixed_place_names_only_what_the_line_has_not(tmp_path):
+    """A near-missed container and one of the supplier's own, beside the
+    same unopened row. Filtered record by record, the line named the first
+    twice -- once as not asked and again as sitting there -- and a record
+    whose every neighbour was already named would hide the second."""
+    from aas_submodel_validate.report import render
+
+    template = _plant(tmp_path, [("Box", "https://example.com/ids/box")])
+    line = render(runner.run(_in_plant(tmp_path, "mixed", [
+        _container("Box", "https://example.com/ids/bux"),
+        _container("Mine", "urn:vendor:mine")]), template=template))
+    assert "1 rule not asked (TPL-E02): Plant/Box" in line, line
+    assert ("1 section not examined (Box), beside an element no row "
+            "describes (Plant/Mine)") in line, line
+    assert line.count("Plant/Box") == 1, line
+
+
+def test_the_line_counts_sections_and_elements_each_as_what_they_are(tmp_path):
+    """One unopened row beside two containers, and two unopened rows beside
+    one: sections and elements are counted apart, and each says so in its
+    own number."""
+    from aas_submodel_validate.report import render
+
+    one_row = _plant(tmp_path, [("Box", "urn:test:box")])
+    line = render(runner.run(_in_plant(tmp_path, "two-beside-one", [
+        _container("MineA", "urn:vendor:a"), _container("MineB", "urn:vendor:b")]),
+        template=one_row))
+    assert ("1 section not examined (Box), beside elements no row describes "
+            "(Plant/MineA, Plant/MineB)") in line, line
+
+    two_rows = _plant(tmp_path, [("Box", "urn:test:box"), ("Crate", "urn:test:crate")])
+    line = render(runner.run(_in_plant(tmp_path, "one-beside-two", [
+        _container("Mine", "urn:vendor:mine")]), template=two_rows))
+    assert ("2 sections not examined (Box, Crate), beside an element no row "
+            "describes (Plant/Mine)") in line, line
+
+
+def test_a_blank_identifier_is_no_identifier(tmp_path):
+    """A key whose value normalises to nothing carried no identifier, and
+    was counted as one: `seen` came out null where the page promises a
+    string."""
+    (record,) = runner.run(_in_plant(tmp_path, "blank", [_container("Blank", " ")]),
+                           template=_plant(tmp_path, [("Box", "urn:test:box")])).not_examined
+    assert record.because == "absent", record
+
+
+def test_a_template_row_numbered_rather_than_named_does_not_crash(tmp_path):
+    """A supplied template's idShort is whatever its JSON says. A number
+    there went into the record's label and crashed the run on its way
+    through the bound: a traceback and exit 1, the code for findings."""
+    template = _plant(tmp_path, [("Box", "urn:test:box")])
+    document = json.loads(template.read_text("utf-8"))
+    document["submodels"][0]["submodelElements"][0]["idShort"] = 5
+    template.write_text(json.dumps(document), encoding="utf-8")
+    (record,) = runner.run(_in_plant(tmp_path, "numbered", []),
+                           template=template).not_examined
+    assert record.label == "5", record
+
+
+def test_names_on_the_summary_line_are_escaped(tmp_path):
+    """The summary line carries names the file wrote, and a raw escape
+    there drove the terminal: measured, it cleared the screen and printed a
+    fake "ok" line over a run with an error in it. Both clauses."""
+    from aas_submodel_validate.report import render
+
+    template = _plant(tmp_path, [("Box", "https://example.com/ids/box")])
+    beside = render(runner.run(_in_plant(tmp_path, "escape-beside", [
+        _container("Evil\x1b[2Jok", "urn:vendor:x")]), template=template))
+    near = render(runner.run(_in_plant(tmp_path, "escape-near", [
+        _container("Box\x1b[2Jok", "https://example.com/ids/bux")]), template=template))
+    for line in (beside.splitlines()[-1], near.splitlines()[-1]):
+        assert "\x1b" not in line and "\\x1b[2Jok" in line, repr(line)
+
+
+def test_the_path_order_reads_a_bounded_prefix():
+    """A key is one tuple per run of digits and a subject is a whole path;
+    a root idShort alternating letters and digits cost about 9 MB per
+    element sorted. The key reads a bounded prefix, and the whole subject
+    breaks the tie past it."""
+    from aas_submodel_validate.rules.engine import _PATH_KEY_CHARACTERS, _in_path_order
+
+    long_path = "a1" * 50_000
+    parts = _in_path_order((long_path, ""))[0]
+    assert len(parts) <= _PATH_KEY_CHARACTERS + 1, len(parts)
+    assert _in_path_order((long_path + "x", "")) != _in_path_order((long_path + "y", ""))

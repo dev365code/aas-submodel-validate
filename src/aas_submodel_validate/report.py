@@ -120,6 +120,8 @@ def _named_at_most(names, total=None) -> str:
     is how many there are when `names` is itself already cut."""
     shown = list(names[:NAMED_AT_MOST])
     rest = (len(names) if total is None else total) - len(shown)
+    if not shown:
+        return "%d, listed by -f json" % rest if rest > 0 else ""
     return ", ".join(shown) + (", and %d more" % rest if rest > 0 else "")
 
 
@@ -326,22 +328,29 @@ def render(report: Report, *, show_meta: bool = False,
     from .rules.engine import _in_path_order, _sitting_order
 
     accounted = {record.subject for record in report.unmatched}
-    shown = [record for record in report.not_examined
-             if record.because == "unclaimed-element-present"
-             and not (record.unclaimed_count == len(record.unclaimed)
-                      and all(subject in accounted
-                              for subject, _seen in record.unclaimed))]
+    shown = []
+    for record in report.not_examined:
+        if record.because != "unclaimed-element-present":
+            continue
+        # Element by element, not record by record: a place holding one
+        # near-missed container and one of the supplier's own named the
+        # first twice, and a record whose every neighbour was already
+        # named hid the second. Past the few a record names, the already
+        # named are assumed to be among them.
+        fresh = tuple(pair for pair in record.unclaimed if pair[0] not in accounted)
+        left = record.unclaimed_count - (len(record.unclaimed) - len(fresh))
+        if left > 0:
+            shown.append((record, fresh, left))
     if shown:
-        sections = sorted({record.label for record in shown},
+        sections = sorted({record.label for record, _fresh, _left in shown},
                           key=lambda label: _in_path_order((label, "")))
+        sitting = [subject for subject, _seen in sorted(
+            {pair for _record, fresh, _left in shown for pair in fresh},
+            key=_sitting_order)]
         # Each record names a few of what sat there and says how many; two
         # records naming the same list at one place are one list.
-        lists = {(record.where, record.unclaimed): record.unclaimed_count
-                 for record in shown}
+        lists = {(record.where, fresh): left for record, fresh, left in shown}
         total = sum(lists.values())
-        sitting = [subject for subject, _seen in sorted(
-            {pair for record in shown for pair in record.unclaimed},
-            key=_sitting_order)]
         examined = ("; %d section%s not examined (%s), beside %s no row "
                     "describes (%s) -- not a defect, and not checked either; "
                     "-f json lists the rules"
@@ -383,7 +392,7 @@ def render(report: Report, *, show_meta: bool = False,
         # checked them has told the reader something it did not do.
         lines.append("%s -- %s (%d rules registered%s%s)%s"
                      % (verdict, report.path, report.checked, judged,
-                        unasked + examined, incomplete))
+                        _safe(unasked + examined), incomplete))
     else:
         # The third count is INFO findings. It said "note(s)" and the
         # report has notes of its own, printed above and not counted
@@ -397,6 +406,10 @@ def render(report: Report, *, show_meta: bool = False,
                      % (verdict,
                         report.count(Severity.ERROR), report.count(Severity.WARNING),
                         report.count(Severity.INFO), report.path, judged,
-                        unasked + examined,
+                        # The two clauses carry names the file wrote --
+                        # idShorts, a template's labels -- and a raw
+                        # escape there rewrote this very line on a
+                        # terminal: cleared the screen and printed "ok".
+                        _safe(unasked + examined),
                         incomplete))
     return "\n".join(lines)
