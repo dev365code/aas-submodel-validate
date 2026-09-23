@@ -15,7 +15,7 @@ name: dco
 
 on:
   push:
-    branches: [main, "release/**", "wip/**"]
+    branches: [main, "release/**", "wip/**", "docs/**"]
     tags: ["v*"]
   pull_request:
 
