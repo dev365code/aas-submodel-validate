@@ -262,12 +262,16 @@ def test_the_records_own_keys_are_documented_too(tmp_path):
 def test_the_terminal_does_not_charge_the_element_with_more_than_it_explains(tmp_path):
     """The sentence and the JSON must not give different answers.
 
-    An optional container the file legitimately omits leaves its children
-    unasked too, and those belong to no element. The count in the sentence
-    is the run's total; the element named beside it accounts for only part
-    of that. Welding the two asserted a cause the JSON denies, and a reader
-    who fixed the named element would have found rules still unasked with
-    nothing to look them up by."""
+    The count in the sentence is the run's total, and an element named
+    beside it may account for only part of that; welding the two asserts
+    a cause the JSON denies. No input reaches that today. An optional
+    container the file omits used to put its children in the total, with
+    no element to charge them to -- this test's fixture was that shape --
+    until a near miss stopped claiming rows it does not resemble: every
+    rule a run leaves unasked now arrives with the element that explains
+    it, a near miss or an element of the wrong kind. The sentence must
+    still not overclaim should a loss arrive without one, so the case is
+    built by hand: one rule the named element does not explain."""
     from aas_submodel_validate.report import render
 
     env = copy.deepcopy(contact_env())
@@ -278,9 +282,11 @@ def test_the_terminal_does_not_charge_the_element_with_more_than_it_explains(tmp
             child["semanticId"]["keys"][0]["value"] = PHONE_TAIL
     report = _run(tmp_path, env)
     explained = {rule for record in report.unmatched for rule in record.unasked}
-    assert explained < set(report.not_asked), (
-        "this fixture no longer exercises the case: the element explains "
-        "everything, so the sentence cannot overclaim")
+    assert explained == set(report.not_asked), (
+        "a rule arrived unasked with no element to explain it: %s"
+        % sorted(set(report.not_asked) - explained))
+    # `CI-E14`, beneath the omitted `Fax`: the rule the old total carried.
+    report.not_asked = list(report.not_asked) + ["CI-E14"]
     line = [text for text in render(report).splitlines()
             if "not asked" in text][0]
     assert "accounts for %d of them" % len(explained) in line, (

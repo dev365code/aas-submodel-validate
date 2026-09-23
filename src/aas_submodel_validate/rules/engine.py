@@ -1305,11 +1305,20 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             if claimed_by.get(row["id"]) or not row["children"]:
                 continue
             grouped.setdefault((row["id"], seen), (row, expected, subject))
+        # And the run-wide list takes the same rows and no others. It
+        # took every row this scope left unentered, because one near miss
+        # fired somewhere in it: a Nameplate whose serial number drifted
+        # reported the three rules of a section the file simply omits as
+        # rules the drift kept from being asked, and the screen said their
+        # element was not one this reader recognised. The omitted section
+        # is still recorded -- `not_examined`, above, says so of every
+        # unentered row -- but as a place nothing explains, which is what
+        # it is. A near miss explains the rows it resembles (#23).
         for (_row_id, seen), (row, expected, subject) in grouped.items():
             lost = tuple(_descendant_ids(row))
             if lost:
                 result["unmatched"].append((subject, seen, lost, expected))
-        result["lost_candidates"].extend(unentered)
+                result["lost_candidates"].extend(lost)
 
 
 def _near_miss(candidates, match_values):

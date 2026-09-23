@@ -1556,6 +1556,19 @@ TABLE = [
      "names a subject, said it named a submodel, and a rule that could not "
      "run said it named an element"),
 
+    ("scope/a-near-miss-claims-only-what-it-resembles",
+     "src/aas_submodel_validate/rules/engine.py",
+     '                result["unmatched"].append((subject, seen, lost, expected))\n'
+     '                result["lost_candidates"].extend(lost)\n',
+     '                result["unmatched"].append((subject, seen, lost, expected))\n'
+     '                result["lost_candidates"].extend(unentered)\n',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_near_miss_claims_only_the_rows_it_resembles"],
+     "a list one version suffix off reported the rules of an optional "
+     "section the file omits beside it as rules the drift had kept from "
+     "being asked: one near miss claimed every row its place left "
+     "unentered, from 0.1.2 on"),
+
 ]
 
 #: The row that must live. A comment nobody reads, in a file whose prose

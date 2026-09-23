@@ -278,9 +278,10 @@ def render(report: Report, *, show_meta: bool = False,
         # The element, and only for the rules it actually accounts for.
         # Welding the whole count to one named element asserted a cause the
         # JSON denies: an optional container the file legitimately omits
-        # leaves its children unasked too, and those belong to no element.
-        # A reader who fixed the named element and found rules still unasked
-        # had been told something this run does not claim.
+        # used to leave its children in the total too, belonging to no
+        # element. No input reaches that since a near miss claims only the
+        # rows it resembles; the sentence still must not overclaim should a
+        # loss ever arrive without its element.
         who = "%s element is not one" % (
             "its" if len(report.not_asked) == 1 else "their")
         if report.unmatched:

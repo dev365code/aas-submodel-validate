@@ -28,6 +28,17 @@ document's own path or a part inside a package. A relayed `meta`
 finding carries an empty one: its subject is the upstream library's own
 expression.
 
+**A near miss claims only the rows it resembles.** Since 0.1.2, where
+the near-miss lint fired anywhere in a place, every row the walk left
+unentered there went to `rulesNotAsked`, a section the file simply omits
+included, and the summary line named them as rules this run did not
+look inside. A Digital Nameplate whose serial number drifted reported
+the three rules of an asset-specific section it does not carry that
+way. Those rows are now what they are: a place not examined, in
+`scopeNotExamined` and on the summary line's clause about sections. The
+rows a near miss does resemble stay where they were. No verdict moves;
+`rulesNotAsked` gets shorter on such files.
+
 It is still 221 rules, 178 generated from the vendored official template
 files, across six template packs. What this reader takes in is
 unchanged: one document at 64 MiB, a container's parts at 64 MiB each

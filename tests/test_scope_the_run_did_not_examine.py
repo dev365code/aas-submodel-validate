@@ -386,12 +386,12 @@ def test_an_element_the_line_already_names_is_not_named_again(tmp_path):
 
 
 def test_a_near_miss_elsewhere_does_not_hide_the_place(tmp_path):
-    """Where a near miss fires the walk sends every unentered row of that
-    place to `rulesNotAsked`, a row the file omits included, and that
-    clause names only rule ids and near-missed containers. Hiding the place
-    on that account left a section and the element beside it named
-    nowhere: a drifted leaf elsewhere in the Nameplate made the line say
-    three rule ids and nothing about where."""
+    """A drifted leaf elsewhere in the Nameplate explains nothing about a
+    section the file omits. The walk used to send every unentered row of
+    the place a near miss fired in to `rulesNotAsked`, and the line said
+    three rule ids -- the omitted section's -- as rules the drift had kept
+    from being asked. It names the section as a place not examined, beside
+    the element sitting there, and claims no rule."""
     from aas_submodel_validate.report import render
     from builders import dn_env
 
@@ -409,10 +409,36 @@ def test_a_near_miss_elsewhere_does_not_hide_the_place(tmp_path):
          "semanticId": _sid("0112/2///61987#ABA951#008")}]
     path = tmp_path / "leaf.json"
     path.write_text(json.dumps(environment), encoding="utf-8")
-    line = render(runner.run(path))
-    assert "rules not asked (DN-E28, DN-E29, DN-E30)" in line, line
+    report = runner.run(path)
+    line = render(report)
+    assert "rules not asked" not in line, line
+    assert report.as_dict()["summary"]["rulesNotAsked"] == []
     assert ("1 section not examined (AssetSpecificProperties), beside an "
             "element no row describes (Nameplate/Extras)") in line, line
+
+
+def test_a_near_miss_claims_only_the_rows_it_resembles(tmp_path):
+    """A list one version suffix off keeps its own rows from being asked,
+    and says so. A section beside it that the file does not carry --
+    `DocumentedEntities`, optional -- was reported with it, as rules the
+    drift had kept from being asked; nothing about the drift reached them.
+    That section is still a place this run did not examine, and says so
+    there."""
+    from builders import hd_env
+
+    environment = hd_env()
+    document = environment["submodels"][0]["submodelElements"][0]["value"][0]
+    versions = next(element for element in document["value"]
+                    if element.get("idShort") == "DocumentVersions")
+    versions["semanticId"]["keys"][0]["value"] = "0173-1#02-ABI503#004"
+    path = tmp_path / "drifted.json"
+    path.write_text(json.dumps(environment), encoding="utf-8")
+    summary = runner.run(path).as_dict()["summary"]
+    unasked = set(summary["rulesNotAsked"])
+    assert "HD-E14" in unasked, sorted(unasked)          # beneath the drifted list
+    assert "HD-E36" not in unasked, sorted(unasked)      # beneath the omitted section
+    assert any(record["rule"] == "HD-E35" and "HD-E36" in record["rulesNotAskedHere"]
+               for record in summary["scopeNotExamined"]), summary["scopeNotExamined"]
 
 
 def test_a_drifted_place_beside_a_sibling_that_entered_it_is_recorded(tmp_path):
