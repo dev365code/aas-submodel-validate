@@ -288,6 +288,14 @@ class NotExamined:
         named as the cause of the other: a different identifier may be a
         legitimate extension (`docs/divergences.md` #19) and there is no
         way to tell that from a typo by looking (#22, #23).
+
+    `unclaimed` names what was sitting there: elements of the kind the
+    row asks for, carrying an identifier, that matched no row, as
+    (subject, identifier), in path order and at most
+    `rules.engine.UNCLAIMED_NAMED` of them; `unclaimed_count` is how many
+    there were. Empty exactly when `because` is `absent`. Without it a
+    drifted container and a legitimately omitted one beside an unrelated
+    container of the same kind wrote the same record, byte for byte.
     """
 
     where: str
@@ -295,11 +303,28 @@ class NotExamined:
     label: str
     unasked: tuple
     because: str
+    unclaimed: tuple = ()
+    unclaimed_count: int = 0
+
+    def __post_init__(self):
+        # File-supplied text, through the same funnel as `Unmatched`: the
+        # place is built from the document's idShorts, the label from the
+        # template's, and both halves of each pair come out of the document.
+        object.__setattr__(self, "where", _bounded(self.where))
+        # A supplied template's idShort is whatever its JSON says; a number
+        # there crashed the run on its way through the bound.
+        object.__setattr__(self, "label", _bounded(
+            self.label if self.label is None else str(self.label)))
+        object.__setattr__(self, "unclaimed", tuple(
+            (_bounded(subject), _bounded(seen)) for subject, seen in self.unclaimed))
 
     def as_dict(self) -> dict:
         return {"where": self.where, "rule": self.rule, "label": self.label,
                 "rulesNotAskedHere": list(self.unasked),
-                "because": self.because}
+                "because": self.because,
+                "unclaimedHere": [{"subject": subject, "seen": seen}
+                                  for subject, seen in self.unclaimed],
+                "unclaimedHereCount": self.unclaimed_count}
 
 
 @dataclass

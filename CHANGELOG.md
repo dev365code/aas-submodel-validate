@@ -22,8 +22,11 @@ archive was judged clean. It draws two errors and leaves by 1.
 relationship resolves — and both still fire, because a package can fail
 either alone: a model can name a file it never declares a relationship
 for, and a relationship can name a part no model mentions. A file that
-is present, and a File value that is an absolute URL, and an
-environment JSON with no package around it, all stay silent.
+is present, and a File value that is an absolute URL, and an environment
+JSON with no package around it, all stay silent. `X4`'s remedy now puts
+correcting the relationship's target first, and says that deleting the
+relationship removes only the declaration: where a File value names the
+same part, the part is still missing.
 
 What this reader takes in is unchanged: one document at 64 MiB, a
 container's parts at 64 MiB each and 256 MiB together, and a container's
@@ -32,20 +35,47 @@ bounded separately, at the same 64 MiB and additionally at ten thousand
 rows.
 
 **And the report says what the run did not open.** `summary` gains
-`scopeNotExamined`: one record per template row whose scope no element
-matched, the rules that went unasked with it, and -- as a separate fact,
-not a cause -- whether anything in that same scope matched no row at
-all. Before it, a container carrying an identifier the template does not
-name passed with every published number identical to a clean run, while
-the rule that would have checked inside it was never put to anything.
+`scopeNotExamined`: a record for each place a template row was not
+entered, with the rules that went unasked there and -- as a separate
+fact, not a cause -- which elements of the kind that row asks for sat
+there matching no row. A place with nothing beside the row is recorded
+only if its rules were not put elsewhere in the submodel, so a section
+one list item omits is not reported when the next item has it. Before
+it, a container of the kind a row asks for, wearing an identifier the
+template does not name, passed with every published number identical to
+a clean run, while the rule that would have checked inside it was never
+put to anything.
 
 It names no culprit. A different identifier may be a legitimate vendor
 extension, and nothing tells that from a typo by looking, so
 `rulesNotAsked` and `unmatchedElements` keep their narrower triggers and
 this reports the reach of the check without the blame. Nothing here
-moves a verdict or an exit code, and the screen prints only the records
-that have an unplaceable element beside them -- the other kind is on
-nearly every clean run.
+moves a verdict or an exit code. The screen names the sections not
+opened and the elements beside them -- not an element the clause about
+rules not asked already names, and not the records with nothing beside
+them, which are on nearly every clean run. An element carrying no
+identifier at all is not counted as sitting there: that is the commonest
+shape of a manufacturer's own container, and a conformant file carrying
+one says nothing.
+
+**What a pass means, run by run.** `docs/scope.md` shows the runs a
+reader is likely to make and what exit 0 and `ok` say for each, and the
+page is run as a test. Two of its rows are easy to miss: with
+`--require-all-judged` a run can leave by 1 with `ok` true, because the
+flag fails on the count and not on a finding, so a build reading `.ok`
+alone goes green; and a supplied template whose every element is open
+content has no rows, so the submodel counts as judged against nothing --
+`provenance.template.rows` is the number that says so.
+
+**What moves: one verdict, and it is the one this release is for.**
+`verdict` Measured against 0.5.1 across the corpus, one of the
+sixty-eight inputs is judged differently: a Digital Nameplate package
+naming two images it does not hold, clean under 0.5.1 at exit 0, now
+draws two `DN-D2` errors and leaves by 1. A pipeline that was green on
+such a package goes red, which is the change. Sixty-seven gain
+`summary.scopeNotExamined`, which is additive and moves no verdict; a
+consumer that does not read the key sees what it saw before. None of
+the sixty-eight is asked with an option 0.5.1 does not have.
 
 ## 0.5.1 — 2026-09-23
 

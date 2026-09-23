@@ -1241,6 +1241,15 @@ def test_the_category_is_read_a_bounded_number_of_times(tmp_path, monkeypatch):
     # And bounded, not merely equal: two runs that both read it a
     # thousand times would satisfy the line above.
     assert large <= 4, large
+    # And not zero, which both lines above allow -- and not merely called:
+    # a reading that finds nothing is called just as often, and on this
+    # input, which declares no category, it prints the same note. So a
+    # file that does declare one is asked too, and the rows its category
+    # settles must reach the report.
+    assert large >= 1, large
+    conditional = {row["element_id_short"]
+                   for row in battery_tables.CONDITIONAL_ON_CATEGORY}
+    assert _r8_subjects(_run(tmp_path, _passport("ev"))) & conditional
 
 
 def test_no_clause_line_names_one_provision_twice(tmp_path):

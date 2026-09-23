@@ -164,9 +164,18 @@ def x6_the_path_can_be_opened(ctx):
 @rule("X4", kind="container", prio="SHOULD",
       title="declared supplementary parts exist",
       spec="IDTA 01005 (AASX, aas-suppl relationships)",
-      fix="Add the missing part to the archive or delete the aas-suppl "
-          "relationship that names it; a declared file a consumer cannot "
-          "extract is a broken promise either way.")
+      # Deleting the relationship was offered as an equal way out, and
+      # where a File value names the same part it leaves the part missing.
+      # The next wording asserted the File rule always says so and that the
+      # declaration was right -- neither holds for a File no pack judges, a
+      # misspelt value, or a name no part can carry. This says what deleting
+      # does and does not do, puts correcting the name first -- a name no
+      # part can carry has only that way out, and a misspelt one beside the
+      # real part would be copied by the other -- and nothing it cannot know.
+      fix="Correct the relationship's target if it names the part wrongly, "
+          "or add the part under the name it gives. Deleting the aas-suppl "
+          "relationship removes only the declaration: if a File value in "
+          "the model names the same part, the part is still missing.")
 def x4_supplementary_parts_exist(ctx):
     from ..container import SUPPL_REL, ContainerError
     container = ctx.loaded.container

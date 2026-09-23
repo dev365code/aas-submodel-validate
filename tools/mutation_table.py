@@ -347,6 +347,272 @@ TABLE = [
      "package lets an installed copy answer for it -- both sides become one "
      "reader, every input agrees with itself, and the tool prints 0 moved"),
 
+    ("scope/what-sat-there-is-named",
+     "src/aas_submodel_validate/rules/engine.py",
+     "unclaimed=tuple(names[:UNCLAIMED_NAMED]),",
+     "unclaimed=(),",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_what_sat_there_is_named_so_opposite_cases_differ"],
+     "a row's own container under a drifted identifier and a row the file "
+     "omits beside an unrelated container of the same kind write the same "
+     "record, byte for byte, unless the record names what sat there"),
+
+    ("screen/a-list-cut-short-says-so",
+     "src/aas_submodel_validate/report.py",
+     'return ", ".join(shown) + (", and %d more" % rest if rest > 0 else "")',
+     'return ", ".join(shown)',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_names_are_cut_with_a_count_never_silently",
+      "tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_list_cut_short_says_how_many_it_left_out"],
+     "three names and then silence reads as three names in all, on the one "
+     "line a generated-only pack speaks on"),
+
+    ("cost/deciding-which-submodels-a-table-answers-for-is-not-skipped",
+     "src/aas_submodel_validate/rules/engine.py",
+     "cached = cache[tables.__name__] = _matched_submodels(ctx, tables)",
+     "cached = cache[tables.__name__] = []",
+     ["tests/test_engine_regressions.py::"
+      "test_which_submodels_a_table_answers_for_is_decided_once"],
+     "the floor under a ceiling: a memo that skips the deciding walks less, "
+     "not more, and a gate that only bounds the count from above passes it "
+     "while every generated table judges nothing"),
+
+    ("cost/each-table-gets-its-own-answer",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    cache = ctx.__dict__.setdefault("_smt_matched", {})\n'
+     "    cached = cache.get(tables.__name__)",
+     '    cache = ctx.__dict__.setdefault("_smt_matched", {})\n'
+     "    cached = next(iter(cache.values()), None)",
+     ["tests/test_engine_regressions.py::"
+      "test_which_submodels_a_table_answers_for_is_decided_once"],
+     "a memo keyed wrongly hands every table the first table's answer; it "
+     "walks less, so the ceiling passes it, and the table this input is an "
+     "instance of is never decided"),
+
+    ("bound/what-sat-there-is-bounded",
+     "src/aas_submodel_validate/model.py",
+     "            (_bounded(subject), _bounded(seen)) for subject, seen in self.unclaimed))",
+     "            (subject, seen) for subject, seen in self.unclaimed))",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_long_name_sitting_there_does_not_grow_the_report"],
+     "a 200,000-character idShort made the summary line 200,892 characters, "
+     "with every test green"),
+
+    ("bound/the-place-is-bounded",
+     "src/aas_submodel_validate/model.py",
+     '        object.__setattr__(self, "where", _bounded(self.where))',
+     '        object.__setattr__(self, "where", self.where)',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_long_name_sitting_there_does_not_grow_the_report"],
+     "the place is built from the document's idShorts and was the one field "
+     "of the record outside the bound"),
+
+    ("corpus/the-case-only-the-scope-record-speaks-about-stays-that-case",
+     "tools/verdict_diff.py",
+     '    elsewhere["submodels"][0]["submodelElements"].append({',
+     "    [].append({",
+     ["tests/test_verdict_diff.py::"
+      "test_the_corpus_holds_a_case_only_the_scope_record_speaks_about"],
+     "the case becomes a plain clean document and the corpus stays 68 inputs, "
+     "so nothing else notices the instrument lost its case for the feature"),
+
+    ("diff/what-sat-there-is-compared",
+     "tools/verdict_diff.py",
+     '            (record.get("where"), record.get("rule"), record.get("because"),\n'
+     '             tuple((pair.get("subject"), pair.get("seen") or "")\n'
+     '                   for pair in record.get("unclaimedHere") or ()))',
+     '            (record.get("where"), record.get("rule"), record.get("because"))',
+     ["tests/test_verdict_diff.py::"
+      "test_two_records_that_differ_only_in_what_sat_there_are_two_answers"],
+     "the two opposite cases differ only in what sat there, and a key without "
+     "it reports the change between them as nothing moved"),
+
+    ("battery/the-category-reading-reaches-the-report",
+     "src/aas_submodel_validate/rules/battery.py",
+     "    return tuple(found)",
+     "    return ()",
+     ["tests/test_battery_rules.py::"
+      "test_the_category_is_read_a_bounded_number_of_times"],
+     "a reading that finds nothing is called as often as one that works, so a "
+     "floor on the count passed a category that was never found"),
+
+    ('screen/an-element-already-named-is-not-named-again',
+     'src/aas_submodel_validate/report.py',
+     '    accounted = {record.subject for record in report.unmatched}',
+     '    accounted = set()',
+     ['tests/test_scope_the_run_did_not_examine.py::test_the_line_says_each_place_once',
+      'tests/test_scope_the_run_did_not_examine.py::test_an_element_the_line_already_names_is_not_named_again'],
+     'the bundled example named its drifted list as not asked and again as not examined'),
+
+    ('screen/a-place-is-not-hidden-behind-another-places-rule-id',
+     'src/aas_submodel_validate/report.py',
+     '        if record.because != "unclaimed-element-present":',
+     '        if record.because != "unclaimed-element-present" or set(record.unasked) & set(report.not_asked):',
+     ['tests/test_scope_the_run_did_not_examine.py::test_the_line_says_each_place_once'],
+     'subtracting by id what the not-asked clause told about one place hid a second submodel losing the same rule for another reason'),
+
+    ('screen/a-near-miss-elsewhere-does-not-hide-the-place',
+     'src/aas_submodel_validate/report.py',
+     '        if left > 0:',
+     '        if left > 0 and not report.not_asked:',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_near_miss_elsewhere_does_not_hide_the_place'],
+     'a drifted leaf elsewhere in the place sends its rows to rulesNotAsked, and that clause names ids, not the section or what sat beside it'),
+
+    ('screen/the-count-of-what-sat-there',
+     'src/aas_submodel_validate/report.py',
+     '        total = sum(lists.values())',
+     '        total = len(sitting)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_what_sat_there_is_in_path_order_and_bounded'],
+     'each record names a few and says how many; counting the names printed and 9 more as 2 more'),
+
+    ('screen/two-lists-at-one-place-are-two-lists',
+     'src/aas_submodel_validate/report.py',
+     '        lists = {(record.where, fresh): left for record, fresh, left in shown}',
+     '        lists = {record.where: left for record, fresh, left in shown}',
+     ['tests/test_scope_the_run_did_not_examine.py::test_two_lists_at_one_place_are_two_lists'],
+     'two kinds unplaced at one place are two lists; keyed by place alone the line said one element for two'),
+
+    ('screen/what-sat-there-is-named-in-path-order',
+     'src/aas_submodel_validate/report.py',
+     '            key=_sitting_order)]',
+     '            key=lambda pair: pair[0])]',
+     ['tests/test_scope_the_run_did_not_examine.py::test_what_sat_there_is_in_path_order_and_bounded'],
+     'by spelling the line names Box10, Box11, Box12 ahead of Box8'),
+
+    ('scope/what-sat-there-is-in-path-order',
+     'src/aas_submodel_validate/rules/engine.py',
+     '    ordered = {kind: sorted(pairs, key=_sitting_order)',
+     '    ordered = {kind: list(pairs)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_what_sat_there_is_in_path_order_and_bounded'],
+     'unsorted, the few a record names are whichever the file happened to list first'),
+
+    ('scope/path-order-survives-the-merge',
+     'src/aas_submodel_validate/rules/engine.py',
+     '        names = sorted(names, key=_sitting_order)',
+     '        names = sorted(names)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_what_sat_there_is_in_path_order_and_bounded'],
+     'the records are merged out of sets and sorted again; by spelling Box10 comes before Box8'),
+
+    ('scope/how-many-sat-there-is-said',
+     'src/aas_submodel_validate/rules/engine.py',
+     '             tuple(sitting[:UNCLAIMED_NAMED]), len(sitting)))',
+     '             tuple(sitting[:UNCLAIMED_NAMED]), len(sitting[:UNCLAIMED_NAMED])))',
+     ['tests/test_scope_the_run_did_not_examine.py::test_what_sat_there_is_in_path_order_and_bounded'],
+     'a record names at most a few; without the count a reader takes the few for all of them'),
+
+    ('scope/an-element-with-no-identifier-is-not-counted',
+     'src/aas_submodel_validate/rules/engine.py',
+     '        if index in claimed or not any(candidates):\n            continue\n        subject = _subject(path, element, index, shared)\n        unplaced.setdefault(',
+     '        if index in claimed:\n            continue\n        subject = _subject(path, element, index, shared)\n        unplaced.setdefault(',
+     ['tests/test_scope_the_run_did_not_examine.py::test_an_element_with_no_identifier_is_not_counted_as_sitting_there'],
+     "a container with no identifier is the commonest shape of a manufacturer's own, and counting it made conformant files speak"),
+
+    ('scope/seen-is-the-elements-own-identifier',
+     'src/aas_submodel_validate/rules/engine.py',
+     '    for reference in ([element.semantic_id]',
+     '    for reference in ([]',
+     ['tests/test_scope_the_run_did_not_examine.py::test_seen_is_the_elements_own_identifier'],
+     "a supplemental identifier stood in for the element's own"),
+
+    ('scope/seen-falls-back-in-the-files-order',
+     'src/aas_submodel_validate/rules/engine.py',
+     '                      + list(getattr(element, "supplemental_semantic_ids", None) or [])):',
+     '                      + list(reversed(getattr(element, "supplemental_semantic_ids", None) or []))):',
+     ['tests/test_scope_the_run_did_not_examine.py::test_seen_is_the_elements_own_identifier'],
+     'failing its own identifier, the first supplemental the file gives, not another'),
+
+    ('scope/seen-joins-stacked-keys',
+     'src/aas_submodel_validate/rules/engine.py',
+     '            return "/".join(values)',
+     '            return values[0]',
+     ['tests/test_scope_the_run_did_not_examine.py::test_seen_is_the_elements_own_identifier'],
+     'a two-key identifier reported as its first key names something the file does not carry'),
+
+    ('scope/a-drifted-place-beside-a-sibling-is-recorded',
+     'src/aas_submodel_validate/rules/engine.py',
+     '                         if because != "absent" or rule_id not in asked_here)',
+     '                         if rule_id not in asked_here)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_drifted_place_beside_a_sibling_that_entered_it_is_recorded'],
+     'rules a sibling item put were taken off a place with a drifted list in it, and the report was the one without the list'),
+
+    ('bound/the-label-is-bounded',
+     'src/aas_submodel_validate/model.py',
+     '        object.__setattr__(self, "label", _bounded(',
+     '        object.__setattr__(self, "label", (',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_long_name_sitting_there_does_not_grow_the_report'],
+     "the label is a template's idShort, text somebody else wrote"),
+
+    ('bound/the-identifier-sitting-there-is-bounded',
+     'src/aas_submodel_validate/model.py',
+     '            (_bounded(subject), _bounded(seen)) for subject, seen in self.unclaimed))',
+     '            (_bounded(subject), seen) for subject, seen in self.unclaimed))',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_long_name_sitting_there_does_not_grow_the_report'],
+     "the identifier is the document's own, and a 200,000-character one went into the record whole"),
+
+    ('remedy/deleting-a-right-declaration-is-not-offered-as-an-equal',
+     'src/aas_submodel_validate/rules/container.py',
+     '"relationship removes only the declaration: if a File value in "',
+     '"relationship is the other way out: if a File value in "',
+     ['tests/test_a_file_a_model_points_at.py::test_the_relationship_remedy_does_not_undo_a_correct_declaration'],
+     'one missing part draws X4 and a File rule, and X4 offered deleting the relationship as an equal way out -- where a File value names the part, deleting the declaration leaves the part missing'),
+
+    ('diff/the-place-sitting-there-is-compared',
+     'tools/verdict_diff.py',
+     '             tuple((pair.get("subject"), pair.get("seen") or "")',
+     '             tuple((pair.get("seen") or "",)',
+     ['tests/test_verdict_diff.py::test_two_records_that_differ_only_in_what_sat_there_are_two_answers'],
+     'the same identifier in another place is another answer'),
+
+    ('diff/the-identifier-sitting-there-is-compared',
+     'tools/verdict_diff.py',
+     '             tuple((pair.get("subject"), pair.get("seen") or "")',
+     '             tuple((pair.get("subject"),)',
+     ['tests/test_verdict_diff.py::test_two_records_that_differ_only_in_what_sat_there_are_two_answers'],
+     'the same place under another identifier is another answer'),
+
+    ('screen/element-by-element',
+     'src/aas_submodel_validate/report.py',
+     '        fresh = tuple(pair for pair in record.unclaimed if pair[0] not in accounted)',
+     '        fresh = tuple(record.unclaimed)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_mixed_place_names_only_what_the_line_has_not'],
+     "filtered record by record, a place holding a near-missed container and one of the supplier's own named the first twice"),
+
+    ('screen/sections-are-counted-as-sections',
+     'src/aas_submodel_validate/report.py',
+     '                    % (len(shown), "" if len(shown) == 1 else "s",',
+     '                    % (total, "" if total == 1 else "s",',
+     ['tests/test_scope_the_run_did_not_examine.py::test_the_line_counts_sections_and_elements_each_as_what_they_are'],
+     'one unopened row beside two containers printed as two sections'),
+
+    ('scope/a-blank-identifier-is-none',
+     'src/aas_submodel_validate/rules/engine.py',
+     '        if index in claimed or not any(candidates):',
+     '        if index in claimed or not candidates:',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_blank_identifier_is_no_identifier'],
+     'a key that normalises to nothing was counted as an identifier, and seen came out null'),
+
+    ('bound/a-numbered-label-does-not-crash',
+     'src/aas_submodel_validate/model.py',
+     '            self.label if self.label is None else str(self.label)))',
+     '            self.label))',
+     ['tests/test_scope_the_run_did_not_examine.py::test_a_template_row_numbered_rather_than_named_does_not_crash'],
+     "a supplied template's idShort given as a number crashed the run on its way through the bound: a traceback and exit 1"),
+
+    ('screen/names-on-the-line-are-escaped',
+     'src/aas_submodel_validate/report.py',
+     '                        _safe(unasked + examined),\n                        incomplete))',
+     '                        unasked + examined,\n                        incomplete))',
+     ['tests/test_scope_the_run_did_not_examine.py::test_names_on_the_summary_line_are_escaped'],
+     'a raw escape in an idShort cleared the screen and printed a fake ok line over a run with an error in it'),
+
+    ('scope/the-path-key-reads-a-bounded-prefix',
+     'src/aas_submodel_validate/rules/engine.py',
+     '    parts = _RUN_OF_DIGITS.split(subject[:_PATH_KEY_CHARACTERS])',
+     '    parts = _RUN_OF_DIGITS.split(subject)',
+     ['tests/test_scope_the_run_did_not_examine.py::test_the_path_order_reads_a_bounded_prefix'],
+     'a key is one tuple per run of digits over a whole path; alternating letters and digits cost about 9 MB per element'),
+
     ("cost/where-the-files-are-is-not-asked-per-part",
      "src/aas_submodel_validate/container.py",
      "        if self._canonical is None:",

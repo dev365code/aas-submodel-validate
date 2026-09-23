@@ -114,6 +114,17 @@ NOTE_KEY = "note=something this run did, not a defect -- nothing to change"
 NAMED_AT_MOST = 3
 
 
+def _named_at_most(names, total=None) -> str:
+    """The first `NAMED_AT_MOST` of `names`, then how many more -- a list
+    cut short says so, or a reader takes the three for the whole. `total`
+    is how many there are when `names` is itself already cut."""
+    shown = list(names[:NAMED_AT_MOST])
+    rest = (len(names) if total is None else total) - len(shown)
+    if not shown:
+        return "%d, listed by -f json" % rest if rest > 0 else ""
+    return ", ".join(shown) + (", and %d more" % rest if rest > 0 else "")
+
+
 def render(report: Report, *, show_meta: bool = False,
            failed: Optional[bool] = None) -> str:
     """The report as a person reads it.
@@ -305,16 +316,48 @@ def render(report: Report, *, show_meta: bool = False,
     #: carries both, which is where a pipeline reads them; the screen
     #: says the one a person can act on. Same rule the line above it
     #: follows: speak where there is something to say.
-    sat = [record for record in report.not_examined
-           if record.because == "unclaimed-element-present"]
-    if sat:
-        lost = sum(len(record.unasked) for record in sat)
-        examined = ("; %d rule%s not examined, under %d section%s carrying an "
-                    "element no row describes (%s) -- not a defect, and not "
-                    "checked either; -f json lists them"
-                    % (lost, "" if lost == 1 else "s", len(sat),
-                       "" if len(sat) == 1 else "s",
-                       ", ".join(sorted({record.label for record in sat})[:3])))
+    #
+    # Named, not counted. A count of rules here met the clause above, which
+    # counts rule ids across the whole run, in every way two such numbers
+    # can: the same rule said twice (the bundled example), one place hidden
+    # behind another place's id, a sum over places read as a number of
+    # rules. So this names the sections not opened and what sat beside
+    # them, and leaves counting rules to the clause above and to `-f json`.
+    # An element that clause already names or counts is not named again;
+    # every other one is, whatever else fired in the same place.
+    from .rules.engine import _in_path_order, _sitting_order
+
+    accounted = {record.subject for record in report.unmatched}
+    shown = []
+    for record in report.not_examined:
+        if record.because != "unclaimed-element-present":
+            continue
+        # Element by element, not record by record: a place holding one
+        # near-missed container and one of the supplier's own named the
+        # first twice, and a record whose every neighbour was already
+        # named hid the second. Past the few a record names, the already
+        # named are assumed to be among them.
+        fresh = tuple(pair for pair in record.unclaimed if pair[0] not in accounted)
+        left = record.unclaimed_count - (len(record.unclaimed) - len(fresh))
+        if left > 0:
+            shown.append((record, fresh, left))
+    if shown:
+        sections = sorted({record.label for record, _fresh, _left in shown},
+                          key=lambda label: _in_path_order((label, "")))
+        sitting = [subject for subject, _seen in sorted(
+            {pair for _record, fresh, _left in shown for pair in fresh},
+            key=_sitting_order)]
+        # Each record names a few of what sat there and says how many; two
+        # records naming the same list at one place are one list.
+        lists = {(record.where, fresh): left for record, fresh, left in shown}
+        total = sum(lists.values())
+        examined = ("; %d section%s not examined (%s), beside %s no row "
+                    "describes (%s) -- not a defect, and not checked either; "
+                    "-f json lists the rules"
+                    % (len(shown), "" if len(shown) == 1 else "s",
+                       _named_at_most(sections),
+                       "an element" if total == 1 else "elements",
+                       _named_at_most(sitting, total)))
     judged = ""
     specified = ""
     if report.submodels_specified:
@@ -349,7 +392,7 @@ def render(report: Report, *, show_meta: bool = False,
         # checked them has told the reader something it did not do.
         lines.append("%s -- %s (%d rules registered%s%s)%s"
                      % (verdict, report.path, report.checked, judged,
-                        unasked + examined, incomplete))
+                        _safe(unasked + examined), incomplete))
     else:
         # The third count is INFO findings. It said "note(s)" and the
         # report has notes of its own, printed above and not counted
@@ -363,6 +406,10 @@ def render(report: Report, *, show_meta: bool = False,
                      % (verdict,
                         report.count(Severity.ERROR), report.count(Severity.WARNING),
                         report.count(Severity.INFO), report.path, judged,
-                        unasked + examined,
+                        # The two clauses carry names the file wrote --
+                        # idShorts, a template's labels -- and a raw
+                        # escape there rewrote this very line on a
+                        # terminal: cleared the screen and printed "ok".
+                        _safe(unasked + examined),
                         incomplete))
     return "\n".join(lines)

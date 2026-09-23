@@ -1057,7 +1057,7 @@ def test_which_submodels_a_table_answers_for_is_decided_once(tmp_path,
     `detect.instances`, which is the walk `matched_submodels` cannot
     avoid doing at least once.
     """
-    from aas_submodel_validate.rules import detect
+    from aas_submodel_validate.rules import detect, engine
 
     real = detect.instances
     calls = []
@@ -1066,7 +1066,15 @@ def test_which_submodels_a_table_answers_for_is_decided_once(tmp_path,
         calls.append(loaded)
         return real(loaded)
 
+    real_decide = engine._matched_submodels
+    decided = []
+
+    def decide(ctx, tables):
+        decided.append(tables.__name__)
+        return real_decide(ctx, tables)
+
     monkeypatch.setattr(detect, "instances", counted)
+    monkeypatch.setattr(engine, "_matched_submodels", decide)
     runner.run(_write(tmp_path, copy.deepcopy(hd_env())))
 
     # One walk per table that is asked, plus the handful of places that
@@ -1076,3 +1084,11 @@ def test_which_submodels_a_table_answers_for_is_decided_once(tmp_path,
         "%d walks over the submodels for one input -- the answer to "
         "'which submodels does this table answer for' is being recomputed "
         "per rule" % len(calls))
+    # And a floor, which the ceiling does not give: a memo that handed
+    # every table the first table's answer, or one that skipped the
+    # deciding altogether, walks *less* and passes the line above. So:
+    # each table decided once, the one this input is an instance of among
+    # them, and never fewer walks than decisions.
+    assert len(decided) == len(set(decided)), sorted(decided)
+    assert "aas_submodel_validate.rules.hd_tables" in decided, decided
+    assert len(calls) >= len(decided), (len(calls), decided)

@@ -6,7 +6,7 @@
  "budgets": {
   "Darwin": {
    "cold_start": 60.1,
-   "corpus_pass": 102.0,
+   "corpus_pass": 106.0,
    "scale": 81.4,
    "rules_layer": 0.446,
    "supplied_template": 28.9
@@ -16,22 +16,22 @@
   "Darwin": {
    "machine": "arm64",
    "python": "3.9.6",
-   "inputs": 67,
+   "inputs": 68,
    "yardstick_seconds": {
     "cold_start": 0.001777,
-    "corpus_pass": 0.001866,
+    "corpus_pass": 0.001976,
     "scale": 0.001849,
     "rules_layer": 0.001883,
     "supplied_template": 0.001872
    },
    "absolute_seconds": {
     "cold_start": 0.1069,
-    "corpus_pass": 0.1907,
+    "corpus_pass": 0.2091,
     "scale": 0.1505,
     "rules_layer": 0.000839,
     "supplied_template": 0.05404
    },
-   "_from": "one run on an idle machine, chosen as the closest to the mean of five. Re-recorded when `supplied_template` joined the layers and when deciding which submodels a table answers for stopped being recomputed once per rule -- the second of those is why `corpus_pass` fell from 111 to 97.5, and leaving the old figure would have been a budget with twelve percent of slack nobody could account for. Those five spanned cold_start 56.4-62.1 (10% peak to peak), corpus_pass 97.5-101 (4%), scale 79.7-86.0 (8%), rules_layer 0.417-0.451 (8%), supplied_template 27.4-29.7 (8%). Peak-to-peak over a stated number of runs is the figure worth quoting; a standard deviation of three samples reads reassuringly and hides what a reader meets. The yardstick itself came out about half the seconds it did when these were first recorded, on the same machine, which is what the ratios exist to absorb and did. Under heavy background load an unchanged tree has been measured between 0.54x and 1.74x, so the warning line at 1.5x is inside the noise on a loaded machine and is advisory, while the failure line at 2.0x has not been crossed by an unchanged tree since the yardstick moved beside the layer. Re-recorded again for `corpus_pass` alone when the corpus gained four inputs judged with a table supplied on the command line (61 to 65), and only that layer: nothing in the package moved -- the change is in `tools/` -- and re-recording the other four would have thrown away the drift they exist to show. Fifteen runs, and they do not support a precise figure: 93.4 to 110, 18% peak to peak, against the 4% the five above spanned. Spacing them 45 seconds apart did not narrow it, so it is another process on the machine rather than heat, and the mean and the median agree at 104, which is the figure; the seconds beside it come from the run that measured it. What the four inputs cost is inside that dispersion and this does not claim otherwise -- the same tree read 101 and 102 with 61 inputs earlier in the same hour, against a budget of 97.5, so most of the move is the machine and not the corpus. A reading within a tenth of this budget is therefore not evidence of anything; the thresholds below are what the gate decides on, and the layer that actually regressed was measured at 3.98x. Taking the memoisation back out puts `supplied_template` at 3.98x, measured. Re-recorded, all five layers, when the File-reference work and the record of what a run did not open were merged: the corpus grew from 65 inputs to 67 (two File-reference cases on a Nameplate) and the package changed under every layer. Five runs spanned cold_start 58.8-61.1 (4% peak to peak), corpus_pass 102-106 (4%), scale 80.5-86.6 (8%), rules_layer 0.437-0.474 (8%), supplied_template 28.5-29.8 (5%), and the run kept is the one closest to their mean. Against the figures they replace every layer moved by less than the dispersion recorded above for an unchanged tree, so what this says is that the merge cost nothing measurable -- not that it cost nothing."
+   "_from": "one run on an idle machine, chosen as the closest to the mean of five. Re-recorded when `supplied_template` joined the layers and when deciding which submodels a table answers for stopped being recomputed once per rule -- the second of those is why `corpus_pass` fell from 111 to 97.5, and leaving the old figure would have been a budget with twelve percent of slack nobody could account for. Those five spanned cold_start 56.4-62.1 (10% peak to peak), corpus_pass 97.5-101 (4%), scale 79.7-86.0 (8%), rules_layer 0.417-0.451 (8%), supplied_template 27.4-29.7 (8%). Peak-to-peak over a stated number of runs is the figure worth quoting; a standard deviation of three samples reads reassuringly and hides what a reader meets. The yardstick itself came out about half the seconds it did when these were first recorded, on the same machine, which is what the ratios exist to absorb and did. Under heavy background load an unchanged tree has been measured between 0.54x and 1.74x, so the warning line at 1.5x is inside the noise on a loaded machine and is advisory, while the failure line at 2.0x has not been crossed by an unchanged tree since the yardstick moved beside the layer. Re-recorded again for `corpus_pass` alone when the corpus gained four inputs judged with a table supplied on the command line (61 to 65), and only that layer: nothing in the package moved -- the change is in `tools/` -- and re-recording the other four would have thrown away the drift they exist to show. Fifteen runs, and they do not support a precise figure: 93.4 to 110, 18% peak to peak, against the 4% the five above spanned. Spacing them 45 seconds apart did not narrow it, so it is another process on the machine rather than heat, and the mean and the median agree at 104, which is the figure; the seconds beside it come from the run that measured it. What the four inputs cost is inside that dispersion and this does not claim otherwise -- the same tree read 101 and 102 with 61 inputs earlier in the same hour, against a budget of 97.5, so most of the move is the machine and not the corpus. A reading within a tenth of this budget is therefore not evidence of anything; the thresholds below are what the gate decides on, and the layer that actually regressed was measured at 3.98x. Taking the memoisation back out puts `supplied_template` at 3.98x, measured. Re-recorded, all five layers, when the File-reference work and the record of what a run did not open were merged: the corpus grew from 65 inputs to 67 (two File-reference cases on a Nameplate) and the package changed under every layer. Five runs spanned cold_start 58.8-61.1 (4% peak to peak), corpus_pass 102-106 (4%), scale 80.5-86.6 (8%), rules_layer 0.437-0.474 (8%), supplied_template 28.5-29.8 (5%), and the run kept is the one closest to their mean. Against the figures they replace every layer moved by less than the dispersion recorded above for an unchanged tree, so what this says is that the merge cost nothing measurable -- not that it cost nothing. Re-recorded for `corpus_pass` alone when the corpus gained the case `scopeNotExamined` was built for (67 inputs to 68): the change is in `tools/`, and the other four are left as they were so they go on showing their drift. Five runs spanned 103-109 (6% peak to peak), and the one closest to their mean is kept."
   }
  },
  "thresholds": {

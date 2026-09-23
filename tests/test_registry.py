@@ -533,9 +533,10 @@ REMEDIES = {
         "the extension decides the format (.json as AAS JSON, otherwise "
         "AAS XML).",
     "X4":
-        "Add the missing part to the archive or delete the aas-suppl "
-        "relationship that names it; a declared file a consumer cannot "
-        "extract is a broken promise either way.",
+        "Correct the relationship's target if it names the part wrongly, "
+        "or add the part under the name it gives. Deleting the aas-suppl "
+        "relationship removes only the declaration: if a File value in "
+        "the model names the same part, the part is still missing.",
     "X6":
         "Check the path and what the account running this may read. "
         "Nothing was opened, so nothing here is a statement about a "

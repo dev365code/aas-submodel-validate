@@ -36,9 +36,42 @@ from ..semantics import (
     candidate_values,
     edit_distance,
     element_candidate_values,
+    key_values,
     submodel_declares,
     version_stem,
 )
+
+#: How many of the elements sitting in an unopened scope one record names;
+#: `unclaimedHereCount` says how many there were. Every unentered row of a
+#: kind names every unplaced element of that kind beside it, so unbounded
+#: the list grows as rows times elements -- measured, a supplied template of
+#: a thousand optional rows against a thousand vendor containers wrote a
+#: 50 MB report where the same report without the lists is half a megabyte.
+UNCLAIMED_NAMED = 5
+
+
+def _identifier(element):
+    """The identifier an unplaced element carries, as this reader matches
+    it (normalised): its own `semanticId`, keys joined as the matching
+    joins them; failing that the first of its supplemental ones in the
+    order the file gives them. Not the first spelling in sorted order,
+    which is what this was -- a supplemental that sorted early stood in
+    for the element's own. Empty key values are not an identifier."""
+    for reference in ([element.semantic_id]
+                      + list(getattr(element, "supplemental_semantic_ids", None) or [])):
+        values = [value for value in key_values(reference) if value]
+        if values:
+            return "/".join(values)
+    return None
+
+
+def _sitting_order(pair):
+    """Path order for (subject, identifier), total: these are sorted out of
+    sets, and a key under which two pairs tie leaves their order to the
+    process's string hashing -- the same file wrote a different report in
+    each process. No identifier sorts first rather than failing."""
+    subject, seen = pair
+    return (_in_path_order((subject, seen or "")), subject, seen or "")
 
 #: How a cardinality is said. The generator has its own copy of these
 #: words for the remedy; the two are compared row by row in
@@ -398,11 +431,18 @@ def _analyze(ctx, tables) -> Dict:
         # scopes it never examined, twenty-two of which it had asked,
         # while `rulesNotAsked` on the same report was empty. Two keys
         # contradicting each other about one run.
+        #
+        # Only where nothing sat there, though. A place with an element of
+        # the row's kind beside the unopened row is a fact about that place
+        # whatever a sibling did: subtracting there too hid a drifted list
+        # in one Document behind the same list, correctly identified, in
+        # the next -- the report was byte for byte the one without it.
         examined = []
-        for path, row_id, label, unasked, because in per["not_examined"]:
-            kept = tuple(rule_id for rule_id in unasked if rule_id not in asked_here)
+        for path, row_id, label, unasked, because, *sat in per["not_examined"]:
+            kept = tuple(rule_id for rule_id in unasked
+                         if because != "absent" or rule_id not in asked_here)
             if kept:
-                examined.append((path, row_id, label, kept, because))
+                examined.append((path, row_id, label, kept, because, *sat))
         per["not_examined"] = examined
         for key in ("violations", "instances"):
             for row_id, entries in per[key].items():
@@ -453,6 +493,13 @@ def unmatched_elements(ctx) -> List:
 #: Digits inside a subject sort by value, not by spelling.
 _RUN_OF_DIGITS = re.compile(r"(\d+)")
 
+#: How much of a subject the path order reads. A key is one tuple per run
+#: of digits, and every subject carries its whole path: measured, a root
+#: idShort alternating letters and digits cost about 9 MB per element
+#: sorted, so a half-megabyte file would outgrow a 16 GB machine. Past
+#: this the whole subject breaks the tie, as a string.
+_PATH_KEY_CHARACTERS = 2000
+
 
 def _in_path_order(record):
     """A sort key that reads `[2]` as two rather than as the text "2".
@@ -461,34 +508,54 @@ def _in_path_order(record):
     twelve sorts `[0] [10] [11] [1] ...` by string. The caller prints
     the first few of these as a place to start looking, and the first
     few were the wrong few.
+
+    Compared as digits, never converted: `int()` refuses a run of more
+    than 4,300 digits on every interpreter CI runs (3.10.7 onwards), and an
+    idShort is the file's to write -- measured, one such submodel name
+    turned two rules into "the rule itself could not run". Shorter runs are
+    smaller, then digit by digit, then the spelling (`1` before `01`), so
+    no two different names compare equal.
     """
     subject, identifier = record
-    parts = _RUN_OF_DIGITS.split(subject)
-    return ([(int(part), "") if index % 2 else (-1, part)
-             for index, part in enumerate(parts)], identifier)
+    parts = _RUN_OF_DIGITS.split(subject[:_PATH_KEY_CHARACTERS])
+    return ([(len(part.lstrip("0")), part.lstrip("0"), part) if index % 2
+             else (-1, part, "") for index, part in enumerate(parts)],
+            identifier, subject)
 
 
 def scope_not_examined(ctx) -> List:
-    """One record per row whose scope no walk in this run opened.
+    """One record per place a row was not entered, where its rules were
+    not put anywhere else in that submodel either.
 
-    Deduplicated by (where, row): a row is walked once per item of a
-    list, and a reader counting the list would read three items as three
-    times the loss. Where the same row is `absent` in one scope and has
-    a stranger beside it in another, the stranger wins -- it is the more
-    specific fact and the one a reader can act on.
+    Per place: `where` carries a list item's index, so each item of a list
+    is its own place and its own record. Two records share a key only when
+    two places print the same way -- an idShort spelled like a position,
+    `[1]`, beside the unnamed item at index 1 -- and then the one with a
+    stranger beside it wins, as the more specific fact, carrying both
+    places' strangers.
     """
     from ..model import NotExamined
 
     analysed = ctx.__dict__.get("_smt_analysis") or {}
     best = {}
+    sat = {}
     for analysis in analysed.values():
-        for where, rule, label, unasked, because in analysis.get("not_examined", ()):
+        for (where, rule, label, unasked, because, sitting,
+             count) in analysis.get("not_examined", ()):
             key = (where, rule)
             if key not in best or because == "unclaimed-element-present":
                 best[key] = (label, unasked, because)
-    return [NotExamined(where=where, rule=rule, label=label,
-                        unasked=unasked, because=because)
-            for (where, rule), (label, unasked, because) in sorted(best.items())]
+            names, total = sat.get(key, ((), 0))
+            sat[key] = (set(names) | set(sitting), max(total, count))
+    out = []
+    for (where, rule), (label, unasked, because) in sorted(best.items()):
+        names, total = sat[(where, rule)]
+        names = sorted(names, key=_sitting_order)
+        out.append(NotExamined(where=where, rule=rule, label=label,
+                               unasked=unasked, because=because,
+                               unclaimed=tuple(names[:UNCLAIMED_NAMED]),
+                               unclaimed_count=max(total, len(names))))
+    return out
 
 
 def repeats_not_entered(ctx) -> List:
@@ -963,10 +1030,21 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #: neighbour's loss, and being first alphabetically it was the element
     #: the terminal named.
     near_here = []
+    #: What sat here unplaced, by kind: each element no row claimed that
+    #: carries an identifier, as (subject, identifier). One carrying none is
+    #: left out on purpose, and it costs something: a template container
+    #: that lost its `semanticId` reads as a section the file does not
+    #: carry. But a container with no identifier is also the commonest
+    #: shape of a manufacturer's own, and counting it made conformant files
+    #: speak, which `docs/divergences.md` #19 promises they do not.
+    unplaced = {}
     for index, element, candidates, _main_empty in indexed:
-        if index in claimed or not candidates:
+        # A key that normalises to nothing is no identifier either.
+        if index in claimed or not any(candidates):
             continue
         subject = _subject(path, element, index, shared)
+        unplaced.setdefault(type(element).__name__, []).append(
+            (subject, _identifier(element)))
         for row in rows:
             near = _near_miss(candidates, row["match"])
             if near:
@@ -1009,23 +1087,31 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #
     # An element can only be sitting in a row's place if it is the kind
     # that row asks for. Anything else is an extension, which is #19's
-    # subject and not this one's. The kinds are collected rather than
-    # the subjects: the subjects were built with `_subject`, sorted, and
-    # then read as a truth value -- the same set the near-miss loop
-    # above had already walked, built a second time and thrown away.
-    unplaced_kinds = {type(element).__name__
-                      for index, element, candidates, _empty in indexed
-                      if index not in claimed and candidates}
+    # subject and not this one's. The elements come from the near-miss
+    # walk above, which visits exactly this set with each subject already
+    # built; an earlier version built them a second time here, sorted
+    # them, and read the result as a truth value.
+    #
+    # And *which* elements, not only whether any. Two opposite situations
+    # -- a row's own container under a drifted identifier, and a row the
+    # file legitimately omits beside an unrelated container of the same
+    # kind -- produced byte-identical records, and the one fact that tells
+    # them apart is what was sitting there. Named; still not blamed.
+    # Sorted once per kind, not once per row: every row of a kind reads
+    # the same list.
+    ordered = {kind: sorted(pairs, key=_sitting_order)
+               for kind, pairs in unplaced.items()}
     for row in rows:
         if not row["children"] or claimed_by.get(row["id"]):
             continue
         lost = tuple(_descendant_ids(row))
         if not lost:
             continue
+        sitting = ordered.get(row["kind"], ())
         result["not_examined"].append(
             (path, row["id"], row["label"], lost,
-             "unclaimed-element-present" if row["kind"] in unplaced_kinds
-             else "absent"))
+             "unclaimed-element-present" if sitting else "absent",
+             tuple(sitting[:UNCLAIMED_NAMED]), len(sitting)))
     # A loss is claimed only where something explains it, and that guard
     # stays: a row left unclaimed because the file legitimately does not
     # carry an optional element is not a loss anyone caused, and blaming a

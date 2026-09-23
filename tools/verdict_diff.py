@@ -293,6 +293,36 @@ def build_corpus(into: Path):
     cases.append(Case("a Digital Nameplate whose URIOfTheProduct is relative",
                   relative_uri))
 
+    # The case `summary.scopeNotExamined` was built for, which this corpus
+    # did not have. Nine inputs here carry a record of a scope with
+    # something sitting in it, and they are nine spellings of one: the
+    # official example's `Entites`, which the near-miss lint already
+    # names, so `rulesNotAsked` says it too. In this one nothing else
+    # does. The list is optional, its identifier is nobody's near miss,
+    # it holds an item so the metamodel has nothing to say about it
+    # either, and every other published number is a clean run's.
+    from builders import hd_env  # noqa: E402
+
+    def _vendor(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    elsewhere = copy.deepcopy(hd_env())
+    elsewhere["submodels"][0]["submodelElements"].append({
+        "modelType": "SubmodelElementList", "idShort": "Entities",
+        "semanticId": _vendor("urn:vendor:our-entities"),
+        "semanticIdListElement": _vendor("urn:vendor:our-entity"),
+        "typeValueListElement": "SubmodelElementCollection",
+        "value": [{"modelType": "SubmodelElementCollection",
+                   "semanticId": _vendor("urn:vendor:our-entity"),
+                   "value": [{"modelType": "Property", "idShort": "Name",
+                              "semanticId": _vendor("urn:vendor:name"),
+                              "valueType": "xs:string", "value": "pump"}]}]})
+    entities_elsewhere = into / "handover-entities-elsewhere.json"
+    entities_elsewhere.write_text(json.dumps(elsewhere), encoding="utf-8")
+    cases.append(Case("a Handover list wearing an identifier no row names",
+                      entities_elsewhere))
+
     # A Carbon Footprint submodel. It wears an identifier 02023 and 02035-3
     # both claim, so it draws BAT-R2's caveat as well as 02023's rows -- the
     # movement this pack introduced, which no earlier corpus input can show.
@@ -683,8 +713,13 @@ def _judge(src: Path, case: Case):
     # same way and for the same reason: it fails no build.
     examined = summary.get("scopeNotExamined")
     if examined is not None:
+        # And what sat there: two records differing only in the element
+        # beside the row are the two opposite cases that field exists to
+        # tell apart, and a key without it reported them as nothing moved.
         examined = tuple(sorted(
-            (record.get("where"), record.get("rule"), record.get("because"))
+            (record.get("where"), record.get("rule"), record.get("because"),
+             tuple((pair.get("subject"), pair.get("seen") or "")
+                   for pair in record.get("unclaimedHere") or ()))
             for record in examined))
     return (tuple(ours), relayed, run.returncode, not_asked, examined)
 
