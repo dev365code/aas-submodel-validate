@@ -645,12 +645,61 @@ def test_a_drifted_nested_copy_is_charged_what_it_holds(tmp_path):
     assert record.subject == "H/Outer/Inner", record
 
 
-def test_a_near_miss_of_the_wrong_kind_is_charged_nothing(tmp_path):
+def test_a_near_miss_of_the_wrong_kind_is_charged_as_a_wrong_kind_match_is(tmp_path):
     """A Property wearing a near miss of `Node`'s identifier. Carrying the
-    identifier itself, it would be judged by its kind and not entered, so
-    nothing beneath `Node` would be asked of it either way."""
+    identifier itself it would be judged by its kind, not entered, and
+    charged with everything beneath `Node` -- so it is charged that now.
+    Charged nothing, it left no trace: with no near-miss lint registered,
+    the report was the report of a clean file."""
     report = _nested(tmp_path, lambda sid: [{
         "modelType": "Property", "idShort": "Outer", "semanticId": sid("Nodes"),
         "valueType": "xs:string", "value": "x"}], "wrong-kind.json")
-    assert report.not_asked == [], report.not_asked
-    assert report.unmatched == [], report.unmatched
+    assert report.not_asked == ["TPL-E02", "TPL-E03", "TPL-E04"], report.not_asked
+    [record] = report.unmatched
+    assert record.subject == "H/Outer", record
+
+
+def test_an_element_goes_to_the_first_row_it_matches(tmp_path):
+    """Two sibling rows share an identifier, and the drifted element holds
+    one element carrying it. The walk hands that element to the first row
+    and the second asks for nothing beneath it; the charge entered it
+    under both, and blamed the drift for the second row's `Leaf`."""
+    base = "https://example.com/ids/"
+
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": base + value}]}
+
+    def card(value):
+        return {"type": "SMT/Cardinality", "valueType": "xs:string", "value": value,
+                "semanticId": {"type": "ExternalReference", "keys": [{
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/SubmodelTemplates/Cardinality/1/0"}]}}
+
+    def section(short, leaf):
+        return {"modelType": "SubmodelElementCollection", "idShort": short,
+                "semanticId": sid("Shared"), "qualifiers": [card("ZeroToOne")],
+                "value": [{"modelType": "Property", "idShort": leaf, "semanticId": sid(leaf),
+                           "valueType": "xs:string", "qualifiers": [card("One")]}]}
+
+    template = tmp_path / "shared-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:t", "idShort": "H", "kind": "Template",
+        "semanticId": sid("top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Root",
+            "semanticId": sid("Root"), "qualifiers": [card("One")],
+            "value": [section("A", "LeafA"), section("B", "LeafB")]}]}]}), encoding="utf-8")
+    document = tmp_path / "shared.json"
+    document.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:d", "idShort": "H", "semanticId": sid("top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Root",
+            "semanticId": sid("Roots"),
+            "value": [{"modelType": "SubmodelElementCollection", "idShort": "Only",
+                       "semanticId": sid("Shared"),
+                       "value": [{"modelType": "Property", "idShort": "LeafA",
+                                  "semanticId": sid("LeafA"), "valueType": "xs:string",
+                                  "value": "x"}]}]}]}]}), encoding="utf-8")
+    report = runner.run(document, template=str(template))
+    assert report.not_asked == ["TPL-E02", "TPL-E03", "TPL-E04"], report.not_asked

@@ -544,30 +544,34 @@ def _asked_inside(row, element, copied=None) -> List[str]:
     and beneath each of those only what `element` holds for it, matched
     the way the walk matches.
 
-    The way the walk goes, too. An element of the wrong kind is judged by
-    its kind and not entered, so nothing beneath its row is asked of it
-    either way: charged anyway, it was blamed for rules its own identifier
-    would not have had asked. And a row that copies an element above it
-    is followed with that element's rows (`copied`, as `_scope` carries
-    them): it used to be asked and not followed, on the reasoning that its
-    rows were counted already, which held one level down -- the sections a
-    nested copy holds were never counted at its own depth."""
+    The way the walk goes, too. An element of the wrong kind is not
+    entered, and the walk charges one carrying the row's identifier
+    outright with everything beneath its row; one whose identifier also
+    drifted is charged the same. Charged nothing, such an element in a pack
+    registering no near-miss lint left no trace at all -- a report the same
+    as a clean file's, and one defect quieter than the file with only the
+    identifier corrected. Each element goes to the first row it matches,
+    as the walk hands them out: entered under every row it matched, one
+    element answered for two sibling rows sharing an identifier. And a row
+    that copies an element above it is followed with that element's rows
+    (`copied`, as `_scope` carries them): it used to be asked and not
+    followed, on the reasoning that its rows were counted already, which
+    held one level down -- the sections a nested copy holds were never
+    counted at its own depth."""
     if type(element).__name__ != row["kind"]:
-        return []
+        return _descendant_ids(row)
     inside = dict(copied or {})
     if row["sid"] and not row.get("recurses"):
         inside[row["sid"]] = row["children"]
     rows = inside.get(row["recurses"], ()) if row.get("recurses") else row["children"]
-    out = []
-    held = _sub_elements(element)
+    out = [child["id"] for child in rows]
     in_list = type(element).__name__ == "SubmodelElementList"
-    for child in rows:
-        out.append(child["id"])
-        if not child["children"] and not child.get("recurses"):
-            continue
-        for sub in held:
+    for sub in _sub_elements(element):
+        for child in rows:
             if _child_matches(sub, child, in_list):
-                out.extend(_asked_inside(child, sub, inside))
+                if child["children"] or child.get("recurses"):
+                    out.extend(_asked_inside(child, sub, inside))
+                break
     return out
 
 

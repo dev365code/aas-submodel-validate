@@ -1651,13 +1651,23 @@ TABLE = [
 
     ("scope/a-wrong-kind-near-miss-is-not-entered",
      "src/aas_submodel_validate/rules/engine.py",
+     '    if type(element).__name__ != row["kind"]:\n        return _descendant_ids(row)\n',
      '    if type(element).__name__ != row["kind"]:\n        return []\n',
-     '    if False:\n        return []\n',
      ["tests/test_unmatched_coverage.py::"
-      "test_a_near_miss_of_the_wrong_kind_is_charged_nothing"],
+      "test_a_near_miss_of_the_wrong_kind_is_charged_as_a_wrong_kind_match_is"],
      "a Property wearing a near miss of a collection's identifier was "
-     "charged every row beneath that collection, though carrying the "
-     "identifier itself it would have been judged by kind and not entered"),
+     "charged nothing, and in a pack with no near-miss lint the report was "
+     "the report of a clean file -- one defect quieter than the same file "
+     "with the identifier corrected"),
+
+    ("scope/an-element-goes-to-the-first-row-it-matches",
+     "src/aas_submodel_validate/rules/engine.py",
+     "                    out.extend(_asked_inside(child, sub, inside))\n                break\n",
+     "                    out.extend(_asked_inside(child, sub, inside))\n",
+     ["tests/test_unmatched_coverage.py::test_an_element_goes_to_the_first_row_it_matches"],
+     "one element carrying an identifier two sibling rows share was entered "
+     "under both, and the drift was blamed for the second row's rules, "
+     "which the walk would never have asked of it"),
 
     ("scope/a-near-miss-is-charged-though-nothing-beside-it-is-unentered",
      "src/aas_submodel_validate/rules/engine.py",
@@ -1671,8 +1681,8 @@ TABLE = [
 
     ("scope/an-item-matched-by-kind-is-followed",
      "src/aas_submodel_validate/rules/engine.py",
-     "            if _child_matches(sub, child, in_list):\n                out.extend(_asked_inside(child, sub, inside))\n",
-     "            if _child_matches(sub, child, False):\n                out.extend(_asked_inside(child, sub, inside))\n",
+     "            if _child_matches(sub, child, in_list):\n                if child[\"children\"] or child.get(\"recurses\"):\n",
+     "            if _child_matches(sub, child, False):\n                if child[\"children\"] or child.get(\"recurses\"):\n",
      ["tests/test_scope_the_run_did_not_examine.py::"
       "test_an_item_matched_by_its_kind_is_followed_as_the_walk_follows_it"],
      "a drifted list whose item carries no semanticId -- the official "
