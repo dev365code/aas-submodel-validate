@@ -432,8 +432,8 @@ submodel identifier and something had to choose.
 | IDTA 02004 Handover Documentation 2.0.1 | 38 | the mandatory VDI 2770 classification and its twelve classes, English class names, the status vocabulary, dates that are dates, files that exist in the container, references that resolve |
 | IDTA 02003 Technical Data 2.0.1 | 26 | dates that are dates, files that exist in the container, references that resolve |
 | IDTA 02035-2 Digital Battery Passport part 2 1.0 | 22 | 02004's, minus the three whose elements this template drops |
-| IDTA 02006-3-0 Digital Nameplate 3.0 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value; files that exist in the container |
-| IDTA 02023 Carbon Footprint 1.0 | 26 | files that exist in the container (the open-content ArbitraryContent placeholder is left unjudged) |
+| IDTA 02006-3-0 Digital Nameplate 3.0 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value; files that exist in the container; the near-miss lint |
+| IDTA 02023 Carbon Footprint 1.0 | 26 | files that exist in the container; the near-miss lint (the open-content ArbitraryContent placeholder is left unjudged) |
 | IDTA 02002 Contact Information 1.0.1 | 36 | the near-miss lint only (no email, telephone, URL, time-zone or language-code shape is checked) |
 | IDTA 02011 Hierarchical Structures 1.1.1 | 11 | the near-miss lint only (a nested node is judged at any depth, and a relationship's two ends are not read) |
 | IDTA 02007 Software Nameplate 1.0.1 | 73 | the near-miss lint only (every row is read as the template writes it where the specification beside it disagrees: `docs/divergences.md` #57) |

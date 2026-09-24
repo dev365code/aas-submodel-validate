@@ -406,6 +406,10 @@ def test_one_element_draws_one_near_miss(tmp_path):
         "value": []})
     near = [f for f in runner.run(_write(tmp_path, env)).findings if f.id == "HDL2"]
     assert len(near) == 1, [f.violation.detail for f in near]
+    # And the row it is named against is the one only a version away: the
+    # supplemental is a last segment one letter off `Documents`' sibling,
+    # and a version drift is nearer than any spelling.
+    assert near[0].violation.detail.endswith("0173-1#02-ABI500#003"), near[0].violation.detail
 
 
 # -- navigation for the hand rules: what a key path may address --------------

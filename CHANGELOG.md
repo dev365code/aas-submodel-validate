@@ -32,25 +32,33 @@ rows. Each now registers the same lint, `DNL1`, `CIL1`, `PCFL1`, `HSL1`
 and `SNL1`, with the same title, clause and remedy as `TDL1`: a SHOULD,
 reported as a warning.
 
-And the row a near miss is named against is the nearest one, the first
-of the nearest breaking a tie. It was the first row near enough, and
-where sibling rows share a stem and differ by a few letters that named
-the wrong one: 02007's `InstallationPath` written `InstallationPaths` is
-one edit from its row and three from `InstallationDate`, which comes
-first, so `SNL1` said the template has `InstallationDate` there, and a
-file that followed its remedy drew two errors. The rows a drift is
-charged in `rulesNotAsked` and `unmatchedElements` follow the same row.
+And a near miss is taken for the nearest row, the first of the nearest
+breaking a tie. It was taken for the first row near enough, and where
+sibling rows share a stem and differ by a few letters that was the wrong
+one: 02007's `SoftwareNameplateInstance` written
+`SoftwareNameplateInstType` was taken for `SoftwareNameplateType`, which
+the file carries, and the fifty-three rules beneath the instance were
+charged to nothing -- `rulesNotAsked` was empty. They are charged to it
+now, and `SNL1` names the row it is closest to. A missing sibling's
+error is graded by the same row: an `InstallationDate` missing beside an
+`InstallationPath` written `InstallationPaths` is a 5 now, nothing there
+resembling it, where it was a 2, an element carrying an identifier close
+to its own.
 
-**A SAMM identifier one version off is a near miss.** 02035-2 names its
-elements twice, by an ECLASS identifier and by a SAMM one,
+**A SAMM identifier at another version is a near miss.** 02035-2 names
+its elements twice, by an ECLASS identifier and by a SAMM one,
 `urn:samm:<namespace>:<version>#<name>`, whose version sits before the
 name. An element carrying the SAMM identifier of another version
 matched no row and was named by nothing: the near-miss check read the
 name after `#` as an ECLASS version suffix, and wanted the `://` of an
-IRI. The same element of the same namespace at another version is now a
-near miss -- `DBP2L2` names it, and a template of the caller's written
-with SAMM identifiers records it in `summary.unmatchedElements` -- while
-another name in the same namespace is not.
+IRI. The same element of the same namespace at another numbered version
+is now a near miss, the SAMM meta-model's own namespaces (`...:
+characteristic:2.1.0#Locale`) included, while another name, another
+namespace or a version that is not a number is not. `DBP2L2` names it;
+a drifted collection or list is charged in `rulesNotAsked` and
+`unmatchedElements` with the rules beneath it, which were a place not
+examined; and a template of the caller's written with SAMM identifiers
+records such a container in `summary.unmatchedElements`.
 
 **What moves: five verdicts in the corpus, and every Product Condition
 submodel that breaks its template.** Measured against 0.7.1 across the
@@ -74,7 +82,7 @@ as before, the finding now saying that only its SAMM version differs;
 and a Digital Nameplate, Contact Information, Carbon Footprint,
 Hierarchical Structures or Software Nameplate submodel holding an element
 one version suffix or one last segment off a row's, or a 02035-2 element
-one SAMM version off, draws a warning where it drew none. The exit code
+at another SAMM version, draws a warning where it drew none. The exit code
 of those is what it was; under `-W`, which fails on warnings, such a
 file that left by 0 leaves by 1. `summary.rulesChecked` counts the
 fifty-five new rules.

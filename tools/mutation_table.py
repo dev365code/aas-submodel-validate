@@ -1724,6 +1724,61 @@ TABLE = [
      "first sibling within the bound, and the file that followed that "
      "remedy drew two errors"),
 
+    ("near-miss/a-samm-near-miss-stays-in-its-namespace",
+     "src/aas_submodel_validate/semantics.py",
+     '        return "%s#%s" % (match.group(1), match.group(3))\n',
+     '        return "urn:samm:#%s" % match.group(3)\n',
+     ["tests/test_dbp_hand_rules.py::"
+      "test_a_samm_identifier_of_another_namespace_is_not_a_near_miss"],
+     "a Documents list wearing 02004's own handover aspect's `documents` "
+     "was called a drift of 02035-2's, whose namespace it does not share"),
+
+    ("near-miss/a-samm-namespace-may-hold-a-colon",
+     "src/aas_submodel_validate/semantics.py",
+     '_SAMM = re.compile(r"^(urn:samm:[^#]+):(\\d+(?:\\.\\d+)*)#(.+)$")',
+     '_SAMM = re.compile(r"^(urn:samm:[^:#]+):(\\d+(?:\\.\\d+)*)#(.+)$")',
+     ["tests/test_dbp_hand_rules.py::"
+      "test_a_samm_meta_model_identifier_one_version_off_is_a_near_miss"],
+     "a language item wearing the SAMM meta-model's Locale at 2.2.0, where "
+     "the template has 2.1.0, drew nothing: the meta-model's namespace "
+     "holds a colon, and the pattern stopped at it"),
+
+    ("near-miss/a-samm-version-is-a-number",
+     "src/aas_submodel_validate/semantics.py",
+     '_SAMM = re.compile(r"^(urn:samm:[^#]+):(\\d+(?:\\.\\d+)*)#(.+)$")',
+     '_SAMM = re.compile(r"^(urn:samm:[^#]+):([^#]+)#(.+)$")',
+     ["tests/test_dbp_hand_rules.py::test_a_samm_version_is_a_number"],
+     "`latest` in a SAMM identifier's version place was read as a version, "
+     "and a Documents list carrying it was called a drift"),
+
+    ("near-miss/a-version-drift-is-nearest",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    if seen_stem and seen_stem == version_stem(expected):\n        return 0\n",
+     "    if seen_stem and seen_stem == version_stem(expected):\n        return 99\n",
+     ["tests/test_engine_regressions.py::test_one_element_draws_one_near_miss"],
+     "an element one ECLASS version off a row, with a supplemental one "
+     "letter off a sibling's, was named against the sibling"),
+
+    ("near-miss/a-tie-goes-to-the-first-row",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            if near and (nearest is None or near[0] < nearest[0][0]):\n",
+     "            if near and (nearest is None or near[0] <= nearest[0][0]):\n",
+     ["tests/test_near_miss_lints.py::test_a_tie_goes_to_the_first_row"],
+     "an identifier as near two rows was named against the later one, where "
+     "the CHANGELOG says the first of the nearest"),
+
+    ("near-miss/the-rest-of-the-report-uses-the-nearest-row",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            near_here.append((subject, seen, expected, row, element))\n",
+     "            near_here.append((subject, seen, expected, next(\n"
+     "                r for r in rows if _nearness(candidates, r[\"match\"])), element))\n",
+     ["tests/test_near_miss_lints.py::"
+      "test_the_nearest_row_is_the_one_the_rest_of_the_report_uses"],
+     "the lint named the nearest row while the charge and a missing "
+     "sibling's grade used the first near one: an InstallationDate missing "
+     "beside InstallationPaths was graded 2 beside a lint naming "
+     "InstallationPath"),
+
     ("near-miss/a-samm-version-drift-is-a-near-miss",
      "src/aas_submodel_validate/rules/engine.py",
      "    if seen_samm and seen_samm == samm_stem(expected):\n",

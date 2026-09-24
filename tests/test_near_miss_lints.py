@@ -146,6 +146,36 @@ def test_the_five_lints_are_tdl1_under_other_names():
         assert shape(rules[lint]) == shape(rules["TDL1"]), lint
 
 
+def test_a_tie_goes_to_the_first_row(tmp_path):
+    """`InstallationDath` is one edit from `InstallationDate` and one from
+    `InstallationPath`; the first in the table is named, as it was before
+    the nearest row was."""
+    env = copy.deepcopy(sn_env())
+    _bump(_find(env, "InstallationPath"), "SoftwareNameplateInstance/InstallationPath",
+          "SoftwareNameplateInstance/InstallationDath")
+    [lint] = [f for f in _run(tmp_path, env, "sn-tie.json").findings if f.id == "SNL1"]
+    assert lint.violation.detail.endswith("SoftwareNameplateInstance/InstallationDate"), \
+        lint.violation.detail
+
+
+def test_the_nearest_row_is_the_one_the_rest_of_the_report_uses(tmp_path):
+    """The row the lint names is the row the drift is charged under, and
+    the one a missing sibling's grade asks about. `InstallationDate` is
+    missing and `InstallationPaths` resembles `InstallationPath`, not it:
+    its error is a 5, nothing here resembling it, where the first row near
+    enough graded it a 2 -- one element carrying an identifier close to
+    its own -- beside a lint naming the other row."""
+    env = copy.deepcopy(sn_env())
+    instance = _find(env, "SoftwareNameplateInstance")
+    instance["value"] = [child for child in instance["value"]
+                         if child.get("idShort") != "InstallationDate"]
+    _bump(_find(env, "InstallationPath"), "SoftwareNameplateInstance/InstallationPath",
+          "SoftwareNameplateInstance/InstallationPaths")
+    report = _run(tmp_path, env, "sn-charge.json")
+    [missing] = [f for f in report.findings if f.id == "SN-E25"]
+    assert missing.fixability == 5, (missing.fixability, missing.fixability_why)
+
+
 def test_the_nearest_row_is_the_one_named(tmp_path):
     """02007's rows under one collection share a stem and differ by a few
     letters. `InstallationPaths` is one edit from `InstallationPath` and

@@ -1338,6 +1338,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             near = _nearness(candidates, row["match"])
             if near and (nearest is None or near[0] < nearest[0][0]):
                 nearest = (near, row)
+                if not near[0]:
+                    break  # nothing is nearer, and a tie goes to the first
         if nearest:
             (_distance, seen, expected), row = nearest
             result["near_misses"].append((subject, seen, expected))
@@ -1524,6 +1526,8 @@ def _nearness(candidates, match_values):
             distance = _distance(seen, expected)
             if distance is not None and (nearest is None or distance < nearest[0]):
                 nearest = (distance, seen, expected)
+                if not distance:
+                    return nearest
     return nearest
 
 
@@ -1537,8 +1541,8 @@ def _distance(seen, expected):
         return 0
     # The same element of the same SAMM namespace at another version:
     # 02035-5 moved every identifier's version with each bugfix release,
-    # so a file written to the release before is this, element for
-    # element.
+    # so an element copied from a file of the release before, into a
+    # submodel of this one, is this.
     seen_samm = samm_stem(seen)
     if seen_samm and seen_samm == samm_stem(expected):
         return 0

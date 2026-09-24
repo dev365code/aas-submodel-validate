@@ -57,7 +57,10 @@ def version_stem(irdi: str) -> Optional[str]:
 #: the element's name, where neither the ECLASS check (a version suffix
 #: after the last `#`) nor the IRI one (a `://` and a last path segment)
 #: looks.
-_SAMM = re.compile(r"^(urn:samm:[^:#]+):(\d+(?:\.\d+)*)#(.+)$")
+#: The namespace may hold a colon itself -- the meta-model's own,
+#: `urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#Locale`, which
+#: 02035-2 uses -- so it runs to the last colon before the version.
+_SAMM = re.compile(r"^(urn:samm:[^#]+):(\d+(?:\.\d+)*)#(.+)$")
 
 
 def samm_stem(value: str) -> Optional[str]:

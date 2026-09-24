@@ -141,6 +141,52 @@ def test_a_samm_identifier_of_another_name_is_not_a_near_miss(tmp_path):
     assert "DBP2L2" not in _findings(tmp_path, env)
 
 
+def test_a_samm_identifier_of_another_namespace_is_not_a_near_miss(tmp_path):
+    """The name and the namespace both have to be the row's: 02004's own
+    handover aspect names a `documents` too, and the 02035-2 table carries
+    that namespace for other rows. A list wearing it is not a drift of
+    02035-2's `documents`."""
+    env = copy.deepcopy(dbp_env())
+    documents = env["submodels"][0]["submodelElements"][0]
+    documents["semanticId"]["keys"][0]["value"] = (
+        "urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#documents")
+    assert "DBP2L2" not in _findings(tmp_path, env)
+
+
+def test_a_samm_meta_model_identifier_one_version_off_is_a_near_miss(tmp_path):
+    """A language item carries `LanguageCode`'s ECLASS identifier and, in
+    the template, the SAMM meta-model's `...:characteristic:2.1.0#Locale`
+    -- a namespace with a colon in it, which the pattern stopped at."""
+    env = copy.deepcopy(dbp_env())
+    stack = [env]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            keys = (node.get("semanticId") or {}).get("keys") or [{}]
+            # The item, not the list: 02004 gives both the one identifier.
+            if node.get("modelType") == "Property" \
+                    and keys[0].get("value") == "0173-1#02-AAN468#008":
+                keys[0]["value"] = "urn:samm:org.eclipse.esmf.samm:characteristic:2.2.0#Locale"
+                break
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+    else:
+        raise AssertionError("the fixture carries no language item")
+    finding = _findings(tmp_path, env)["DBP2L2"]
+    assert "characteristic:2.1.0#Locale" in finding.violation.detail, finding.violation.detail
+
+
+def test_a_samm_version_is_a_number(tmp_path):
+    """`latest` is not a version, and an identifier carrying it in that
+    place is not the row's at another one."""
+    env = copy.deepcopy(dbp_env())
+    documents = env["submodels"][0]["submodelElements"][0]
+    documents["semanticId"]["keys"][0]["value"] = (
+        "urn:samm:io.admin-shell.idta.batterypass.handover_documentation:latest#documents")
+    assert "DBP2L2" not in _findings(tmp_path, env)
+
+
 def test_a_reference_type_that_differs_from_the_template_is_noted(tmp_path):
     env = copy.deepcopy(dbp_env())
     env["submodels"][0]["semanticId"]["type"] = "ExternalReference"
