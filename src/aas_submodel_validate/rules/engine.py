@@ -1333,15 +1333,25 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         # three from `InstallationDate`, which comes first, so the lint
         # told the file to become the date it already carried -- and the
         # file that followed it drew two errors.
+        #
+        # At the same distance, a row nothing here matched wins over one
+        # something did: a drift is of what is missing. Two rows as near,
+        # neither matched, go to the first. The first of any two used to
+        # win, and 02007's `InstallationDath`, as near `InstallationDate`
+        # as `InstallationPath`, was named against the date the file
+        # already carried.
         nearest = None
         for row in rows:
             near = _nearness(candidates, row["match"])
-            if near and (nearest is None or near[0] < nearest[0][0]):
-                nearest = (near, row)
-                if not near[0]:
-                    break  # nothing is nearer, and a tie goes to the first
+            if not near:
+                continue
+            rank = (near[0], row["id"] in claimed_by)
+            if nearest is None or rank < nearest[0]:
+                nearest = (rank, near, row)
+                if rank == (0, False):
+                    break  # nothing ranks above it
         if nearest:
-            (_distance, seen, expected), row = nearest
+            _rank, (_distance, seen, expected), row = nearest
             result["near_misses"].append((subject, seen, expected))
             near_here.append((subject, seen, expected, row, element))
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.1 — unreleased
+
+**A tie goes to the row nothing matched.** A near miss is taken for the
+nearest row, and where two rows were as near, the first in the table was
+taken, whether or not something in that place had already matched it.
+02007's `InstallationPath` written `InstallationDath` is one edit from
+`InstallationPath` and one from `InstallationDate`; the file carries its
+`InstallationDate`, and `SNL1` named that, so a file that followed its
+remedy drew two errors. At the same distance a row nothing in that place
+matched now wins over one something did, and two such rows still go to
+the first. What the drift is charged in `rulesNotAsked` and
+`unmatchedElements`, and how a missing sibling's error is graded, follow
+the same row. No verdict moves.
+
+It is 360 rules, 311 generated from the vendored official template files,
+across nine template packs, as in 0.8.0. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.8.0 — 2026-09-25
 
 **IDTA 02035-5 Product Condition is the ninth template pack.** The

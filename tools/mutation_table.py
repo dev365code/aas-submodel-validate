@@ -1716,8 +1716,8 @@ TABLE = [
 
     ("near-miss/the-nearest-row-is-named",
      "src/aas_submodel_validate/rules/engine.py",
-     "            if near and (nearest is None or near[0] < nearest[0][0]):\n",
-     "            if near and nearest is None:\n",
+     "            if nearest is None or rank < nearest[0]:\n",
+     "            if nearest is None:\n",
      ["tests/test_near_miss_lints.py::test_the_nearest_row_is_the_one_named"],
      "a Software Nameplate whose InstallationPath drifted to "
      "InstallationPaths was told the template says InstallationDate, the "
@@ -1770,11 +1770,20 @@ TABLE = [
 
     ("near-miss/a-tie-goes-to-the-first-row",
      "src/aas_submodel_validate/rules/engine.py",
-     "            if near and (nearest is None or near[0] < nearest[0][0]):\n",
-     "            if near and (nearest is None or near[0] <= nearest[0][0]):\n",
-     ["tests/test_near_miss_lints.py::test_a_tie_goes_to_the_first_row"],
-     "an identifier as near two rows was named against the later one, where "
-     "the CHANGELOG says the first of the nearest"),
+     "            if nearest is None or rank < nearest[0]:\n",
+     "            if nearest is None or rank <= nearest[0]:\n",
+     ["tests/test_near_miss_lints.py::test_a_tie_between_rows_nothing_matched_goes_to_the_first"],
+     "an identifier as near two rows nothing matched was named against the "
+     "later one, where the CHANGELOG says the first"),
+
+    ("near-miss/a-tie-goes-to-the-row-nothing-matched",
+     "src/aas_submodel_validate/rules/engine.py",
+     '            rank = (near[0], row["id"] in claimed_by)\n',
+     "            rank = (near[0], False)\n",
+     ["tests/test_near_miss_lints.py::test_a_tie_goes_to_the_row_nothing_here_matched"],
+     "InstallationDath, as near InstallationDate as InstallationPath, was "
+     "named against the date the file already carried, and a file that "
+     "followed the remedy drew two errors"),
 
     ("near-miss/the-rest-of-the-report-uses-the-nearest-row",
      "src/aas_submodel_validate/rules/engine.py",

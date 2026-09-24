@@ -146,14 +146,30 @@ def test_every_pack_s_near_miss_lint_is_tdl1_under_another_name():
         assert shape(rules[lint]) == shape(rules["TDL1"]), lint
 
 
-def test_a_tie_goes_to_the_first_row(tmp_path):
+def test_a_tie_goes_to_the_row_nothing_here_matched(tmp_path):
     """`InstallationDath` is one edit from `InstallationDate` and one from
-    `InstallationPath`; the first in the table is named, as it was before
-    the nearest row was."""
+    `InstallationPath`. The file carries its `InstallationDate`, so the
+    drift is of the row nothing here matched: naming the first of the two
+    told the file to become the date it already carried, and a file that
+    followed that remedy drew two errors."""
     env = copy.deepcopy(sn_env())
     _bump(_find(env, "InstallationPath"), "SoftwareNameplateInstance/InstallationPath",
           "SoftwareNameplateInstance/InstallationDath")
     [lint] = [f for f in _run(tmp_path, env, "sn-tie.json").findings if f.id == "SNL1"]
+    assert lint.violation.detail.endswith("SoftwareNameplateInstance/InstallationPath"), \
+        lint.violation.detail
+
+
+def test_a_tie_between_rows_nothing_matched_goes_to_the_first(tmp_path):
+    """With `InstallationDate` gone too, nothing here matched either row,
+    and the first in the table is named."""
+    env = copy.deepcopy(sn_env())
+    instance = _find(env, "SoftwareNameplateInstance")
+    instance["value"] = [child for child in instance["value"]
+                         if child.get("idShort") != "InstallationDate"]
+    _bump(_find(env, "InstallationPath"), "SoftwareNameplateInstance/InstallationPath",
+          "SoftwareNameplateInstance/InstallationDath")
+    [lint] = [f for f in _run(tmp_path, env, "sn-tie-both.json").findings if f.id == "SNL1"]
     assert lint.violation.detail.endswith("SoftwareNameplateInstance/InstallationDate"), \
         lint.violation.detail
 
