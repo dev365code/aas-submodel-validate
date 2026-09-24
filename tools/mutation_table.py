@@ -1507,6 +1507,15 @@ TABLE = [
      "file whose element sat at that very place one version suffix off, "
      "with the near-miss lint saying so on the next line"),
 
+    ("readme/the-elision-is-the-lines-the-run-prints",
+     "README.md",
+     "The `…` is six lines: the one that accounts for the `8 info` — the\n",
+     "The `…` is four lines: the one that accounts for the `8 info` — the\n",
+     ["tests/test_readme_front.py::test_the_anatomy_block_is_what_the_tool_prints"],
+     "the sentence under the battery sample said the elided run was four "
+     "lines when the tool printed six, and every gate on the block read "
+     "the quoted lines and none read the sentence"),
+
     ("fixability/a-qualified-label-is-not-an-idshort",
      "src/aas_submodel_validate/rules/engine.py",
      "                        if element.id_short and element.id_short == _id_short_of(row))\n",

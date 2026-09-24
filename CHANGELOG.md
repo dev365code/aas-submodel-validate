@@ -34,8 +34,8 @@ unentered there went to `rulesNotAsked`, a section the file simply omits
 included, and the summary line named them as rules this run did not
 look inside. A Digital Nameplate whose serial number drifted reported
 the three rules of an asset-specific section it does not carry that
-way. Those rows are now what they are: a place not examined, recorded
-in `scopeNotExamined` -- the summary line names such a place only where
+way. Those rows are what they are: a place not examined, which
+`scopeNotExamined` recorded already -- the summary line names such a place only where
 an element of its kind sits there. The rows a near miss does resemble
 stay where they were. No verdict moves; `rulesNotAsked` gets shorter on
 such files, and a pipeline that read a non-empty one as a sign of drift
@@ -51,12 +51,17 @@ rules both tables lost there. It was charged with one table's, and the
 other's stayed in `rulesNotAsked` with no element beside them.
 
 **IDTA 02011 Hierarchical Structures enabling Bills of Material is the
-seventh template pack.** A submodel of it was reported as not matched
-(`SMT-D1`) and left by 1; it is judged now against eleven rows generated
-from the vendored 1.1.1 template -- the entry node, its nodes, their three
-relationships, `BulkCount` and `ArcheType` -- and a conformant one leaves
-by 0. A pipeline that is red on such a file today goes quiet, and nothing
-downstream reports that, so it is said here. A bill of material is a
+seventh template pack.** A submodel of it was judged by no table: where
+nothing else in the file matched one it drew `SMT-D1` and left by 1, or
+by 0 under `--allow-unmatched`, and beside a submodel that did match it
+was passed over without a word. It is judged now against eleven rows
+generated from the vendored 1.1.1 template -- the entry node, its nodes,
+their three relationships, `BulkCount` and `ArcheType`. Exits move both
+ways, and nothing downstream reports either, so they are said here: a
+conformant one on its own leaves by 0 where it left by 1; a defective
+one leaves by 1 where it left by 0 beside a matched submodel or under
+`--allow-unmatched`; and under `--require-all-judged` a file that failed
+only because such a submodel went unjudged passes if it conforms. A bill of material is a
 tree: a `Node` holds `Node`s of its own identifier to any depth, the
 template writes that out one level down and stops, and the walk gives
 each nested node the rows of the node it copies, so a defect four levels
@@ -83,9 +88,9 @@ other, and neither is one inside an entry node the run could not place,
 which `scopeNotExamined` already names.
 
 **IDTA 02007 Software Nameplate is the eighth.** A submodel of it was
-reported as not matched (`SMT-D1`) and left by 1; it is judged now against
-seventy-three rows generated from the vendored 1.0.1 template, and a
-conformant one leaves by 0 -- said here for the same reason as above. The
+judged by no table either, and is judged now against seventy-three rows
+generated from the vendored 1.0.1 template, with the same moves in every
+direction as a Hierarchical Structures one. The
 template's two collections, one for the software as a type and one for an
 installed instance, are both optional, and every mandatory element sits
 beneath one of them, so a submodel holding neither leaves by 0 as well.
@@ -102,9 +107,10 @@ remedy names the new template too, and a submodel *named*
 `SoftwareNameplate` that carries some other identifier is now told that
 matching goes by identifier rather than by name.
 
-**What moves: four verdicts, each a submodel no pack answered for.**
-Measured against 0.6.0 across the corpus, four of the seventy-four
-inputs are judged differently, and all four drew `SMT-D1` before. A
+**What moves: four verdicts in the corpus, and three shapes it does not
+hold.** Measured against 0.6.0 across the corpus, four of the
+seventy-four inputs are judged differently, and all four drew `SMT-D1`
+before. A
 valid Hierarchical Structures submodel and a valid Software Nameplate
 now leave by 0 where they left by 1: a pipeline that was red on such a
 file goes quiet. A Hierarchical Structures node four levels down
@@ -114,7 +120,17 @@ specification prints draws `SN-E35` (`docs/divergences.md` #57); both
 still leave by 1. The other seventy are judged as before: every finding
 in them gains `fixability`, `fixabilityWhy` and `path`, which are
 additive, and `summary.rulesChecked` counts the new rules. None of the
-seventy-four is asked with an option 0.6.0 does not have.
+seventy-four is asked with an option 0.6.0 does not have. The corpus
+holds no Hierarchical Structures or Software Nameplate submodel beside
+one a pack already answered, no run with `--allow-unmatched` or
+`--require-all-judged`, and no template of the caller's that contains
+itself, and those move too, measured by hand: a defective submodel of
+either template beside a Digital Nameplate, or on its own under
+`--allow-unmatched`, left by 0 and leaves by 1; a conformant one beside
+a Digital Nameplate under `--require-all-judged` left by 1 and leaves by
+0; and a file whose nested copies break a self-containing template given
+with `--template` left by 0 with a note and leaves by 1 with the
+findings.
 
 It is 305 rules, 262 generated from the vendored official template files,
 across eight template packs. What this reader takes in is

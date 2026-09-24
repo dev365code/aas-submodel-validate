@@ -51,10 +51,12 @@ remembered. It has to be: the element this page led with until 0.1.3 was
 applicable**, energy round trip efficiency and its fade". See
 `docs/divergences.md` #37.
 
-The `…` is four lines: the one that accounts for the `8 info` — the
+The `…` is six lines: the one that accounts for the `8 info` — the
 relayed metamodel findings, folded into a count unless you ask for them
-— the coverage note quoted further down, and the two-line key naming
-the labels this run printed. Notes are printed and not counted; the
+— a coverage note of the kind quoted further down, and a four-line key:
+the labels this run printed, what a note is, that the finding is a
+reading of the regulation and not a determination of compliance, and
+where that reading is written down. Notes are printed and not counted; the
 folded line is counted and not printed in full. The
 summary opens `ok` because the exit code is **0**: a disagreement with a
 reading of the regulation is a warning, so it does not fail your build unless you ask

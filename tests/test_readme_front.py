@@ -921,6 +921,22 @@ def test_the_anatomy_block_is_what_the_tool_prints(tmp_path, monkeypatch):
             "the block ends with an elision mark and has already quoted "
             "the run's last line, so there is nothing left to elide")
 
+    # And the prose beneath says how many lines the mark stands for. It
+    # said four while the run printed six -- two key lines had been added
+    # since -- because the sentence was the one thing here nothing read.
+    marks = [k for k, index in enumerate(seen) if index is None]
+    assert len(marks) == 1, "the sentence below describes one elision"
+    k = marks[0]
+    after = seen[k + 1] if k + 1 < len(seen) else len(printed_in_order)
+    elided = after - seen[k - 1] - 1
+    said = re.search(r"The `…` is (\w+) lines", FLOWED)
+    assert said, "the page no longer says what the elision stands for"
+    words = ["zero", "one", "two", "three", "four", "five", "six", "seven",
+             "eight", "nine", "ten"]
+    assert said.group(1) in words and words.index(said.group(1)) == elided, (
+        "the page says the elision is %s lines and it stands for %d"
+        % (said.group(1), elided))
+
 
 #: Flags on this page that are somebody else's, and whose. Anything not
 #: here has to be one of ours, and anything here has to still be on the
