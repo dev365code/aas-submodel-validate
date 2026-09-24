@@ -533,10 +533,10 @@ REMEDIES = {
         "Correct the semanticId to the template's spelling; a near-miss "
         "matches nothing, and every rule that would have applied to the "
         "element silently stops applying.",
-    **{lint: "Correct the semanticId to the template's spelling; a near-miss "
-             "matches nothing, and every rule that would have applied to the "
-             "element silently stops applying."
-       for lint in ("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1")},
+    **dict.fromkeys(("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1"),
+                    "Correct the semanticId to the template's spelling; a near-miss "
+                    "matches nothing, and every rule that would have applied to the "
+                    "element silently stops applying."),
     "TDL2":
         "Use the reference type the template declares here; the value "
         "matched, so this is interoperability polish, not a failure.",

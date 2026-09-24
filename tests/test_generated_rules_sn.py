@@ -153,6 +153,11 @@ def test_a_configuration_uri_with_its_own_identifier_is_charged_to_the_file(tmp_
     [finding] = [f for f in report.findings if f.id == "SN-E35"]
     assert finding.violation.subject.endswith("ConfigurationPaths/ConfigurationPath")
     assert (SN + "SoftwareNameplateInstance/ConfigurationPath") in finding.rule.fix
+    # And the near-miss lint names the element, pointing the same way:
+    # the template's spelling, which is the parent's identifier.
+    [lint] = [f for f in report.findings if f.id == "SNL1"]
+    assert lint.violation.subject.endswith("ConfigurationPath/ConfigurationURI")
+    assert (SN + "SoftwareNameplateInstance/ConfigurationPath") in lint.violation.detail
 
 
 def test_a_configuration_type_given_as_text_is_charged_to_the_file(tmp_path):

@@ -1686,6 +1686,23 @@ TABLE = [
      "the report of a clean file -- one defect quieter than the same file "
      "with the identifier corrected"),
 
+    ("near-miss/the-shared-lint-reports-what-it-finds",
+     "src/aas_submodel_validate/rules/engine.py",
+     "        yield from near_miss_violations(ctx, tables)\n    return check\n",
+     "        yield from ()\n    return check\n",
+     ["tests/test_near_miss_lints.py::test_a_drifted_identifier_is_named_by_the_pack_s_lint"],
+     "the five packs that registered no near-miss lint until 0.8.0 register "
+     "one that reports nothing, and a drifted identifier is again named "
+     "only in summary.unmatchedElements"),
+
+    ("near-miss/a-pack-registers-its-lint",
+     "src/aas_submodel_validate/rules/dn.py",
+     'install_near_miss_lint("DNL1", dn_tables)\n',
+     "\n",
+     ["tests/test_near_miss_lints.py::test_a_drifted_identifier_is_named_by_the_pack_s_lint"],
+     "a Digital Nameplate whose serial number drifted one version suffix "
+     "draws no finding naming it"),
+
     ("scope/the-first-row-takes-the-element-whatever-it-holds",
      "src/aas_submodel_validate/rules/engine.py",
      '                if child["children"] or child.get("recurses"):\n'

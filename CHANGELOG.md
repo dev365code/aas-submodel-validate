@@ -8,12 +8,26 @@ and 02003's packs have registered a near-miss lint (`HDL2`, `TDL1`, and
 Nameplate, Contact Information, Carbon Footprint, Hierarchical Structures
 or Software Nameplate submodel, an element whose identifier was one
 version suffix or one last segment off matched no row and took the rows
-beneath it out of the run, and the only trace was a record in
-`summary.unmatchedElements` -- none among the findings, and none at all
-where the drifted element had no rows beneath its own, as a property or
-a file has none. Each now registers the same lint,
-`DNL1`, `CIL1`, `PCFL1`, `HSL1` and `SNL1`, with the same title, clause
-and remedy as `TDL1`: a SHOULD, reported as a warning.
+beneath it out of the run, and the only trace naming it was a record in
+`summary.unmatchedElements` -- no finding named it -- and there was none
+at all where the drifted element had no rows beneath its own, as a
+property or a file has none. Each now registers the same lint, `DNL1`,
+`CIL1`, `PCFL1`, `HSL1` and `SNL1`, with the same title, clause and
+remedy as `TDL1`: a SHOULD, reported as a warning.
+
+**What moves: one verdict in the corpus, and every such drift in five
+packs.** Measured against 0.7.0 across the corpus, one of the
+seventy-four inputs is judged differently: a Software Nameplate whose
+`ConfigurationURI` carries the identifier its specification prints now
+draws `SNL1` beside `SN-E35` and still leaves by 1. The lint's remedy,
+like `SN-E35`'s, is the template's identifier, which there is the
+template's defect (`docs/divergences.md` #57). Outside the corpus, a
+Digital Nameplate, Contact Information, Carbon Footprint, Hierarchical
+Structures or Software Nameplate submodel holding an element whose
+identifier is one version suffix or one last segment off a row's draws a
+warning where it drew none. The exit code is what it was; under `-W`,
+which fails on warnings, such a file that left by 0 leaves by 1.
+`summary.rulesChecked` counts the five new rules.
 
 It is 310 rules, 262 generated from the vendored official template files,
 across eight template packs. What this reader takes in is unchanged: one
