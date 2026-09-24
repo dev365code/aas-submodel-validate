@@ -54,11 +54,11 @@ other's stayed in `rulesNotAsked` with no element beside them.
 seventh template pack.** A submodel of it was judged by no table: where
 nothing else in the file matched one it drew `SMT-D1` and left by 1, or
 by 0 under `--allow-unmatched`, and beside a submodel that did match it
-was passed over without a word. It is judged now against eleven rows
+was passed over without a finding. It is judged now against eleven rows
 generated from the vendored 1.1.1 template -- the entry node, its nodes,
 their three relationships, `BulkCount` and `ArcheType`. Exits move both
 ways, and nothing downstream reports either, so they are said here: a
-conformant one on its own leaves by 0 where it left by 1; a defective
+conformant one where nothing else matched leaves by 0 where it left by 1; a defective
 one leaves by 1 where it left by 0 beside a matched submodel or under
 `--allow-unmatched`; and under `--require-all-judged` a file that failed
 only because such a submodel went unjudged passes if it conforms. A bill of material is a
@@ -78,7 +78,14 @@ template -- clean before -- now draws those findings and leaves by 1. A
 copy the template writes with content of its own is judged as written, a
 copy it makes mandatory -- which no finite file could satisfy -- is judged
 as optional and said in a note, and a repeat through another element (a
-node, a list, a node) is not followed. The note that remains counts the
+node, a list, a node) is not followed. The copy is a row of its own now,
+so such a template builds one more row than it did --
+`provenance.template.rows` counts it -- and every `TPL-E` id from that
+row on moves up by one: 02011's template supplied this way numbered its
+rows to `TPL-E10` and numbers them to `TPL-E11`, and a 0.6.0 suppression
+of one of those ids silences a different row. They are numbered by
+position, as the README says, and here the tool moved them, not an edit
+to the template. The note that remains counts the
 elements carrying the copied identifier that the walk did not reach inside
 an element it judged -- in a container no row describes, beneath a copy of
 the wrong kind, or beneath a node whose identifier drifted -- and names
@@ -103,9 +110,10 @@ finding; inside collections spelled the template's way, a
 told it is missing, because the template gives that element its parent's
 identifier. Its `Contact` is 02002's collection copied in, and carries
 that template's recorded identifier defects with it (#51). `SMT-D1`'s
-remedy names the new template too, and a submodel *named*
-`SoftwareNameplate` that carries some other identifier is now told that
-matching goes by identifier rather than by name.
+remedy names both new templates, and a submodel *named*
+`HierarchicalStructures` or `SoftwareNameplate` that carries some other
+identifier is now told that matching goes by identifier rather than by
+name.
 
 **What moves: four verdicts in the corpus, and three shapes it does not
 hold.** Measured against 0.6.0 across the corpus, four of the
@@ -130,7 +138,8 @@ either template beside a Digital Nameplate, or on its own under
 a Digital Nameplate under `--require-all-judged` left by 1 and leaves by
 0; and a file whose nested copies break a self-containing template given
 with `--template` left by 0 with a note and leaves by 1 with the
-findings.
+findings, whose `TPL-E` ids from the copy's row on are one higher than
+0.6.0 gave the same rows.
 
 It is 305 rules, 262 generated from the vendored official template files,
 across eight template packs. What this reader takes in is
