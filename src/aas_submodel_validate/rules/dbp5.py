@@ -9,20 +9,25 @@ Whether a Product Condition submodel is present is *not* here: that
 question belongs to the tool rather than to this template, and it is
 asked once for every template in `rules/detect.py`.
 
-Every identifier in the template is a SAMM URN,
-`urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#...`,
-with an ECLASS identifier beside most of them as a supplemental, and the
-version inside it moved with each release: 1.0 wrote `1.0.0`, 1.0.1 a
-mix of `1.0.0` and `1.0.1`, 1.0.2 `1.0.2` throughout (its Annex B says
-so). A submodel written to an earlier release matches no row, and
-SMT-D1 says which template it means and that only the version differs;
-an element of an earlier release inside a 1.0.2 submodel is a near miss
-(docs/divergences.md #58).
+Every element's own identifier is a SAMM URN -- all but
+`DocumentIdentifier`'s, 02004's handover aspect at 2.0.0, in
+`urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#...`
+-- with an ECLASS identifier beside thirty-seven of them as a
+supplemental, and the `product_condition` version moved with each
+release: 1.0 wrote `1.0.0`, 1.0.1 a mix of `1.0.0` and `1.0.1`, 1.0.2
+`1.0.2` throughout (its Annex B says so). A submodel written to an
+earlier release matches no row and is not judged; where nothing else in
+the file is, SMT-D1 says which template it means and that only the
+version differs. An element of an earlier release inside a 1.0.2
+submodel matches through its ECLASS identifier where it carries one, and
+is a near miss where it does not (docs/divergences.md #58).
 
-Four collections are mandatory -- `StateOfCharge`, `NumberOfFullCycles`,
-`InformationOnAccidents` and `TemperatureInformation` -- and each of the
-twelve dynamic ones holds a `LastUpdate` under one shared identifier,
-which the table tells apart by its parent's name.
+Four of the fourteen sections are mandatory -- `StateOfCharge`,
+`NumberOfFullCycles` and `TemperatureInformation`, collections, and
+`InformationOnAccidents`, a list -- and each of thirteen collections,
+the twelve dynamic ones and every `NegativeEvent`, holds a `LastUpdate`
+under one shared identifier, which the table tells apart by its
+parent's name.
 
 This pack is generated rows only: cardinality, element kind, `valueType`
 and the semanticId at every level. No value is checked for what it says

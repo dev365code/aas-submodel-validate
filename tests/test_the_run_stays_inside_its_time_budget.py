@@ -189,6 +189,16 @@ def test_the_budget_file_records_what_it_was_measured_on():
             seconds = about["absolute_seconds"][layer]
             unit = about["yardstick_seconds"][layer]
             assert abs(seconds / unit - budget) / budget < 0.05, (key, layer)
+        # And the record keeps its history. `--record` prints no history,
+        # and a re-recording pasted over the whole block deleted every
+        # earlier one -- each set of runs, its spread, and why the
+        # thresholds sit where they do -- with every gate passing. The last
+        # entry is the one that recorded over this many inputs.
+        history = about.get("_from", "")
+        assert history, "%s: the record of how the budget was measured is gone" % key
+        assert "to %d)" % about["inputs"] in history or "%d inputs" % about["inputs"] in history, (
+            "%s: the history does not say when the budget was recorded over %d inputs"
+            % (key, about["inputs"]))
 
 
 def test_a_measurement_covers_every_layer_the_budget_names():

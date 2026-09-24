@@ -1089,7 +1089,9 @@ def dbp5_env() -> dict:
     each generated row has a scope to strip from, a bound to exceed, or an
     identifier to put the wrong kind under. Values are the template's own.
 
-    Identifiers are reproduced exactly as the template writes them. Twelve
+    The elements' own identifiers are the template's; the ECLASS ones it
+    puts beside thirty-seven of them are left out, and the rows match
+    without them. Thirteen
     collections carry a `LastUpdate` under one identifier, so the table
     tells them apart by their parent's name.
     """

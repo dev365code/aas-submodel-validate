@@ -437,7 +437,7 @@ submodel identifier and something had to choose.
 | IDTA 02002 Contact Information 1.0.1 | 36 | the near-miss lint only (no email, telephone, URL, time-zone or language-code shape is checked) |
 | IDTA 02011 Hierarchical Structures 1.1.1 | 11 | the near-miss lint only (a nested node is judged at any depth, and a relationship's two ends are not read) |
 | IDTA 02007 Software Nameplate 1.0.1 | 73 | the near-miss lint only (every row is read as the template writes it where the specification beside it disagrees: `docs/divergences.md` #57) |
-| IDTA 02035-5 Digital Battery Passport part 5 1.0.2 | 49 | the near-miss lint only (every identifier is a SAMM one whose version moved with each release, and a submodel of an earlier release is told so: `docs/divergences.md` #58) |
+| IDTA 02035-5 Digital Battery Passport part 5 1.0.2 | 49 | the near-miss lint only (its identifiers are SAMM ones whose version moved with each release; a submodel of an earlier release, alone in its file, is told so: `docs/divergences.md` #58) |
 
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and

@@ -1724,6 +1724,15 @@ TABLE = [
      "first sibling within the bound, and the file that followed that "
      "remedy drew two errors"),
 
+    ("budget/the-record-keeps-its-history",
+     "docs/time-budget.json",
+     '  "_from": "',
+     '  "_gone": "',
+     ["tests/test_the_run_stays_inside_its_time_budget.py::"
+      "test_the_budget_file_records_what_it_was_measured_on"],
+     "a re-recording pasted over the recorded block deleted the history of "
+     "every earlier one, and nothing noticed"),
+
     ("near-miss/a-samm-near-miss-stays-in-its-namespace",
      "src/aas_submodel_validate/semantics.py",
      '        return "%s#%s" % (match.group(1), match.group(3))\n',

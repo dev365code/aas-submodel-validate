@@ -9,13 +9,18 @@ capacity and power capability, negative events, accidents, temperatures,
 self-discharge and round-trip efficiency -- is vendored at 1.0.2, the
 newest edition at the pin and the one the battery-data layer already
 reads, and generates forty-nine rules, `DBP5-E01` to `DBP5-E49`, with
-the near-miss lint `DBP5L1`. Every identifier in it is a SAMM URN whose
-version moved with each release, so a submodel written to 1.0 or 1.0.1
-matches no row: `SMT-D1` says of it that it differs from this template's
-identifier only in its SAMM version, and an element of an earlier
-release inside a 1.0.2 submodel is a near miss. Where the template and
-its specification disagree, and what that costs a file, is
-`docs/divergences.md` #58.
+the near-miss lint `DBP5L1`. Every element's own identifier is a SAMM
+URN, all but one in the `product_condition` namespace, whose version
+moved with each release, so a submodel written to 1.0 or 1.0.1 matches
+no row and is not judged: where nothing else in the file is, `SMT-D1`
+says it differs from this template's identifier only in its SAMM
+version. An element of an earlier release inside a 1.0.2 submodel
+matches its row through the ECLASS identifier beside its own where it
+carries one, as thirty-seven do, and is judged; one that carries none is
+a near miss, and `DBP5L1` names it. A submodel *named* `ProductCondition`
+that carries another identifier is told, as for the other packs, that
+matching goes by semanticId. Where the template and its specification
+disagree, and what that costs a file, is `docs/divergences.md` #58.
 
 **Every pack names an identifier that nearly matches a row.** 02004's
 and 02003's packs have registered a near-miss lint (`HDL2`, `TDL1`, and
@@ -67,8 +72,8 @@ Product Condition submodels added -- five are judged differently. Four
 are battery passports whose Product Condition submodel is empty, the
 shape the battery rules were built and tested on: it now draws
 `DBP5-E04`, `DBP5-E10`, `DBP5-E26` and `DBP5-E28` for the four
-collections the template makes mandatory and leaves by 1 where it left
-by 0, and `summary.scopeNotExamined` names its fourteen collections. A
+elements the template makes mandatory and leaves by 1 where it left by
+0, and `summary.scopeNotExamined` names its fourteen sections. A
 pipeline that passed such a passport goes red. The fifth is the Software
 Nameplate whose `ConfigurationURI` carries the identifier its
 specification prints: it now draws `SNL1` beside `SN-E35` and still
@@ -76,9 +81,10 @@ leaves by 1; the lint's remedy, like `SN-E35`'s, is the template's
 identifier, which there is the template's defect
 (`docs/divergences.md` #57). Outside the corpus, a Product Condition
 submodel that breaks its template in any other way -- a collection
-without its `LastUpdate`, a value of the wrong type -- leaves by 1 where
-it left by 0; one written to 1.0 or 1.0.1 draws `SMT-D1` and leaves by 1
-as before, the finding now saying that only its SAMM version differs;
+without its `LastUpdate`, a `valueType` other than the template's --
+leaves by 1 where it left by 0; one written to 1.0 or 1.0.1, alone in
+its file, draws `SMT-D1` and leaves by 1 as before, the finding now
+saying that only its SAMM version differs;
 and a Digital Nameplate, Contact Information, Carbon Footprint,
 Hierarchical Structures or Software Nameplate submodel holding an element
 one version suffix or one last segment off a row's, or a 02035-2 element

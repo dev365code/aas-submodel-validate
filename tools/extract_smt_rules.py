@@ -296,9 +296,9 @@ PACKS = (
     },
     # IDTA 02035-5 Product Condition 1.0.2, the Digital Battery Passport's
     # part 5: forty-nine elements -- 33 Properties, 14 collections, 2 lists
-    # -- each with the `SMT/Cardinality` qualifier. Every identifier is a
+    # -- each with the `SMT/Cardinality` qualifier. Every own identifier is a
     # SAMM URN, with the ECLASS identifier, where there is one, beside it
-    # as a supplemental; twelve collections hold a `LastUpdate` under one
+    # as a supplemental; thirteen collections hold a `LastUpdate` under one
     # identifier. No open content.
     {
         "template": ROOT / "src/aas_submodel_validate/data/smt/02035-5/1.0.2/template.json",
