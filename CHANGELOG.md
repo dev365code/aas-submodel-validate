@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0 — unreleased
+## 0.7.0 — 2026-09-25
 
 **A finding says what repairing it would take, and what its subject
 names.** Three keys join every finding, additive under `schemaVersion`

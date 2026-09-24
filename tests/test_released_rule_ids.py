@@ -13,6 +13,7 @@ told there is no such rule.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import aas_submodel_validate.rules  # noqa: F401 - importing registers them
@@ -40,4 +41,4 @@ def test_every_rule_id_the_last_release_published_still_exists():
 def test_the_released_list_says_where_it_came_from():
     """A golden file nobody can date is one nobody can update correctly."""
     header = RELEASED.read_text("utf-8").split("\n", 1)[0]
-    assert header.startswith("#") and "v0.1." in header, header
+    assert header.startswith("#") and re.search(r"taken at v\d+\.\d+\.\d+\.$", header), header
