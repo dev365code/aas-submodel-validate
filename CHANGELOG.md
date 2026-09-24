@@ -102,6 +102,20 @@ remedy names the new template too, and a submodel *named*
 `SoftwareNameplate` that carries some other identifier is now told that
 matching goes by identifier rather than by name.
 
+**What moves: four verdicts, each a submodel no pack answered for.**
+Measured against 0.6.0 across the corpus, four of the seventy-four
+inputs are judged differently, and all four drew `SMT-D1` before. A
+valid Hierarchical Structures submodel and a valid Software Nameplate
+now leave by 0 where they left by 1: a pipeline that was red on such a
+file goes quiet. A Hierarchical Structures node four levels down
+carrying the wrong value type now draws `HS-E07` at that node, and a
+Software Nameplate whose `ConfigurationURI` carries the identifier its
+specification prints draws `SN-E35` (`docs/divergences.md` #57); both
+still leave by 1. The other seventy are judged as before: every finding
+in them gains `fixability`, `fixabilityWhy` and `path`, which are
+additive, and `summary.rulesChecked` counts the new rules. None of the
+seventy-four is asked with an option 0.6.0 does not have.
+
 It is 305 rules, 262 generated from the vendored official template files,
 across eight template packs. What this reader takes in is
 unchanged: one document at 64 MiB, a container's parts at 64 MiB each
