@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import copy
 import json
-import zlib
 import re
+import zlib
 from pathlib import Path
 
 import pytest
