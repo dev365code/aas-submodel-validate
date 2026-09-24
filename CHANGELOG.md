@@ -29,6 +29,17 @@ warning where it drew none. The exit code is what it was; under `-W`,
 which fails on warnings, such a file that left by 0 leaves by 1.
 `summary.rulesChecked` counts the five new rules.
 
+**A SAMM identifier one version off is a near miss.** 02035-2 names its
+elements twice, by an ECLASS identifier and by a SAMM one,
+`urn:samm:<namespace>:<version>#<name>`, whose version sits before the
+name. An element carrying the SAMM identifier of another version
+matched no row and was named by nothing: the near-miss check read the
+name after `#` as an ECLASS version suffix, and wanted the `://` of an
+IRI. The same element of the same namespace at another version is now a
+near miss -- `DBP2L2` names it, and a template of the caller's written
+with SAMM identifiers records it in `summary.unmatchedElements` -- while
+another name in the same namespace is not.
+
 It is 310 rules, 262 generated from the vendored official template files,
 across eight template packs. What this reader takes in is unchanged: one
 document at 64 MiB, a container's parts at 64 MiB each and 256 MiB

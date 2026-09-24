@@ -38,6 +38,7 @@ from ..semantics import (
     edit_distance,
     element_candidate_values,
     key_values,
+    samm_stem,
     submodel_declares,
     version_stem,
 )
@@ -1489,14 +1490,22 @@ def _scope(rows, elements, path: str, result, in_list: bool,
 
 def _near_miss(candidates, match_values):
     """(seen, expected) when a candidate almost matches a row value: same
-    ECLASS stem with a different version suffix, or the same IRI namespace
-    with a *similar* last segment. Similarity is bounded (a small edit
+    ECLASS stem with a different version suffix, the same SAMM element at
+    another version, or the same IRI namespace with a *similar* last
+    segment. Similarity is bounded (a small edit
     distance) so a genuine singular/plural typo is caught while an
     unrelated neighbour that merely shares a directory is not."""
     for seen in sorted(candidates):
         for expected in match_values:
             seen_stem, expected_stem = version_stem(seen), version_stem(expected)
             if seen_stem and seen_stem == expected_stem and seen != expected:
+                return (seen, expected)
+            # The same element of the same SAMM namespace at another
+            # version: 02035-5 moved every identifier's version with each
+            # bugfix release, so a file written to the release before is
+            # this, element for element.
+            seen_samm = samm_stem(seen)
+            if seen_samm and seen_samm == samm_stem(expected) and seen != expected:
                 return (seen, expected)
             if "://" in seen and "://" in expected and seen != expected:
                 seen_head, _, seen_tail = seen.rstrip("/").rpartition("/")

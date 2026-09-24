@@ -1695,6 +1695,14 @@ TABLE = [
      "one that reports nothing, and a drifted identifier is again named "
      "only in summary.unmatchedElements"),
 
+    ("near-miss/a-samm-version-drift-is-a-near-miss",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            if seen_samm and seen_samm == samm_stem(expected) and seen != expected:\n",
+     "            if False and seen_samm == samm_stem(expected) and seen != expected:\n",
+     ["tests/test_dbp_hand_rules.py::test_a_samm_version_drift_is_diagnosed"],
+     "a Documents list carrying the SAMM identifier of 02035-2's next "
+     "version matched no row and nothing named it"),
+
     ("near-miss/a-pack-registers-its-lint",
      "src/aas_submodel_validate/rules/dn.py",
      'install_near_miss_lint("DNL1", dn_tables)\n',

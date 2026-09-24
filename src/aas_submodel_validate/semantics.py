@@ -51,6 +51,24 @@ def version_stem(irdi: str) -> Optional[str]:
     return None
 
 
+#: A SAMM identifier, `urn:samm:<namespace>:<version>#<element>`: the
+#: Semantic Aspect Meta Model's, which the battery passport's templates
+#: carry beside their ECLASS ones. Its version sits in the middle, before
+#: the element's name, where neither the ECLASS check (a version suffix
+#: after the last `#`) nor the IRI one (a `://` and a last path segment)
+#: looks.
+_SAMM = re.compile(r"^(urn:samm:[^:#]+):(\d+(?:\.\d+)*)#(.+)$")
+
+
+def samm_stem(value: str) -> Optional[str]:
+    """`urn:samm:io.x:1.0.2#energy` -> `urn:samm:io.x#energy`; None when the
+    value is not a SAMM identifier with a version."""
+    match = _SAMM.match(value)
+    if match:
+        return "%s#%s" % (match.group(1), match.group(3))
+    return None
+
+
 def candidate_values(reference) -> frozenset:
     """Every spelling under which a reference may match a template row.
 

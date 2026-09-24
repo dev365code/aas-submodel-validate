@@ -116,6 +116,31 @@ def test_an_eclass_version_drift_is_diagnosed(tmp_path):
     assert "DBP2L2" in _findings(tmp_path, env)
 
 
+def test_a_samm_version_drift_is_diagnosed(tmp_path):
+    """02035-2 names its elements twice, by an ECLASS identifier and by a
+    SAMM one, `urn:samm:<namespace>:<version>#<name>`, whose version sits
+    before the name. A list carrying the SAMM identifier of another
+    version matched no row and was named by nothing: the ECLASS check
+    read `documents` as the version suffix, and the IRI check wants a
+    `://` a URN does not have."""
+    env = copy.deepcopy(dbp_env())
+    documents = env["submodels"][0]["submodelElements"][0]
+    documents["semanticId"]["keys"][0]["value"] = (
+        "urn:samm:io.admin-shell.idta.batterypass.handover_documentation:1.0.1#documents")
+    finding = _findings(tmp_path, env)["DBP2L2"]
+    assert "handover_documentation:1.0.0#documents" in finding.violation.detail
+
+
+def test_a_samm_identifier_of_another_name_is_not_a_near_miss(tmp_path):
+    """Only the version may differ: the same namespace naming another
+    element is a different element, as it is for an ECLASS stem."""
+    env = copy.deepcopy(dbp_env())
+    documents = env["submodels"][0]["submodelElements"][0]
+    documents["semanticId"]["keys"][0]["value"] = (
+        "urn:samm:io.admin-shell.idta.batterypass.handover_documentation:1.0.0#documentz")
+    assert "DBP2L2" not in _findings(tmp_path, env)
+
+
 def test_a_reference_type_that_differs_from_the_template_is_noted(tmp_path):
     env = copy.deepcopy(dbp_env())
     env["submodels"][0]["semanticId"]["type"] = "ExternalReference"
