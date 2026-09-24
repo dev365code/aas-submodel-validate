@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.7.1 — unreleased
+
+**One file stored twice is nothing to choose between.** A File value
+naming a part the package lacks, where several parts carry the file name
+it ends in, was graded 3 -- a person's choice -- even where they were
+the same file. Where the archive records one size and one checksum for
+every one of them, the grade is 2, and `fixabilityWhy` says what was
+compared: the archive's record, not the bytes.
+
+**A near miss is charged what its element would have had asked.** Where
+an element's identifier drifts close to a row's, every rule beneath that
+row was charged to it in `rulesNotAsked` and `unmatchedElements`,
+including sections the element does not carry, which matched would have
+been places not examined all the same. It is charged now with the rows
+directly beneath the one it resembles and, below those, only what it
+holds; the sections it does not carry stay in `scopeNotExamined`. A
+drifted copy beside an intact sibling is charged what only it holds,
+where it was charged nothing because the sibling had entered the row.
+No verdict moves.
+
+It is 305 rules, 262 generated from the vendored official template files,
+across eight template packs, as in 0.7.0. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.7.0 — 2026-09-25
 
 **A finding says what repairing it would take, and what its subject

@@ -146,6 +146,13 @@ _FILE_GRADES = {
                "confirmed to be the file meant"),
     "several": (3, "several parts of this package carry the file name this "
                    "value ends in; which one is meant is a person's choice"),
+    # Several parts, one file: the same bytes stored under two folders
+    # were graded a choice, and there is nothing to choose between -- any
+    # of them is the file meant once one is confirmed to be.
+    "alike": (2, "several parts of this package carry the file name this "
+                 "value ends in, and the archive records the same size and "
+                 "checksum for each; the corrected value is determined once "
+                 "one of them is confirmed to be the file meant"),
     "none": (5, "no part of this package carries the file name this value ends "
                 "in; the file has to be supplied, or someone who knows the "
                 "document has to say which part it is"),
@@ -156,7 +163,10 @@ def _file_grade(container, value):
     from ..container import file_name
     if not file_name(value):
         return _FILE_GRADES["directory"]
-    found = len(container.carrying(value))
+    carrying = container.carrying(value)
+    if len(carrying) > 1 and container.alike(carrying):
+        return _FILE_GRADES["alike"]
+    found = len(carrying)
     return _FILE_GRADES["none" if not found else "one" if found == 1 else "several"]
 
 
@@ -525,6 +535,25 @@ def _descendant_ids(row) -> List[str]:
     for child in row["children"]:
         out.append(child["id"])
         out.extend(_descendant_ids(child))
+    return out
+
+
+def _asked_inside(row, element) -> List[str]:
+    """The rule ids a walk entering `element` as `row` would ask: every
+    row directly beneath it, since entering a scope asks each of its rows,
+    and beneath each of those only what `element` holds for it, matched
+    the way the walk matches. A row that copies an element above it is
+    asked and not followed: its rows are that element's, counted already."""
+    out = []
+    held = _sub_elements(element)
+    in_list = type(element).__name__ == "SubmodelElementList"
+    for child in row["children"]:
+        out.append(child["id"])
+        if not child["children"] or child.get("recurses"):
+            continue
+        for sub in held:
+            if _child_matches(sub, child, in_list):
+                out.extend(_asked_inside(child, sub))
     return out
 
 
@@ -1245,7 +1274,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             near = _near_miss(candidates, row["match"])
             if near:
                 result["near_misses"].append((subject,) + near)
-                near_here.append((subject, near[0], near[1], row))
+                near_here.append((subject, near[0], near[1], row, element))
                 break
 
     # What each "too few" finding here would take to repair, now that the
@@ -1258,7 +1287,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         loose = [(index, element) for index, element, _c, _m in indexed
                  if index not in claimed]
         for row, at in short:
-            like = {subject for subject, _seen, _expected, near in near_here
+            like = {subject for subject, _seen, _expected, near, _element in near_here
                     if near is row}
             like.update(_subject(path, element, index, shared)
                         for index, element in loose
@@ -1352,7 +1381,15 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     # typo from a legitimate neighbour without a dictionary this project does
     # not carry (`test_the_rows_a_middle_typo_silences_are_identifiers_
     # nothing_can_separate` keeps that argument loud).
-    if unentered and near_here:
+    if near_here:
+        # Asked whether or not this scope left a row unentered, and of a
+        # row a sibling entered too. Both gates stood here while the loss
+        # was the resembled row's whole subtree, and both were stand-ins:
+        # an entered row's subtree is not lost -- but what a drifted copy
+        # holds and its intact sibling does not is, and the subtraction
+        # below takes back what any scope asked, which is the question
+        # the two gates were answering by guess.
+        #
         # A row's subtree is that row's loss, counted once. Handing every
         # unplaceable element the whole scope's loss made each answer for
         # the others (two drifted siblings each got the other's children,
@@ -1365,10 +1402,10 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         # one drift between them, not one each. Counting a loss twice is the
         # over-attribution #23 records an earlier version making.
         grouped = {}
-        for subject, seen, expected, row in near_here:
-            if claimed_by.get(row["id"]) or not row["children"]:
+        for subject, seen, expected, row, element in near_here:
+            if not row["children"]:
                 continue
-            grouped.setdefault((row["id"], seen), (row, expected, subject))
+            grouped.setdefault((row["id"], seen), (row, expected, subject, []))[3].append(element)
         # And the run-wide list takes the same rows and no others. It
         # took every row this scope left unentered, because one near miss
         # fired somewhere in it: a Nameplate whose serial number drifted
@@ -1378,8 +1415,22 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         # is still recorded -- `not_examined`, above, says so of every
         # unentered row -- but as a place nothing explains, which is what
         # it is. A near miss explains the rows it resembles (#23).
-        for (_row_id, seen), (row, expected, subject) in grouped.items():
-            lost = tuple(_descendant_ids(row))
+        #
+        # And of the rows it resembles, only what the element would have
+        # had asked. Matched, it would have opened the row's scope, and
+        # every row directly beneath is asked there; beneath those, only a
+        # section the element carries is entered. A section it does not
+        # carry would have been a place not examined all the same, so the
+        # drift kept nothing of it from being asked -- charging its rules
+        # to the element said otherwise, and the place is recorded, as
+        # every unentered row is, in `not_examined`.
+        for (_row_id, seen), (row, expected, subject, elements) in grouped.items():
+            lost = []
+            for element in elements:
+                for rule_id in _asked_inside(row, element):
+                    if rule_id not in lost:
+                        lost.append(rule_id)
+            lost = tuple(lost)
             if lost:
                 result["unmatched"].append((subject, seen, lost, expected))
                 result["lost_candidates"].extend(lost)

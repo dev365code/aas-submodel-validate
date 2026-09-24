@@ -500,3 +500,74 @@ def test_an_element_whose_id_short_is_its_own_is_named_by_it(tmp_path):
     assert record.subject.endswith("/Phone"), (
         "an element with an idShort nothing shares was renamed: %s"
         % record.subject)
+
+
+def _sectioned(tmp_path, holds):
+    """A template whose `Section` holds a `Leaf` and an optional `Sub`, and
+    a file whose `Section` carries a near miss of its identifier and holds
+    what `holds` names. Numbered by position: TPL-E01 is `Section`, E02
+    `Leaf`, E03 `Sub`, E04 the `Deep` that `Sub` requires."""
+    base = "https://example.com/ids/"
+
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": base + value}]}
+
+    def card(value):
+        return {"type": "SMT/Cardinality", "valueType": "xs:string", "value": value,
+                "semanticId": {"type": "ExternalReference", "keys": [{
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/SubmodelTemplates/Cardinality/1/0"}]}}
+
+    def prop(short, bound=None):
+        out = {"modelType": "Property", "idShort": short, "semanticId": sid(short),
+               "valueType": "xs:string"}
+        if bound:
+            out["qualifiers"] = [card(bound)]
+        else:
+            out["value"] = "x"
+        return out
+
+    template = tmp_path / "sectioned-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:t", "idShort": "H", "kind": "Template",
+        "semanticId": sid("top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Section",
+            "semanticId": sid("Section"), "qualifiers": [card("ZeroToOne")],
+            "value": [prop("Leaf", "ZeroToOne"), {
+                "modelType": "SubmodelElementCollection", "idShort": "Sub",
+                "semanticId": sid("Sub"), "qualifiers": [card("ZeroToOne")],
+                "value": [prop("Deep", "One")]}]}]}]}), encoding="utf-8")
+    inside = {"Leaf": prop("Leaf"),
+              "Sub": {"modelType": "SubmodelElementCollection", "idShort": "Sub",
+                      "semanticId": sid("Sub"), "value": [prop("Deep")]}}
+    document = tmp_path / ("sectioned-%s.json" % "-".join(holds))
+    document.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:d", "idShort": "H", "semanticId": sid("top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Section",
+            "semanticId": sid("Sections"),
+            "value": [inside[name] for name in holds]}]}]}), encoding="utf-8")
+    return runner.run(document, template=str(template))
+
+
+def test_a_near_miss_is_charged_only_what_its_element_would_have_asked(tmp_path):
+    """A `Section` whose identifier drifted, holding a `Leaf` and no `Sub`.
+    Matched, it would have been entered and its two rows asked; the
+    `Deep` beneath `Sub` would not, `Sub` being absent -- a place not
+    examined either way. Every rule beneath the row it resembles was
+    charged to it, `Deep` included, as if the drift had kept that from
+    being asked. Holding `Sub`, it is charged `Deep` too."""
+    without = _sectioned(tmp_path, ["Leaf"])
+    [record] = without.unmatched
+    assert record.subject == "H/Section", record
+    assert tuple(record.unasked) == ("TPL-E02", "TPL-E03"), record
+    assert without.not_asked == ["TPL-E02", "TPL-E03"], without.not_asked
+    # The place is still said: the row's scope was not opened.
+    [place] = [p for p in without.not_examined if p.label == "Section"]
+    assert "TPL-E04" in place.unasked, place
+
+    holding = _sectioned(tmp_path, ["Leaf", "Sub"])
+    [record] = holding.unmatched
+    assert tuple(record.unasked) == ("TPL-E02", "TPL-E03", "TPL-E04"), record
