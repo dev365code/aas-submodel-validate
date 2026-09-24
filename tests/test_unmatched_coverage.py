@@ -571,3 +571,86 @@ def test_a_near_miss_is_charged_only_what_its_element_would_have_asked(tmp_path)
     holding = _sectioned(tmp_path, ["Leaf", "Sub"])
     [record] = holding.unmatched
     assert tuple(record.unasked) == ("TPL-E02", "TPL-E03", "TPL-E04"), record
+
+
+def _nested(tmp_path, document_elements, name):
+    """A template whose `Node` holds a copy of itself and a `Section` with a
+    mandatory `Leaf`; numbered TPL-E01 `Node`, E02 the copy, E03 `Section`,
+    E04 `Leaf`. `Nodes` is a near miss of `Node`'s identifier."""
+    base = "https://example.com/ids/"
+
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": base + value}]}
+
+    def card(value):
+        return {"type": "SMT/Cardinality", "valueType": "xs:string", "value": value,
+                "semanticId": {"type": "ExternalReference", "keys": [{
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/SubmodelTemplates/Cardinality/1/0"}]}}
+
+    template = tmp_path / "nested-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:t", "idShort": "H", "kind": "Template",
+        "semanticId": sid("top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Node",
+            "semanticId": sid("Node"), "qualifiers": [card("One")],
+            "value": [{"modelType": "SubmodelElementCollection", "idShort": "Node",
+                       "semanticId": sid("Node"), "qualifiers": [card("ZeroToMany")],
+                       "value": []},
+                      {"modelType": "SubmodelElementCollection", "idShort": "Section",
+                       "semanticId": sid("Section"), "qualifiers": [card("ZeroToOne")],
+                       "value": [{"modelType": "Property", "idShort": "Leaf",
+                                  "semanticId": sid("Leaf"), "valueType": "xs:string",
+                                  "qualifiers": [card("One")]}]}]}]}]}), encoding="utf-8")
+    document = tmp_path / name
+    document.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:d", "idShort": "H", "semanticId": sid("top"),
+        "submodelElements": document_elements(sid)}]}), encoding="utf-8")
+    return runner.run(document, template=str(template))
+
+
+def _collection(short, identifier, value):
+    return {"modelType": "SubmodelElementCollection", "idShort": short,
+            "semanticId": identifier, "value": value}
+
+
+def _section(sid):
+    return _collection("Section", sid("Section"), [{
+        "modelType": "Property", "idShort": "Leaf", "semanticId": sid("Leaf"),
+        "valueType": "xs:string", "value": "x"}])
+
+
+def test_what_a_nested_copy_holds_is_charged_at_its_depth(tmp_path):
+    """The outer `Node` drifted and holds no `Section`; the copy inside it
+    does. Matched, the walk would enter the copy with `Node`'s rows and ask
+    for its `Leaf` -- so the drift kept that from being asked too. The copy
+    was asked and not followed, and `Leaf` went uncharged."""
+    report = _nested(tmp_path, lambda sid: [_collection("Outer", sid("Nodes"), [
+        _collection("Inner", sid("Node"), [_section(sid)])])], "outer-drifted.json")
+    assert report.not_asked == ["TPL-E02", "TPL-E03", "TPL-E04"], report.not_asked
+
+
+def test_a_drifted_nested_copy_is_charged_what_it_holds(tmp_path):
+    """The outer `Node` is intact and holds no `Section`; the copy inside it
+    drifted and does. The copy's row and `Section`'s were asked of the
+    outer node, so what the drift kept from being asked is the `Leaf`. A
+    row marking a copy has no children of its own in the table, and was
+    passed over for that."""
+    report = _nested(tmp_path, lambda sid: [_collection("Outer", sid("Node"), [
+        _collection("Inner", sid("Nodes"), [_section(sid)])])], "inner-drifted.json")
+    assert report.not_asked == ["TPL-E04"], report.not_asked
+    [record] = report.unmatched
+    assert record.subject == "H/Outer/Inner", record
+
+
+def test_a_near_miss_of_the_wrong_kind_is_charged_nothing(tmp_path):
+    """A Property wearing a near miss of `Node`'s identifier. Carrying the
+    identifier itself, it would be judged by its kind and not entered, so
+    nothing beneath `Node` would be asked of it either way."""
+    report = _nested(tmp_path, lambda sid: [{
+        "modelType": "Property", "idShort": "Outer", "semanticId": sid("Nodes"),
+        "valueType": "xs:string", "value": "x"}], "wrong-kind.json")
+    assert report.not_asked == [], report.not_asked
+    assert report.unmatched == [], report.unmatched

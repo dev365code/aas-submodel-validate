@@ -538,22 +538,36 @@ def _descendant_ids(row) -> List[str]:
     return out
 
 
-def _asked_inside(row, element) -> List[str]:
+def _asked_inside(row, element, copied=None) -> List[str]:
     """The rule ids a walk entering `element` as `row` would ask: every
     row directly beneath it, since entering a scope asks each of its rows,
     and beneath each of those only what `element` holds for it, matched
-    the way the walk matches. A row that copies an element above it is
-    asked and not followed: its rows are that element's, counted already."""
+    the way the walk matches.
+
+    The way the walk goes, too. An element of the wrong kind is judged by
+    its kind and not entered, so nothing beneath its row is asked of it
+    either way: charged anyway, it was blamed for rules its own identifier
+    would not have had asked. And a row that copies an element above it
+    is followed with that element's rows (`copied`, as `_scope` carries
+    them): it used to be asked and not followed, on the reasoning that its
+    rows were counted already, which held one level down -- the sections a
+    nested copy holds were never counted at its own depth."""
+    if type(element).__name__ != row["kind"]:
+        return []
+    inside = dict(copied or {})
+    if row["sid"] and not row.get("recurses"):
+        inside[row["sid"]] = row["children"]
+    rows = inside.get(row["recurses"], ()) if row.get("recurses") else row["children"]
     out = []
     held = _sub_elements(element)
     in_list = type(element).__name__ == "SubmodelElementList"
-    for child in row["children"]:
+    for child in rows:
         out.append(child["id"])
-        if not child["children"] or child.get("recurses"):
+        if not child["children"] and not child.get("recurses"):
             continue
         for sub in held:
             if _child_matches(sub, child, in_list):
-                out.extend(_asked_inside(child, sub))
+                out.extend(_asked_inside(child, sub, inside))
     return out
 
 
@@ -1403,7 +1417,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         # over-attribution #23 records an earlier version making.
         grouped = {}
         for subject, seen, expected, row, element in near_here:
-            if not row["children"]:
+            if not row["children"] and not row.get("recurses"):
                 continue
             grouped.setdefault((row["id"], seen), (row, expected, subject, []))[3].append(element)
         # And the run-wide list takes the same rows and no others. It
@@ -1427,7 +1441,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         for (_row_id, seen), (row, expected, subject, elements) in grouped.items():
             lost = []
             for element in elements:
-                for rule_id in _asked_inside(row, element):
+                for rule_id in _asked_inside(row, element, copied):
                     if rule_id not in lost:
                         lost.append(rule_id)
             lost = tuple(lost)

@@ -1609,7 +1609,7 @@ TABLE = [
 
     ("scope/a-near-miss-is-charged-what-its-element-holds",
      "src/aas_submodel_validate/rules/engine.py",
-     "                for rule_id in _asked_inside(row, element):\n",
+     "                for rule_id in _asked_inside(row, element, copied):\n",
      "                for rule_id in _descendant_ids(row):\n",
      ["tests/test_unmatched_coverage.py::"
       "test_a_near_miss_is_charged_only_what_its_element_would_have_asked"],
@@ -1629,12 +1629,32 @@ TABLE = [
      "from being asked -- a leaf resembles no row with anything beneath "
      "it, so the first row's line is never reached on this shape"),
 
+    ("scope/a-nested-copy-is-followed-with-the-rows-it-copies",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    rows = inside.get(row["recurses"], ()) if row.get("recurses") else row["children"]\n',
+     '    rows = () if row.get("recurses") else row["children"]\n',
+     ["tests/test_unmatched_coverage.py::"
+      "test_what_a_nested_copy_holds_is_charged_at_its_depth"],
+     "a drifted Node whose nested copy held a Section was not charged the "
+     "Section's Leaf: the copy was asked and not followed, and what it held "
+     "was counted nowhere"),
+
+    ("scope/a-wrong-kind-near-miss-is-not-entered",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    if type(element).__name__ != row["kind"]:\n        return []\n',
+     '    if False:\n        return []\n',
+     ["tests/test_unmatched_coverage.py::"
+      "test_a_near_miss_of_the_wrong_kind_is_charged_nothing"],
+     "a Property wearing a near miss of a collection's identifier was "
+     "charged every row beneath that collection, though carrying the "
+     "identifier itself it would have been judged by kind and not entered"),
+
     ("scope/what-only-a-drifted-copy-holds-is-its-loss",
      "src/aas_submodel_validate/rules/engine.py",
-     '            if not row["children"]:\n'
+     '            if not row["children"] and not row.get("recurses"):\n'
      '                continue\n'
      '            grouped.setdefault(',
-     '            if claimed_by.get(row["id"]) or not row["children"]:\n'
+     '            if claimed_by.get(row["id"]) or not row["children"] and not row.get("recurses"):\n'
      '                continue\n'
      '            grouped.setdefault(',
      ["tests/test_scope_the_run_did_not_examine.py::"
