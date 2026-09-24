@@ -595,6 +595,12 @@ def unmatched_elements(ctx) -> List:
     from ..model import UnmatchedElement
 
     analysed = ctx.__dict__.get("_smt_analysis") or {}
+    # In the tables' order, as `rows_not_reached` lists the same rules.
+    # Collected the way a walk into the element meets them -- the rows
+    # directly beneath it first, then what it holds -- a record listed the
+    # rules beneath a section after that section's siblings, and one set
+    # of rules came out in two orders in one report.
+    order = {row["id"]: index for index, row in enumerate(_all_rows(ctx, analysed))}
     lost, resembled = {}, {}
     for analysis in analysed.values():
         for subject, seen, unasked, resembles in analysis.get("unmatched", ()):
@@ -605,7 +611,9 @@ def unmatched_elements(ctx) -> List:
             for rule in unasked:
                 if rule not in held:
                     held.append(rule)
-    return [UnmatchedElement(subject=key[0], seen=key[1], unasked=tuple(lost[key]),
+    return [UnmatchedElement(subject=key[0], seen=key[1],
+                             unasked=tuple(sorted(lost[key], key=lambda rid: (
+                                 order.get(rid, len(order)), rid))),
                              resembles=resembled[key][1])
             for key in sorted(lost)]
 

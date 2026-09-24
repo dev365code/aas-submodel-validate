@@ -39,9 +39,9 @@ mutants:
 # docs/report-schema.md and its test hold the shape; this holds the
 # values, so a severity respelled or a grade moving is a line in a diff
 # rather than something a consumer finds. `toolVersion` is the one
-# marker, and the tool says why. Written above the target and not between
-# its lines: tests/test_ci_parity.py reads a recipe up to its first line
-# that is not a command, and a comment there hid this one from it.
+# marker, and the tool says why. Written above the target: between its
+# lines it once hid the second from tests/test_ci_parity.py, which reads a
+# recipe past comments and blank lines now, as make does.
 generated:
 	$(PYTHON) tools/extract_smt_rules.py --check
 	$(PYTHON) tools/golden_report.py --check

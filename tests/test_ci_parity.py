@@ -49,16 +49,37 @@ def _check_targets():
     return line.group(1).split()
 
 
-def _commands_of(target: str):
-    # Comment lines are read past, as make reads past them: a comment
-    # between two lines of a recipe stopped this at the first line, and the
-    # golden gate below one was a command make ran and this never saw.
-    body = re.search(r"^%s:.*?\n((?:\t.*\n|#.*\n|\n)*)" % re.escape(target), MAKEFILE, re.M)
+def _commands_of(target: str, makefile: str = MAKEFILE):
+    # Comment lines and blank ones are read past, as make reads past them,
+    # a comment indented with spaces included: a comment between two lines
+    # of a recipe stopped this at the first line, and the golden gate
+    # below one was a command make ran and this never saw.
+    body = re.search(r"^%s:.*?\n((?:\t.*\n|[ \t]*#.*\n|[ \t]*\n)*)" % re.escape(target),
+                     makefile, re.M)
     if not body:
         return []
     return [raw.strip().replace("$(PYTHON)", "").strip()
             for raw in body.group(1).splitlines()
             if raw.strip().startswith("$(PYTHON)")]
+
+
+def test_a_recipe_is_read_past_its_comments_and_blank_lines():
+    """Make reads a recipe past a comment and a blank line, a comment
+    indented with spaces and a line of spaces included; this read past a
+    first-column comment only, so a step behind any other was a command
+    make ran and this never compared."""
+    makefile = ("generated:\n"
+                "\t$(PYTHON) tools/one.py --check\n"
+                "# a first-column comment\n"
+                "    # an indented one\n"
+                "    \n"
+                "\n"
+                "\t$(PYTHON) tools/two.py --check\n"
+                "\n"
+                "other:\n"
+                "\t$(PYTHON) tools/three.py\n")
+    assert _commands_of("generated", makefile) == ["tools/one.py --check",
+                                                   "tools/two.py --check"]
 
 
 def _normalise(command: str) -> str:

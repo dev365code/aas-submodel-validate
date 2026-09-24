@@ -15,15 +15,18 @@ row was charged to it in `rulesNotAsked` and `unmatchedElements`,
 including sections the element does not carry, which matched would have
 been places not examined all the same. It is charged now with the rows
 directly beneath the one it resembles and, below those, only what it
-holds; the sections it does not carry stay in `scopeNotExamined`. A
-drifted copy beside an intact sibling is charged what only it holds,
-where it was charged nothing because the sibling had entered the row.
-An element of the wrong kind is charged as it was, with everything
+holds; the sections it does not carry stay in `scopeNotExamined`. An
+element of the wrong kind is not entered, and is charged with everything
 beneath the row, which is what the walk charges one carrying the row's
-identifier outright; each element goes to the first row it matches, as
-the walk hands them out; and in a template of the caller's that contains
-itself a nested copy is followed with the rows of the element it copies,
-as the walk follows it. No verdict moves.
+identifier outright. Either way, a rule some other scope in the
+submodel asked is not charged. Beside an intact sibling that had entered
+the row, a drifted element was charged nothing at all: it is charged now
+with what the sibling did not ask -- what it holds, or, of the wrong
+kind, the rest of the row -- and where that is anything the report names
+the element, which it did not. Each element goes to the first row it
+matches, as the walk hands them out, and in a template of the caller's
+that contains itself a nested copy is followed with the rows of the
+element it copies, as the walk follows it. No verdict moves.
 
 **One report is kept whole.** `docs/golden-report.json` is what `-f json`
 says about a package built from this repository's own fixtures -- five

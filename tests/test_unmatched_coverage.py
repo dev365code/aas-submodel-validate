@@ -703,3 +703,106 @@ def test_an_element_goes_to_the_first_row_it_matches(tmp_path):
                                   "value": "x"}]}]}]}]}), encoding="utf-8")
     report = runner.run(document, template=str(template))
     assert report.not_asked == ["TPL-E02", "TPL-E03", "TPL-E04"], report.not_asked
+
+
+def _root_template(tmp_path, rows):
+    """A template whose mandatory `Root` holds `rows`, and the helpers to
+    write a file against it. `Roots` is a near miss of `Root`."""
+    base = "https://example.com/ids/"
+
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": base + value}]}
+
+    def card(value):
+        return {"type": "SMT/Cardinality", "valueType": "xs:string", "value": value,
+                "semanticId": {"type": "ExternalReference", "keys": [{
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/SubmodelTemplates/Cardinality/1/0"}]}}
+
+    template = tmp_path / "root-template.json"
+    template.write_text(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:t", "idShort": "H", "kind": "Template",
+        "semanticId": sid("top"),
+        "submodelElements": [{
+            "modelType": "SubmodelElementCollection", "idShort": "Root",
+            "semanticId": sid("Root"), "qualifiers": [card("One")],
+            "value": rows(sid, card)}]}]}), encoding="utf-8")
+
+    def run(name, root, holds):
+        document = tmp_path / name
+        document.write_text(json.dumps({"submodels": [{
+            "modelType": "Submodel", "id": "urn:d", "idShort": "H", "semanticId": sid("top"),
+            "submodelElements": [{
+                "modelType": "SubmodelElementCollection", "idShort": "Root",
+                "semanticId": sid(root), "value": holds(sid)}]}]}), encoding="utf-8")
+        return runner.run(document, template=str(template))
+    return run
+
+
+def test_an_element_goes_to_the_first_row_it_matches_whatever_that_row_holds(tmp_path):
+    """The first of two sibling rows sharing an identifier is a Property,
+    the second a collection with a mandatory `Leaf`, and the drifted
+    `Root` holds one collection carrying the identifier. The walk hands it
+    to the Property row -- the wrong kind, nothing beneath -- and never
+    asks for `Leaf`; handed on to the row after, the charge blamed the
+    drift for it. Corrected, the file asks everything it was charged."""
+    def rows(sid, card):
+        return [{"modelType": "Property", "idShort": "P", "semanticId": sid("Shared"),
+                 "valueType": "xs:string", "qualifiers": [card("ZeroToOne")]},
+                {"modelType": "SubmodelElementCollection", "idShort": "C",
+                 "semanticId": sid("Shared"), "qualifiers": [card("ZeroToOne")],
+                 "value": [{"modelType": "Property", "idShort": "Leaf",
+                            "semanticId": sid("Leaf"), "valueType": "xs:string",
+                            "qualifiers": [card("One")]}]}]
+
+    def holds(sid):
+        return [_collection("Only", sid("Shared"), [{
+            "modelType": "Property", "idShort": "Leaf", "semanticId": sid("Leaf"),
+            "valueType": "xs:string", "value": "x"}])]
+
+    run = _root_template(tmp_path, rows)
+    assert run("drifted.json", "Roots", holds).not_asked == ["TPL-E02", "TPL-E03"]
+    assert run("corrected.json", "Root", holds).not_asked == []
+
+
+def test_a_wrong_kind_element_inside_a_near_miss_is_charged_as_the_walk_charges_it(tmp_path):
+    """The outer `Node` drifted, and holds a Property where `Section`
+    belongs. Corrected, the walk matches `Section` with it, does not enter
+    it, and charges `Leaf` to it; charging only the elements of the right
+    kind inside a near miss left `Leaf` out of the drift's charge."""
+    def outer(identifier):
+        return lambda sid: [_collection("Outer", sid(identifier), [{
+            "modelType": "Property", "idShort": "Section", "semanticId": sid("Section"),
+            "valueType": "xs:string", "value": "x"}])]
+
+    drifted = _nested(tmp_path, outer("Nodes"), "section-drifted.json")
+    assert drifted.not_asked == ["TPL-E02", "TPL-E03", "TPL-E04"], drifted.not_asked
+    corrected = _nested(tmp_path, outer("Node"), "section-corrected.json")
+    assert [(record.subject, record.unasked) for record in corrected.unmatched] == [
+        ("H/Outer/Section", ("TPL-E04",))], corrected.unmatched
+
+
+def test_a_record_lists_its_rules_in_the_tables_order(tmp_path):
+    """`Root` holds a `Sub` with a mandatory `Deep`, then a `Leaf`; the
+    drifted `Root` holds the `Sub`. The rules come out as the table orders
+    them -- as `rulesNotAsked` gives them -- and not as a walk meets them,
+    which put `Leaf` before `Deep`."""
+    def rows(sid, card):
+        return [{"modelType": "SubmodelElementCollection", "idShort": "Sub",
+                 "semanticId": sid("Sub"), "qualifiers": [card("ZeroToOne")],
+                 "value": [{"modelType": "Property", "idShort": "Deep",
+                            "semanticId": sid("Deep"), "valueType": "xs:string",
+                            "qualifiers": [card("One")]}]},
+                {"modelType": "Property", "idShort": "Leaf", "semanticId": sid("Leaf"),
+                 "valueType": "xs:string", "qualifiers": [card("ZeroToOne")]}]
+
+    def holds(sid):
+        return [_collection("Sub", sid("Sub"), [{
+            "modelType": "Property", "idShort": "Deep", "semanticId": sid("Deep"),
+            "valueType": "xs:string", "value": "x"}])]
+
+    report = _root_template(tmp_path, rows)("ordered.json", "Roots", holds)
+    assert report.not_asked == ["TPL-E02", "TPL-E03", "TPL-E04"], report.not_asked
+    [record] = report.unmatched
+    assert record.unasked == ("TPL-E02", "TPL-E03", "TPL-E04"), record.unasked

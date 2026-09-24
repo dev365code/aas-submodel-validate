@@ -1686,6 +1686,52 @@ TABLE = [
      "the report of a clean file -- one defect quieter than the same file "
      "with the identifier corrected"),
 
+    ("scope/the-first-row-takes-the-element-whatever-it-holds",
+     "src/aas_submodel_validate/rules/engine.py",
+     '                if child["children"] or child.get("recurses"):\n'
+     '                    out.extend(_asked_inside(child, sub, inside))\n'
+     '                break\n',
+     '                if child["children"] or child.get("recurses"):\n'
+     '                    out.extend(_asked_inside(child, sub, inside))\n'
+     '                    break\n',
+     ["tests/test_unmatched_coverage.py::"
+      "test_an_element_goes_to_the_first_row_it_matches_whatever_that_row_holds"],
+     "an element handed to a Property row -- the first sharing its "
+     "identifier -- was handed on to the collection row after it, and the "
+     "drift was blamed for a Leaf the walk never asks of it"),
+
+    ("scope/a-wrong-kind-element-inside-a-near-miss-is-charged",
+     "src/aas_submodel_validate/rules/engine.py",
+     '                if child["children"] or child.get("recurses"):\n'
+     '                    out.extend(_asked_inside(child, sub, inside))\n',
+     '                if (child["children"] or child.get("recurses")) '
+     'and type(sub).__name__ == child["kind"]:\n'
+     '                    out.extend(_asked_inside(child, sub, inside))\n',
+     ["tests/test_unmatched_coverage.py::"
+      "test_a_wrong_kind_element_inside_a_near_miss_is_charged_as_the_walk_charges_it"],
+     "a Property standing where a section belongs inside a drifted node "
+     "was charged nothing, and the section's rules left the drift's charge "
+     "though the corrected file charges them to that Property"),
+
+    ("scope/a-record-lists-its-rules-in-the-tables-order",
+     "src/aas_submodel_validate/rules/engine.py",
+     "                             unasked=tuple(sorted(lost[key], key=lambda rid: (\n"
+     "                                 order.get(rid, len(order)), rid))),\n",
+     "                             unasked=tuple(lost[key]),\n",
+     ["tests/test_unmatched_coverage.py::test_a_record_lists_its_rules_in_the_tables_order"],
+     "an element's record listed the rules beneath a section after the "
+     "section's siblings, in the order a walk meets them, while "
+     "rulesNotAsked listed the same rules in the table's"),
+
+    ("ci-parity/a-recipe-is-read-past-its-comments",
+     "tests/test_ci_parity.py",
+     r'    body = re.search(r"^%s:.*?\n((?:\t.*\n|[ \t]*#.*\n|[ \t]*\n)*)" % re.escape(target),',
+     r'    body = re.search(r"^%s:.*?\n((?:\t.*\n|#.*\n|\n)*)" % re.escape(target),',
+     ["tests/test_ci_parity.py::test_a_recipe_is_read_past_its_comments_and_blank_lines"],
+     "a comment indented with spaces between two lines of a recipe hid "
+     "every line after it from the comparison with CI, though make runs "
+     "them"),
+
     ("scope/an-element-goes-to-the-first-row-it-matches",
      "src/aas_submodel_validate/rules/engine.py",
      "                    out.extend(_asked_inside(child, sub, inside))\n                break\n",
