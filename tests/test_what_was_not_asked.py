@@ -380,9 +380,15 @@ def test_a_row_asked_in_one_list_item_is_not_reported_from_another(tmp_path):
     all, which the mutation round found.
 
     Measured on two `Document` items with the second's `DocumentVersions`
-    identifier drifted: four rules unasked with the subtraction and
-    twenty-two without, the extra eighteen being rows the first item
-    answered.
+    identifier drifted, the second also carrying a `RefersToEntities` the
+    first does not: one rule unasked with the subtraction -- the item row
+    beneath that section, which nothing asked -- and nineteen without, the
+    other eighteen being rows the first item answered. (Before a near
+    miss was charged only what its element holds, the same fixture
+    without the extra section measured four and twenty-two; charged by
+    its content, a copy identical to the first had nothing left once the
+    first item's rows were taken back, and the precondition below read
+    "stale".)
     """
     import copy
 
@@ -418,6 +424,17 @@ def test_a_row_asked_in_one_list_item_is_not_reported_from_another(tmp_path):
             for item in node:
                 drift(item)
     drift(second)
+    version = find(second, "DocumentVersions")["value"][0]
+    version["value"].append({
+        "modelType": "SubmodelElementList", "idShort": "RefersToEntities",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference", "value": "0173-1#02-ABK288#002"}]},
+        "typeValueListElement": "ReferenceElement",
+        "value": [{"modelType": "ReferenceElement",
+                   "semanticId": {"type": "ExternalReference", "keys": [
+                       {"type": "GlobalReference", "value": "0173-1#02-ABK288#002"}]},
+                   "value": {"type": "ExternalReference",
+                             "keys": [{"type": "GlobalReference", "value": "urn:x:pump"}]}}]})
     documents["value"].append(second)
 
     path = tmp_path / "two-items.json"
