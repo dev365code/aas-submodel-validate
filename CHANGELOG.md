@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.1 — unreleased
+## 0.7.1 — 2026-09-25
 
 **One file stored twice is nothing to choose between.** A File value
 naming a part the package lacks, where several parts carry the file name
