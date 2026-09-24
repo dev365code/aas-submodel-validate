@@ -4,6 +4,7 @@ from . import (  # noqa: F401
     contact,
     container,
     dbp,
+    dbp5,
     detect,
     dn,
     hd,

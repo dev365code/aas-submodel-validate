@@ -1078,3 +1078,73 @@ def sn_env() -> dict:
                                           "SoftwareNameplate/1/0"}]},
         "submodelElements": [kind, instance],
     }]}
+
+
+PC = "urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#"
+
+
+def dbp5_env() -> dict:
+    """The golden fixture for IDTA 02035-5 Product Condition 1.0.2, written by
+    hand like the others and carrying every row the template declares, so
+    each generated row has a scope to strip from, a bound to exceed, or an
+    identifier to put the wrong kind under. Values are the template's own.
+
+    Identifiers are reproduced exactly as the template writes them. Twelve
+    collections carry a `LastUpdate` under one identifier, so the table
+    tells them apart by their parent's name.
+    """
+    when = "2000-01-01T14:23:00"
+
+    def reading(name, value, value_type="xs:float"):
+        low = name[0].lower() + name[1:]
+        return _smc(PC + low, [
+            _prop(name + "Value", PC + low + "Value", value, value_type),
+            _prop("LastUpdate", PC + "lastUpdate", when, "xs:dateTime"),
+        ], id_short=name)
+
+    elements = [
+        reading("EnergyThroughput", "100000"),
+        reading("StateOfCharge", "70"),
+        reading("CapacityThroughput", "214"),
+        reading("NumberOfFullCycles", "600", "xs:unsignedInt"),
+        reading("StateOfCertifiedEnergy", "70"),
+        reading("RemainingEnergy", "30"),
+        reading("RemainingCapacity", "56"),
+        _sml("NegativeEvents", PC + "negativeEvents", "SubmodelElementCollection", [
+            _smc(PC + "NegativeEvent", [
+                _prop("NegativeEventValue", PC + "negativeEventValue", "overcharged"),
+                _prop("LastUpdate", PC + "lastUpdate", when, "xs:dateTime"),
+            ]),
+        ]),
+        _sml("InformationOnAccidents", PC + "informationOnAccidents", "Property", [
+            _prop(None, "urn:samm:io.admin-shell.idta.handover_documentation:2.0.0"
+                        "#DocumentIdentifier", "XF90-884"),
+        ], value_type="xs:string"),
+        _smc(PC + "temperatureInformation", [
+            _prop("MeasuredTemp", PC + "measuredTemp", "21.5", "xs:float"),
+            _prop("TimeExtremeHighTemp", PC + "timeExtremeHighTemp", "0", "xs:float"),
+            _prop("TimeExtremeLowTemp", PC + "timeExtremeLowTemp", "0", "xs:float"),
+            _prop("TimeExtremeHighTempCharging", PC + "timeExtremeHighTempCharging", "0",
+                  "xs:float"),
+            _prop("TimeExtremeLowTempCharging", PC + "timeExtremeLowTempCharging", "0",
+                  "xs:float"),
+            _prop("LastUpdate", PC + "lastUpdate", when, "xs:dateTime"),
+        ], id_short="TemperatureInformation"),
+        _smc(PC + "remainingPowerCapability", [
+            _smc(PC + "remainingPowerCapabilityDynamicAt", [
+                _prop("RPCLastUpdated", PC + "rPCLastUpdated", when, "xs:dateTime"),
+                _prop("AtSoC", PC + "atSoC", "80", "xs:float"),
+                _prop("PowerCapabilityAt", PC + "powerCapabilityAt", "95", "xs:float"),
+            ], id_short="RemainingPowerCapabilityDynamicAt"),
+            _prop("LastUpdate", PC + "lastUpdate", when, "xs:dateTime"),
+        ], id_short="RemainingPowerCapability"),
+        reading("EvolutionOfSelfDischarge", "1"),
+        reading("CurrentSelfDischargingRate", "2"),
+        reading("RemainingRoundTripEnergyEfficiency", "80"),
+    ]
+    return {"submodels": [{
+        "id": "urn:example:product-condition",
+        "idShort": "ProductCondition", "modelType": "Submodel",
+        "semanticId": _sid(PC + "ProductCondition"),
+        "submodelElements": elements,
+    }]}

@@ -31,6 +31,8 @@ COVERED = {
     "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations",    # 02002
     "https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel",  # 02011
     "https://admin-shell.io/idta/SoftwareNameplate/1/0",                # 02007
+    "urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2"
+    "#ProductCondition",                                                # 02035-5
 }
 
 
@@ -102,10 +104,11 @@ def test_scope_md_names_every_template_the_tool_has_a_table_for():
     assert "SMT-D1" in section
     assert "Multiplicity" in section
     head, _, _ = section.partition("A submodel of any other template")
-    assert "Eight official templates are given rule tables" in head, head[:200]
+    assert "Nine official templates are given rule tables" in head, head[:200]
     for name in ("02004 Handover Documentation", "02003 Technical Data",
                  "02035-2 Digital Battery Passport", "02006 Digital Nameplate",
                  "02023 Carbon Footprint", "02002 Contact Information",
-                 "02011 Hierarchical Structures", "02007 Software Nameplate"):
+                 "02011 Hierarchical Structures", "02007 Software Nameplate",
+                 "02035-5 Digital Battery Passport part 5"):
         assert name in head, name
     assert "still not vendored" not in section.partition("## ")[0]

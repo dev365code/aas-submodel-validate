@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 262 rows is how one of them
+extracted, not hand-written: hand-copying 311 rows is how one of them
 silently goes stale. This sentence's number is pinned against the
 generator's own list of packs, and the README's beside it
 (`tests/test_readme_front.py`) -- pinned because it has been wrong
@@ -167,6 +167,13 @@ PCF_ITEM_NAMES = {
 
 DN_ARBITRARY = ARBITRARY
 
+#: 02035-5's two list items. The template gives both an idShort
+#: (AASd-120), and these are those names.
+DBP5_ITEM_NAMES = {
+    "NegativeEvents": "NegativeEvent",
+    "InformationOnAccidents": "DocumentIdentifier",
+}
+
 #: One entry per vendored template. `source` names the file in the header
 #: of the generated module, so a reader lands on the right upstream
 #: artefact; `prefix` is the rule-id namespace the registry keeps unique.
@@ -284,6 +291,22 @@ PACKS = (
         "source": "IDTA 02007-1-0-1_Template_Software Nameplate.json",
         "citation": "IDTA 02007-1-0-1 template",
         "item_names": {},
+        "example_types": (),
+        "skip_sids": ARBITRARY,
+    },
+    # IDTA 02035-5 Product Condition 1.0.2, the Digital Battery Passport's
+    # part 5: forty-nine elements -- 33 Properties, 14 collections, 2 lists
+    # -- each with the `SMT/Cardinality` qualifier. Every identifier is a
+    # SAMM URN, with the ECLASS identifier, where there is one, beside it
+    # as a supplemental; twelve collections hold a `LastUpdate` under one
+    # identifier. No open content.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-5/1.0.2/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/dbp5_tables.py",
+        "prefix": "DBP5-E",
+        "source": "IDTA 02035-5_DBP-Part-5_ProductCondition_V1.0.2.json",
+        "citation": "IDTA 02035-5 1.0.2 template",
+        "item_names": DBP5_ITEM_NAMES,
         "example_types": (),
         "skip_sids": ARBITRARY,
     },

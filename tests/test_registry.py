@@ -10,6 +10,7 @@ from aas_submodel_validate.model import KINDS, Severity, Violation
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.rules import (
     contact_tables,
+    dbp5_tables,
     dbp_tables,
     dn_tables,
     engine,
@@ -194,7 +195,7 @@ SHOULD_RULES = {
     "TD-D3", "TDL1", "X4",
     # The near-miss lint every pack registers since 0.8.0, 02004's and
     # 02003's by hand before then: SHOULD, as TDL1 has always been.
-    "CIL1", "DNL1", "HSL1", "PCFL1", "SNL1",
+    "CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1",
 }
 MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 
@@ -228,7 +229,7 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #: truncated repr of 87 Rule objects names nothing. Widening the pattern
 #: without moving that assertion would have made the case it was widened
 #: for worse.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI|HS|SN)-E\d+$")
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI|HS|SN|DBP5)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -241,9 +242,10 @@ def test_every_generated_rule_stops_a_build():
     # count, which is the number this project quotes in its README.
     assert {rule.id for rule in generated} == {
         row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables,
-                                pcf_tables, contact_tables, hs_tables, sn_tables)
+                                pcf_tables, contact_tables, hs_tables, sn_tables,
+                                dbp5_tables)
         for row in tables.ROWS}
-    assert len(generated) == 262
+    assert len(generated) == 311
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -301,6 +303,8 @@ NAMESPACES = {
     r"CIL\d+": "IDTA 02002, informational lints",
     r"HSL\d+": "IDTA 02011, informational lints",
     r"SNL\d+": "IDTA 02007, informational lints",
+    r"DBP5-E\d+": "IDTA 02035-5, generated from the template's rows",
+    r"DBP5L\d+": "IDTA 02035-5, informational lints",
 }
 
 
@@ -508,7 +512,10 @@ REMEDIES = {
         "https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel "
         "for Hierarchical Structures (IDTA 02011); "
         "https://admin-shell.io/idta/SoftwareNameplate/1/0 "
-        "for Software Nameplate (IDTA 02007). If it means a template "
+        "for Software Nameplate (IDTA 02007); "
+        "urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2"
+        "#ProductCondition for Product Condition (IDTA 02035-5). "
+        "If it means a template "
         "this tool has no table for, "
         "leave the identifier alone -- it is doing its job, and this "
         "finding only says nothing here judged the submodel against a "
@@ -533,7 +540,7 @@ REMEDIES = {
         "Correct the semanticId to the template's spelling; a near-miss "
         "matches nothing, and every rule that would have applied to the "
         "element silently stops applying.",
-    **dict.fromkeys(("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1"),
+    **dict.fromkeys(("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1"),
                     "Correct the semanticId to the template's spelling; a near-miss "
                     "matches nothing, and every rule that would have applied to the "
                     "element silently stops applying."),

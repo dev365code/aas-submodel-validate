@@ -46,11 +46,14 @@ Where it stands, template by template:
 - IDTA 02002 Contact Information — done
 - IDTA 02011 Hierarchical Structures — done
 - IDTA 02007 Software Nameplate — done
+- IDTA 02035-5 Digital Battery Passport, part 5 — done
 
-Every template named for 1.0 has a pack. They were named rather than
+Every template named for 1.0 has a pack -- the eight above 02035-5. They were named rather than
 counted: a count can be met by whichever templates are easiest, and a
 name says which documents a reader can bring. Which templates come next
-is decided by what people bring (the README's roadmap).
+is decided by what people bring (the README's roadmap); the battery
+passport's part 5 came next because the battery-data layer already reads
+it.
 
 ## Explanation
 
@@ -170,7 +173,7 @@ Before 1.0: every row of the mutation table killed on the tree it ships with, an
 **The vendored templates are pinned and hash-checked.**
 
 ```
-vendored material matches its recorded hashes, and the trees hold nothing else (13 files, pin 11ef33531246)
+vendored material matches its recorded hashes, and the trees hold nothing else (14 files, pin 11ef33531246)
 ```
 
 Reproduce: `python3 tools/vendor_template.py --check` in a clone; CI runs it

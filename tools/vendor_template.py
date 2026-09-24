@@ -110,6 +110,15 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02007/1.0.1/template.json":
         "published/Software Nameplate/1/0/1/"
         "IDTA 02007-1-0-1_Template_Software Nameplate.json",
+    # 02035-5 is the Digital Battery Passport's part 5, Product Condition,
+    # published at 1.0, 1.0.1 and 1.0.2; 1.0.2 is the newest at the pin,
+    # and the edition the battery-data layer already reads. Its directory
+    # holds no README and names the JSON by its version. Every identifier
+    # is a SAMM URN whose version moved with each release (1.0.0, 1.0.1,
+    # 1.0.2 -- the specification's Annex B says so of 1.0.2).
+    "src/aas_submodel_validate/data/smt/02035-5/1.0.2/template.json":
+        "published/Digital Battery Passport/5_Product Condition/1/0/2/"
+        "IDTA 02035-5_DBP-Part-5_ProductCondition_V1.0.2.json",
 }
 
 

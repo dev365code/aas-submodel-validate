@@ -176,7 +176,7 @@ VERDICT_LINES = [
     (19, [(140, N, "key", 1),
           (180, N, "docs/divergences.md is at https://github.com/dev365code/"
                    + ELISION, 0)]),
-    (19, [(28, T, "ok -- 0 error(s), 1 warning(s), 8 info", 1),
+    (19, [(28, T, "ok -- 0 error(s), 1 warning(s), 4 info", 1),
           (327, N, "-- battery-passport.json; judged 3 of 3 submodels", 0)]),
 ]
 

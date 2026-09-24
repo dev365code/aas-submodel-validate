@@ -34,7 +34,8 @@ import re
 import pytest
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.rules import battery, battery_tables
+from aas_submodel_validate.rules import battery, battery_tables, dbp5_tables
+from builders import dbp5_env
 
 CARBON_FOOTPRINT = "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0"
 #: An element BAT-R8 reads once a category is settled, and where it sits.
@@ -840,6 +841,25 @@ def _category_property(value: str) -> dict:
             "value": value}
 
 
+def _conformant_product_condition(carried):
+    """A Product Condition submodel's elements: the four collections the
+    template makes mandatory, and each carried one as the template writes
+    it rather than empty.
+
+    Product Condition is judged by a template pack since 0.8.0, and a
+    submodel without those four fails there whatever its category -- so
+    a test of the conditional rows would have read the pack's errors as
+    well as its own. The carried collections come from the same golden
+    fixture, whole, for the same reason."""
+    golden = {element["semanticId"]["keys"][0]["value"]: element
+              for element in dbp5_env()["submodels"][0]["submodelElements"]}
+    mandatory = [element for element in golden.values()
+                 if element["idShort"] in ("StateOfCharge", "NumberOfFullCycles",
+                                           "InformationOnAccidents", "TemperatureInformation")]
+    return mandatory + [golden.get(element["semanticId"]["keys"][0]["value"], element)
+                        for element in carried]
+
+
 def _passport(category=None, carrying=()):
     """Every submodel the conditional rows belong to, each empty except
     for what `carrying` names, and the category the file declares.
@@ -857,6 +877,8 @@ def _passport(category=None, carrying=()):
     for index, (sid, held) in enumerate(sorted(by_submodel.items())):
         value = [_collection(row["element_id_short"], row["element_semantic_id"])
                  for row in held if row["element_semantic_id"] in wanted]
+        if sid == dbp5_tables.TEMPLATE_SEMANTIC_ID:
+            value = _conformant_product_condition(value)
         if sid.endswith("TechnicalData/1/0") and category is not None:
             value.append(_collection(
                 "GeneralInformation",

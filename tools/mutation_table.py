@@ -1509,8 +1509,8 @@ TABLE = [
 
     ("readme/the-elision-is-the-lines-the-run-prints",
      "README.md",
-     "The `…` is six lines: the one that accounts for the `8 info` — the\n",
-     "The `…` is four lines: the one that accounts for the `8 info` — the\n",
+     "The `…` is six lines: the one that accounts for the `4 info` — the\n",
+     "The `…` is four lines: the one that accounts for the `4 info` — the\n",
      ["tests/test_readme_front.py::test_the_anatomy_block_is_what_the_tool_prints"],
      "the sentence under the battery sample said the elided run was four "
      "lines when the tool printed six, and every gate on the block read "
@@ -1943,6 +1943,35 @@ TABLE = [
      '    card = (0, None) if repeats else card\n    endless = card[0] if repeats and card[0] > 0 else None\n',
      ['tests/test_hierarchical_scheme_spec.py::test_a_self_containing_entity_gives_its_copy_a_marked_row'],
      "the nested copy's bound is the template's -- ZeroToOne in the test -- and a generator assuming 0..* passed the test that claimed it read it"),
+
+    ("detect/a-samm-identifier-has-no-eclass-stem",
+     "src/aas_submodel_validate/rules/detect.py",
+     '        return version_stem(self.semantic_id) or ""\n',
+     '        return self.semantic_id.rpartition("#")[0]\n',
+     ["tests/test_generated_rules_dbp5.py::"
+      "test_another_element_of_the_namespace_is_not_one_version_off"],
+     "a submodel naming another element of 02035-5's SAMM namespace was "
+     "told it differed from the Product Condition template's identifier "
+     "only in the ECLASS version suffix"),
+
+    ("detect/a-submodel-one-samm-version-off-is-told-so",
+     "src/aas_submodel_validate/rules/detect.py",
+     "                if samm_stem(value) and samm_stem(value) == samm_stem(pack.semantic_id) \\\n",
+     "                if False and samm_stem(value) == samm_stem(pack.semantic_id) \\\n",
+     ["tests/test_generated_rules_dbp5.py::"
+      "test_a_submodel_written_to_an_earlier_edition_is_named_by_its_version"],
+     "a Product Condition submodel written to 1.0.1 was told only which "
+     "identifier it carried, and not that it differs from the template's "
+     "in its SAMM version alone"),
+
+    ("dbp5/the-pack-registers-its-lint",
+     "src/aas_submodel_validate/rules/dbp5.py",
+     'install_near_miss_lint("DBP5L1", dbp5_tables)\n',
+     "\n",
+     ["tests/test_generated_rules_dbp5.py::"
+      "test_an_element_one_samm_version_off_is_named_by_the_lint"],
+     "an element of 02035-5's release before, inside a 1.0.2 submodel, "
+     "drew no finding naming it"),
 
 ]
 

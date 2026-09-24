@@ -142,7 +142,7 @@ def test_the_five_lints_are_tdl1_under_other_names():
 
     def shape(rule):
         return (rule.kind, rule.prio, rule.title, rule.spec, rule.fix, rule.path)
-    for lint in ("DNL1", "CIL1", "PCFL1", "HSL1", "SNL1"):
+    for lint in ("DNL1", "CIL1", "PCFL1", "HSL1", "SNL1", "DBP5L1"):
         assert shape(rules[lint]) == shape(rules["TDL1"]), lint
 
 

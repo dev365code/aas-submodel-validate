@@ -2,6 +2,21 @@
 
 ## 0.8.0 — unreleased
 
+**IDTA 02035-5 Product Condition is the ninth template pack.** The
+Digital Battery Passport's part 5 -- energy and capacity throughput,
+full cycles, state of charge and of certified energy, remaining energy,
+capacity and power capability, negative events, accidents, temperatures,
+self-discharge and round-trip efficiency -- is vendored at 1.0.2, the
+newest edition at the pin and the one the battery-data layer already
+reads, and generates forty-nine rules, `DBP5-E01` to `DBP5-E49`, with
+the near-miss lint `DBP5L1`. Every identifier in it is a SAMM URN whose
+version moved with each release, so a submodel written to 1.0 or 1.0.1
+matches no row: `SMT-D1` says of it that it differs from this template's
+identifier only in its SAMM version, and an element of an earlier
+release inside a 1.0.2 submodel is a near miss. Where the template and
+its specification disagree, and what that costs a file, is
+`docs/divergences.md` #58.
+
 **Every pack names an identifier that nearly matches a row.** 02004's
 and 02003's packs have registered a near-miss lint (`HDL2`, `TDL1`, and
 `DBP2L2` for 02035-2), and the other five did not. In a Digital
@@ -26,20 +41,6 @@ first, so `SNL1` said the template has `InstallationDate` there, and a
 file that followed its remedy drew two errors. The rows a drift is
 charged in `rulesNotAsked` and `unmatchedElements` follow the same row.
 
-**What moves: one verdict in the corpus, and drifts of that kind in five
-packs.** Measured against 0.7.1 across the corpus, one of the
-seventy-four inputs is judged differently: a Software Nameplate whose
-`ConfigurationURI` carries the identifier its specification prints now
-draws `SNL1` beside `SN-E35` and still leaves by 1. The lint's remedy,
-like `SN-E35`'s, is the template's identifier, which there is the
-template's defect (`docs/divergences.md` #57). Outside the corpus, a
-Digital Nameplate, Contact Information, Carbon Footprint, Hierarchical
-Structures or Software Nameplate submodel holding an element whose
-identifier is one version suffix or one last segment off a row's draws a
-warning where it drew none. The exit code is what it was; under `-W`,
-which fails on warnings, such a file that left by 0 leaves by 1.
-`summary.rulesChecked` counts the five new rules.
-
 **A SAMM identifier one version off is a near miss.** 02035-2 names its
 elements twice, by an ECLASS identifier and by a SAMM one,
 `urn:samm:<namespace>:<version>#<name>`, whose version sits before the
@@ -51,8 +52,35 @@ near miss -- `DBP2L2` names it, and a template of the caller's written
 with SAMM identifiers records it in `summary.unmatchedElements` -- while
 another name in the same namespace is not.
 
-It is 310 rules, 262 generated from the vendored official template files,
-across eight template packs. What this reader takes in is unchanged: one
+**What moves: five verdicts in the corpus, and every Product Condition
+submodel that breaks its template.** Measured against 0.7.1 across the
+corpus -- seventy-seven inputs now, the vendored 02035-5 template and two
+Product Condition submodels added -- five are judged differently. Four
+are battery passports whose Product Condition submodel is empty, the
+shape the battery rules were built and tested on: it now draws
+`DBP5-E04`, `DBP5-E10`, `DBP5-E26` and `DBP5-E28` for the four
+collections the template makes mandatory and leaves by 1 where it left
+by 0, and `summary.scopeNotExamined` names its fourteen collections. A
+pipeline that passed such a passport goes red. The fifth is the Software
+Nameplate whose `ConfigurationURI` carries the identifier its
+specification prints: it now draws `SNL1` beside `SN-E35` and still
+leaves by 1; the lint's remedy, like `SN-E35`'s, is the template's
+identifier, which there is the template's defect
+(`docs/divergences.md` #57). Outside the corpus, a Product Condition
+submodel that breaks its template in any other way -- a collection
+without its `LastUpdate`, a value of the wrong type -- leaves by 1 where
+it left by 0; one written to 1.0 or 1.0.1 draws `SMT-D1` and leaves by 1
+as before, the finding now saying that only its SAMM version differs;
+and a Digital Nameplate, Contact Information, Carbon Footprint,
+Hierarchical Structures or Software Nameplate submodel holding an element
+one version suffix or one last segment off a row's, or a 02035-2 element
+one SAMM version off, draws a warning where it drew none. The exit code
+of those is what it was; under `-W`, which fails on warnings, such a
+file that left by 0 leaves by 1. `summary.rulesChecked` counts the
+fifty-five new rules.
+
+It is 360 rules, 311 generated from the vendored official template files,
+across nine template packs. What this reader takes in is unchanged: one
 document at 64 MiB, a container's parts at 64 MiB each and 256 MiB
 together, and a container's directory of names at 16 MiB.
 

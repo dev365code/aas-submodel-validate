@@ -386,6 +386,21 @@ def build_corpus(into: Path):
     cases.append(Case("a Software Nameplate whose ConfigurationURI carries the "
                       "identifier its specification prints", spelled))
 
+    # A Product Condition submodel, and one written to the release before.
+    # The first shows IDTA 02035-5 land; the second is the shape
+    # docs/divergences.md #58 says a file of 1.0 or 1.0.1 has: every
+    # identifier at another SAMM version, so no row matches it and
+    # SMT-D1 says which template it means.
+    from builders import dbp5_env  # noqa: E402
+    condition = into / "product-condition-valid.json"
+    condition.write_text(json.dumps(dbp5_env()), encoding="utf-8")
+    cases.append(Case("a valid Product Condition submodel", condition))
+    earlier = into / "product-condition-written-to-1.0.1.json"
+    earlier.write_text(json.dumps(dbp5_env()).replace(
+        "product_condition:1.0.2#", "product_condition:1.0.0#"), encoding="utf-8")
+    cases.append(Case("a Product Condition submodel written to the release before, "
+                      "every identifier at SAMM version 1.0.0", earlier))
+
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
     # refusing the file, so a file like this is judged -- and what it is

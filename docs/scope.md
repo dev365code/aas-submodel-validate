@@ -93,10 +93,11 @@ the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 
-Eight official templates are given rule tables: IDTA 02004 Handover
+Nine official templates are given rule tables: IDTA 02004 Handover
 Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
 part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact
-Information, 02011 Hierarchical Structures, and 02007 Software Nameplate. A submodel of any other template is reported as not
+Information, 02011 Hierarchical Structures, 02007 Software Nameplate,
+and 02035-5 Digital Battery Passport part 5. A submodel of any other template is reported as not
 matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
@@ -123,7 +124,7 @@ submodel judged against that. What that buys and what it does not:
   your file and is not a published IDTA template. **A verdict against a
   template you supplied is not a statement about conformance to a
   published one.**
-- Where your template claims an identifier one of the eight packs also
+- Where your template claims an identifier one of the nine packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
 - The `TPL-E*` ids such a run uses are **not ids this project
@@ -250,3 +251,22 @@ finding; one that follows the template's collections and the
 specification inside them can draw an error the template's own defect
 put there. `docs/divergences.md` #57 lists each one and what the
 run does with it.
+
+IDTA 02035-5 Product Condition 1.0.2, the Digital Battery Passport's
+part 5, holds a battery's dynamic data: energy and capacity throughput,
+full cycles, state of charge and of certified energy, remaining energy,
+capacity and power capability, negative events, accidents, temperatures,
+self-discharge and round-trip efficiency, each collection with the time
+of its last update. Four collections are mandatory -- `StateOfCharge`,
+`NumberOfFullCycles`, `InformationOnAccidents` and
+`TemperatureInformation` -- and the other ten optional. Its pack is
+generated rows only: no value is checked for what it says, so a state of
+charge above 100 or a last update in the future draws nothing, and the
+battery-data layer (`BAT-R8`) reads what it reads of this part on its
+own terms. Every identifier in the template is a SAMM URN whose version
+moved with each release, so a submodel written to 1.0 or 1.0.1 matches
+no row and `SMT-D1` says it differs only in that version; an element of
+an earlier release inside a 1.0.2 submodel is a near miss.
+`docs/divergences.md` #58 records that, a misspelt supplemental
+identifier the rows match as written, and the template's other
+disagreements with its specification.

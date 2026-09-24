@@ -15,10 +15,11 @@ from __future__ import annotations
 
 from ..model import Violation
 from ..registry import rule
-from ..semantics import key_values, submodel_declares
+from ..semantics import key_values, samm_stem, submodel_declares, version_stem
 from . import (
     battery_tables,
     contact_tables,
+    dbp5_tables,
     dn_tables,
     hd_tables,
     hs_tables,
@@ -50,8 +51,15 @@ class Pack:
         """The identifier without its ECLASS version suffix, or "" when it
         carries none -- a URI-style identifier (IDTA 02006's Nameplate) has
         no `#` to partition on. `_nearest_miss` reads the empty string as
-        "this pack takes no version-suffix hint"."""
-        return self.semantic_id.rpartition("#")[0]
+        "this pack takes no version-suffix hint".
+
+        Read as ECLASS reads it, and not as "everything before the last
+        `#`": a SAMM identifier (02035-5's) has a `#` too, with the
+        element's name after it, and that reading made its stem the
+        namespace and version -- so a submodel naming any other element
+        of that namespace was told it differed "only in the ECLASS version
+        suffix", and one written to the release before got no hint."""
+        return version_stem(self.semantic_id) or ""
 
 
 PACKS = (
@@ -62,6 +70,7 @@ PACKS = (
     Pack("Contact Information (IDTA 02002)", contact_tables, "contactinformation"),
     Pack("Hierarchical Structures (IDTA 02011)", hs_tables, "hierarchicalstructures"),
     Pack("Software Nameplate (IDTA 02007)", sn_tables, "softwarenameplate"),
+    Pack("Product Condition (IDTA 02035-5)", dbp5_tables, "productcondition"),
 )
 
 
@@ -202,6 +211,10 @@ _ONE_VERSION_OFF = (2, "the identifier differs from a template this tool has onl
                        "in its version suffix; giving it that template's is "
                        "determined once the submodel is confirmed to follow "
                        "that version")
+_ONE_SAMM_VERSION_OFF = (2, "the identifier differs from a template this tool has "
+                            "only in its SAMM version; giving it that template's is "
+                            "determined once the submodel is confirmed to follow "
+                            "that version")
 _NAMED_AS_ONE = (2, "the submodel is named as a template this tool has; giving it "
                     "that template's semanticId is determined once the name is "
                     "confirmed to mean it")
@@ -237,6 +250,14 @@ def _diagnosed(submodels):
                              "only in the ECLASS version suffix"
                              % (value, pack.name, pack.semantic_id),)
                             + _ONE_VERSION_OFF)
+                # A SAMM identifier's version sits before the element's
+                # name, and 02035-5 moved it with every release.
+                if samm_stem(value) and samm_stem(value) == samm_stem(pack.semantic_id) \
+                        and value != pack.semantic_id:
+                    return (("found %s, which differs from the %s template's %s "
+                             "only in its SAMM version"
+                             % (value, pack.name, pack.semantic_id),)
+                            + _ONE_SAMM_VERSION_OFF)
         named = (getattr(submodel, "id_short", None) or "").lower()
         for pack in PACKS:
             if named == pack.id_short_hint:
