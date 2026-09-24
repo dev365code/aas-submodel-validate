@@ -401,6 +401,12 @@ def build_corpus(into: Path):
     cases.append(Case("a Product Condition submodel written to 1.0, every "
                       "identifier at SAMM version 1.0.0", earlier))
 
+    # A Battery Nameplate submodel, IDTA 02035-1's, landing.
+    from builders import dbp1_env  # noqa: E402
+    nameplate = into / "battery-nameplate-valid.json"
+    nameplate.write_text(json.dumps(dbp1_env()), encoding="utf-8")
+    cases.append(Case("a valid Battery Nameplate submodel", nameplate))
+
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
     # refusing the file, so a file like this is judged -- and what it is

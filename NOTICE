@@ -27,6 +27,9 @@ License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
   - aas_submodel_validate/data/smt/02035-5/1.0.2/template.json
     (IDTA 02035-5 Digital Battery Passport part 5 Product Condition
     template, V1.0.2, unmodified)
+  - aas_submodel_validate/data/smt/02035-1/1.0/template.json
+    (IDTA 02035-1 Digital Battery Passport part 1 Digital Nameplate
+    template, V1.0, unmodified)
   - aas_submodel_validate/data/example/idta-02004-2.0.aasx
     (IDTA 02004 2.0 Handover Documentation example package, unmodified
     -- defects and all, which is why it is worth shipping)

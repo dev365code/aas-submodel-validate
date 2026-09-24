@@ -43,7 +43,7 @@ needs to handle.
     "errors": 1,
     "warnings": 0,
     "info": 0,
-    "rulesChecked": 360,
+    "rulesChecked": 384,
     "metamodel": "3.0",
     "complete": true,
     "judged": true,
@@ -241,7 +241,7 @@ A grade is not permission to rewrite a file. Step 1 changes its meaning
 the moment a signature or an external digest covers the bytes, and this
 reader writes prescriptions rather than repairs.
 
-Every text field of a finding — `message`, `subject`, `detail`, `fix`, `spec`, `fixabilityWhy` — is bounded at 2000 characters. A report repeats what a file said, and a file can say a great deal: a 200 KB `File` value produced a 200,670-character report before the bound existed. Where a field was cut it says so and by how much (`... (198000 more characters, not shown)`), so a short value and a shortened one are never the same thing on the page. The bound sits far above anything this tool writes — the longest remedy it ships is 1,003 characters — so it can only ever cut what a file supplied.
+Every text field of a finding — `message`, `subject`, `detail`, `fix`, `spec`, `fixabilityWhy` — is bounded at 2000 characters. A report repeats what a file said, and a file can say a great deal: a 200 KB `File` value produced a 200,670-character report before the bound existed. Where a field was cut it says so and by how much (`... (198000 more characters, not shown)`), so a short value and a shortened one are never the same thing on the page. The bound sits far above anything this tool writes — the longest remedy it ships is 1,116 characters — so it can only ever cut what a file supplied.
 
 `kind` is `meta` for findings relayed from
 [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s

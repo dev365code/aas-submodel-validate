@@ -1150,3 +1150,77 @@ def dbp5_env() -> dict:
         "semanticId": _sid(PC + "ProductCondition"),
         "submodelElements": elements,
     }]}
+
+
+DBP1 = "urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#"
+
+
+def dbp1_env() -> dict:
+    """The golden fixture for IDTA 02035-1 Digital Nameplate 1.0, the
+    battery passport's part 1, written by hand like the others and
+    carrying every row the template declares. Values are the template's
+    own where it gives one.
+
+    The elements' own identifiers are the template's -- IEC CDD for most,
+    an IRI, an ECLASS IRDI or a SAMM URN for the rest -- and the ECLASS and
+    SAMM identifiers it puts beside them are left out: the rows match
+    without them. `AddressInformation` is 02002's collection dropped in and
+    written empty in the template, which asks nothing inside it; it holds
+    the four fields the specification's §3.2 requires, with 02002's
+    identifiers, because the file this stands for has them. And
+    `LifeCycleStage` is `original`, from the template's own value list,
+    not its example `Original`, which is outside that list
+    (docs/divergences.md #59).
+    """
+    marking = _smc("0112/2///61360_7#AAS009#001", [
+        _prop("MarkingName", "0112/2///61987#ABA231#009", "0173-1#07-DAA603#004"),
+        _prop("DesignationOfCertificateOrApproval", "0112/2///61987#ABH783#003",
+              "KEMA99IECEX1105/128"),
+        _prop("IssueDate", "0112/2///61987#ABO097#001", "2022-01-01", "xs:date"),
+        _prop("ExpiryDate", "0112/2///61987#ABH830#002", "2028-01-01", "xs:date"),
+        {"idShort": "MarkingFile", "modelType": "File",
+         "semanticId": _sid("0112/2///61987#ABO100#002"),
+         "contentType": "image/png", "value": "/aasx/files/marking.png"},
+        _prop("MarkingAdditionalText", "0112/2///61987#ABB146#007", "0044"),
+    ])
+    elements = [
+        _prop("URIOfTheProduct", "0112/2///61987#ABN590#002",
+              "https://dc-qr.com/?m=R123456789", "xs:anyURI"),
+        _mlp("ManufacturerName", "0112/2///61987#ABA565#009", "Muster AG"),
+        {"idShort": "AddressInformation", "modelType": "SubmodelElementCollection",
+         "semanticId": _sid("https://admin-shell.io/zvei/nameplate/1/0/"
+                            "ContactInformations/AddressInformation"),
+         "value": [_mlp("Street", "0173-1#02-AAO128#002", "Musterstrasse 1"),
+                   _mlp("Zipcode", "0173-1#02-AAO129#002", "12345"),
+                   _mlp("CityTown", "0173-1#02-AAO132#002", "Musterstadt"),
+                   _mlp("NationalCode", "0173-1#02-AAO134#002", "DE")]},
+        _prop("SerialNumber", "0112/2///61987#ABA951#009", "A12345-X75EN"),
+        _prop("DateOfManufacture", "0112/2///61987#ABB757#007", "2022-01-01", "xs:date"),
+        _prop("DateOfPuttingIntoService", DBP1 + "dateOfPuttingIntoService",
+              "2022-06-01", "xs:date"),
+        _prop("UniqueFacilityIdentifier",
+              "https://admin-shell.io/idta/nameplate/3/0/UniqueFacilityIdentifier",
+              "987654321"),
+        _prop("LifeCycleStage", "0173-1#02-ABL841#001", "original"),
+        _prop("OperatorIdentifier", DBP1 + "operatorIdentifier", "123456789"),
+        _prop("ManufacturerIdentifier",
+              "urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0"
+              "#manufacturerIdentifier", "XYZ-123456"),
+        _sml("Markings", "0112/2///61360_7#AAS006", "SubmodelElementCollection", [marking]),
+        _sml("EUDeclarationOfConformity", DBP1 + "euDeclarationOfConformity", "Property", [
+            _prop(None, "urn:samm:io.admin-shell.idta.handover_documentation:2.0.0"
+                        "#DocumentIdentifier", "EU-DOC-0001"),
+        ], value_type="xs:string"),
+        _sml("ResultsOfTestReportsProvingCompliance",
+             DBP1 + "resultsOfTestReportsProvingCompliance", "Property", [
+                 _prop(None, "urn:samm:io.admin-shell.idta.handover_documentation:2.0.0"
+                             "#DocumentIdentifier", "TEST-REPORT-0001"),
+             ], value_type="xs:string"),
+    ]
+    return {"submodels": [{
+        "id": "urn:example:battery-nameplate",
+        "idShort": "BatteryNameplate", "modelType": "Submodel",
+        "semanticId": _sid("https://admin-shell.io/idta/digitalbatterypassport/"
+                           "nameplate/1/0/Nameplate"),
+        "submodelElements": elements,
+    }]}
