@@ -286,6 +286,9 @@ PDF = ("aasx/files/manual.pdf", b"%PDF-1.4 bytes")
     # two parts carry that file name
     ("/aasx/documents/manual.pdf",
      [PDF, ("aasx/other/manual.pdf", b"%PDF-1.4 other")], 3),
+    # two parts carry it, and they are one file stored twice
+    ("/aasx/documents/manual.pdf",
+     [PDF, ("aasx/other/manual.pdf", PDF[1])], 2),
     # nothing in the package carries it
     ("../manuals/manual-v3.pdf", [PDF], 5),
     ("/aasx/files/missing.pdf", [PDF], 5),
@@ -297,6 +300,25 @@ def test_a_file_value_is_graded_by_what_the_package_holds(tmp_path, value, files
     finding = _only(document, "HD-D7")
     assert _grade(finding) == grade, finding
     assert finding["path"] == ["document", "submodel", "element"], finding
+
+
+def test_one_file_stored_under_two_names_is_nothing_to_choose(tmp_path):
+    """The same bytes in two folders, and a File value naming neither: the
+    grade said a person must choose between them, and whichever is chosen
+    is the same file. The reason says what the reader looked at -- the
+    archive's record of size and checksum, not the bytes."""
+    same = _only(_run(tmp_path, _with_file_value("/aasx/documents/manual.pdf"), aasx=True,
+                      files=[PDF, ("aasx/other/manual.pdf", PDF[1])]), "HD-D7")
+    assert _grade(same) == 2, same
+    assert "same size and checksum" in same["fixabilityWhy"], same
+    # The same size and other bytes: two files, and a choice. A size alone
+    # would call them one.
+    other = PDF[1][:-1] + b"z"
+    assert len(other) == len(PDF[1]) and other != PDF[1]
+    differ = _only(_run(tmp_path, _with_file_value("/aasx/documents/manual.pdf"), aasx=True,
+                        files=[PDF, ("aasx/other/manual.pdf", other)], name="differ"),
+                   "HD-D7")
+    assert _grade(differ) == 3, differ
 
 
 def test_an_identifier_one_version_off_is_a_2(tmp_path):

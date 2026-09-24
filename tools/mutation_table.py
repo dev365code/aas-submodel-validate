@@ -1498,7 +1498,7 @@ TABLE = [
 
     ("fixability/a-drifted-copy-here-is-a-correction",
      "src/aas_submodel_validate/rules/engine.py",
-     "            like = {subject for subject, _seen, _expected, near in near_here\n"
+     "            like = {subject for subject, _seen, _expected, near, _element in near_here\n"
      "                    if near is row}\n",
      "            like = set()\n",
      ["tests/test_severity_and_fixability.py::"
@@ -1509,13 +1509,31 @@ TABLE = [
 
     ("fixability/a-file-value-is-graded-by-the-package",
      "src/aas_submodel_validate/rules/engine.py",
-     "    found = len(container.carrying(value))\n",
+     "    found = len(carrying)\n",
      "    found = 0\n",
      ["tests/test_severity_and_fixability.py::"
       "test_a_file_value_is_graded_by_what_the_package_holds"],
      "a File value naming /aasx/documents/manual.pdf for a file the package "
      "holds in /aasx/files/ was told its bytes were not in the input, "
      "because the grade was fixed per branch and no branch had looked"),
+
+    ("fixability/one-file-under-two-names-is-nothing-to-choose",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    if len(carrying) > 1 and container.alike(carrying):\n",
+     "    if False:\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_one_file_stored_under_two_names_is_nothing_to_choose"],
+     "the same bytes stored in two folders were graded a choice a person "
+     "has to make, and whichever part is chosen is the same file"),
+
+    ("fixability/two-files-of-one-size-are-still-two",
+     "src/aas_submodel_validate/container.py",
+     "        return len({(info.file_size, info.CRC) for info in infos}) == 1\n",
+     "        return len({info.file_size for info in infos}) == 1\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_one_file_stored_under_two_names_is_nothing_to_choose"],
+     "two manuals of one length and different bytes would have been called "
+     "one file stored twice, and the choice between them graded away"),
 
     ("fixability/an-item-where-its-list-belongs-is-wrapped",
      "src/aas_submodel_validate/rules/engine.py",
@@ -1569,6 +1587,16 @@ TABLE = [
      "being asked: one near miss claimed every row its place left "
      "unentered, from 0.1.2 on"),
 
+    ("scope/a-near-miss-is-charged-what-its-element-holds",
+     "src/aas_submodel_validate/rules/engine.py",
+     "                for rule_id in _asked_inside(row, element):\n",
+     "                for rule_id in _descendant_ids(row):\n",
+     ["tests/test_unmatched_coverage.py::"
+      "test_a_near_miss_is_charged_only_what_its_element_would_have_asked"],
+     "a drifted Section holding no Sub was charged the rules beneath Sub, "
+     "which matched it would not have asked either: a place not examined, "
+     "reported as something the drift kept from being asked"),
+
     ("scope/a-drifted-leaf-claims-nothing",
      "src/aas_submodel_validate/rules/engine.py",
      '                result["lost_candidates"].extend(lost)\n\n\ndef _near_miss(',
@@ -1581,18 +1609,20 @@ TABLE = [
      "from being asked -- a leaf resembles no row with anything beneath "
      "it, so the first row's line is never reached on this shape"),
 
-    ("scope/a-row-a-sibling-entered-is-not-a-loss",
+    ("scope/what-only-a-drifted-copy-holds-is-its-loss",
      "src/aas_submodel_validate/rules/engine.py",
-     '            if claimed_by.get(row["id"]) or not row["children"]:\n'
-     '                continue\n'
-     '            grouped.setdefault(',
      '            if not row["children"]:\n'
      '                continue\n'
      '            grouped.setdefault(',
+     '            if claimed_by.get(row["id"]) or not row["children"]:\n'
+     '                continue\n'
+     '            grouped.setdefault(',
      ["tests/test_scope_the_run_did_not_examine.py::"
-      "test_a_near_miss_of_a_row_its_sibling_entered_claims_nothing"],
-     "a drifted copy of a list beside the intact one was charged with three "
-     "optional sections beneath that row which neither list carries"),
+      "test_what_only_the_drifted_copy_holds_is_its_loss"],
+     "a drifted copy of a list beside the intact one, holding a section the "
+     "intact one does not, was charged nothing because its sibling had "
+     "entered the row: the section's rules were asked of nothing, and "
+     "rulesNotAsked said so of nobody"),
 
     ("unmatched/one-record-holds-every-tables-rules",
      "src/aas_submodel_validate/rules/engine.py",

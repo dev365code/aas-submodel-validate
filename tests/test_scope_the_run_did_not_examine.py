@@ -464,6 +464,39 @@ def test_a_near_miss_of_a_row_its_sibling_entered_claims_nothing(tmp_path):
     assert summary["unmatchedElements"] == [], summary["unmatchedElements"]
 
 
+def test_what_only_the_drifted_copy_holds_is_its_loss(tmp_path):
+    """The same drifted copy beside the intact list, now carrying a
+    `RefersToEntities` the intact one does not. Everything else it holds
+    was asked of its sibling and is taken back; what only it holds -- the
+    `RefersTo` item row beneath that section -- was asked of nothing, and
+    the drift is why. Skipping every row a sibling entered said nothing
+    was lost here."""
+    from builders import hd_env
+
+    environment = hd_env()
+    document = environment["submodels"][0]["submodelElements"][0]["value"][0]
+    versions = next(element for element in document["value"]
+                    if element.get("idShort") == "DocumentVersions")
+    copy = json.loads(json.dumps(versions))
+    copy["idShort"] = "DocumentVersions2"
+    copy["semanticId"]["keys"][0]["value"] = "0173-1#02-ABI503#004"
+    copy["value"][0]["value"].append({
+        "modelType": "SubmodelElementList", "idShort": "RefersToEntities",
+        "semanticId": _sid("0173-1#02-ABK288#002"),
+        "typeValueListElement": "ReferenceElement",
+        "value": [{"modelType": "ReferenceElement", "semanticId": _sid("0173-1#02-ABK288#002"),
+                   "value": {"type": "ExternalReference",
+                             "keys": [{"type": "GlobalReference", "value": "urn:x:pump"}]}}]})
+    document["value"].append(copy)
+    path = tmp_path / "beside-holding-more.json"
+    path.write_text(json.dumps(environment), encoding="utf-8")
+    summary = runner.run(path).as_dict()["summary"]
+    assert summary["rulesNotAsked"] == ["HD-E27"], summary["rulesNotAsked"]
+    [record] = summary["unmatchedElements"]
+    assert record["subject"].endswith("/DocumentVersions2"), record
+    assert record["rulesNotAskedHere"] == ["HD-E27"], record
+
+
 def test_a_drifted_place_beside_a_sibling_that_entered_it_is_recorded(tmp_path):
     """Rules put elsewhere in the submodel are taken off a place's record,
     so that a section one list item omits is not reported as unexamined

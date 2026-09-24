@@ -915,6 +915,16 @@ class AasxPackage:
             self._by_file_name = {key: tuple(names) for key, names in index.items()}
         return self._by_file_name.get(wanted, ())
 
+    def alike(self, names) -> bool:
+        """Whether the archive records one size and one checksum for every
+        part in `names`: the most this reader can say about their content
+        without reading it, and enough to tell one file stored under two
+        names from two files a person has to choose between. A CRC-32 is
+        not a digest, so this is a claim about the record, and the grade
+        built on it says so."""
+        infos = [self._zip.getinfo(name) for name in names]
+        return len({(info.file_size, info.CRC) for info in infos}) == 1
+
     def read(self, name: str) -> bytes:
         if name not in self._names:
             raise ContainerError("%s names no part %s" % (self.path, name))
