@@ -37,6 +37,11 @@ mutants:
 
 generated:
 	$(PYTHON) tools/extract_smt_rules.py --check
+# The whole report for one package, as a file. docs/report-schema.md and
+# its test hold the shape; this holds the values, so a severity respelled
+# or a grade moving is a line in a diff rather than something a
+# consumer finds. `toolVersion` is the one marker, and the tool says why.
+	$(PYTHON) tools/golden_report.py --check
 
 vendored:
 	$(PYTHON) tools/vendor_template.py --check

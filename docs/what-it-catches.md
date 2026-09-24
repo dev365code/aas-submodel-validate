@@ -97,13 +97,17 @@ make, and what exit 0 and `ok` mean for each, are a table in
 its exit code and `ok` checked against what the page prints.
 
 - schemaVersion in every report — done
-- a golden report held by a test — not yet
+- a golden report held by a test — done
 - exit codes 0, 1, 2 and 64 under test — done
 - a field-by-field schema page — done
 
-Before 1.0: a golden report — a full JSON report of a fixed input, values
-included, committed and compared by a test. The keys are held already, in
-both directions; what is not held is what they say.
+The golden report is [`docs/golden-report.json`](golden-report.json): what
+`-f json` says about a package built from this repository's fixtures,
+values included, which `make check`, CI and the suite compare with what
+the tool says now. The keys were held already, in both directions; this
+holds what they say.
+
+Reproduce: `python3 tools/golden_report.py --check` in a clone.
 
 ## Entrances
 

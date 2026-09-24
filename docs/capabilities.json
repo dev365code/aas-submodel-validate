@@ -129,7 +129,11 @@
         },
         {
           "text": "a golden report held by a test",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": "README.md",
+            "says": "is kept in `docs/golden-report.json`, and every build compares it with what the tool says now"
+          }
         },
         {
           "text": "exit codes 0, 1, 2 and 64 under test",
@@ -148,8 +152,8 @@
           }
         }
       ],
-      "now_text": "schemaVersion, exit codes, schema page",
-      "target_text": "+ a golden report"
+      "now_text": "schemaVersion, golden report, exit codes, schema page",
+      "target_text": "met"
     },
     {
       "key": "entrances",
