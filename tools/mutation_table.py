@@ -1776,6 +1776,26 @@ TABLE = [
      "an identifier as near two rows nothing matched was named against the "
      "later one, where the CHANGELOG says the first"),
 
+    ("near-miss/a-drift-of-a-matched-row-does-not-end-the-search",
+     "src/aas_submodel_validate/rules/engine.py",
+     "                if rank == (0, False):\n",
+     "                if not rank[0]:\n",
+     ["tests/test_near_miss_lints.py::"
+      "test_a_version_drift_of_a_matched_row_does_not_end_the_search"],
+     "an element one version off a row the file carries and, through a "
+     "supplemental, one version off a row it lacks was named against the "
+     "row it carries, and the missing one was graded as if nothing here "
+     "resembled it"),
+
+    ("near-miss/matched-means-matched-in-that-place",
+     "src/aas_submodel_validate/rules/engine.py",
+     '            rank = (near[0], row["id"] in claimed_by)\n',
+     '            rank = (near[0], bool(result["instances"].get(row["id"])))\n',
+     ["tests/test_near_miss_lints.py::test_matched_means_matched_in_that_place"],
+     "in a second configuration entry a drifted ConfigurationType was named "
+     "against ConfigurationURI's identifier, because the first entry had "
+     "matched both rows, and the remedy made the entry's URI a second one"),
+
     ("near-miss/a-tie-goes-to-the-row-nothing-matched",
      "src/aas_submodel_validate/rules/engine.py",
      '            rank = (near[0], row["id"] in claimed_by)\n',

@@ -160,6 +160,66 @@ def test_a_tie_goes_to_the_row_nothing_here_matched(tmp_path):
         lint.violation.detail
 
 
+def test_a_version_drift_of_a_matched_row_does_not_end_the_search(tmp_path):
+    """An element one version off `URIOfTheProduct`, which the file
+    carries, and -- through a supplemental -- one version off
+    `ManufacturerName`, which it lacks. Both are as near as anything can
+    be, so the row nothing matched is named, and the missing
+    `ManufacturerName` is graded as the correction it is. Stopping at the
+    first version drift named the product URI the file already carried."""
+    env = copy.deepcopy(sn_env())
+    kind = _find(env, "SoftwareNameplateType")
+    kind["value"] = [child for child in kind["value"]
+                     if child.get("idShort") != "ManufacturerName"]
+    kind["value"].append({
+        "idShort": "Drifted", "modelType": "MultiLanguageProperty",
+        "semanticId": {"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference", "value": "0173-1#02-AAY811#002"}]},
+        "supplementalSemanticIds": [{"type": "ExternalReference", "keys": [
+            {"type": "GlobalReference", "value": "0173-1#02-AAO677#003"}]}],
+        "value": [{"language": "en", "text": "x"}]})
+    report = _run(tmp_path, env, "sn-two-drifts.json")
+    [lint] = [f for f in report.findings if f.id == "SNL1"]
+    assert lint.violation.detail.endswith("0173-1#02-AAO677#002"), lint.violation.detail
+    [missing] = [f for f in report.findings if f.id == "SN-E03"]
+    assert missing.fixability == 2, (missing.fixability, missing.fixability_why)
+
+
+def test_matched_means_matched_in_that_place(tmp_path):
+    """Two configuration entries; in the second, `ConfigurationType` is
+    written `ConfigurationTyth`, two edits from its own row and two from
+    the identifier the template gives `ConfigurationURI`. The first entry
+    matched both rows, and that is not this place: here only the URI is
+    carried, so the drift is of `ConfigurationType`. Read run-wide, both
+    rows had matched, the first won, and the remedy made the entry's URI
+    a second one."""
+    env = copy.deepcopy(sn_env())
+    paths = _find(env, "ConfigurationPaths")
+    second = copy.deepcopy(paths["value"][0])
+    kind = next(child for child in second["value"] if child.get("idShort") == "ConfigurationType")
+    _bump(kind, "SoftwareNameplateInstance/ConfigurationType",
+          "SoftwareNameplateInstance/ConfigurationTyth")
+    paths["value"].append(second)
+    [lint] = [f for f in _run(tmp_path, env, "sn-two-entries.json").findings if f.id == "SNL1"]
+    assert lint.violation.detail.endswith("SoftwareNameplateInstance/ConfigurationType"), \
+        lint.violation.detail
+
+
+def test_a_tie_moves_the_charge_with_the_name(tmp_path):
+    """`SoftwareNameplateInstance` misspelt `SoftwareNameplatIance` is as
+    near its own row as `SoftwareNameplateType`'s, which the file carries.
+    Taken for the type, the instance's rules were charged to nothing;
+    taken for the instance, they are charged to it."""
+    env = copy.deepcopy(sn_env())
+    instance = _find(env, "SoftwareNameplateInstance")
+    _bump(instance, "SoftwareNameplate/SoftwareNameplateInstance",
+          "SoftwareNameplate/SoftwareNameplatIance")
+    report = _run(tmp_path, env, "sn-instance-tie.json")
+    [record] = [r for r in report.unmatched if r.subject.endswith("SoftwareNameplateInstance")]
+    assert record.resembles.endswith("SoftwareNameplate/SoftwareNameplateInstance"), record.resembles
+    assert "SN-E21" in record.unasked, record.unasked
+
+
 def test_a_tie_between_rows_nothing_matched_goes_to_the_first(tmp_path):
     """With `InstallationDate` gone too, nothing here matched either row,
     and the first in the table is named."""

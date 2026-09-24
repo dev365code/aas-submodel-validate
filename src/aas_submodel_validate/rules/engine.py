@@ -1326,8 +1326,9 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         subject = _subject(path, element, index, shared)
         unplaced.setdefault(type(element).__name__, []).append(
             (subject, _identifier(element)))
-        # The nearest row, and the first of the nearest. The first row
-        # near enough used to win, and a pack whose sibling rows share a
+        # The nearest row, and of the nearest one nothing here matched,
+        # then the first. The first row near enough used to win, and a
+        # pack whose sibling rows share a
         # stem and differ by a few letters named the wrong one: 02007's
         # `InstallationPaths` is one edit from `InstallationPath` and
         # three from `InstallationDate`, which comes first, so the lint
