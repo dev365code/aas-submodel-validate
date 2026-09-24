@@ -455,12 +455,13 @@ def _analyze(ctx, tables) -> Dict:
                                          ("document", "submodel")))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
                in_list=False, citation=tables.TEMPLATE_CITATION, top=True)
-        # Copies of a self-containing element the walk did not reach. Where
-        # the template puts one -- a Node directly inside a Node -- the walk
-        # gives it the copied element's rows; one sitting anywhere else,
-        # inside a container no row describes or beneath a copy of the
-        # wrong kind, was reached by nothing, and saying so is what keeps
-        # the reach of the check on the page (#48).
+        # Copies of a self-containing element the walk did not reach, inside
+        # an occurrence it did. Where the template puts one -- a Node
+        # directly inside a Node -- the walk gives it the copied element's
+        # rows; one sitting anywhere else inside a hierarchy the run judged,
+        # in a container no row describes or beneath a copy of the wrong
+        # kind, was reached by nothing, and saying so is what keeps the
+        # reach of the check on the page (#48).
         copied = {row["recurses"] for row in tables.ROWS if row.get("recurses")}
         if copied:
             per["not_entered"] = _copies_not_reached(
@@ -621,7 +622,8 @@ def scope_not_examined(ctx) -> List:
 
 def repeats_not_entered(ctx) -> List:
     """(subject, identifier) for every nested copy of a self-containing
-    row this run did not walk into, deduplicated and in path order."""
+    row this run did not walk into, inside an occurrence it did,
+    deduplicated and in path order."""
     analysed = ctx.__dict__.get("_smt_analysis") or {}
     seen = set()
     for analysis in analysed.values():
@@ -777,8 +779,21 @@ def _matches_row(candidates, main_empty: bool, kind_name: str, row, in_list: boo
 
 
 def _copies_not_reached(elements, root, copied, reached):
-    """Every element under `root` carrying one of the `copied` identifiers
-    that the walk did not reach, with where it sits.
+    """Every copy the walk did not reach inside an occurrence it did, with
+    where it sits.
+
+    A copy is an element carrying one of the `copied` identifiers inside
+    another carrying the same one, and the outermost of such a chain
+    decides whether its copies are counted. Where the walk reached it,
+    the run judged that hierarchy, and a copy it missed inside is the
+    reach of the check. Where it did not, the outermost is an element no
+    row claimed: one beside the template's own, silent the way any extra
+    element is (`docs/divergences.md` #19), or one inside a place the run
+    already names in `scopeNotExamined` -- and its copies are that same
+    place. Counting every element that carried the identifier called a
+    Node at the submodel's root a nested copy, and the first-level Nodes
+    under a drifted entry node too: neither is nested, and the second was
+    said twice.
 
     The whole tree and not the immediate children: a copy the walk did
     not reach hides the copies inside it from the walk too. Measured on a
@@ -795,17 +810,23 @@ def _copies_not_reached(elements, root, copied, reached):
     stop, in a walk added beside it that did not call it.
     """
     found = []
-    stack = [(elements, root)]
+    #: Per identifier, whether the walk reached the outermost element
+    #: carrying it above this point; absent until one has been passed.
+    stack = [(elements, root, {})]
     while stack:
-        children, where = stack.pop()
+        children, where, outermost = stack.pop()
         names = Counter(child.id_short for child in children if child.id_short)
         shared = {name for name, count in names.items() if count > 1}
         for index, child in enumerate(children):
             here = _subject(where, child, index, shared)
             carried = copied & element_candidate_values(child)
-            if carried and id(child) not in reached:
-                found.append((here, sorted(carried)[0]))
-            stack.append((_sub_elements(child), here))
+            judged = sorted(value for value in carried if outermost.get(value))
+            if judged and id(child) not in reached:
+                found.append((here, judged[0]))
+            below = dict(outermost)
+            below.update((value, id(child) in reached)
+                         for value in carried if value not in outermost)
+            stack.append((_sub_elements(child), here, below))
     return found
 
 

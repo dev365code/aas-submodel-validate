@@ -152,3 +152,41 @@ def test_what_the_walk_could_not_reach_in_a_bill_is_said(tmp_path):
     [note] = [n for n in report.notes if "nested cop" in n]
     assert "Shaft/Bolt/Washer" in note and "Shaft/Bolt," not in note, note
     assert "Shaft/Bolt)" not in note, note
+
+
+def _stray(name, inside=()):
+    return {"idShort": name, "modelType": "Entity", "semanticId": _sid(HS + "Node/1/0"),
+            "entityType": "SelfManagedEntity", "globalAssetId": "urn:example:asset:" + name,
+            **({"statements": list(inside)} if inside else {})}
+
+
+def test_a_node_beside_the_entry_is_not_a_nested_copy(tmp_path):
+    """A Node at the submodel's root, holding one of its own, beside a
+    complete bill. The template puts no Node there: it is an element no
+    row describes, and draws what any such element draws -- nothing
+    (docs/divergences.md #19). The note called it a nested copy sitting
+    elsewhere, and the Node inside it one more: the first is not nested,
+    and neither is inside anything the run judged."""
+    env = copy.deepcopy(hs_env())
+    env["submodels"][0]["submodelElements"].append(_stray("Stray", [_stray("Inner")]))
+    report = _run(tmp_path, env)
+    assert report.findings == [], [(f.id, f.violation.subject) for f in report.findings]
+    assert report.notes == [], report.notes
+
+
+def test_nodes_under_an_entry_the_run_could_not_place_are_said_once(tmp_path):
+    """The entry node's identifier drifts, so the walk enters none of the
+    bill. What that costs is said where a place not examined is said --
+    `scopeNotExamined`, naming the drifted element -- and the note used to
+    say it again, calling the entry's first-level Nodes nested copies
+    sitting elsewhere: they are neither, and the one Node nested inside
+    them is inside nothing the run judged."""
+    env = copy.deepcopy(hs_env())
+    keys = _entry(env)["semanticId"]["keys"]
+    keys[0]["value"] = keys[0]["value"].replace("EntryNode", "EntryNod")
+    report = _run(tmp_path, env)
+    assert not [n for n in report.notes if "nested cop" in n], report.notes
+    [place] = report.as_dict()["summary"]["scopeNotExamined"]
+    assert place["label"] == "EntryNode", place
+    assert [e["subject"] for e in place["unclaimedHere"]] == [
+        "HierarchicalStructures/EntryNode"], place

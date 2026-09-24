@@ -74,8 +74,11 @@ copy the template writes with content of its own is judged as written, a
 copy it makes mandatory -- which no finite file could satisfy -- is judged
 as optional and said in a note, and a repeat through another element (a
 node, a list, a node) is not followed. The note that remains is for a copy
-sitting somewhere the template does not put one, which the walk does not
-reach.
+the walk did not reach inside an occurrence it judged -- in a container no
+row describes, or beneath a copy of the wrong kind. A node the file puts
+at the submodel's root is not counted in it, being an element no row
+describes and as silent as any other, and neither is one under an entry
+node the run could not place, which `scopeNotExamined` already names.
 
 It is 232 rules, 189 generated from the vendored official template files,
 across seven template packs. What this reader takes in is

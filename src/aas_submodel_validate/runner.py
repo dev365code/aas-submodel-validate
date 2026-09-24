@@ -573,13 +573,17 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
         # Not "you supplied": 02011 is vendored and self-containing, and
         # not "the outermost occurrence": a copy where the template puts
         # one is judged at any depth now (#48). What is left for this note
-        # is a copy the walk did not reach -- inside a container no row
-        # describes, or beneath a copy of the wrong kind.
+        # is a copy the walk did not reach inside an occurrence it judged
+        # -- in a container no row describes, or beneath a copy of the
+        # wrong kind. Not "sitting elsewhere" either: what that counted
+        # was every element carrying the identifier, and a Node at the
+        # submodel's root, or under an entry node the run could not place,
+        # is neither nested nor unsaid (`_copies_not_reached`).
         report.notes.append(
             "a template here describes an element that contains itself "
             "(%s); this reader judges a copy where the template puts one, "
-            "and did not reach %d nested cop%s sitting elsewhere (%s). "
-            "Nothing here is a statement about what they hold."
+            "and did not reach %d nested cop%s inside an occurrence it "
+            "judged (%s). Nothing here is a statement about what they hold."
             % (repeats[0][1], len(repeats),
                "y" if len(repeats) == 1 else "ies",
                ", ".join(subject for subject, _ in named)
