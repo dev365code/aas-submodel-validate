@@ -1,0 +1,226 @@
+{
+ "findings": [
+  {
+   "detail": null,
+   "fix": "Add a DocumentClassification whose ClassificationSystem property names VDI 2770 -- 'VDI 2770 Blatt 1:2020' is the spelling to prefer, and the template's own 'VDI2770:2020' is accepted too (docs/divergences.md #9). Pick its ClassId from the twelve VDI 2770 classes (e.g. 03-02, Operation).",
+   "fixability": null,
+   "fixabilityWhy": null,
+   "kind": "template",
+   "message": "no DocumentClassification declares the mandatory VDI 2770 classification system",
+   "path": [
+    "document",
+    "submodel",
+    "element"
+   ],
+   "priority": "MUST",
+   "rule": "HD-D2",
+   "severity": "error",
+   "spec": "IDTA 02004-2-0 \u00a72.3",
+   "subject": "HandoverDocumentation/Documents/[0]",
+   "title": "every Document carries a VDI 2770 classification"
+  },
+  {
+   "detail": "/aasx/documents/manual.pdf",
+   "fix": "Add the file to the .aasx under the name this File value gives, or correct the value's path. (Declaring an aas-suppl relationship for it is X4's question, not this one's.)",
+   "fixability": 2,
+   "fixabilityWhy": "one part of this package carries the file name this value ends in; the corrected value is determined once that part is confirmed to be the file meant",
+   "kind": "template",
+   "message": "the container holds no part at this File's value",
+   "path": [
+    "document",
+    "submodel",
+    "element"
+   ],
+   "priority": "MUST",
+   "rule": "HD-D7",
+   "severity": "error",
+   "spec": "IDTA 02004-2-0 \u00a72.8; IDTA 01005 (AASX)",
+   "subject": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]/DigitalFiles/[0]",
+   "title": "files named by DigitalFile/PreviewFile exist in the container"
+  },
+  {
+   "detail": null,
+   "fix": "Provide exactly one 'DocumentClassifications' element(s) under Document with semanticId 0173-1#02-ABI502#003.",
+   "fixability": 2,
+   "fixabilityWhy": "one element here that no row claimed carries this row's idShort or an identifier close to its own; the correction is determined once it is confirmed to be the one meant",
+   "kind": "template",
+   "message": "the template expects exactly one 'DocumentClassifications' here; found 0",
+   "path": [
+    "document",
+    "submodel",
+    "element"
+   ],
+   "priority": "MUST",
+   "rule": "HD-E08",
+   "severity": "error",
+   "spec": "IDTA 02004-2-0-1 template, SMT/Cardinality qualifier",
+   "subject": "HandoverDocumentation/Documents/[0]",
+   "title": "'DocumentClassifications' as the template declares it (0173-1#02-ABI502#003)"
+  },
+  {
+   "detail": null,
+   "fix": "Provide exactly one 'Version' element(s) under DocumentVersion with semanticId 0173-1#02-AAP003#005; example value: 'V1.2'.",
+   "fixability": 5,
+   "fixabilityWhy": "nothing else here resembles the missing element, and what it holds is content the template does not give",
+   "kind": "template",
+   "message": "the template expects exactly one 'Version' here; found 0",
+   "path": [
+    "document",
+    "submodel",
+    "element"
+   ],
+   "priority": "MUST",
+   "rule": "HD-E17",
+   "severity": "error",
+   "spec": "IDTA 02004-2-0-1 template, SMT/Cardinality qualifier",
+   "subject": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]",
+   "title": "'Version' as the template declares it (0173-1#02-AAP003#005)"
+  },
+  {
+   "detail": "0173-1#02-ABI502#004, where the template says 0173-1#02-ABI502#003",
+   "fix": "Correct the semanticId to the template's spelling; a near-miss matches nothing, and every rule that would have applied to the element silently stops applying.",
+   "fixability": null,
+   "fixabilityWhy": null,
+   "kind": "lint",
+   "message": "semanticId almost matches the template",
+   "path": [
+    "document",
+    "submodel",
+    "element"
+   ],
+   "priority": "SHOULD",
+   "rule": "HDL2",
+   "severity": "warning",
+   "spec": "matching policy, docs/divergences.md",
+   "subject": "HandoverDocumentation/Documents/[0]/DocumentClassifications",
+   "title": "near-miss semantic identifiers are diagnosed, not ignored"
+  }
+ ],
+ "notes": [],
+ "ok": false,
+ "options": {
+  "allowUnmatched": false,
+  "meta": "warning",
+  "profile": null,
+  "strictMeta": false
+ },
+ "path": "golden.aasx",
+ "provenance": {
+  "engine": null,
+  "envelope": null,
+  "inputSha256": "7d8971398eb468a4ece9108222166afec2226b45854296355d24c8da4b553fc6"
+ },
+ "schemaVersion": 1,
+ "summary": {
+  "complete": true,
+  "errors": 4,
+  "info": 0,
+  "judged": true,
+  "rulesChecked": 305,
+  "rulesNotAsked": [
+   "HD-E09",
+   "HD-E10",
+   "HD-E11",
+   "HD-E12"
+  ],
+  "scopeNotExamined": [
+   {
+    "because": "absent",
+    "label": "Entities",
+    "rule": "HD-E37",
+    "rulesNotAskedHere": [
+     "HD-E38"
+    ],
+    "unclaimedHere": [],
+    "unclaimedHereCount": 0,
+    "where": "HandoverDocumentation"
+   },
+   {
+    "because": "unclaimed-element-present",
+    "label": "DocumentClassifications",
+    "rule": "HD-E08",
+    "rulesNotAskedHere": [
+     "HD-E09",
+     "HD-E10",
+     "HD-E11",
+     "HD-E12"
+    ],
+    "unclaimedHere": [
+     {
+      "seen": "0173-1#02-ABI502#004",
+      "subject": "HandoverDocumentation/Documents/[0]/DocumentClassifications"
+     }
+    ],
+    "unclaimedHereCount": 1,
+    "where": "HandoverDocumentation/Documents/[0]"
+   },
+   {
+    "because": "unclaimed-element-present",
+    "label": "DocumentedEntities",
+    "rule": "HD-E35",
+    "rulesNotAskedHere": [
+     "HD-E36"
+    ],
+    "unclaimedHere": [
+     {
+      "seen": "0173-1#02-ABI502#004",
+      "subject": "HandoverDocumentation/Documents/[0]/DocumentClassifications"
+     }
+    ],
+    "unclaimedHereCount": 1,
+    "where": "HandoverDocumentation/Documents/[0]"
+   },
+   {
+    "because": "absent",
+    "label": "RefersToEntities",
+    "rule": "HD-E26",
+    "rulesNotAskedHere": [
+     "HD-E27"
+    ],
+    "unclaimedHere": [],
+    "unclaimedHereCount": 0,
+    "where": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]"
+   },
+   {
+    "because": "absent",
+    "label": "BasedOnReferences",
+    "rule": "HD-E28",
+    "rulesNotAskedHere": [
+     "HD-E29"
+    ],
+    "unclaimedHere": [],
+    "unclaimedHereCount": 0,
+    "where": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]"
+   },
+   {
+    "because": "absent",
+    "label": "TranslationOfEntities",
+    "rule": "HD-E30",
+    "rulesNotAskedHere": [
+     "HD-E31"
+    ],
+    "unclaimedHere": [],
+    "unclaimedHereCount": 0,
+    "where": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]"
+   }
+  ],
+  "submodelsJudged": 1,
+  "submodelsSeen": 1,
+  "submodelsSpecified": 0,
+  "unmatchedElements": [
+   {
+    "resembles": "0173-1#02-ABI502#003",
+    "rulesNotAskedHere": [
+     "HD-E09",
+     "HD-E10",
+     "HD-E11",
+     "HD-E12"
+    ],
+    "seen": "0173-1#02-ABI502#004",
+    "subject": "HandoverDocumentation/Documents/[0]/DocumentClassifications"
+   }
+  ],
+  "warnings": 1
+ },
+ "toolVersion": "<the release that ran it; moves with every release>"
+}

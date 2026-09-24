@@ -6,6 +6,7 @@ graft tests
 graft tools
 include docs/divergences.md
 include docs/report-schema.md
+include docs/golden-report.json
 include docs/rule-coverage.json
 include docs/scope.md
 include docs/time-budget.json

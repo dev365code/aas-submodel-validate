@@ -2,7 +2,7 @@
 |---|---|---|
 | Coverage | 2002, 03, 04, 06, 07, 11, 23, 35-2 | met |
 | Explanation | what is wrong, remedy, requirement | + evidence, the line in the file |
-| Report contract | schemaVersion, exit codes, schema page | + a golden report |
+| Report contract | schemaVersion, golden report, exit codes, schema page | met |
 | Entrances | command line, single file | + Python library, GitHub Action, browser |
 | Input safety | read budgets, advisory | + own mutations, encodings |
 | Upstream | pinned by commit | + checked for upstream change, one pin move shipped |
@@ -24,9 +24,9 @@
 - where each rule's requirement lives — done (`docs/report-schema.md`: "Where the requirement lives, and always present")
 - the line in the file — not yet
 
-**Report contract** — 3 of 4:
+**Report contract** — 4 of 4:
 - schemaVersion in every report — done (`README.md`: "document with a `schemaVersion`")
-- a golden report held by a test — not yet
+- a golden report held by a test — done (`README.md`: "is kept in `docs/golden-report.json`, and every build compares it with what the tool says now")
 - exit codes 0, 1, 2 and 64 under test — done (`tests/test_what_a_pass_means.py`: "Each row there names an exit code and an `ok`")
 - a field-by-field schema page — done (`README.md`: "described field by field in")
 

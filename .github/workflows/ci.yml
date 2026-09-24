@@ -54,6 +54,8 @@ jobs:
       - run: pip install -e .
       - name: the generated rule table matches its generator
         run: python tools/extract_smt_rules.py --check
+      - name: the stored report is the one this tree produces
+        run: python tools/golden_report.py --check
       - name: the vendored official material matches its recorded hashes
         run: python tools/vendor_template.py --check
       - name: readers the battery-passport extractors import
