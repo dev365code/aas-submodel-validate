@@ -15,7 +15,13 @@ import re
 from ..model import Violation
 from ..registry import rule
 from . import dn_tables
-from .engine import analyze, install_file_rule, instances_of, matched_submodels
+from .engine import (
+    analyze,
+    install_file_rule,
+    install_near_miss_lint,
+    instances_of,
+    matched_submodels,
+)
 
 #: The template's own identity -- one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = dn_tables.TEMPLATE_SEMANTIC_ID
@@ -110,3 +116,8 @@ def dn_d1_uri_of_the_product_is_absolute(ctx):
 # The body is shared and was called from 02004's family alone, so a
 # package of this kind naming parts it does not hold was judged clean.
 install_file_rule("DN-D2", dn_tables, dn_tables.TEMPLATE_CITATION)
+
+
+#: The element whose identifier nearly matches a row, named among the
+#: findings (docs/divergences.md #23).
+install_near_miss_lint("DNL1", dn_tables)

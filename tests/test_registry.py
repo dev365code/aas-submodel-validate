@@ -192,6 +192,9 @@ SHOULD_RULES = {
     "DBP2-D5", "DBP2-D10", "DBP2L2", "DBP2L4", "DBP2L5",
     "HD-D5", "HD-D6", "HD-D9", "HD-D10", "HDL2", "HDL4", "HDL5",
     "TD-D3", "TDL1", "X4",
+    # The near-miss lint every pack registers since 0.8.0, 02004's and
+    # 02003's by hand before then: SHOULD, as TDL1 has always been.
+    "CIL1", "DNL1", "HSL1", "PCFL1", "SNL1",
 }
 MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 
@@ -293,6 +296,11 @@ NAMESPACES = {
     r"CI-E\d+": "IDTA 02002, generated from the template's rows",
     r"HS-E\d+": "IDTA 02011, generated from the template's rows",
     r"SN-E\d+": "IDTA 02007, generated from the template's rows",
+    r"DNL\d+": "IDTA 02006, informational lints",
+    r"PCFL\d+": "IDTA 02023, informational lints",
+    r"CIL\d+": "IDTA 02002, informational lints",
+    r"HSL\d+": "IDTA 02011, informational lints",
+    r"SNL\d+": "IDTA 02007, informational lints",
 }
 
 
@@ -525,6 +533,10 @@ REMEDIES = {
         "Correct the semanticId to the template's spelling; a near-miss "
         "matches nothing, and every rule that would have applied to the "
         "element silently stops applying.",
+    **{lint: "Correct the semanticId to the template's spelling; a near-miss "
+             "matches nothing, and every rule that would have applied to the "
+             "element silently stops applying."
+       for lint in ("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1")},
     "TDL2":
         "Use the reference type the template declares here; the value "
         "matched, so this is interoperability polish, not a failure.",

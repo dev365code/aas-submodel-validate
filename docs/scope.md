@@ -198,9 +198,10 @@ Four of 02002's five mandatory rows sit beneath an *optional* container --
 under `Email`, `AddressOfAdditionalLink` under `IPCommunication`, each of
 those containers `0..1` or `0..*`. So a container whose identifier has
 drifted matches no row, violates no count, is never descended, and takes
-its mandatory child out of the run: the report names the unasked rules only
-where the near-miss lint recognises the drift, and this pack registers no
-near-miss lint and no reference-type lint at all. Nothing here promotes an
+its mandatory child out of the run. Since 0.8.0 the pack registers the
+near-miss lint (`CIL1`), so a container one version suffix or one last
+segment off is named among the findings; a drift elsewhere in its
+identifier is not, and the pack registers no reference-type lint. Nothing here promotes an
 unasked mandatory row to a finding. That is not specific to one edition of
 the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
 #23 record it.

@@ -32,15 +32,16 @@ empty-value check is a Property's, docs/divergences.md #40), and neither
 an email, a telephone number, a URL, a time zone nor a language code is
 checked for shape. `docs/scope.md` says so too.
 
-Like the other generated-only packs it registers no near-miss lint, so a
-drifted identifier here can take rules out of the run with nothing
-naming the drift that did it (docs/divergences.md #23).
+It registers the near-miss lint every pack has had since 0.8.0
+(`CIL1`), so an identifier one version suffix or one last segment off
+is named among the findings; a drift elsewhere in an identifier is
+not (docs/divergences.md #23).
 """
 from __future__ import annotations
 
 from ..registry import rule
 from . import contact_tables
-from .engine import analyze, matched_submodels
+from .engine import analyze, install_near_miss_lint, matched_submodels
 
 #: The template's own identity -- one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = contact_tables.TEMPLATE_SEMANTIC_ID
@@ -74,3 +75,8 @@ for _row in contact_tables.ROWS:
          # repairable, so each is graded where it is produced.
          path=("document", "submodel", "element"),
          )(_row_check(_row["id"]))
+
+
+#: The element whose identifier nearly matches a row, named among the
+#: findings (docs/divergences.md #23).
+install_near_miss_lint("CIL1", contact_tables)

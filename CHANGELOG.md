@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.0 — unreleased
+
+**Every pack names an identifier that nearly matches a row.** 02004's
+and 02003's packs have registered a near-miss lint (`HDL2`, `TDL1`, and
+`DBP2L2` for 02035-2), and the other five did not. In a Digital
+Nameplate, Contact Information, Carbon Footprint, Hierarchical Structures
+or Software Nameplate submodel, an element whose identifier was one
+version suffix or one last segment off matched no row and took the rows
+beneath it out of the run, and the only trace was a record in
+`summary.unmatchedElements` -- none among the findings, and none at all
+where the drifted element had no rows beneath its own, as a property or
+a file has none. Each now registers the same lint,
+`DNL1`, `CIL1`, `PCFL1`, `HSL1` and `SNL1`, with the same title, clause
+and remedy as `TDL1`: a SHOULD, reported as a warning.
+
+It is 310 rules, 262 generated from the vendored official template files,
+across eight template packs. What this reader takes in is unchanged: one
+document at 64 MiB, a container's parts at 64 MiB each and 256 MiB
+together, and a container's directory of names at 16 MiB.
+
 ## 0.7.1 — 2026-09-25
 
 **One file stored twice is nothing to choose between.** A File value

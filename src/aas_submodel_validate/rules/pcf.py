@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from ..registry import rule
 from . import pcf_tables
-from .engine import analyze, install_file_rule, matched_submodels
+from .engine import analyze, install_file_rule, install_near_miss_lint, matched_submodels
 
 #: The template's own identity -- one authority, the generated table.
 TEMPLATE_SEMANTIC_ID = pcf_tables.TEMPLATE_SEMANTIC_ID
@@ -71,3 +71,8 @@ for _row in pcf_tables.ROWS:
 # naming it the way such a reference is written (`docs/divergences.md` #55).
 install_file_rule("PCF-D1", pcf_tables, pcf_tables.TEMPLATE_CITATION,
                   only=("ExplanatoryStatement",))
+
+
+#: The element whose identifier nearly matches a row, named among the
+#: findings (docs/divergences.md #23).
+install_near_miss_lint("PCFL1", pcf_tables)

@@ -214,9 +214,8 @@ def test_a_node_in_a_container_the_entry_holds_is_counted(tmp_path):
 def test_a_node_under_a_node_whose_identifier_drifted_is_counted(tmp_path):
     """The gearbox's identifier drifts, so the walk claims it for no row and
     never enters it; the shaft inside it is a Node the run did not judge,
-    inside an entry node it did. A drifted first-level node draws nothing
-    of its own in a pack with no near-miss lint (#23), so this note is the
-    one place the shaft is said."""
+    inside an entry node it did. The gearbox is named by `HSL1`; the shaft
+    inside it, which no lint sees, is said in this note."""
     env = copy.deepcopy(hs_env())
     _named(_entry(env)["statements"], "Gearbox")["semanticId"] = _sid(HS + "Node/1/1")
     [note] = [n for n in _run(tmp_path, env).notes if "contains itself" in n]

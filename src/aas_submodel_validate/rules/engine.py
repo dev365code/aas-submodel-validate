@@ -316,6 +316,31 @@ def near_miss_violations(ctx, tables):
                         detail="%s, where the template says %s" % (seen, expected))
 
 
+def install_near_miss_lint(rule_id: str, tables):
+    """Register, for `tables`, the near-miss lint 02004's and 02003's packs
+    have registered by hand from the start (`HDL2`, `TDL1`).
+
+    Five packs never asked it. In them an identifier one version suffix or
+    one last segment off took rows out of the run with nothing among the
+    findings naming the element that did it: the one trace was a record in
+    `summary.unmatchedElements`, which a pipeline reading findings never
+    sees, and a drifted element with no rows beneath its own -- a
+    property, a file -- left not even that (`docs/divergences.md` #23). Same title, clause and remedy as `TDL1`,
+    so the finding reads alike whichever pack drew it."""
+    from ..registry import rule
+
+    @rule(rule_id, kind="lint", prio="SHOULD",
+          path=("document", "submodel", "element"),
+          title="near-miss semantic identifiers are diagnosed, not ignored",
+          spec="matching policy, docs/divergences.md",
+          fix="Correct the semanticId to the template's spelling; a near-miss "
+              "matches nothing, and every rule that would have applied to the "
+              "element silently stops applying.")
+    def check(ctx):
+        yield from near_miss_violations(ctx, tables)
+    return check
+
+
 def reftype_violations(ctx, tables):
     """The reference-type lint, for whichever pack asks. Same pair."""
     from ..model import Violation

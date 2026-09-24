@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aas-submodel-validate?label=PyPI&color=2f6fb3)](https://pypi.org/project/aas-submodel-validate/)
-[![templates](https://img.shields.io/badge/IDTA_templates-8_·_305_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
+[![templates](https://img.shields.io/badge/IDTA_templates-8_·_310_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
 [![licence](https://img.shields.io/badge/licence-Apache--2.0-5f6a75)](https://github.com/dev365code/aas-submodel-validate/blob/main/LICENSE)
 
 &nbsp;**Apache-2.0**&nbsp;·&nbsp;**Python 3.9–3.13**&nbsp;·&nbsp;**Linux · macOS · Windows**&nbsp;·&nbsp;**zero network, by design**
@@ -126,7 +126,7 @@ and failed.
 
 ## What it catches
 
-Five of the 305, in the words the tool actually prints:
+Five of the 310, in the words the tool actually prints:
 
 | You ship this | `smtv` says |
 |---|---|
@@ -279,7 +279,7 @@ metamodel channel, so that listing is one line longer than the count.
 timeline
     title Where aas-submodel-validate is going
     Shipped : Eight IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate
-            : 305 rules, 262 of them generated from the vendored official template files
+            : 310 rules, 262 of them generated from the vendored official template files
             : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
@@ -394,9 +394,9 @@ even that.
 
 ## What it checks
 
-305 rules, 295 of them across eight IDTA templates — 262 generated from the vendored
+310 rules, 300 of them across eight IDTA templates — 262 generated from the vendored
 official template files (cardinality, element kinds, value types,
-semantic identifiers at every nesting level), 33 hand-written where a
+semantic identifiers at every nesting level), 38 hand-written where a
 template file cannot speak. Of the ten that belong to no template,
 six are about the input itself — how it is packaged, whether it parses,
 and how much of it this reader will take in — and two are about whether
@@ -441,7 +441,7 @@ submodel identifier and something had to choose.
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and
 a manufacturer's own properties pass without complaint. Near-miss
-identifiers are diagnosed rather than silently unmatched, in the three whose identifiers carry an ECLASS version suffix.
+identifiers are diagnosed rather than silently unmatched, in every pack.
 
 IDTA 02035-2 (*Digital Battery Passport*, part 2) publishes IDTA 02004's
 submodel identifier and asks for less than it does, so which of the two
@@ -469,7 +469,7 @@ a separate `meta` channel (the JSON field is `kind`) — warnings by
 default, folded into one line unless `--show-meta`, `--meta error` to
 promote — and never re-implemented here.
 
-The rule counts (305, 262), the drift figures above and the sample are pinned by the test
+The rule counts (310, 262), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
 **And a template of your own.** `--template FILE` generates a table from
