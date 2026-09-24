@@ -386,8 +386,9 @@ def test_require_all_judged_asks_only_for_what_can_be_given(tmp_path, instances,
 # -- a file this tool judges without having a template table for it -----------
 
 def _battery(tmp_path, category="lmt"):
-    """A passport of IDTA 02035-1/-4/-5 submodels, which this tool has a
-    rule pack for and no template table for."""
+    """A passport of IDTA 02035-1/-4/-5 submodels. The battery rules read
+    all three; 02035-5 has a template table of its own since 0.8.0, and
+    the passport carries what that table makes mandatory."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from test_battery_rules import _passport
@@ -438,6 +439,33 @@ def test_a_battery_passport_passes_at_the_flags_a_stranger_types(tmp_path):
     there was no no-match to downgrade."""
     from aas_submodel_validate.cli import main
     assert main([str(_battery(tmp_path))]) == 0
+
+
+def test_an_empty_product_condition_fails_its_template_and_nothing_else_moves(tmp_path):
+    """The passport the battery rules were built on held an empty Product
+    Condition submodel, and passed. Judged by 02035-5's table it fails,
+    for the four elements the template makes mandatory, and the battery
+    rules say what they said of the passport that carries them."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from aas_submodel_validate.rules import dbp5_tables
+    from test_battery_rules import _passport
+    conformant = _passport("lmt")
+    empty = copy.deepcopy(conformant)
+    for submodel in empty["submodels"]:
+        if submodel["semanticId"]["keys"][0]["value"] == dbp5_tables.TEMPLATE_SEMANTIC_ID:
+            submodel["submodelElements"] = []
+    reports = []
+    for name, env in (("conformant.json", conformant), ("empty.json", empty)):
+        path = tmp_path / name
+        path.write_text(json.dumps(env), "utf-8")
+        reports.append(runner.run(path))
+    passing, failing = reports
+    assert passing.ok and not failing.ok
+    assert sorted(f.id for f in failing.findings if f.id.startswith("DBP5-")) == [
+        "DBP5-E04", "DBP5-E10", "DBP5-E26", "DBP5-E28"]
+    assert ([(f.id, f.violation.subject) for f in passing.findings if f.id == "BAT-R8"]
+            == [(f.id, f.violation.subject) for f in failing.findings if f.id == "BAT-R8"])
 
 
 def test_a_file_this_tool_judges_nothing_in_still_says_so(tmp_path):

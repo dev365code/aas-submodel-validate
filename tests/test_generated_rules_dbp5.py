@@ -101,6 +101,17 @@ def test_a_submodel_written_to_an_earlier_edition_is_named_by_its_version(tmp_pa
     assert finding.fixability == 2, finding.fixability
 
 
+def test_a_submodel_named_as_the_template_is_told_matching_goes_by_identifier(tmp_path):
+    """Named `ProductCondition` and carrying another identifier, a submodel
+    is told what the other packs' namesakes are: the name is not what
+    matches."""
+    env = copy.deepcopy(dbp5_env())
+    env["submodels"][0]["semanticId"]["keys"][0]["value"] = "urn:vendor:thing:1"
+    report = _run(tmp_path, env)
+    [finding] = [f for f in report.findings if f.id == "SMT-D1"]
+    assert "is *named* ProductCondition" in finding.violation.detail, finding.violation.detail
+
+
 def test_another_element_of_the_namespace_is_not_one_version_off(tmp_path):
     """Read as "everything before the last `#`", a SAMM identifier's stem
     was its namespace and version, and a submodel naming any other element

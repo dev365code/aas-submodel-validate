@@ -14,7 +14,8 @@ URN, all but one in the `product_condition` namespace, whose version
 moved with each release, so a submodel written to 1.0 or 1.0.1 matches
 no row and is not judged: where nothing else in the file is, `SMT-D1`
 says it differs from this template's identifier only in its SAMM
-version. An element of an earlier release inside a 1.0.2 submodel
+version, graded 2, where it named the identifier and left the grade
+empty. An element of an earlier release inside a 1.0.2 submodel
 matches its row through the ECLASS identifier beside its own where it
 carries one, as thirty-seven do, and is judged; one that carries none is
 a near miss, and `DBP5L1` names it. A submodel *named* `ProductCondition`
@@ -84,7 +85,7 @@ submodel that breaks its template in any other way -- a collection
 without its `LastUpdate`, a `valueType` other than the template's --
 leaves by 1 where it left by 0; one written to 1.0 or 1.0.1, alone in
 its file, draws `SMT-D1` and leaves by 1 as before, the finding now
-saying that only its SAMM version differs;
+saying that only its SAMM version differs and graded 2;
 and a Digital Nameplate, Contact Information, Carbon Footprint,
 Hierarchical Structures or Software Nameplate submodel holding an element
 one version suffix or one last segment off a row's, or a 02035-2 element

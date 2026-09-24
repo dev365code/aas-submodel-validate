@@ -130,7 +130,7 @@ def test_two_items_carrying_one_drift_are_both_named(tmp_path):
                      "CarbonFootprint/ProductCarbonFootprints/[1]"], named
 
 
-def test_the_five_lints_are_tdl1_under_other_names():
+def test_every_pack_s_near_miss_lint_is_tdl1_under_another_name():
     """The same kind, severity, title, clause, remedy and route as `TDL1`,
     compared with it rather than copied from it: a remedy pinned as a
     literal held while `TDL1`'s own was reworded, and nothing held the

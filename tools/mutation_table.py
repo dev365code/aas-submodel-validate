@@ -1709,7 +1709,7 @@ TABLE = [
      "src/aas_submodel_validate/rules/engine.py",
      '    @rule(rule_id, kind="lint", prio="SHOULD",\n',
      '    @rule(rule_id, kind="template", prio="SHOULD",\n',
-     ["tests/test_near_miss_lints.py::test_the_five_lints_are_tdl1_under_other_names"],
+     ["tests/test_near_miss_lints.py::test_every_pack_s_near_miss_lint_is_tdl1_under_another_name"],
      "the five lints registered as template rules, `kind: template` in "
      "the JSON, and nothing compared them with the TDL1 they are said to "
      "copy"),
@@ -2024,9 +2024,20 @@ TABLE = [
      "                if False and samm_stem(value) == samm_stem(pack.semantic_id) \\\n",
      ["tests/test_generated_rules_dbp5.py::"
       "test_a_submodel_written_to_an_earlier_edition_is_named_by_its_version"],
-     "a Product Condition submodel written to 1.0.1 was told only which "
-     "identifier it carried, and not that it differs from the template's "
-     "in its SAMM version alone"),
+     "a Product Condition submodel written to 1.0.1 was not told that it "
+     "differs from the template's identifier in its SAMM version alone -- "
+     "named ProductCondition, it was told only that matching goes by "
+     "semanticId"),
+
+    ("dbp5/the-name-an-author-reaches-for",
+     "src/aas_submodel_validate/rules/detect.py",
+     '"productcondition")',
+     '"productconditions")',
+     ["tests/test_generated_rules_dbp5.py::"
+      "test_a_submodel_named_as_the_template_is_told_matching_goes_by_identifier"],
+     "a submodel named ProductCondition that carried another identifier was "
+     "listed as an unknown identifier, where the other packs' namesakes are "
+     "told the name is not what matches"),
 
     ("dbp5/the-pack-registers-its-lint",
      "src/aas_submodel_validate/rules/dbp5.py",

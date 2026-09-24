@@ -847,10 +847,13 @@ def _conformant_product_condition(carried):
     it rather than empty.
 
     Product Condition is judged by a template pack since 0.8.0, and a
-    submodel without those four fails there whatever its category -- so
-    a test of the conditional rows would have read the pack's errors as
-    well as its own. The carried collections come from the same golden
-    fixture, whole, for the same reason."""
+    submodel without those four fails there whatever its category. The
+    tests that read a passport's whole report -- that it passes, and the
+    lines the door picture and the front page quote -- would read the
+    pack's errors too; the tests of the conditional rows read BAT-R8's
+    findings alone and pass either way. The carried collections come from
+    the same golden fixture, whole, for the same reason. What an empty
+    Product Condition draws now is `test_detect`'s to hold."""
     golden = {element["semanticId"]["keys"][0]["value"]: element
               for element in dbp5_env()["submodels"][0]["submodelElements"]}
     mandatory = [element for element in golden.values()
@@ -861,8 +864,10 @@ def _conformant_product_condition(carried):
 
 
 def _passport(category=None, carrying=()):
-    """Every submodel the conditional rows belong to, each empty except
-    for what `carrying` names, and the category the file declares.
+    """Every submodel the conditional rows belong to, holding what
+    `carrying` names, and the category the file declares. The Product
+    Condition submodel also holds what its template makes mandatory
+    (`_conformant_product_condition`); the others hold nothing else.
 
     Built from the table rather than from a list written here: the rows
     move when the indexes move, and a fixture with the identifiers typed

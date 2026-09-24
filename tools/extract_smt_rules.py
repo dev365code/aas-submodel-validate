@@ -168,7 +168,9 @@ PCF_ITEM_NAMES = {
 DN_ARBITRARY = ARBITRARY
 
 #: 02035-5's two list items. The template gives both an idShort
-#: (AASd-120), and these are those names.
+#: (AASd-120), which the generator takes first, so these name nothing
+#: today; they are here so an upstream repair of that defect renames no
+#: row, as for every other pack's list items.
 DBP5_ITEM_NAMES = {
     "NegativeEvents": "NegativeEvent",
     "InformationOnAccidents": "DocumentIdentifier",
