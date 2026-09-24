@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aas-submodel-validate?label=PyPI&color=2f6fb3)](https://pypi.org/project/aas-submodel-validate/)
-[![templates](https://img.shields.io/badge/IDTA_templates-7_·_232_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
+[![templates](https://img.shields.io/badge/IDTA_templates-8_·_305_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
 [![licence](https://img.shields.io/badge/licence-Apache--2.0-5f6a75)](https://github.com/dev365code/aas-submodel-validate/blob/main/LICENSE)
 
 &nbsp;**Apache-2.0**&nbsp;·&nbsp;**Python 3.9–3.13**&nbsp;·&nbsp;**Linux · macOS · Windows**&nbsp;·&nbsp;**zero network, by design**
@@ -76,7 +76,7 @@ If `pip3` is not the spelling on your machine, `python3 -m pip install aas-submo
 error   SMT-D1   no submodel declares a semanticId this tool has a template table for
         saw  semanticId value(s): urn:somecompany:docs
         per  IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2
-        fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate for Digital Nameplate (IDTA 02006); https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 for Carbon Footprint (IDTA 02023); https://admin-shell.io/zvei/nameplate/1/0/ContactInformations for Contact Information (IDTA 02002); https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel for Hierarchical Structures (IDTA 02011). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
+        fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate for Digital Nameplate (IDTA 02006); https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 for Carbon Footprint (IDTA 02023); https://admin-shell.io/zvei/nameplate/1/0/ContactInformations for Contact Information (IDTA 02002); https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel for Hierarchical Structures (IDTA 02011); https://admin-shell.io/idta/SoftwareNameplate/1/0 for Software Nameplate (IDTA 02007). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
 key     saw=what is there now per=the clause fix=what to change
 FAILED -- 1 error(s), 0 warning(s), 0 info -- machine-docs.json; judged 0 of 1 submodel
 ```
@@ -124,7 +124,7 @@ and failed.
 
 ## What it catches
 
-Five of the 232, in the words the tool actually prints:
+Five of the 305, in the words the tool actually prints:
 
 | You ship this | `smtv` says |
 |---|---|
@@ -139,7 +139,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=28f28689" alt="Coverage: 2004, 2003, 2035-2, 2006, 2023, 2002, 2011; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=bb030de6" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-2; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
@@ -276,13 +276,13 @@ metamodel channel, so that listing is one line longer than the count.
 ```mermaid
 timeline
     title Where aas-submodel-validate is going
-    Shipped : Seven IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures
-            : 232 rules, 189 of them generated from the vendored official template files
+    Shipped : Eight IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate
+            : 305 rules, 262 of them generated from the vendored official template files
             : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
-    Building : Deeper coverage of the seven templates already supported
-    Planned : IDTA 02007, then templates chosen by what people bring
+    Building : Deeper coverage of the eight templates already supported
+    Planned : Templates chosen by what people bring
             : The rest of the battery obligation index, once a rule can read a battery's category
             : An evidence bundle a reviewer can file — one command, report plus provenance
             : Cross-checks with neighbouring standards — VDI 2770, iiRDS
@@ -329,7 +329,7 @@ Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02
 
 ## When aas-submodel-validate is not the tool
 
-- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the six it supports.
+- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the eight it supports.
 - **You need a file repaired.** There is no `--fix`. A validator that edits your file has to be trusted twice.
 - **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly. If you have the template file, `--template` judges against it: what a template states, and not the hand-written rules or the recorded readings that come with a pack. The report says the table was yours.
 - **You want a hosted check.** There is none, on purpose.
@@ -392,7 +392,7 @@ even that.
 
 ## What it checks
 
-232 rules, 222 of them across seven IDTA templates — 189 generated from the vendored
+305 rules, 295 of them across eight IDTA templates — 262 generated from the vendored
 official template files (cardinality, element kinds, value types,
 semantic identifiers at every nesting level), 33 hand-written where a
 template file cannot speak. Of the ten that belong to no template,
@@ -434,6 +434,7 @@ submodel identifier and something had to choose.
 | IDTA 02023 Carbon Footprint 1.0 | 26 | files that exist in the container (the open-content ArbitraryContent placeholder is left unjudged) |
 | IDTA 02002 Contact Information 1.0.1 | 36 | — (every row is generated; no email, telephone, URL, time-zone or language-code shape is checked) |
 | IDTA 02011 Hierarchical Structures 1.1.1 | 11 | — (every row is generated; a nested node is judged at any depth, and a relationship's two ends are not read) |
+| IDTA 02007 Software Nameplate 1.0.1 | 73 | — (every row is generated, and read as the template writes it where the specification beside it disagrees: `docs/divergences.md` #57) |
 
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and
@@ -466,7 +467,7 @@ a separate `meta` channel (the JSON field is `kind`) — warnings by
 default, folded into one line unless `--show-meta`, `--meta error` to
 promote — and never re-implemented here.
 
-The rule counts (232, 189), the drift figures above and the sample are pinned by the test
+The rule counts (305, 262), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
 **And a template of your own.** `--template FILE` generates a table from

@@ -1,13 +1,11 @@
 """What this project covers, and what it deliberately does not.
 
-Seven templates are given rule tables. The generator reads a cardinality
+Eight templates are given rule tables. The generator reads a cardinality
 in any of three spellings -- `SMT/Cardinality`, the older `Multiplicity`,
 or a bare `Cardinality` (docs/divergences.md #20, #50) -- so a template
 written in the older spelling is judgeable once vendored. IDTA 02002
-Contact Information is the first vendored that way; IDTA 02007 Software
-Nameplate is written the same way and is still not vendored, and
-docs/scope.md names it. These tests hold the tool and the prose to each
-other.
+Contact Information and IDTA 02007 Software Nameplate are both vendored
+that way. These tests hold the tool and the prose to each other.
 """
 from __future__ import annotations
 
@@ -21,13 +19,10 @@ sys.path.insert(0, str(ROOT / "tools"))
 # is the emitter. These ask the builder, so they follow it.
 from aas_submodel_validate import tablegen as g  # noqa: E402
 
-#: The identifier docs/scope.md names as not covered, from the pinned
-#: upstream: the template states cardinality with Multiplicity only.
-SOFTWARE_NAMEPLATE = "https://admin-shell.io/idta/SoftwareNameplate/1/0"               # 02007
-
-#: The identifiers of the templates that DO have a table -- the converse
-#: guard, so a stale or typo'd "uncovered" constant cannot pass merely by
-#: being trivially absent from the covered set.
+#: The identifiers of the templates that have a table. 02007 stood beside
+#: this set as the one docs/scope.md named as not yet vendored, with a
+#: guard that the packs did not claim it; it has a pack now, and there is
+#: no template left on that side of the page.
 COVERED = {
     "0173-1#01-AHF578#003",                                             # 02004 (02035-2 shares it)
     "0173-1#01-AHX837#002",                                             # 02003
@@ -35,19 +30,17 @@ COVERED = {
     "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0",  # 02023
     "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations",    # 02002
     "https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel",  # 02011
+    "https://admin-shell.io/idta/SoftwareNameplate/1/0",                # 02007
 }
 
 
-def test_the_covered_and_uncovered_identifiers_are_what_the_docs_say():
-    """Both directions. Every pack claims one of the covered identifiers,
-    and neither uncovered template's identifier is claimed. The converse
-    half is what makes it a guard: `X not in claimed` alone stays green
-    for a stale constant that has quietly stopped guarding anything."""
+def test_the_covered_identifiers_are_the_ones_the_packs_claim():
+    """Both directions, as one equality: every pack claims one of the
+    covered identifiers, and every covered identifier has a pack."""
     import aas_submodel_validate.rules  # noqa: F401  (registers the packs)
     from aas_submodel_validate.rules import detect
     claimed = {pack.semantic_id for pack in detect.PACKS}
     assert claimed == COVERED
-    assert SOFTWARE_NAMEPLATE not in claimed
 
 
 def test_the_generator_reads_all_three_cardinality_spellings():
@@ -92,27 +85,27 @@ def test_a_zero_to_many_row_still_obliges_kind_not_only_absence():
     assert row["kind"] == "Property"    # but the kind is still recorded and checked
 
 
-def test_scope_md_puts_each_template_on_the_side_the_tool_puts_it():
-    """The prose a reader relies on, anchored to its context and to which
-    *side* each name sits on -- not merely present somewhere in the file,
-    which is how this test would pass with the meaning inverted.
+def test_scope_md_names_every_template_the_tool_has_a_table_for():
+    """The prose a reader relies on, anchored to its context -- the
+    sentence that says which templates are given tables -- and not merely
+    present somewhere in the file, which is how a template could sit on
+    the wrong side of the page and pass.
 
-    02002 is vendored now, so it must appear among the templates given
-    tables; 02007 is not, so it must appear with the not-yet-vendored
-    reason. Both halves are asserted, because asserting only the absent
-    one stays green for a stale constant that has stopped guarding
-    anything."""
+    Until 02007 was vendored this held a second side too: 02007 among the
+    templates not yet vendored, and 02002 not there. That sentence is gone
+    with nothing left to put in it, so what is held is that every
+    template with a table is named where the tables are, under the number
+    the page gives, and that nothing is still called unvendored."""
     scope = " ".join((ROOT / "docs" / "scope.md").read_text("utf-8").split())
     _, _, section = scope.partition("Which templates it covers")
     assert section, "the coverage section is gone"
     assert "SMT-D1" in section
     assert "Multiplicity" in section
-    covered, _, not_covered = section.partition("still not vendored")
-    assert not_covered, "the not-yet-vendored sentence is gone"
-    # Bound the window at the next heading: without this, the "02002 is not
-    # on the not-covered side" check below forbids the string anywhere in
-    # the rest of the file, and would fire on an unrelated later mention.
-    not_covered = not_covered.partition("## ")[0]
-    assert "02002 Contact Information" in covered
-    assert "02007 Software Nameplate" in not_covered
-    assert "02002" not in not_covered
+    head, _, _ = section.partition("A submodel of any other template")
+    assert "Eight official templates are given rule tables" in head, head[:200]
+    for name in ("02004 Handover Documentation", "02003 Technical Data",
+                 "02035-2 Digital Battery Passport", "02006 Digital Nameplate",
+                 "02023 Carbon Footprint", "02002 Contact Information",
+                 "02011 Hierarchical Structures", "02007 Software Nameplate"):
+        assert name in head, name
+    assert "still not vendored" not in section.partition("## ")[0]

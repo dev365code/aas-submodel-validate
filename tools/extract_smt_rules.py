@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 189 rows is how one of them
+extracted, not hand-written: hand-copying 262 rows is how one of them
 silently goes stale. This sentence's number is pinned against the
 generator's own list of packs, and the README's beside it
 (`tests/test_readme_front.py`) -- pinned because it has been wrong
@@ -266,6 +266,23 @@ PACKS = (
         "prefix": "HS-E",
         "source": "IDTA 02011-1-1-1_Template_HSEBoM.json",
         "citation": "IDTA 02011-1-1-1 template",
+        "item_names": {},
+        "example_types": (),
+        "skip_sids": ARBITRARY,
+    },
+    # IDTA 02007 Software Nameplate 1.0.1: seventy-three elements -- 34
+    # Properties, 29 MultiLanguageProperties, 10 collections -- each with
+    # the older `Multiplicity` qualifier (#50). Both top-level collections
+    # are 0..1, so every mandatory row sits beneath an optional one. Its
+    # `Contact` is 02002's `ContactInformation` copied in, defects and all
+    # (#51), and `ConfigurationURI` wears the identifier of the collection
+    # it sits in (#57). No list, so no item names; no open content.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02007/1.0.1/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/sn_tables.py",
+        "prefix": "SN-E",
+        "source": "IDTA 02007-1-0-1_Template_Software Nameplate.json",
+        "citation": "IDTA 02007-1-0-1 template",
         "item_names": {},
         "example_types": (),
         "skip_sids": ARBITRARY,

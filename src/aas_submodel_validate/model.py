@@ -92,7 +92,7 @@ assert META_KIND in KINDS
 #: Chosen above the longest sentence this project writes -- `SMT-D1`'s
 #: remedy, which names every template this tool has a table for and so
 #: grows by roughly a line with each pack added: 403 characters at three
-#: packs, 590 at five, 690 at six, 796 at seven. The bound is raised when it does
+#: packs, 590 at five, 690 at six, 796 at seven, 883 at eight. The bound is raised when it does
 #: rather than the
 #: sentence shortened, so the bound can only ever cut something a file
 #: supplied. A test asserts that nothing authored comes near it, and it
@@ -275,7 +275,7 @@ class Rule:
         # rules and interpolated from the template's own strings for every
         # generated pack, and the second of those is not this project's to
         # keep short. Measured: the longest text any rule here carries is
-        # 796 characters (`SMT-D1`'s remedy) and none reaches the bound, so
+        # 883 characters (`SMT-D1`'s remedy) and none reaches the bound, so
         # this cuts nothing that was written on purpose.
         for name in ("title", "spec", "fix"):
             value = getattr(self, name)

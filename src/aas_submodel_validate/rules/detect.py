@@ -16,7 +16,16 @@ from __future__ import annotations
 from ..model import Violation
 from ..registry import rule
 from ..semantics import key_values, submodel_declares
-from . import battery_tables, contact_tables, dn_tables, hd_tables, hs_tables, pcf_tables, td_tables
+from . import (
+    battery_tables,
+    contact_tables,
+    dn_tables,
+    hd_tables,
+    hs_tables,
+    pcf_tables,
+    sn_tables,
+    td_tables,
+)
 
 #: The rule id. Referenced by the runner, which can demote this one
 #: finding to a note, so the string lives here rather than in two places.
@@ -52,6 +61,7 @@ PACKS = (
     Pack("Carbon Footprint (IDTA 02023)", pcf_tables, "carbonfootprint"),
     Pack("Contact Information (IDTA 02002)", contact_tables, "contactinformation"),
     Pack("Hierarchical Structures (IDTA 02011)", hs_tables, "hierarchicalstructures"),
+    Pack("Software Nameplate (IDTA 02007)", sn_tables, "softwarenameplate"),
 )
 
 

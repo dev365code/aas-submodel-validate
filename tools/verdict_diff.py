@@ -365,6 +365,27 @@ def build_corpus(into: Path):
     cases.append(Case("a Hierarchical Structures node four levels down, "
                       "carrying the wrong valueType", deeper))
 
+    # A Software Nameplate, and one whose configuration entry follows the
+    # specification rather than the template. The first shows IDTA 02007
+    # land, as the pair above does 02011; the second is the shape
+    # docs/divergences.md #57 says a file built to the specification
+    # meets: a `ConfigurationURI` carrying the identifier the specification
+    # prints, charged as missing because the template gives that element
+    # its parent's.
+    from builders import SN, sn_env  # noqa: E402
+    software = into / "software-nameplate-valid.json"
+    software.write_text(json.dumps(sn_env()), encoding="utf-8")
+    cases.append(Case("a valid Software Nameplate submodel", software))
+    spec = sn_env()
+    instance = spec["submodels"][0]["submodelElements"][1]
+    paths = next(e for e in instance["value"] if e.get("idShort") == "ConfigurationPaths")
+    uri = paths["value"][0]["value"][0]
+    uri["semanticId"]["keys"][0]["value"] = SN + "SoftwareNameplateInstance/ConfigurationURI"
+    spelled = into / "software-nameplate-configuration-uri-as-specified.json"
+    spelled.write_text(json.dumps(spec), encoding="utf-8")
+    cases.append(Case("a Software Nameplate whose ConfigurationURI carries the "
+                      "identifier its specification prints", spelled))
+
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
     # refusing the file, so a file like this is judged -- and what it is

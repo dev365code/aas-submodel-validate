@@ -102,6 +102,14 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02011/1.1.1/template.json":
         "published/Hierarchical Structures enabling Bills of Material/1/1/1/"
         "IDTA 02011-1-1-1_Template_HSEBoM.json",
+    # 02007 is published at 1.0 and at 1.0.1; 1.0.1 is the newest at the
+    # pin. Like 02002's, its JSON is published twice, under this name and
+    # under a "_forAASMetamodelV3.1" one, and the two are byte-identical.
+    # Its `Contact` collection is 02002's `ContactInformation` copied in,
+    # and it carries 02002's defects with it (docs/divergences.md #51).
+    "src/aas_submodel_validate/data/smt/02007/1.0.1/template.json":
+        "published/Software Nameplate/1/0/1/"
+        "IDTA 02007-1-0-1_Template_Software Nameplate.json",
 }
 
 

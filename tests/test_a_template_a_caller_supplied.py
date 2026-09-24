@@ -331,10 +331,13 @@ def test_the_terminal_says_the_template_was_yours(tmp_path):
 
 #: A template no pack here has, which is the case the mode exists for.
 #: Every test above points at a vendored template, and that is why none
-#: of them saw what the three below are about: a template one of the six
+#: of them saw what the three below are about: a template one of the
 #: packs also answers for hides every defect that turns on nothing else
-#: answering.
-UNCLAIMED = "https://admin-shell.io/idta/SoftwareNameplate/1/0"
+#: answering. This was 02007 Software Nameplate's identifier until that
+#: template was given a pack, and every test below then stood on a
+#: claimed one; an identifier no published template uses is not taken
+#: the same way.
+UNCLAIMED = "urn:example:template:no-pack-answers-for-this"
 
 
 def _unclaimed_template(tmp_path, *, semantic_id=UNCLAIMED):
@@ -1765,7 +1768,7 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
     against 26 for 02023, and every one of those extra rows was an
     open-content placeholder the pack drops.
 
-    Asked of all seven rather than of the one that failed, because the
+    Asked of all eight rather than of the one that failed, because the
     difference was a list the two readers kept separately.
     """
     from aas_submodel_validate.rules import (
@@ -1775,12 +1778,13 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
         hd_tables,
         hs_tables,
         pcf_tables,
+        sn_tables,
         td_tables,
     )
 
     packs = {"02002": contact_tables, "02003": td_tables, "02004": hd_tables,
-             "02006": dn_tables, "02011": hs_tables, "02023": pcf_tables,
-             "02035-2": dbp_tables}
+             "02006": dn_tables, "02007": sn_tables, "02011": hs_tables,
+             "02023": pcf_tables, "02035-2": dbp_tables}
     data = pathlib.Path(runner.__file__).parent / "data" / "smt"
     seen = 0
     for document in sorted(data.glob("*/*/template.json")):

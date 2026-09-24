@@ -93,10 +93,10 @@ the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 
-Seven official templates are given rule tables: IDTA 02004 Handover
+Eight official templates are given rule tables: IDTA 02004 Handover
 Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
 part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact
-Information, and 02011 Hierarchical Structures. A submodel of any other template is reported as not
+Information, 02011 Hierarchical Structures, and 02007 Software Nameplate. A submodel of any other template is reported as not
 matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
@@ -123,7 +123,7 @@ submodel judged against that. What that buys and what it does not:
   your file and is not a published IDTA template. **A verdict against a
   template you supplied is not a statement about conformance to a
   published one.**
-- Where your template claims an identifier one of the seven packs also
+- Where your template claims an identifier one of the eight packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
 - The `TPL-E*` ids such a run uses are **not ids this project
@@ -176,7 +176,9 @@ carrying none of them as `0..*` (#20). So a template that states its
 obligations in any of the three is judgeable once its table is vendored.
 IDTA 02002 Contact Information 1.0.1 is the first such template vendored
 here: all thirty-six of its elements state their cardinality in
-`Multiplicity` and none in `SMT/Cardinality`.
+`Multiplicity` and none in `SMT/Cardinality`. IDTA 02007 Software
+Nameplate 1.0.1 is the second, all seventy-three of its elements in the
+same spelling.
 
 IDTA 02002's pack is generated rows only, and what that leaves unchecked
 is worth stating because twenty-one of its thirty-six rows are
@@ -219,9 +221,27 @@ editor's convenience and not a stated constraint. And whether the tree the
 relationships draw agrees with the tree the nodes nest is a question this
 pack does not ask.
 
-One published template written in the `Multiplicity` spelling is still
-not vendored: **IDTA 02007 Software Nameplate 1.0.1** (73 elements, 14
-mandatory), measured from the published template at the upstream pin.
-Until its table is added, a submodel of it draws `SMT-D1` — or can be
-judged with `--template` against the published template file, with the
-limits above.
+IDTA 02007 Software Nameplate 1.0.1 describes software twice over: one
+collection for the software as a type, one for an installed instance.
+The template makes both optional, and every one of its fourteen mandatory
+elements sits beneath one of them, so a Software Nameplate holding
+neither draws nothing. Its pack is generated rows only, and what that
+leaves unchecked: twenty-nine of its seventy-three rows are
+`MultiLanguageProperty`, with the same limit as 02002's above;
+`URIOfTheProduct` is not checked as an absolute URI, which is the Digital
+Nameplate's hand rule and not this template's; no version, date,
+checksum or path is checked for what it says; and the specification's
+instruction that a contact's role be the technical-contact code is not a
+rule here. Its `Contact` is 02002's collection copied in, and draws what
+02002's pack draws, drifts included.
+
+The rows are the template's, and the specification beside it disagrees
+with the template in several places: the two collections' own
+identifiers, `ConfigurationURI`'s identifier, `ConfigurationType`'s value
+type, whether `InstallationDate` is mandatory, how many `InventoryTag`s
+and `Contact`s there may be, and two elements the specification's diagram
+makes a `Blob`. So a file built to the specification's tables rather
+than to the template can have both of its collections left unexamined --
+which `scopeNotExamined` says -- or draw an error the template's own
+defect put there. `docs/divergences.md` #57 lists each one and what the
+run does with it.

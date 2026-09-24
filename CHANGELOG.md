@@ -80,8 +80,24 @@ at the submodel's root is not counted in it, being an element no row
 describes and as silent as any other, and neither is one under an entry
 node the run could not place, which `scopeNotExamined` already names.
 
-It is 232 rules, 189 generated from the vendored official template files,
-across seven template packs. What this reader takes in is
+**IDTA 02007 Software Nameplate is the eighth.** A submodel of it was
+reported as not matched (`SMT-D1`) and left by 1; it is judged now against
+seventy-three rows generated from the vendored 1.0.1 template, and a
+conformant one leaves by 0 -- said here for the same reason as above. The
+template's two collections, one for the software as a type and one for an
+installed instance, are both optional, and every mandatory element sits
+beneath one of them, so a submodel holding neither leaves by 0 as well.
+The rows are the template's, and where the specification beside it
+disagrees they are still the template's (`docs/divergences.md` #57): a
+file that spells the two collections as the specification's tables do
+has neither examined, which `scopeNotExamined` says, and one that gives
+`ConfigurationURI` the identifier the specification prints is told its
+`ConfigurationURI` is missing, because the template gives that element
+its parent's identifier. Its `Contact` is 02002's collection copied in,
+and carries that template's recorded identifier defects with it (#51).
+
+It is 305 rules, 262 generated from the vendored official template files,
+across eight template packs. What this reader takes in is
 unchanged: one document at 64 MiB, a container's parts at 64 MiB each
 and 256 MiB together, and a container's directory of names at 16 MiB.
 

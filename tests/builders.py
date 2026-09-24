@@ -657,8 +657,14 @@ def inject(env: dict, parent_row, stubs, tables) -> dict:
         env["submodels"][0]["submodelElements"].extend(stubs)
         return env
     for _container, element in list(_scopes(env)):
-        if _element_matches(element, parent_row["match"]):
-            element.setdefault(_children_of(element) or "value", []).extend(stubs)
+        # Into containers only. 02007's `ConfigurationURI` is a Property
+        # carrying the identifier of the collection it sits in
+        # (docs/divergences.md #57), so matching by identifier alone found
+        # it as a second scope and appended to its string -- and an MLP,
+        # whose value is a list too, would have taken the stubs silently.
+        key = _children_of(element)
+        if key and _element_matches(element, parent_row["match"]):
+            element.setdefault(key, []).extend(stubs)
     return env
 
 
@@ -916,4 +922,159 @@ def hs_env() -> dict:
             {"idShort": "ArcheType", "modelType": "Property",
              "valueType": "xs:string", "value": "Full",
              "semanticId": _sid(HS + "ArcheType/1/0")}],
+    }]}
+
+
+# --- a fully conformant Software Nameplate instance --------------------------
+
+SN = "https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/"
+SN_CONTACT = "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
+
+
+def sn_env() -> dict:
+    """The golden fixture for IDTA 02007 Software Nameplate 1.0.1, written by
+    hand like the others and carrying every row the template declares, so
+    each generated row has a scope to strip from, a bound to exceed, or an
+    identifier to put the wrong kind under. Values follow the
+    specification's examples where it gives one.
+
+    Identifiers are reproduced exactly as the **template** writes them, and
+    in four places that is not what the specification writes
+    (docs/divergences.md #57): the two top-level collections carry the
+    `SoftwareNameplate/` segment the specification's Table 1 leaves out,
+    `ConfigurationURI` carries the identifier of the `ConfigurationPath` it
+    sits in, and inside `Contact`, 02002's collection copied in,
+    `IPCommunication` carries 02002 1.0's identifier -- the Contact
+    Information submodel's own -- and `TypeOfCommunication` a space
+    (#51). `ConfigurationType` is an integer, as the template and the
+    specification's diagram have it and its table does not. So this
+    fixture proves the table against the template, not against the
+    specification.
+    """
+    B, N = SN, SN_CONTACT
+    available = N + "ContactInformation/AvailableTime/"
+    kind = _smc(B + "SoftwareNameplateType", [
+        _prop("URIOfTheProduct", "0173-1#02-AAY811#001",
+              "https://example.com/software/demo-firmware"),
+        _mlp("ManufacturerName", "0173-1#02-AAO677#002", "ZVEI AK IT in Automation"),
+        _mlp("ManufacturerProductDesignation", "0173-1#02-AAW338#001",
+             "My Software Package for Demonstration"),
+        _mlp("ManufacturerProductDescription",
+             B + "SoftwareNameplateType/ManufacturerProductDescription",
+             "A first software installation to be used for demo purpose only."),
+        _mlp("ManufacturerProductFamily", "0173-1#02-AAU731#001", "Demo Products"),
+        _mlp("ManufacturerProductType", "0173-1#02-AAO057#002", "DP-AKIT-A"),
+        _prop("SoftwareType", B + "SoftwareNameplateType/SoftwareType", "PLC Runtime"),
+        _prop("Version", B + "SoftwareNameplateType/Version", "0.9.1.0"),
+        _mlp("VersionName", B + "SoftwareNameplateType/VersionName", "R2021 beta"),
+        _mlp("VersionInfo", B + "SoftwareNameplateType/VersionInfo",
+             "Please do not install in productive environments!"),
+        _prop("ReleaseDate", B + "SoftwareNameplateType/ReleaseDate", "2022-02-07",
+              "xs:date"),
+        _mlp("ReleaseNotes", B + "SoftwareNameplateType/ReleaseNotes",
+             "This release requires special configuration."),
+        _prop("ReleaseInformation", B + "SoftwareNameplateType/ReleaseInformation",
+              "release-notes.txt"),
+        _prop("BuildDate", B + "SoftwareNameplateType/BuildDate", "2020-11-19",
+              "xs:date"),
+        _prop("InstallationURI", B + "SoftwareNameplateType/InstallationURI",
+              "https://example.com/download/DemoFirmware_09.zip", "xs:anyURI"),
+        _prop("InstallationFile", B + "SoftwareNameplateType/InstallationFile",
+              "DemoFirmware_09.zip"),
+        _prop("InstallerType", B + "SoftwareNameplateType/InstallerType", "MSI"),
+        _prop("InstallationChecksum", B + "SoftwareNameplateType/InstallationChecksum",
+              "0x2783"),
+    ], id_short="SoftwareNameplateType")
+    contact = _smc(N + "ContactInformation", [
+        _prop("RoleOfContactPerson", "0173-1#02-AAO204#003", "0173-1#07-AAS931#001"),
+        _mlp("NationalCode", "0173-1#02-AAO134#002", "DE"),
+        _prop("Language", N + "ContactInformation/Language", "de"),
+        _prop("TimeZone", N + "ContactInformation/TimeZone", "+01:00"),
+        _mlp("CityTown", "0173-1#02-AAO132#002", "Frankfurt"),
+        _mlp("Company", "0173-1#02-AAW001#001", "ACME GmbH"),
+        _mlp("Department", "0173-1#02-AAO127#003", "Support"),
+        _smc(N + "ContactInformation/Phone", [
+            _mlp("TelephoneNumber", "0173-1#02-AAO136#002", "+49 69 1234"),
+            _prop("TypeOfTelephone", "0173-1#02-AAO137#003", "office"),
+            _mlp("AvailableTime", available, "09:00-17:00"),
+        ], id_short="Phone"),
+        _smc("0173-1#02-AAQ834#005", [
+            _mlp("FaxNumber", "0173-1#02-AAO195#002", "+49 69 1235"),
+            _prop("TypeOfFaxNumber", "0173-1#02-AAO196#003", "office"),
+        ], id_short="Fax"),
+        _smc("0173-1#02-AAQ836#005", [
+            _prop("EmailAddress", "0173-1#02-AAO198#002", "support@example.com"),
+            _mlp("PublicKey", "0173-1#02-AAO200#002", "AAAA"),
+            _prop("TypeOfEmailAddress", "0173-1#02-AAO199#003", "office"),
+            _mlp("TypeOfPublicKey", "0173-1#02-AAO201#002", "PGP"),
+        ], id_short="Email"),
+        _smc(N, [
+            _prop("AddressOfAdditionalLink", "0173-1#02-AAQ326#002",
+                  "https://example.com/chat"),
+            _prop("TypeOfCommunication",
+                  "https://admin-shell.io/zvei/nameplate/1/0/ ContactInformations"
+                  "/ContactInformation/IPCommunication/TypeOfCommunication", "chat"),
+            _mlp("AvailableTime", available, "09:00-17:00"),
+        ], id_short="IPCommunication01"),
+        _mlp("Street", "0173-1#02-AAO128#002", "Musterstrasse 1"),
+        _mlp("Zipcode", "0173-1#02-AAO129#002", "60313"),
+        _mlp("POBox", "0173-1#02-AAO130#002", "PO 1"),
+        _mlp("ZipCodeOfPOBox", "0173-1#02-AAO131#002", "60001"),
+        _mlp("StateCounty", "0173-1#02-AAO133#002", "Hessen"),
+        _mlp("NameOfContact", "0173-1#02-AAO205#002", "Muster"),
+        _mlp("FirstName", "0173-1#02-AAO206#002", "Erika"),
+        _mlp("MiddleNames", "0173-1#02-AAO207#002", "M."),
+        _mlp("Title", "0173-1#02-AAO208#003", "Dr."),
+        _mlp("AcademicTitle", "0173-1#02-AAO209#003", "Dr. rer. nat."),
+        _mlp("FurtherDetailsOfContact", "0173-1#02-AAO210#002", "reception"),
+        _prop("AddressOfAdditionalLink", "0173-1#02-AAQ326#002",
+              "https://example.com/contact"),
+    ], id_short="Contact")
+    instance = _smc(B + "SoftwareNameplateInstance", [
+        _prop("SerialNumber", "0173-1#02-AAM556#002", "123456"),
+        _prop("InventoryTag", B + "SoftwareNameplateInstance/InventoryTag", "TU3-88D5"),
+        _prop("InstanceName", B + "SoftwareNameplateInstance/InstanceName",
+              "My Software Instance"),
+        _prop("InstalledVersion", B + "SoftwareNameplateInstance/InstalledVersion",
+              "0.9.1.0"),
+        _prop("InstallationDate", B + "SoftwareNameplateInstance/InstallationDate",
+              "2020-11-19", "xs:date"),
+        _prop("InstallationPath", B + "SoftwareNameplateInstance/InstallationPath",
+              "file:///opt/demo/firmware", "xs:anyURI"),
+        _prop("InstallationSource", B + "SoftwareNameplateInstance/InstallationSource",
+              "https://example.com/installation/firmware/src", "xs:anyURI"),
+        _prop("InstalledOnArchitecture",
+              B + "SoftwareNameplateInstance/InstalledOnArchitecture", "x86-32"),
+        _prop("InstalledOnOS", B + "SoftwareNameplateInstance/InstalledOnOS",
+              "Windows 10"),
+        _prop("InstalledOnHost", B + "SoftwareNameplateInstance/InstalledOnHost",
+              "IPC_42"),
+        _smc(B + "SoftwareNameplateInstance/InstalledModules", [
+            _prop("InstalledModule01", B + "SoftwareNameplateInstance/InstalledModule",
+                  "main"),
+            _prop("InstalledModule02", B + "SoftwareNameplateInstance/InstalledModule",
+                  "diagnostics"),
+        ], id_short="InstalledModules"),
+        _smc(B + "SoftwareNameplateInstance/ConfigurationPaths", [
+            _smc(B + "SoftwareNameplateInstance/ConfigurationPath", [
+                _prop("ConfigurationURI",
+                      B + "SoftwareNameplateInstance/ConfigurationPath",
+                      "file:///opt/demo/config/initial.cfg", "xs:anyURI"),
+                _prop("ConfigurationType",
+                      B + "SoftwareNameplateInstance/ConfigurationType", "1",
+                      "xs:integer"),
+            ], id_short="ConfigurationPath"),
+        ], id_short="ConfigurationPaths"),
+        _prop("SLAInformation", B + "SoftwareNameplateInstance/SLAInformation",
+              "Service level GOLD USER."),
+        contact,
+    ], id_short="SoftwareNameplateInstance")
+    return {"submodels": [{
+        "id": "urn:example:software-nameplate",
+        "idShort": "SoftwareNameplate", "modelType": "Submodel",
+        "semanticId": {"type": "ModelReference",
+                       "keys": [{"type": "Submodel",
+                                 "value": "https://admin-shell.io/idta/"
+                                          "SoftwareNameplate/1/0"}]},
+        "submodelElements": [kind, instance],
     }]}
