@@ -299,6 +299,39 @@ def test_a_file_value_is_graded_by_what_the_package_holds(tmp_path, value, files
     assert finding["path"] == ["document", "submodel", "element"], finding
 
 
+def test_the_row_s_idshort_is_recognised_where_its_label_is_qualified(tmp_path):
+    """Two rows sharing an idShort get a qualified label (#48), and the
+    remedy still names the element by its idShort. An element carrying it,
+    under an identifier no row claims, sat beside the missing one and was
+    not recognised: the grade said nothing there resembled it. The same
+    shape beside a row with a plain label was a 2, and is the control."""
+    from builders import _sid, sn_env
+
+    def named(children, short):
+        return next(child for child in children if child.get("idShort") == short)
+
+    def graded(env, rule, name):
+        path = tmp_path / name
+        path.write_text(json.dumps(env), encoding="utf-8")
+        return next(f for f in runner.run(str(path)).as_dict()["findings"] if f["rule"] == rule)
+
+    env = sn_env()
+    instance = named(env["submodels"][0]["submodelElements"], "SoftwareNameplateInstance")
+    link = named(named(named(instance["value"], "Contact")["value"],
+                       "IPCommunication01")["value"], "AddressOfAdditionalLink")
+    link["semanticId"] = _sid("urn:x:another-identifier")
+    qualified = graded(env, "SN-E59", "qualified.json")
+    assert "'AddressOfAdditionalLink (IPCommunication__00__)'" in qualified["message"]
+    assert _grade(qualified) == 2, qualified
+    assert "idShort" in qualified["fixabilityWhy"], qualified
+
+    env = sn_env()
+    kind = named(env["submodels"][0]["submodelElements"], "SoftwareNameplateType")
+    named(kind["value"], "Version")["semanticId"] = _sid("urn:x:another-identifier")
+    plain = graded(env, "SN-E09", "plain.json")
+    assert _grade(plain) == 2, plain
+
+
 def test_an_identifier_one_version_off_is_a_2(tmp_path):
     finding = _only(_run(tmp_path, env_json("0173-1#01-AHF578#002")), "SMT-D1")
     assert _grade(finding) == 2, finding

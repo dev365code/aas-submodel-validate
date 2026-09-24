@@ -1507,6 +1507,17 @@ TABLE = [
      "file whose element sat at that very place one version suffix off, "
      "with the near-miss lint saying so on the next line"),
 
+    ("fixability/a-qualified-label-is-not-an-idshort",
+     "src/aas_submodel_validate/rules/engine.py",
+     "                        if element.id_short and element.id_short == _id_short_of(row))\n",
+     "                        if element.id_short and element.id_short == row[\"label\"])\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_the_row_s_idshort_is_recognised_where_its_label_is_qualified"],
+     "an element carrying AddressOfAdditionalLink sat beside the missing "
+     "one, and the row's label -- qualified with its parent because 02002 "
+     "declares that idShort twice -- was compared instead of its idShort: "
+     "graded 5, nothing here resembles the missing element"),
+
     ("fixability/a-file-value-is-graded-by-the-package",
      "src/aas_submodel_validate/rules/engine.py",
      "    found = len(container.carrying(value))\n",

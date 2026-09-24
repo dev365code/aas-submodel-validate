@@ -508,6 +508,17 @@ def _analyze(ctx, tables) -> Dict:
 
 
 
+def _id_short_of(row) -> str:
+    """The idShort a row's element carries: its label, less the qualifier
+    `docs/divergences.md` #48 adds where two rows share one -- `Node
+    (EntryNode)`, `AddressOfAdditionalLink (IPCommunication__00__)`. Asked
+    against the label itself, an element carrying the row's own idShort
+    beside such a row was never recognised, and the missing element was
+    graded 5 with a reason saying nothing here resembled it. An idShort
+    holds no space, so the qualifier is everything from the first ` (`."""
+    return row["label"].split(" (", 1)[0]
+
+
 def _descendant_ids(row) -> List[str]:
     """Every rule id beneath a row, which is what leaves the run with it."""
     out = []
@@ -1251,7 +1262,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                     if near is row}
             like.update(_subject(path, element, index, shared)
                         for index, element in loose
-                        if element.id_short and element.id_short == row["label"])
+                        if element.id_short and element.id_short == _id_short_of(row))
             if like:
                 grade, why = _LIKE_ONE if len(like) == 1 else _LIKE_SEVERAL
             elif (row["kind"] in _CONTAINERS
