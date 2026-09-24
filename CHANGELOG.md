@@ -17,8 +17,12 @@ been places not examined all the same. It is charged now with the rows
 directly beneath the one it resembles and, below those, only what it
 holds; the sections it does not carry stay in `scopeNotExamined`. A
 drifted copy beside an intact sibling is charged what only it holds,
-where it was charged nothing because the sibling had entered the row.
-No verdict moves.
+where it was charged nothing because the sibling had entered the row. An
+element of the wrong kind is charged nothing, since carrying the
+identifier it nearly carries it would be judged by its kind and not
+entered, and in a template of the caller's that contains itself a nested
+copy is followed with the rows of the element it copies, as the walk
+follows it. No verdict moves.
 
 It is 305 rules, 262 generated from the vendored official template files,
 across eight template packs, as in 0.7.0. What this reader takes in is
