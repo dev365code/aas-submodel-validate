@@ -497,6 +497,79 @@ def test_what_only_the_drifted_copy_holds_is_its_loss(tmp_path):
     assert record["rulesNotAskedHere"] == ["HD-E27"], record
 
 
+def _refers_to_entities():
+    return {"modelType": "SubmodelElementList", "idShort": "RefersToEntities",
+            "semanticId": _sid("0173-1#02-ABK288#002"),
+            "typeValueListElement": "ReferenceElement",
+            "value": [{"modelType": "ReferenceElement", "semanticId": _sid("0173-1#02-ABK288#002"),
+                       "value": {"type": "ExternalReference",
+                                 "keys": [{"type": "GlobalReference", "value": "urn:x:pump"}]}}]}
+
+
+def _beside_intact(copies):
+    """hd_env's Document with drifted copies of its DocumentVersions list
+    beside the intact one, each named and saying whether it holds a
+    RefersToEntities the intact list does not."""
+    from builders import hd_env
+
+    environment = hd_env()
+    document = environment["submodels"][0]["submodelElements"][0]["value"][0]
+    versions = next(element for element in document["value"]
+                    if element.get("idShort") == "DocumentVersions")
+    for short, holds in copies:
+        copy = json.loads(json.dumps(versions))
+        copy["idShort"] = short
+        copy["semanticId"]["keys"][0]["value"] = "0173-1#02-ABI503#004"
+        if holds:
+            copy["value"][0]["value"].append(_refers_to_entities())
+        document["value"].append(copy)
+    return environment, document
+
+
+def _summary_of(tmp_path, environment, name):
+    path = tmp_path / name
+    path.write_text(json.dumps(environment), encoding="utf-8")
+    return runner.run(path).as_dict()["summary"]
+
+
+def test_a_group_of_drifted_copies_is_charged_what_any_of_them_holds(tmp_path):
+    """Two copies drifted alike beside the intact list, and only the second
+    holds a RefersToEntities. They carry one drift between them and are
+    charged once -- with what the second holds, which nothing asked."""
+    environment, _ = _beside_intact([("DocumentVersions2", False),
+                                     ("DocumentVersions3", True)])
+    summary = _summary_of(tmp_path, environment, "two-copies.json")
+    assert summary["rulesNotAsked"] == ["HD-E27"], summary["rulesNotAsked"]
+    assert [record["rulesNotAskedHere"] for record in summary["unmatchedElements"]] \
+        == [["HD-E27"]], summary["unmatchedElements"]
+
+
+def test_an_item_matched_by_its_kind_is_followed_as_the_walk_follows_it(tmp_path):
+    """The drifted copy's DocumentVersion carries no semanticId of its own,
+    as the official example's list items do not. The walk takes such an
+    item by its kind, and so does the charge."""
+    environment, document = _beside_intact([("DocumentVersions2", True)])
+    del document["value"][-1]["value"][0]["semanticId"]
+    summary = _summary_of(tmp_path, environment, "item-by-kind.json")
+    assert summary["rulesNotAsked"] == ["HD-E27"], summary["rulesNotAsked"]
+
+
+def test_a_near_miss_is_charged_though_no_row_beside_it_is_unentered(tmp_path):
+    """The Document also carries DocumentedEntities, so its scope leaves no
+    row unentered. The charge used to wait for one to be, and what only the
+    drifted copy holds went unsaid."""
+    environment, document = _beside_intact([("DocumentVersions2", True)])
+    document["value"].append({
+        "modelType": "SubmodelElementList", "idShort": "DocumentedEntities",
+        "semanticId": _sid("https://admin-shell.io/vdi/2770/1/0/Document/DocumentedEntities"),
+        "typeValueListElement": "ReferenceElement",
+        "value": [{"modelType": "ReferenceElement",
+                   "value": {"type": "ExternalReference",
+                             "keys": [{"type": "GlobalReference", "value": "urn:x:pump"}]}}]})
+    summary = _summary_of(tmp_path, environment, "nothing-unentered.json")
+    assert summary["rulesNotAsked"] == ["HD-E27"], summary["rulesNotAsked"]
+
+
 def test_a_drifted_place_beside_a_sibling_that_entered_it_is_recorded(tmp_path):
     """Rules put elsewhere in the submodel are taken off a place's record,
     so that a section one list item omits is not reported as unexamined

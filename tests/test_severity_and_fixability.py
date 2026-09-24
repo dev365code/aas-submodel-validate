@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import copy
 import json
+import zlib
 import re
 from pathlib import Path
 
@@ -352,6 +353,15 @@ def test_one_file_stored_under_two_names_is_nothing_to_choose(tmp_path):
                         files=[PDF, ("aasx/other/manual.pdf", other)], name="differ"),
                    "HD-D7")
     assert _grade(differ) == 3, differ
+    # And the size is half of what is compared: two parts forged to one
+    # CRC-32 at different lengths are two files, and a checksum alone would
+    # have called them one.
+    forged = b"%PDF-1.4 a different, longer manual\x1d\x01\x80\xbe"
+    assert zlib.crc32(forged) == zlib.crc32(PDF[1]) and len(forged) != len(PDF[1])
+    collided = _only(_run(tmp_path, _with_file_value("/aasx/documents/manual.pdf"), aasx=True,
+                          files=[PDF, ("aasx/other/manual.pdf", forged)], name="collided"),
+                     "HD-D7")
+    assert _grade(collided) == 3, collided
 
 
 def test_an_identifier_one_version_off_is_a_2(tmp_path):

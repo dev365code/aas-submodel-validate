@@ -1555,6 +1555,16 @@ TABLE = [
      "two manuals of one length and different bytes would have been called "
      "one file stored twice, and the choice between them graded away"),
 
+    ("fixability/one-checksum-at-two-sizes-is-two-files",
+     "src/aas_submodel_validate/container.py",
+     "        return len({(info.file_size, info.CRC) for info in infos}) == 1\n",
+     "        return len({info.CRC for info in infos}) == 1\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_one_file_stored_under_two_names_is_nothing_to_choose"],
+     "two parts forged to one CRC-32 at different lengths were graded one "
+     "file stored twice, with a reason saying the archive recorded the same "
+     "size for each"),
+
     ("fixability/an-item-where-its-list-belongs-is-wrapped",
      "src/aas_submodel_validate/rules/engine.py",
      '        return (2, "this element is of the kind the template gives the list\'s "',
@@ -1648,6 +1658,36 @@ TABLE = [
      "a Property wearing a near miss of a collection's identifier was "
      "charged every row beneath that collection, though carrying the "
      "identifier itself it would have been judged by kind and not entered"),
+
+    ("scope/a-near-miss-is-charged-though-nothing-beside-it-is-unentered",
+     "src/aas_submodel_validate/rules/engine.py",
+     "    if near_here:\n        # Asked whether or not this scope left a row unentered, and of a\n",
+     "    if unentered and near_here:\n        # Asked whether or not this scope left a row unentered, and of a\n",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_near_miss_is_charged_though_no_row_beside_it_is_unentered"],
+     "a Document carrying every optional list left no row unentered, and the "
+     "section only a drifted copy held went unsaid: the charge waited for an "
+     "unentered row that had nothing to do with it"),
+
+    ("scope/an-item-matched-by-kind-is-followed",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            if _child_matches(sub, child, in_list):\n                out.extend(_asked_inside(child, sub, inside))\n",
+     "            if _child_matches(sub, child, False):\n                out.extend(_asked_inside(child, sub, inside))\n",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_an_item_matched_by_its_kind_is_followed_as_the_walk_follows_it"],
+     "a drifted list whose item carries no semanticId -- the official "
+     "example's shape -- was charged none of what the item held, though the "
+     "walk takes such an item by its kind"),
+
+    ("scope/every-copy-in-a-drifted-group-counts",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            for element in elements:\n                for rule_id in _asked_inside(row, element, copied):\n",
+     "            for element in elements[:1]:\n                for rule_id in _asked_inside(row, element, copied):\n",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_group_of_drifted_copies_is_charged_what_any_of_them_holds"],
+     "two copies drifted alike, the second holding a section the first did "
+     "not: charging the group with its first copy's content lost the "
+     "second's"),
 
     ("scope/what-only-a-drifted-copy-holds-is-its-loss",
      "src/aas_submodel_validate/rules/engine.py",
