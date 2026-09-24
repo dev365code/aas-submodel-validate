@@ -24,6 +24,7 @@ from aas_submodel_validate.report import render
 from aas_submodel_validate.rules import (
     battery_tables,
     contact_tables,
+    dbp1_tables,
     dbp5_tables,
     dbp_tables,
     dn_tables,
@@ -76,12 +77,13 @@ def test_the_rule_counts_are_the_registrys():
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS) + len(hs_tables.ROWS)
-                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS))
-    assert len(all_rules()) == 360
+                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS))
+    assert len(all_rules()) == 384
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS),
             len(dn_tables.ROWS), len(pcf_tables.ROWS),
             len(contact_tables.ROWS), len(hs_tables.ROWS),
-            len(sn_tables.ROWS), len(dbp5_tables.ROWS)) == (38, 26, 22, 30, 26, 36, 11, 73, 49)
+            len(sn_tables.ROWS), len(dbp5_tables.ROWS),
+            len(dbp1_tables.ROWS)) == (38, 26, 22, 30, 26, 36, 11, 73, 49, 22)
     # Every place the page says it, not "somewhere on the page". The
     # count appears six times -- the badge, the gallery, the roadmap,
     # the table's heading and the sentence that says which numbers are
@@ -93,7 +95,7 @@ def test_the_rule_counts_are_the_registrys():
     # the count of occurrences underneath.
     total = len(all_rules())
     for where in ("[![templates](https://img.shields.io/badge/"
-                  "IDTA_templates-9_\u00b7_%d_rules" % total,
+                  "IDTA_templates-10_\u00b7_%d_rules" % total,
                   # The count of rows in the table underneath, not a
                   # word written twice. `8dbc1bc` changed "Five of the
                   # 183" to "Six of the 219" without adding a sixth row,
@@ -139,8 +141,8 @@ def test_the_rule_counts_are_the_registrys():
     template_rules = (families["HD"] + families["TD"] + families["DBP"]
                       + families["DN"] + families["PCF"] + families["CI"]
                       + families["HS"] + families["SN"])
-    assert template_rules == 350, families
-    assert "%d of them across nine IDTA templates" % template_rules in FLOWED
+    assert template_rules == 374, families
+    assert "%d of them across ten IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2
     # Counts, not a description. The sentence beneath this one said
@@ -499,7 +501,7 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS) + len(hs_tables.ROWS)
-                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS))
+                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS))
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
     # The bounds are on this page too, and were the only prose numbers on
@@ -1170,3 +1172,33 @@ def test_which_changelog_headings_are_checked_against_this_tree(heading, version
     is caught by the shape assertion rather than silently checked.
     """
     assert _numbers_are_this_trees(heading, version) is checked
+
+
+#: How the page spells a count of templates. Lower case: the sentences
+#: capitalise it only when it opens one.
+_TEMPLATE_WORDS = {8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}
+
+
+def test_every_count_of_the_templates_on_the_page_is_the_same():
+    """The page counts the templates it supports in several sentences,
+    and nothing compared them with each other or with the tree: one said
+    "the complementary layer for the eight it supports" through 0.8.0 and
+    0.8.1, which vendored nine. Every phrase that counts them is held to
+    the number of vendored templates."""
+    vendored = len(list((ROOT / "src/aas_submodel_validate/data/smt").rglob("template.json")))
+    phrases = re.findall(
+        r"\b(\w+) (?:IDTA templates|it supports|templates already supported)\b", FLOWED)
+    assert phrases, "no phrase counts the templates any more; update the pattern with the page"
+    assert {phrase.lower() for phrase in phrases} == {_TEMPLATE_WORDS[vendored]}, phrases
+
+
+def test_the_elision_counts_the_info_the_quoted_summary_prints():
+    """The sentence under the passport block says what its `…` stands
+    for, naming the run's info count. The count is the quoted summary
+    line's, which the block's own test holds to a run; the sentence's
+    number was held only by a mutation row's literal text."""
+    [block] = [body for body in re.findall("```console\n(.*?)```", README, re.S)
+               if "BAT-R8" in body]
+    [info] = re.findall(r"^ok -- \d+ error\(s\), \d+ warning\(s\), (\d+) info -- ",
+                        block, re.M)
+    assert "accounts for the `%s info`" % info in FLOWED

@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml/badge.svg)](https://github.com/dev365code/aas-submodel-validate/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/aas-submodel-validate?label=PyPI&color=2f6fb3)](https://pypi.org/project/aas-submodel-validate/)
-[![templates](https://img.shields.io/badge/IDTA_templates-9_·_360_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
+[![templates](https://img.shields.io/badge/IDTA_templates-10_·_384_rules-a8721c)](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/scope.md)
 [![licence](https://img.shields.io/badge/licence-Apache--2.0-5f6a75)](https://github.com/dev365code/aas-submodel-validate/blob/main/LICENSE)
 
 &nbsp;**Apache-2.0**&nbsp;·&nbsp;**Python 3.9–3.13**&nbsp;·&nbsp;**Linux · macOS · Windows**&nbsp;·&nbsp;**zero network, by design**
@@ -15,7 +15,7 @@
 
 ## Ten seconds
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=79797cc8" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=60b06d54" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ pip3 install aas-submodel-validate
@@ -32,7 +32,7 @@ warning BAT-R8   conformant to the template; a published reading of the regulati
         per  Regulation (EU) 2023/1542 Annex XIII 4 (b), Annex VII Part A (1); docs/divergences.md #37 for whose reading of it this answers
         fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
 …
-ok -- 0 error(s), 1 warning(s), 4 info -- your-battery-passport.json; judged 3 of 3 submodels
+ok -- 0 error(s), 1 warning(s), 3 info -- your-battery-passport.json; judged 3 of 3 submodels
 ```
 
 **Note what it does not say.** Not "not to the regulation": the tool has a
@@ -51,7 +51,7 @@ remembered. It has to be: the element this page led with until 0.1.3 was
 applicable**, energy round trip efficiency and its fade". See
 `docs/divergences.md` #37.
 
-The `…` is six lines: the one that accounts for the `4 info` — the
+The `…` is six lines: the one that accounts for the `3 info` — the
 relayed metamodel findings, folded into a count unless you ask for them
 — a coverage note of the kind quoted further down, and a four-line key:
 the labels this run printed, what a note is, that the finding is a
@@ -78,7 +78,7 @@ If `pip3` is not the spelling on your machine, `python3 -m pip install aas-submo
 error   SMT-D1   no submodel declares a semanticId this tool has a template table for
         saw  semanticId value(s): urn:somecompany:docs
         per  IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2
-        fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate for Digital Nameplate (IDTA 02006); https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 for Carbon Footprint (IDTA 02023); https://admin-shell.io/zvei/nameplate/1/0/ContactInformations for Contact Information (IDTA 02002); https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel for Hierarchical Structures (IDTA 02011); https://admin-shell.io/idta/SoftwareNameplate/1/0 for Software Nameplate (IDTA 02007); urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#ProductCondition for Product Condition (IDTA 02035-5). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
+        fix: If the submodel means one of the templates this tool has a table for, give it that template's semanticId: 0173-1#01-AHF578#003 for Handover Documentation (IDTA 02004); 0173-1#01-AHX837#002 for Technical Data (IDTA 02003); https://admin-shell.io/idta/nameplate/3/0/Nameplate for Digital Nameplate (IDTA 02006); https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0 for Carbon Footprint (IDTA 02023); https://admin-shell.io/zvei/nameplate/1/0/ContactInformations for Contact Information (IDTA 02002); https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel for Hierarchical Structures (IDTA 02011); https://admin-shell.io/idta/SoftwareNameplate/1/0 for Software Nameplate (IDTA 02007); urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#ProductCondition for Product Condition (IDTA 02035-5); https://admin-shell.io/idta/digitalbatterypassport/nameplate/1/0/Nameplate for Battery Nameplate (IDTA 02035-1). If it means a template this tool has no table for, leave the identifier alone -- it is doing its job, and this finding only says nothing here judged the submodel against a template.
 key     saw=what is there now per=the clause fix=what to change
 FAILED -- 1 error(s), 0 warning(s), 0 info -- machine-docs.json; judged 0 of 1 submodel
 ```
@@ -126,7 +126,7 @@ and failed.
 
 ## What it catches
 
-Five of the 360, in the words the tool actually prints:
+Five of the 384, in the words the tool actually prints:
 
 | You ship this | `smtv` says |
 |---|---|
@@ -141,7 +141,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=d837989e" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-2, 35-5; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=583113fd" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, 35-2, 35-5; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
@@ -278,12 +278,12 @@ metamodel channel, so that listing is one line longer than the count.
 ```mermaid
 timeline
     title Where aas-submodel-validate is going
-    Shipped : Nine IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate, 02035-5 Digital Battery Passport part 5
-            : 360 rules, 311 of them generated from the vendored official template files
+    Shipped : Ten IDTA templates — 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate, 02035-5 Digital Battery Passport part 5, 02035-1 Digital Battery Passport part 1
+            : 384 rules, 333 of them generated from the vendored official template files
             : The battery passport read against Regulation (EU) 2023/1542 where template and law disagree
             : Machine-readable obligation indexes, joined and published with their coverage stated as a floor
             : Versioned JSON report, exit codes, reproducible single-file build
-    Building : Deeper coverage of the nine templates already supported
+    Building : Deeper coverage of the ten templates already supported
     Planned : Templates chosen by what people bring
             : The rest of the battery obligation index, once a rule can read a battery's category
             : An evidence bundle a reviewer can file — one command, report plus provenance
@@ -327,11 +327,11 @@ finished.
 
 That is what the number promises. What this project asks of itself before it uses the number is longer, and the picture under [Where it stands](#where-it-stands) draws it:
 
-Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02004 Handover Documentation · IDTA 02003 Technical Data · IDTA 02035-2 Digital Battery Passport, part 2 · IDTA 02006 Digital Nameplate · IDTA 02023 Carbon Footprint · IDTA 02002 Contact Information · IDTA 02011 Hierarchical Structures · IDTA 02007 Software Nameplate · IDTA 02035-5 Digital Battery Passport, part 5; Explanation: what is wrong, in one sentence · the evidence as read from the file · a remedy, for every rule · where each rule's requirement lives · the line in the file; Report contract: schemaVersion in every report · a golden report held by a test · exit codes 0, 1, 2 and 64 under test · a field-by-field schema page; Entrances: command line · Python library · single file, nothing to install · GitHub Action · browser, nothing installed; Input safety: read budgets, per file and per run · a security fix ships with an advisory · tests verified against their own mutations · declared encodings read without loss; Upstream: upstream templates pinned by commit · checked for upstream change · one pin move shipped.
+Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02004 Handover Documentation · IDTA 02003 Technical Data · IDTA 02035-2 Digital Battery Passport, part 2 · IDTA 02006 Digital Nameplate · IDTA 02023 Carbon Footprint · IDTA 02002 Contact Information · IDTA 02011 Hierarchical Structures · IDTA 02007 Software Nameplate · IDTA 02035-5 Digital Battery Passport, part 5 · IDTA 02035-1 Digital Battery Passport, part 1; Explanation: what is wrong, in one sentence · the evidence as read from the file · a remedy, for every rule · where each rule's requirement lives · the line in the file; Report contract: schemaVersion in every report · a golden report held by a test · exit codes 0, 1, 2 and 64 under test · a field-by-field schema page; Entrances: command line · Python library · single file, nothing to install · GitHub Action · browser, nothing installed; Input safety: read budgets, per file and per run · a security fix ships with an advisory · tests verified against their own mutations · declared encodings read without loss; Upstream: upstream templates pinned by commit · checked for upstream change · one pin move shipped.
 
 ## When aas-submodel-validate is not the tool
 
-- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the eight it supports.
+- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the ten it supports.
 - **You need a file repaired.** There is no `--fix`. A validator that edits your file has to be trusted twice.
 - **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly. If you have the template file, `--template` judges against it: what a template states, and not the hand-written rules or the recorded readings that come with a pack. The report says the table was yours.
 - **You want a hosted check.** There is none, on purpose.
@@ -394,9 +394,9 @@ even that.
 
 ## What it checks
 
-360 rules, 350 of them across nine IDTA templates — 311 generated from the vendored
+384 rules, 374 of them across ten IDTA templates — 333 generated from the vendored
 official template files (cardinality, element kinds, value types,
-semantic identifiers at every nesting level), 39 hand-written where a
+semantic identifiers at every nesting level), 41 hand-written where a
 template file cannot speak. Of the ten that belong to no template,
 six are about the input itself — how it is packaged, whether it parses,
 and how much of it this reader will take in — and two are about whether
@@ -413,12 +413,13 @@ sources name, so it reports a row only where the file states its own
 category; the rest are counted in the report and left unsaid, because
 saying them without the category would tell one manufacturer to add
 what another's guidance
-forbids. Two of a battery passport's parts have template tables here:
-part 2, which declares 02004's identifier, and part 5, Product
-Condition, since 0.8.0. The battery rules read parts 1, 4 and 5 as well,
-so a package holding only those is judged by them -- `judged 2 of 2`,
-not a `SMT-D1` -- and a part whose identifier nothing here reads is
-reported as not matched, which `--allow-unmatched` turns into a note. X1, X2 and X4 are about the AASX/OPC
+forbids. Three of a battery passport's parts have template tables here:
+part 2, which declares 02004's identifier; part 5, Product Condition,
+since 0.8.0; and part 1, Digital Nameplate, since 0.9.0. The battery
+rules read part 4 as well, which has no table here, so a package holding
+only part 4 is judged -- `judged 1 of 1 submodel`, not a `SMT-D1` -- and a part whose
+identifier nothing here reads is reported as not matched, which
+`--allow-unmatched` turns into a note. X1, X2 and X4 are about the AASX/OPC
 package the submodel arrives in; X3 says a document would not parse,
 packaged or bare; X5 is this reader's own bound on how much it will
 take in, whichever way it arrives; and X6 is whether the path names
@@ -438,6 +439,7 @@ submodel identifier and something had to choose.
 | IDTA 02011 Hierarchical Structures 1.1.1 | 11 | the near-miss lint only (a nested node is judged at any depth, and a relationship's two ends are not read) |
 | IDTA 02007 Software Nameplate 1.0.1 | 73 | the near-miss lint only (every row is read as the template writes it where the specification beside it disagrees: `docs/divergences.md` #57) |
 | IDTA 02035-5 Digital Battery Passport part 5 1.0.2 | 49 | the near-miss lint only (its identifiers are SAMM ones whose version moved with each release; a submodel of an earlier release, alone in its file, is told so: `docs/divergences.md` #58) |
+| IDTA 02035-1 Digital Battery Passport part 1 1.0 | 22 | files that exist in the container; the near-miss lint (identifiers mix IEC CDD, ECLASS, IRI and SAMM; `AddressInformation` is dropped in empty and not looked inside, though its specification requires four address fields in it: `docs/divergences.md` #59) |
 
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and
@@ -470,7 +472,7 @@ a separate `meta` channel (the JSON field is `kind`) — warnings by
 default, folded into one line unless `--show-meta`, `--meta error` to
 promote — and never re-implemented here.
 
-The rule counts (360, 311), the drift figures above and the sample are pinned by the test
+The rule counts (384, 333), the drift figures above and the sample are pinned by the test
 suite and fail the build when they go stale.
 
 **And a template of your own.** `--template FILE` generates a table from

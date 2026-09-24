@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.9.0 — unreleased
+
+**IDTA 02035-1 Digital Nameplate is the tenth template pack.** The
+Digital Battery Passport's part 1 -- the battery's product URI,
+manufacturer and address, serial number, dates of manufacture and of
+putting into service, facility, life-cycle stage, operator and
+manufacturer identifiers, markings, and the documents that declare its
+conformity and prove it by test -- is vendored at 1.0, the only edition
+at the pin, and generates twenty-two rules, `DBP1-E01` to `DBP1-E22`,
+with the near-miss lint `DBP1L1` and `DBP1-D1`, which asks, as every
+pack with a File row does, whether the file a marking names is in the
+package. Its identifiers mix IEC CDD, ECLASS, IRI and SAMM ones, and the
+one its document lists' items carry is an identifier the specification
+never prints, which 02035-2 spells otherwise: items spelled 02035-2's
+way leave both lists reported empty. Its `AddressInformation` is 02002's
+collection dropped in and written empty, so nothing inside it is asked,
+though the specification requires four address fields there. Its
+`Markings` list carries `0112/2///61360_7#AAS006` with no version
+suffix, so a list whose identifier ends `...#001` and that carries
+nothing else the row matches is no row's, and the mandatory `Markings`
+is reported missing. A submodel *named* `BatteryNameplate` that carries
+another identifier is told, as for the other packs, that matching goes
+by semanticId, and `SMT-D1`'s remedy names this template's identifier
+among the ones it lists. Where the template disagrees with itself or
+with its specification, and what that costs a file, is
+`docs/divergences.md` #59.
+
+**What moves: four verdicts in the corpus, and every Battery Nameplate
+submodel that breaks its template.** Measured against 0.8.1 across the
+corpus -- seventy-nine inputs now, the vendored 02035-1 template and a
+Battery Nameplate submodel added -- four are judged differently: the
+battery passports whose Battery Nameplate submodel is empty now draw
+eleven errors for the elements that template makes mandatory, beside the
+four their empty Product Condition has drawn since 0.8.0, and still
+leave by 1, `summary.scopeNotExamined` naming that part's sections as
+well. Outside the corpus, a Battery Nameplate submodel that breaks its
+template -- a mandatory element missing, an element of the wrong kind, a
+`valueType` other than the template's, a marking naming a file the
+package does not hold -- leaves by 1 where it left by 0 when nothing
+else in the file failed, and an element one version suffix or one last
+segment off a row's draws `DBP1L1`, a warning -- but not a `Markings`
+list, whose row's identifier has no suffix to compare.
+`summary.rulesChecked` counts the twenty-four new rules.
+
+It is 384 rules, 333 generated from the vendored official template files,
+across ten template packs. What this reader takes in is unchanged: one
+document at 64 MiB, a container's parts at 64 MiB each and 256 MiB
+together, and a container's directory of names at 16 MiB.
+
 ## 0.8.2 — 2026-09-25
 
 **The scope page says which metamodel edition is read.** This reader

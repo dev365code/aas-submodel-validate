@@ -104,11 +104,12 @@ the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 
-Nine official templates are given rule tables: IDTA 02004 Handover
+Ten official templates are given rule tables: IDTA 02004 Handover
 Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
 part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact
 Information, 02011 Hierarchical Structures, 02007 Software Nameplate,
-and 02035-5 Digital Battery Passport part 5. A submodel of any other template is reported as not
+02035-5 Digital Battery Passport part 5, and 02035-1 Digital Battery
+Passport part 1. A submodel of any other template is reported as not
 matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
@@ -135,7 +136,7 @@ submodel judged against that. What that buys and what it does not:
   your file and is not a published IDTA template. **A verdict against a
   template you supplied is not a statement about conformance to a
   published one.**
-- Where your template claims an identifier one of the nine packs also
+- Where your template claims an identifier one of the ten packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
 - The `TPL-E*` ids such a run uses are **not ids this project
@@ -283,3 +284,25 @@ is a near miss unless the ECLASS identifier thirty-seven of them carry
 beside their own matches it first. `docs/divergences.md` #58 records
 that, a misspelt supplemental identifier the rows match as written, and
 the template's other disagreements with its specification.
+
+IDTA 02035-1 Digital Nameplate 1.0, the Digital Battery Passport's part
+1, names the battery: its product URI, manufacturer, address, serial
+number, dates of manufacture and of putting into service, facility,
+life-cycle stage, operator and manufacturer identifiers, markings, and
+the documents that declare its conformity and prove it by test. Eleven
+of its thirteen top-level elements are mandatory. Its pack is generated
+rows and the question every pack with a File row asks, whether the file
+a marking names is in the package: the product URI is not checked for
+shape, as the Digital Nameplate's is; no date, identifier, life-cycle
+stage or marking is checked for what it says -- the template's own
+example life-cycle stage, `Original`, is outside the list its concept
+description gives; and `AddressInformation` is 02002's collection
+dropped in and written empty, so nothing inside it is asked, though the
+specification's §3.2 requires a street, postcode, town and country code
+there. Its identifiers mix IEC CDD, ECLASS, IRI and SAMM ones; the one
+its two document lists' items carry is an identifier the specification
+never prints, and 02035-2 spells that element differently. Its
+`Markings` list carries `0112/2///61360_7#AAS006` with no version
+suffix, where 02006 writes `#001`: a list whose identifier ends `#001`
+and that carries nothing else the row matches is no row's, and the
+mandatory `Markings` is reported missing (`docs/divergences.md` #59).

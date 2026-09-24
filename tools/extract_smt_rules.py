@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 311 rows is how one of them
+extracted, not hand-written: hand-copying 333 rows is how one of them
 silently goes stale. This sentence's number is pinned against the
 generator's own list of packs, and the README's beside it
 (`tests/test_readme_front.py`) -- pinned because it has been wrong
@@ -167,6 +167,17 @@ PCF_ITEM_NAMES = {
 
 DN_ARBITRARY = ARBITRARY
 
+#: 02035-1's list items: the markings, and the document identifiers of
+#: its two reference lists. The template gives every item an idShort
+#: (`Markings__00__`, `DocumentIdentifier` -- AASd-120), which the
+#: generator takes first, so these name nothing today; they are here so an
+#: upstream repair of that defect renames no row, as for 02035-5's.
+DBP1_ITEM_NAMES = {
+    "Markings": "Marking",
+    "EUDeclarationOfConformity": "DocumentIdentifier",
+    "ResultsOfTestReportsProvingCompliance": "DocumentIdentifier",
+}
+
 #: 02035-5's two list items. The template gives both an idShort
 #: (AASd-120), which the generator takes first, so these name nothing
 #: today; they are here so an upstream repair of that defect renames no
@@ -293,6 +304,19 @@ PACKS = (
         "source": "IDTA 02007-1-0-1_Template_Software Nameplate.json",
         "citation": "IDTA 02007-1-0-1 template",
         "item_names": {},
+        "example_types": (),
+        "skip_sids": ARBITRARY,
+    },
+    # IDTA 02035-1 Digital Nameplate 1.0, the Digital Battery Passport's
+    # part 1: twenty-two elements, each with the `SMT/Cardinality`
+    # qualifier but one. Identifiers mix IEC CDD, ECLASS, IRI and SAMM.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-1/1.0/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/dbp1_tables.py",
+        "prefix": "DBP1-E",
+        "source": "IDTA 02035-1_DBP-Part-1_Digital Nameplate.json",
+        "citation": "IDTA 02035-1 1.0 template",
+        "item_names": DBP1_ITEM_NAMES,
         "example_types": (),
         "skip_sids": ARBITRARY,
     },

@@ -34,8 +34,8 @@ import re
 import pytest
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.rules import battery, battery_tables, dbp5_tables
-from builders import dbp5_env
+from aas_submodel_validate.rules import battery, battery_tables, dbp1_tables, dbp5_tables
+from builders import dbp1_env, dbp5_env
 
 CARBON_FOOTPRINT = "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0"
 #: An element BAT-R8 reads once a category is settled, and where it sits.
@@ -656,7 +656,7 @@ def test_the_divergence_row_counts_the_index_it_cites():
     numbers = re.search(r"indexes (\w+) template editions; this repository "
                         r"vendors (\w+) of those", row[0])
     assert numbers, "row 36 no longer states both counts in a readable shape"
-    words = {"one": 1, "two": 2, "three": 3, "ten": 10, "eleven": 11,
+    words = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "ten": 10, "eleven": 11,
              "twelve": 12, "thirteen": 13}
     assert words[numbers.group(1)] == len(editions)
     assert words[numbers.group(2)] == shared
@@ -841,33 +841,34 @@ def _category_property(value: str) -> dict:
             "value": value}
 
 
-def _conformant_product_condition(carried):
-    """A Product Condition submodel's elements: the four collections the
-    template makes mandatory, and each carried one as the template writes
-    it rather than empty.
+def _conformant(tables, golden_env, carried):
+    """A judged part's elements: what its template makes mandatory at the
+    top, and each carried element as the template writes it rather than
+    empty, both from the pack's golden fixture.
 
-    Product Condition is judged by a template pack since 0.8.0, and a
-    submodel without those four fails there whatever its category. The
-    tests that read a passport's whole report -- that it passes, and the
-    lines the door picture and the front page quote -- would read the
-    pack's errors too; the tests of the conditional rows read BAT-R8's
-    findings alone and pass either way. The carried collections come from
-    the same golden fixture, whole, for the same reason. What an empty
-    Product Condition draws now is `test_detect`'s to hold."""
+    Product Condition is judged by a template pack since 0.8.0 and the
+    Battery Nameplate since 0.9.0, and a submodel without its mandatory
+    elements fails there whatever its category. The tests that read a
+    passport's whole report -- that it passes, and the lines the door
+    picture and the front page quote -- would read the packs' errors too;
+    the tests of the conditional rows read BAT-R8's findings alone and
+    pass either way. What an empty part draws now is `test_detect`'s to
+    hold."""
     golden = {element["semanticId"]["keys"][0]["value"]: element
-              for element in dbp5_env()["submodels"][0]["submodelElements"]}
-    mandatory = [element for element in golden.values()
-                 if element["idShort"] in ("StateOfCharge", "NumberOfFullCycles",
-                                           "InformationOnAccidents", "TemperatureInformation")]
-    return mandatory + [golden.get(element["semanticId"]["keys"][0]["value"], element)
-                        for element in carried]
+              for element in golden_env()["submodels"][0]["submodelElements"]}
+    mandatory = {row["sid"] for row in tables.ROWS
+                 if row["parent"] is None and row["card"][0] >= 1}
+    return ([element for sid, element in golden.items() if sid in mandatory]
+            + [golden.get(element["semanticId"]["keys"][0]["value"], element)
+               for element in carried])
 
 
 def _passport(category=None, carrying=()):
     """Every submodel the conditional rows belong to, holding what
     `carrying` names, and the category the file declares. The Product
-    Condition submodel also holds what its template makes mandatory
-    (`_conformant_product_condition`); the others hold nothing else.
+    Condition and Battery Nameplate submodels also hold what their
+    templates make mandatory (`_conformant`); the other holds nothing
+    else.
 
     Built from the table rather than from a list written here: the rows
     move when the indexes move, and a fixture with the identifiers typed
@@ -883,7 +884,9 @@ def _passport(category=None, carrying=()):
         value = [_collection(row["element_id_short"], row["element_semantic_id"])
                  for row in held if row["element_semantic_id"] in wanted]
         if sid == dbp5_tables.TEMPLATE_SEMANTIC_ID:
-            value = _conformant_product_condition(value)
+            value = _conformant(dbp5_tables, dbp5_env, value)
+        if sid == dbp1_tables.TEMPLATE_SEMANTIC_ID:
+            value = _conformant(dbp1_tables, dbp1_env, value)
         if sid.endswith("TechnicalData/1/0") and category is not None:
             value.append(_collection(
                 "GeneralInformation",

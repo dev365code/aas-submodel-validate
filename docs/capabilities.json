@@ -12,7 +12,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation"
           }
         },
         {
@@ -20,7 +20,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data"
           }
         },
         {
@@ -28,7 +28,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2"
           }
         },
         {
@@ -36,7 +36,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate"
           }
         },
         {
@@ -44,7 +44,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint"
           }
         },
         {
@@ -52,7 +52,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information"
           }
         },
         {
@@ -60,7 +60,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures"
           }
         },
         {
@@ -68,7 +68,7 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate"
           }
         },
         {
@@ -76,11 +76,19 @@
           "done": true,
           "evidence": {
             "file": "docs/scope.md",
-            "says": "Nine official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate, and 02035-5 Digital Battery Passport part 5"
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate, 02035-5 Digital Battery Passport part 5"
+          }
+        },
+        {
+          "text": "IDTA 02035-1 Digital Battery Passport, part 1",
+          "done": true,
+          "evidence": {
+            "file": "docs/scope.md",
+            "says": "Ten official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate, 02035-5 Digital Battery Passport part 5, and 02035-1 Digital Battery Passport part 1"
           }
         }
       ],
-      "now_text": "2002, 03, 04, 06, 07, 11, 23, 35-2, 35-5",
+      "now_text": "2002, 03, 04, 06, 07, 11, 23, 35-1, 35-2, 35-5",
       "target_text": "met"
     },
     {
