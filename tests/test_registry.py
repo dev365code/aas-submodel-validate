@@ -10,6 +10,7 @@ from aas_submodel_validate.model import KINDS, Severity, Violation
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.rules import (
     contact_tables,
+    dbp1_tables,
     dbp5_tables,
     dbp_tables,
     dn_tables,
@@ -186,7 +187,7 @@ MUST_RULES = {
     "DBP2-D2", "DBP2-D3", "DBP2-D4", "DBP2-D7",
     "HD-D2", "HD-D3", "HD-D4", "HD-D7", "HD-D8",
     "SMT-D1", "TD-D1", "TD-D2", "X1", "X2", "X3", "X5", "X6",
-    "DN-D1", "DN-D2", "PCF-D1",
+    "DN-D1", "DN-D2", "PCF-D1", "DBP1-D1",
 }
 SHOULD_RULES = {
     "BAT-R2", "BAT-R8",
@@ -195,7 +196,7 @@ SHOULD_RULES = {
     "TD-D3", "TDL1", "X4",
     # The near-miss lint every pack registers since 0.8.0, 02004's and
     # 02003's by hand before then: SHOULD, as TDL1 has always been.
-    "CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1",
+    "CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1", "DBP1L1",
 }
 MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 
@@ -229,7 +230,7 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #: truncated repr of 87 Rule objects names nothing. Widening the pattern
 #: without moving that assertion would have made the case it was widened
 #: for worse.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI|HS|SN|DBP5)-E\d+$")
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI|HS|SN|DBP5|DBP1)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -243,9 +244,9 @@ def test_every_generated_rule_stops_a_build():
     assert {rule.id for rule in generated} == {
         row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables,
                                 pcf_tables, contact_tables, hs_tables, sn_tables,
-                                dbp5_tables)
+                                dbp5_tables, dbp1_tables)
         for row in tables.ROWS}
-    assert len(generated) == 311
+    assert len(generated) == 333
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -305,6 +306,9 @@ NAMESPACES = {
     r"SNL\d+": "IDTA 02007, informational lints",
     r"DBP5-E\d+": "IDTA 02035-5, generated from the template's rows",
     r"DBP5L\d+": "IDTA 02035-5, informational lints",
+    r"DBP1-E\d+": "IDTA 02035-1, generated from the template's rows",
+    r"DBP1L\d+": "IDTA 02035-1, informational lints",
+    r"DBP1-D\d+": "IDTA 02035-1, what the template file cannot say",
 }
 
 
@@ -373,6 +377,10 @@ REMEDIES = {
         "or correct the value's path. (Declaring an aas-suppl "
         "relationship for it is X4's question, not this one's.)",
     "PCF-D1":
+        "Add the file to the .aasx under the name this File value gives, "
+        "or correct the value's path. (Declaring an aas-suppl "
+        "relationship for it is X4's question, not this one's.)",
+    "DBP1-D1":
         "Add the file to the .aasx under the name this File value gives, "
         "or correct the value's path. (Declaring an aas-suppl "
         "relationship for it is X4's question, not this one's.)",
@@ -514,7 +522,9 @@ REMEDIES = {
         "https://admin-shell.io/idta/SoftwareNameplate/1/0 "
         "for Software Nameplate (IDTA 02007); "
         "urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2"
-        "#ProductCondition for Product Condition (IDTA 02035-5). "
+        "#ProductCondition for Product Condition (IDTA 02035-5); "
+        "https://admin-shell.io/idta/digitalbatterypassport/nameplate/1/0/Nameplate "
+        "for Battery Nameplate (IDTA 02035-1). "
         "If it means a template "
         "this tool has no table for, "
         "leave the identifier alone -- it is doing its job, and this "
@@ -540,7 +550,7 @@ REMEDIES = {
         "Correct the semanticId to the template's spelling; a near-miss "
         "matches nothing, and every rule that would have applied to the "
         "element silently stops applying.",
-    **dict.fromkeys(("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1"),
+    **dict.fromkeys(("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1", "DBP1L1"),
                     "Correct the semanticId to the template's spelling; a near-miss "
                     "matches nothing, and every rule that would have applied to the "
                     "element silently stops applying."),

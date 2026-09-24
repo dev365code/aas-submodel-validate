@@ -22,7 +22,7 @@ import json
 import pytest
 
 from aas_submodel_validate import runner
-from builders import contact_env, dn_env, hs_env, pcf_env, sn_env
+from builders import contact_env, dbp1_env, dn_env, hs_env, pcf_env, sn_env
 
 
 def _find(node, short):
@@ -53,6 +53,8 @@ CASES = [
     ("HSL1", hs_env, "Gearbox", "https://admin-shell.io/idta/HierarchicalStructures/Node/1/0",
      "https://admin-shell.io/idta/HierarchicalStructures/Node/1/1"),
     ("SNL1", sn_env, "URIOfTheProduct", "0173-1#02-AAY811#001", "0173-1#02-AAY811#002"),
+    ("DBP1L1", dbp1_env, "SerialNumber", "0112/2///61987#ABA951#009",
+     "0112/2///61987#ABA951#008"),
 ]
 
 
@@ -142,7 +144,7 @@ def test_every_pack_s_near_miss_lint_is_tdl1_under_another_name():
 
     def shape(rule):
         return (rule.kind, rule.prio, rule.title, rule.spec, rule.fix, rule.path)
-    for lint in ("DNL1", "CIL1", "PCFL1", "HSL1", "SNL1", "DBP5L1"):
+    for lint in ("DNL1", "CIL1", "PCFL1", "HSL1", "SNL1", "DBP5L1", "DBP1L1"):
         assert shape(rules[lint]) == shape(rules["TDL1"]), lint
 
 

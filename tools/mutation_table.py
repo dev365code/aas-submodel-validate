@@ -1509,8 +1509,8 @@ TABLE = [
 
     ("readme/the-elision-is-the-lines-the-run-prints",
      "README.md",
-     "The `…` is six lines: the one that accounts for the `4 info` — the\n",
-     "The `…` is four lines: the one that accounts for the `4 info` — the\n",
+     "The `…` is six lines: the one that accounts for the `3 info` — the\n",
+     "The `…` is four lines: the one that accounts for the `3 info` — the\n",
      ["tests/test_readme_front.py::test_the_anatomy_block_is_what_the_tool_prints"],
      "the sentence under the battery sample said the elided run was four "
      "lines when the tool printed six, and every gate on the block read "
@@ -2058,6 +2058,24 @@ TABLE = [
      "named ProductCondition, it was told only that matching goes by "
      "semanticId"),
 
+    ("detect/the-handover-name-an-author-reaches-for",
+     "src/aas_submodel_validate/rules/detect.py",
+     '"handoverdocumentation")',
+     '"handoverdocumentations")',
+     ["tests/test_detect.py::test_a_submodel_named_but_not_identified_gets_told_why"],
+     "a submodel named HandoverDocumentation that carried another identifier "
+     "was listed as an unknown identifier -- and the test that asked about it "
+     "looked for a word every SMT-D1 detail carries, so it passed"),
+
+    ("detect/the-technical-data-name-an-author-reaches-for",
+     "src/aas_submodel_validate/rules/detect.py",
+     '"technicaldata")',
+     '"technicaldatas")',
+     ["tests/test_detect.py::test_the_name_hint_covers_the_second_template_as_well"],
+     "a submodel named TechnicalData that carried another identifier was "
+     "listed as an unknown identifier, where the other packs' namesakes are "
+     "told the name is not what matches"),
+
     ("dbp5/the-name-an-author-reaches-for",
      "src/aas_submodel_validate/rules/detect.py",
      '"productcondition")',
@@ -2067,6 +2085,25 @@ TABLE = [
      "a submodel named ProductCondition that carried another identifier was "
      "listed as an unknown identifier, where the other packs' namesakes are "
      "told the name is not what matches"),
+
+    ("dbp1/the-name-an-author-reaches-for",
+     "src/aas_submodel_validate/rules/detect.py",
+     '"batterynameplate")',
+     '"batterynameplates")',
+     ["tests/test_generated_rules_dbp1.py::"
+      "test_a_submodel_named_as_the_template_is_told_matching_goes_by_identifier"],
+     "a submodel named BatteryNameplate that carried another identifier was "
+     "listed as an unknown identifier, where the other packs' namesakes are "
+     "told the name is not what matches"),
+
+    ("dbp1/the-pack-registers-its-lint",
+     "src/aas_submodel_validate/rules/dbp1.py",
+     'install_near_miss_lint("DBP1L1", dbp1_tables)\n',
+     "\n",
+     ["tests/test_near_miss_lints.py::"
+      "test_a_drifted_identifier_is_named_by_the_pack_s_lint[DBP1L1]"],
+     "a Battery Nameplate element one version suffix off its row drew no "
+     "finding naming it"),
 
     ("dbp5/the-pack-registers-its-lint",
      "src/aas_submodel_validate/rules/dbp5.py",

@@ -110,6 +110,13 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02007/1.0.1/template.json":
         "published/Software Nameplate/1/0/1/"
         "IDTA 02007-1-0-1_Template_Software Nameplate.json",
+    # 02035-1 is the Digital Battery Passport's part 1, Digital Nameplate,
+    # published once at the pin, at 1.0. Its identifiers mix IEC CDD, ECLASS,
+    # IRI and SAMM ones, and seventeen of its twenty-two elements carry more
+    # beside their own.
+    "src/aas_submodel_validate/data/smt/02035-1/1.0/template.json":
+        "published/Digital Battery Passport/1_Digital Nameplate/1/0/"
+        "IDTA 02035-1_DBP-Part-1_Digital Nameplate.json",
     # 02035-5 is the Digital Battery Passport's part 5, Product Condition,
     # published at 1.0, 1.0.1 and 1.0.2; 1.0.2 is the newest at the pin,
     # and the edition the battery-data layer already reads. Its directory

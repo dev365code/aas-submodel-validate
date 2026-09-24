@@ -83,14 +83,17 @@ def test_a_submodel_named_but_not_identified_gets_told_why(tmp_path):
     document = json.loads(env_json("urn:wrong:id"))
     document["submodels"][0]["idShort"] = "HandoverDocumentation"
     finding = _findings(tmp_path, json.dumps(document).encode())["SMT-D1"]
-    assert "semanticId" in finding.violation.detail
+    # Not "semanticId": the detail without the hint says "semanticId
+    # value(s): ...", so that assertion held with the hint deleted.
+    assert "is *named* HandoverDocumentation" in finding.violation.detail, \
+        finding.violation.detail
 
 
 def test_the_name_hint_covers_the_second_template_as_well(tmp_path):
     document = json.loads(env_json("urn:wrong:id"))
     document["submodels"][0]["idShort"] = "TechnicalData"
     finding = _findings(tmp_path, json.dumps(document).encode())["SMT-D1"]
-    assert "semanticId" in finding.violation.detail
+    assert "is *named* TechnicalData" in finding.violation.detail, finding.violation.detail
 
 
 def test_a_submodel_wearing_our_anchor_in_a_supplemental_is_not_recognised(tmp_path):
@@ -281,7 +284,7 @@ def test_the_vendored_templates_pass_the_tool_that_reads_them(tmp_path):
 
     vendored = sorted((ROOT / "src" / "aas_submodel_validate" / "data"
                        / "smt").rglob("template.json"))
-    assert len(vendored) == 9, vendored
+    assert len(vendored) == 10, vendored
     for template in vendored:
         assert main(["-q", "--allow-unmatched", str(template)]) == EXIT_OK, (
             "%s is the template this project reads its rules out of, and "
@@ -387,8 +390,9 @@ def test_require_all_judged_asks_only_for_what_can_be_given(tmp_path, instances,
 
 def _battery(tmp_path, category="lmt"):
     """A passport of IDTA 02035-1/-4/-5 submodels. The battery rules read
-    all three; 02035-5 has a template table of its own since 0.8.0, and
-    the passport carries what that table makes mandatory."""
+    all three; 02035-5 has a template table of its own since 0.8.0 and
+    02035-1 since 0.9.0, and the passport carries what those tables make
+    mandatory. 02035-4 has none."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from test_battery_rules import _passport
@@ -466,6 +470,53 @@ def test_an_empty_product_condition_fails_its_template_and_nothing_else_moves(tm
         "DBP5-E04", "DBP5-E10", "DBP5-E26", "DBP5-E28"]
     assert ([(f.id, f.violation.subject) for f in passing.findings if f.id == "BAT-R8"]
             == [(f.id, f.violation.subject) for f in failing.findings if f.id == "BAT-R8"])
+
+
+def test_an_empty_battery_nameplate_fails_its_template_and_nothing_else_moves(tmp_path):
+    """The same for the Battery Nameplate, judged by 02035-1's table since
+    0.9.0: an empty one fails for the eleven elements the template makes
+    mandatory, and the battery rules' findings do not move."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from aas_submodel_validate.rules import dbp1_tables
+    from test_battery_rules import _passport
+    conformant = _passport("lmt")
+    empty = copy.deepcopy(conformant)
+    for submodel in empty["submodels"]:
+        if submodel["semanticId"]["keys"][0]["value"] == dbp1_tables.TEMPLATE_SEMANTIC_ID:
+            submodel["submodelElements"] = []
+    reports = []
+    for name, env in (("conformant.json", conformant), ("empty.json", empty)):
+        path = tmp_path / name
+        path.write_text(json.dumps(env), "utf-8")
+        reports.append(runner.run(path))
+    passing, failing = reports
+    assert passing.ok and not failing.ok
+    assert sorted(f.id for f in failing.findings if f.id.startswith("DBP1-")) == [
+        "DBP1-E01", "DBP1-E02", "DBP1-E03", "DBP1-E04", "DBP1-E05", "DBP1-E07",
+        "DBP1-E08", "DBP1-E10", "DBP1-E11", "DBP1-E19", "DBP1-E21"]
+    assert ([(f.id, f.violation.subject) for f in passing.findings if f.id == "BAT-R8"]
+            == [(f.id, f.violation.subject) for f in failing.findings if f.id == "BAT-R8"])
+
+
+def test_a_part_with_no_table_here_is_still_judged(tmp_path):
+    """The front page's example of a file this tool judges without a
+    template table: a package holding only the passport's part 4, which
+    the battery rules read and no table does, is judged -- `judged 1 of 1
+    submodel`, and no `SMT-D1`."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from test_battery_rules import _passport
+    payload = _passport("lmt")
+    payload["submodels"] = [submodel for submodel in payload["submodels"]
+                            if submodel["semanticId"]["keys"][0]["value"].endswith(
+                                "TechnicalData/1/0")]
+    assert len(payload["submodels"]) == 1
+    path = tmp_path / "part4.json"
+    path.write_text(json.dumps(payload), "utf-8")
+    report = runner.run(path)
+    assert "SMT-D1" not in {f.id for f in report.findings}
+    assert render(report).endswith("; judged 1 of 1 submodel"), render(report)
 
 
 def test_a_file_this_tool_judges_nothing_in_still_says_so(tmp_path):
