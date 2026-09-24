@@ -1,6 +1,6 @@
 {
   "product": "aas-submodel-validate",
-  "as_of": "0.7.1",
+  "as_of": "0.8.0",
   "detail": "docs/what-it-catches.md",
   "axes": [
     {

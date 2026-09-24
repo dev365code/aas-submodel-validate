@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.0 — unreleased
+## 0.8.0 — 2026-09-25
 
 **IDTA 02035-5 Product Condition is the ninth template pack.** The
 Digital Battery Passport's part 5 -- energy and capacity throughput,
