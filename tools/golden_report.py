@@ -120,8 +120,8 @@ def report() -> dict:
     child = ("import os, sys; sys.path.insert(0, sys.argv[1]); "
              "import aas_submodel_validate as package; "
              "got = os.path.realpath(package.__file__); "
-             "assert got.startswith(os.path.realpath(sys.argv[1]) + os.sep), "
-             "'this tree was not the package imported: ' + got; "
+             "got.startswith(os.path.realpath(sys.argv[1]) + os.sep) or "
+             "sys.exit('this tree was not the package imported: ' + got); "
              "from aas_submodel_validate.cli import main; sys.exit(main(sys.argv[2:]))")
     with tempfile.TemporaryDirectory() as scratch:
         build(Path(scratch))

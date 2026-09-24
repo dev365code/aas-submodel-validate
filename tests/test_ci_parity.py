@@ -50,7 +50,10 @@ def _check_targets():
 
 
 def _commands_of(target: str):
-    body = re.search(r"^%s:.*?\n((?:\t.*\n|\n)*)" % re.escape(target), MAKEFILE, re.M)
+    # Comment lines are read past, as make reads past them: a comment
+    # between two lines of a recipe stopped this at the first line, and the
+    # golden gate below one was a command make ran and this never saw.
+    body = re.search(r"^%s:.*?\n((?:\t.*\n|#.*\n|\n)*)" % re.escape(target), MAKEFILE, re.M)
     if not body:
         return []
     return [raw.strip().replace("$(PYTHON)", "").strip()

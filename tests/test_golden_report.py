@@ -14,7 +14,13 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
+if not (ROOT / "src" / "aas_submodel_validate").is_dir():
+    pytest.skip("an installed package, not a checkout: the golden report is "
+                "compared against the tree it was written from",
+                allow_module_level=True)
 sys.path.insert(0, str(ROOT / "tools"))
 import golden_report  # noqa: E402
 
@@ -23,6 +29,20 @@ GOLDEN = json.loads((ROOT / "docs" / "golden-report.json").read_text("utf-8"))
 
 def test_the_stored_report_is_the_one_this_tree_produces():
     assert golden_report.main(["--check"]) == 0
+
+
+def test_a_report_from_another_copy_of_the_package_is_refused(tmp_path, monkeypatch):
+    """The child is told which tree to run and asked where the package it
+    imported came from. Pointed at a tree with no package in it, it finds
+    one elsewhere -- an install, or the checkout itself on the path -- or
+    none at all, and either way no report comes back to be compared: a
+    report from another copy was the failure this refusal was written
+    against, and it had no test."""
+    (tmp_path / "src").mkdir()
+    monkeypatch.setattr(golden_report, "ROOT", tmp_path)
+    with pytest.raises(SystemExit) as refused:
+        golden_report.report()
+    assert "gave no report" in str(refused.value), refused.value
 
 
 def test_every_finding_in_it_is_this_projects_own():

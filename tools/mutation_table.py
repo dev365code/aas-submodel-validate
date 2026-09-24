@@ -1574,6 +1574,23 @@ TABLE = [
      "file stored twice, with a reason saying the archive recorded the same "
      "size for each"),
 
+    ("fixability/every-candidate-is-compared",
+     "src/aas_submodel_validate/container.py",
+     "        infos = [self._zip.getinfo(name) for name in names]\n",
+     "        infos = [self._zip.getinfo(name) for name in names[:2]]\n",
+     ["tests/test_severity_and_fixability.py::"
+      "test_one_file_stored_under_two_names_is_nothing_to_choose"],
+     "two copies of one file and a third file under the same name were "
+     "graded one file stored twice, the third never compared"),
+
+    ("golden/a-report-from-another-copy-is-refused",
+     "tools/golden_report.py",
+     '             "got.startswith(os.path.realpath(sys.argv[1]) + os.sep) or "\n',
+     '             "True or "\n',
+     ["tests/test_golden_report.py::test_a_report_from_another_copy_of_the_package_is_refused"],
+     "the golden check ran whichever copy of the package the child imported "
+     "and compared its report, and said nothing of which copy that was"),
+
     ("fixability/an-item-where-its-list-belongs-is-wrapped",
      "src/aas_submodel_validate/rules/engine.py",
      '        return (2, "this element is of the kind the template gives the list\'s "',
@@ -1707,6 +1724,25 @@ TABLE = [
      "two copies drifted alike, the second holding a section the first did "
      "not: charging the group with its first copy's content lost the "
      "second's"),
+
+    ("scope/the-last-copy-of-a-group-is-not-the-only-one",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            for element in elements:\n                for rule_id in _asked_inside(row, element, copied):\n",
+     "            for element in elements[-1:]:\n                for rule_id in _asked_inside(row, element, copied):\n",
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_group_of_drifted_copies_is_charged_what_any_of_them_holds"],
+     "two copies drifted alike, the first holding a section the second did "
+     "not: charging the group with its last copy's content lost the first's"),
+
+    ("scope/a-container-of-the-wrong-kind-is-not-entered",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    if type(element).__name__ != row["kind"]:\n        return _descendant_ids(row)\n',
+     '    if type(element).__name__ != row["kind"] and row["kind"] not in _CONTAINERS:\n        return _descendant_ids(row)\n',
+     ["tests/test_scope_the_run_did_not_examine.py::"
+      "test_a_drifted_container_of_the_wrong_kind_is_charged_as_a_wrong_kind_match"],
+     "a collection wearing a near miss of a list's identifier was entered "
+     "as though it were the list, and charged by what it held rather than "
+     "as the walk charges a collection where a list belongs"),
 
     ("scope/what-only-a-drifted-copy-holds-is-its-loss",
      "src/aas_submodel_validate/rules/engine.py",

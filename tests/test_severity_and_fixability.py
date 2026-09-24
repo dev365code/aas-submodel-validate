@@ -362,6 +362,12 @@ def test_one_file_stored_under_two_names_is_nothing_to_choose(tmp_path):
                           files=[PDF, ("aasx/other/manual.pdf", forged)], name="collided"),
                      "HD-D7")
     assert _grade(collided) == 3, collided
+    # And every candidate is compared, not the first two: two copies of
+    # one file and a third file under the same name is still a choice.
+    third = _only(_run(tmp_path, _with_file_value("/aasx/documents/manual.pdf"), aasx=True,
+                       files=[PDF, ("aasx/other/manual.pdf", PDF[1]),
+                              ("aasx/third/manual.pdf", other)], name="third"), "HD-D7")
+    assert _grade(third) == 3, third
 
 
 def test_an_identifier_one_version_off_is_a_2(tmp_path):

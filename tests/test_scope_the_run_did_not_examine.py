@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from aas_submodel_validate import runner
 from aas_submodel_validate.model import Severity
 
@@ -532,16 +534,37 @@ def _summary_of(tmp_path, environment, name):
     return runner.run(path).as_dict()["summary"]
 
 
-def test_a_group_of_drifted_copies_is_charged_what_any_of_them_holds(tmp_path):
-    """Two copies drifted alike beside the intact list, and only the second
+@pytest.mark.parametrize("holding", [(False, True), (True, False)],
+                         ids=["the-second-holds-it", "the-first-holds-it"])
+def test_a_group_of_drifted_copies_is_charged_what_any_of_them_holds(tmp_path, holding):
+    """Two copies drifted alike beside the intact list, and one of them
     holds a RefersToEntities. They carry one drift between them and are
-    charged once -- with what the second holds, which nothing asked."""
-    environment, _ = _beside_intact([("DocumentVersions2", False),
-                                     ("DocumentVersions3", True)])
+    charged once -- with what that copy holds, which nothing asked. In
+    both orders: a group charged by its first copy alone loses the second
+    one's content, and by its last alone the first one's."""
+    environment, _ = _beside_intact([("DocumentVersions2", holding[0]),
+                                     ("DocumentVersions3", holding[1])])
     summary = _summary_of(tmp_path, environment, "two-copies.json")
     assert summary["rulesNotAsked"] == ["HD-E27"], summary["rulesNotAsked"]
     assert [record["rulesNotAskedHere"] for record in summary["unmatchedElements"]] \
         == [["HD-E27"]], summary["unmatchedElements"]
+
+
+def test_a_drifted_container_of_the_wrong_kind_is_charged_as_a_wrong_kind_match(tmp_path):
+    """The drifted copy is a collection where the template writes a list.
+    Carrying the list's identifier outright it would be judged by its kind
+    and not entered, and charged everything beneath the row; so it is
+    charged that, less what the intact list asked -- not what it holds, as
+    though it had been entered."""
+    environment, document = _beside_intact([("DocumentVersions2", True)])
+    copy = document["value"][-1]
+    copy["modelType"] = "SubmodelElementCollection"
+    del copy["typeValueListElement"]
+    copy["value"][0]["idShort"] = "Version1"
+    summary = _summary_of(tmp_path, environment, "wrong-kind-container.json")
+    assert summary["rulesNotAsked"] == ["HD-E27", "HD-E29", "HD-E31"], summary["rulesNotAsked"]
+    assert [record["subject"].rsplit("/", 1)[-1] for record in summary["unmatchedElements"]] \
+        == ["DocumentVersions2"], summary["unmatchedElements"]
 
 
 def test_an_item_matched_by_its_kind_is_followed_as_the_walk_follows_it(tmp_path):
