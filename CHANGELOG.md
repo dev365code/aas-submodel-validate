@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.1 — unreleased
+## 0.8.1 — 2026-09-25
 
 **A tie goes to the row nothing matched.** A near miss is taken for the
 nearest row, and where two rows were as near, the first in the table was
