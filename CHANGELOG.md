@@ -73,12 +73,14 @@ template -- clean before -- now draws those findings and leaves by 1. A
 copy the template writes with content of its own is judged as written, a
 copy it makes mandatory -- which no finite file could satisfy -- is judged
 as optional and said in a note, and a repeat through another element (a
-node, a list, a node) is not followed. The note that remains is for a copy
-the walk did not reach inside an occurrence it judged -- in a container no
-row describes, or beneath a copy of the wrong kind. A node the file puts
-at the submodel's root is not counted in it, being an element no row
-describes and as silent as any other, and neither is one under an entry
-node the run could not place, which `scopeNotExamined` already names.
+node, a list, a node) is not followed. The note that remains counts the
+elements carrying the copied identifier that the walk did not reach inside
+an element it judged -- in a container no row describes, beneath a copy of
+the wrong kind, or beneath a node whose identifier drifted -- and names
+every identifier it counted. A node the file puts at the submodel's root
+is not counted, being an element no row describes and as silent as any
+other, and neither is one inside an entry node the run could not place,
+which `scopeNotExamined` already names.
 
 **IDTA 02007 Software Nameplate is the eighth.** A submodel of it was
 reported as not matched (`SMT-D1`) and left by 1; it is judged now against
@@ -90,11 +92,15 @@ beneath one of them, so a submodel holding neither leaves by 0 as well.
 The rows are the template's, and where the specification beside it
 disagrees they are still the template's (`docs/divergences.md` #57): a
 file that spells the two collections as the specification's tables do
-has neither examined, which `scopeNotExamined` says, and one that gives
-`ConfigurationURI` the identifier the specification prints is told its
-`ConfigurationURI` is missing, because the template gives that element
-its parent's identifier. Its `Contact` is 02002's collection copied in,
-and carries that template's recorded identifier defects with it (#51).
+has neither examined, which `scopeNotExamined` says, and draws no
+finding; inside collections spelled the template's way, a
+`ConfigurationURI` carrying the identifier the specification prints is
+told it is missing, because the template gives that element its parent's
+identifier. Its `Contact` is 02002's collection copied in, and carries
+that template's recorded identifier defects with it (#51). `SMT-D1`'s
+remedy names the new template too, and a submodel *named*
+`SoftwareNameplate` that carries some other identifier is now told that
+matching goes by identifier rather than by name.
 
 It is 305 rules, 262 generated from the vendored official template files,
 across eight template packs. What this reader takes in is

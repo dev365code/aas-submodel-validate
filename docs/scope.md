@@ -232,16 +232,20 @@ leaves unchecked: twenty-nine of its seventy-three rows are
 Nameplate's hand rule and not this template's; no version, date,
 checksum or path is checked for what it says; and the specification's
 instruction that a contact's role be the technical-contact code is not a
-rule here. Its `Contact` is 02002's collection copied in, and draws what
-02002's pack draws, drifts included.
+rule here. Its `Contact` is 02002's collection copied in, but with 02002
+1.0's identifier for `IPCommunication` rather than 1.0.1's, so the same
+collection is not judged the same way under the two packs
+(`docs/divergences.md` #51).
 
 The rows are the template's, and the specification beside it disagrees
 with the template in several places: the two collections' own
 identifiers, `ConfigurationURI`'s identifier, `ConfigurationType`'s value
 type, whether `InstallationDate` is mandatory, how many `InventoryTag`s
-and `Contact`s there may be, and two elements the specification's diagram
-makes a `Blob`. So a file built to the specification's tables rather
-than to the template can have both of its collections left unexamined --
-which `scopeNotExamined` says -- or draw an error the template's own
-defect put there. `docs/divergences.md` #57 lists each one and what the
+and `Contact`s there may be, two elements the specification makes a
+`Blob`, and a second identifier for `SerialNumber`. A file built to the
+specification's tables rather than to the template has both of its
+collections left unexamined, which `scopeNotExamined` says, and draws no
+finding; one that follows the template's collections and the
+specification inside them can draw an error the template's own defect
+put there. `docs/divergences.md` #57 lists each one and what the
 run does with it.

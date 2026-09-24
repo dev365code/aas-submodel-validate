@@ -2226,7 +2226,7 @@ def test_a_template_that_contains_itself_is_judged_at_every_depth(tmp_path):
     assert missing == ["H/Node/Node2", "H/Node/Node2/Node3"], (
         missing, [(f.id, f.violation.subject, f.violation.message)
                   for f in report.findings])
-    assert not [n for n in report.notes if "nested cop" in n], report.notes
+    assert not [n for n in report.notes if "contains itself" in n], report.notes
 
 
 def _tree_template(tmp_path, inner, name="tree-tpl.json"):
@@ -2340,10 +2340,57 @@ def test_a_copy_below_a_copy_the_walk_missed_is_counted_too(tmp_path):
                                   {"type": "GlobalReference", "value": "urn:test:node"}]},
                               "value": []})
     document.write_text(json.dumps(data), "utf-8")
-    note = next(n for n in runner.run(document, template=template).notes if "nested cop" in n)
-    assert "2 nested copies" in note, note
+    note = next(n for n in runner.run(document, template=template).notes
+                if "contains itself" in n)
+    assert "2 elements carrying" in note, note
     assert "H/Node/Nodes/[0]/Deep" in note, note
     assert "urn:test:node" in note, note
+
+
+def test_a_note_about_two_self_containing_elements_names_both(tmp_path):
+    """A template in which `A` and `B` each contain themselves, and a file
+    putting a copy of each where no row describes it. The note counted two
+    and named one identifier -- the first in path order, `B`'s -- so the
+    copy of `A` was reported as a copy of `B`."""
+    def sid(value):
+        return {"type": "ExternalReference",
+                "keys": [{"type": "GlobalReference", "value": value}]}
+
+    def card(value):
+        return {"semanticId": sid("https://admin-shell.io/SubmodelTemplates/"
+                                  "Cardinality/1/0"),
+                "type": "SMT/Cardinality", "valueType": "xs:string", "value": value}
+
+    def smc(short, identifier, value, bound=None):
+        out = {"modelType": "SubmodelElementCollection", "idShort": short, "value": value}
+        if identifier:
+            out["semanticId"] = sid(identifier)
+        if bound:
+            out["qualifiers"] = [card(bound)]
+        return out
+
+    template = tmp_path / "two-tpl.json"
+    template.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:two", "idShort": "H", "kind": "Template",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [smc("A", "urn:test:a", [
+            smc("A", "urn:test:a", [], "ZeroToMany"),
+            smc("B", "urn:test:b", [smc("B", "urn:test:b", [], "ZeroToMany")],
+                "ZeroToOne")], "One")]}]}).encode("utf-8"))
+    inner = [{"modelType": "Property", "idShort": "Note", "valueType": "xs:string",
+              "value": "x", "semanticId": sid("urn:test:note")}]
+    document = tmp_path / "two.json"
+    document.write_bytes(json.dumps({"submodels": [{
+        "modelType": "Submodel", "id": "urn:test:d", "idShort": "H",
+        "semanticId": sid("urn:test:top"),
+        "submodelElements": [smc("A", "urn:test:a", [
+            smc("BoxA", None, [smc("Ax", "urn:test:a", inner)]),
+            smc("B", "urn:test:b", [smc("BoxB", None, [smc("Bx", "urn:test:b", inner)])])
+        ])]}]}).encode("utf-8"))
+    [note] = [n for n in runner.run(document, template=template).notes
+              if "contain themselves" in n]
+    assert "(urn:test:a, urn:test:b)" in note, note
+    assert "did not reach 2 elements carrying those identifiers" in note, note
 
 
 def _self_containing_list(tmp_path, copies=3):
@@ -2419,7 +2466,7 @@ def test_nested_copies_with_no_name_of_their_own_are_counted_apart(tmp_path):
     document, template = _self_containing_list(tmp_path)
     report = runner.run(document, template=template)
     said = " ".join(report.notes)
-    assert "3 nested copies" in said, said
+    assert "3 elements carrying" in said, said
     for where in ("H/Node/Nodes/[0]", "H/Node/Nodes/[1]", "H/Node/Nodes/[2]"):
         assert where in said, (where, said)
 
@@ -2439,8 +2486,8 @@ def test_a_note_names_the_first_few_copies_and_counts_all_of_them(tmp_path):
     """
     document, template = _self_containing_list(tmp_path, copies=5)
     report = runner.run(document, template=template)
-    note = next(n for n in report.notes if "nested cop" in n)
-    assert "5 nested copies" in note, note
+    note = next(n for n in report.notes if "contains itself" in n)
+    assert "5 elements carrying" in note, note
     named = re.findall(r"H/Node/Nodes/\[\d+\]", note)
     assert len(named) == 3, (
         "the note named %d of five copies; the bound is three and the "
@@ -2455,8 +2502,8 @@ def test_a_note_names_the_first_few_copies_and_counts_all_of_them(tmp_path):
     # invisible below ten.
     document, template = _self_containing_list(tmp_path, copies=12)
     note = next(n for n in runner.run(document, template=template).notes
-                if "nested cop" in n)
-    assert "12 nested copies" in note, note
+                if "contains itself" in n)
+    assert "12 elements carrying" in note, note
     assert re.findall(r"H/Node/Nodes/\[(\d+)\]", note) == ["0", "1", "2"], note
 
 

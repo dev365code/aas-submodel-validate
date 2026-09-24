@@ -573,19 +573,28 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
         # Not "you supplied": 02011 is vendored and self-containing, and
         # not "the outermost occurrence": a copy where the template puts
         # one is judged at any depth now (#48). What is left for this note
-        # is a copy the walk did not reach inside an occurrence it judged
-        # -- in a container no row describes, or beneath a copy of the
-        # wrong kind. Not "sitting elsewhere" either: what that counted
-        # was every element carrying the identifier, and a Node at the
-        # submodel's root, or under an entry node the run could not place,
-        # is neither nested nor unsaid (`_copies_not_reached`).
+        # is an element carrying the identifier that the walk did not
+        # reach inside an element it judged -- in a container no row
+        # describes, beneath a copy of the wrong kind or one whose
+        # identifier drifted. Not "nested copies sitting elsewhere": a
+        # Node at the submodel's root is neither and is not counted, being
+        # an element no row describes and silent like any other (#19), and
+        # one inside an entry node the run could not place is in a place
+        # `scopeNotExamined` names (`_copies_not_reached`). Every
+        # identifier counted is named: a template can hold two elements
+        # that contain themselves, and naming the first one's alone put
+        # the other's copies under it.
+        identifiers = sorted({value for _, value in repeats})
         report.notes.append(
-            "a template here describes an element that contains itself "
-            "(%s); this reader judges a copy where the template puts one, "
-            "and did not reach %d nested cop%s inside an occurrence it "
-            "judged (%s). Nothing here is a statement about what they hold."
-            % (repeats[0][1], len(repeats),
-               "y" if len(repeats) == 1 else "ies",
+            "a template here describes %s (%s); this reader judges a copy "
+            "wherever the template puts one, and did not reach %d element%s "
+            "carrying %s, inside ones it judged (%s). Nothing here is a "
+            "statement about what they hold."
+            % ("an element that contains itself" if len(identifiers) == 1
+               else "elements that contain themselves",
+               ", ".join(identifiers), len(repeats),
+               "" if len(repeats) == 1 else "s",
+               "that identifier" if len(identifiers) == 1 else "those identifiers",
                ", ".join(subject for subject, _ in named)
                + ("" if len(named) == len(repeats) else ", and more")))
     report.findings.extend(_meta_findings(loaded, strict_meta))

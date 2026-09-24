@@ -149,9 +149,10 @@ def test_what_the_walk_could_not_reach_in_a_bill_is_said(tmp_path):
     assert [f.violation.subject.rsplit("/", 1)[-1] for f in report.findings
             if f.id == "HS-E03"] == ["Bolt"]
     assert not [f for f in report.findings if f.id == "HS-E07"]
-    [note] = [n for n in report.notes if "nested cop" in n]
+    [note] = [n for n in report.notes if "contains itself" in n]
     assert "Shaft/Bolt/Washer" in note and "Shaft/Bolt," not in note, note
     assert "Shaft/Bolt)" not in note, note
+    assert "did not reach 1 element carrying that identifier, inside ones it judged" in note, note
 
 
 def _stray(name, inside=()):
@@ -185,8 +186,56 @@ def test_nodes_under_an_entry_the_run_could_not_place_are_said_once(tmp_path):
     keys = _entry(env)["semanticId"]["keys"]
     keys[0]["value"] = keys[0]["value"].replace("EntryNode", "EntryNod")
     report = _run(tmp_path, env)
-    assert not [n for n in report.notes if "nested cop" in n], report.notes
+    assert not [n for n in report.notes if "contains itself" in n], report.notes
     [place] = report.as_dict()["summary"]["scopeNotExamined"]
     assert place["label"] == "EntryNode", place
     assert [e["subject"] for e in place["unclaimedHere"]] == [
         "HierarchicalStructures/EntryNode"], place
+
+
+def _box(inside):
+    return {"idShort": "Box", "modelType": "SubmodelElementCollection", "value": [inside]}
+
+
+def test_a_node_in_a_container_the_entry_holds_is_counted(tmp_path):
+    """A collection no row describes, directly inside the entry node,
+    holding a Node that holds a Node. The entry node is judged, so the two
+    Nodes the walk never reached are the reach of the check, and the note
+    names both. Counting only copies inside a judged *Node* left them
+    unsaid -- the entry node carries another identifier -- while the same
+    collection one level down, inside the gearbox, was counted."""
+    env = copy.deepcopy(hs_env())
+    _entry(env)["statements"].append(_box(_stray("Pin", [_stray("Tip")])))
+    [note] = [n for n in _run(tmp_path, env).notes if "contains itself" in n]
+    assert "did not reach 2 elements carrying that identifier" in note, note
+    assert "EntryNode/Box/Pin, " in note and "EntryNode/Box/Pin/Tip)" in note, note
+
+
+def test_a_node_under_a_node_whose_identifier_drifted_is_counted(tmp_path):
+    """The gearbox's identifier drifts, so the walk claims it for no row and
+    never enters it; the shaft inside it is a Node the run did not judge,
+    inside an entry node it did. A drifted first-level node draws nothing
+    of its own in a pack with no near-miss lint (#23), so this note is the
+    one place the shaft is said."""
+    env = copy.deepcopy(hs_env())
+    _named(_entry(env)["statements"], "Gearbox")["semanticId"] = _sid(HS + "Node/1/1")
+    [note] = [n for n in _run(tmp_path, env).notes if "contains itself" in n]
+    assert "did not reach 1 element carrying that identifier" in note, note
+    assert "EntryNode/Gearbox/Shaft)" in note, note
+
+
+def test_a_stray_at_the_root_does_not_change_what_the_bill_is_told(tmp_path):
+    """A Node at the root beside a collection wearing Node's identifier deep
+    in the bill: the washer inside that collection is counted and the stray
+    is not. Each path carries its own answer to "did the run judge
+    something above here" -- kept for a level instead, the entry node's
+    answer stood for the stray beside it."""
+    env = copy.deepcopy(hs_env())
+    shaft = _named(_named(_entry(env)["statements"], "Gearbox")["statements"], "Shaft")
+    shaft["statements"].append({"idShort": "Bolt", "modelType": "SubmodelElementCollection",
+                                "semanticId": _sid(HS + "Node/1/0"),
+                                "value": [_stray("Washer")]})
+    env["submodels"][0]["submodelElements"].append(_stray("Stray"))
+    [note] = [n for n in _run(tmp_path, env).notes if "contains itself" in n]
+    assert "did not reach 1 element carrying that identifier" in note, note
+    assert "Shaft/Bolt/Washer)" in note and "Stray" not in note, note

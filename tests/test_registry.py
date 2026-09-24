@@ -929,7 +929,7 @@ NON_CONTAINER_FORMS = ("environment-json", "environment-xml", "submodel-json")
 def _one_row_per_cardinality():
     """One generated row per cardinality the tables use.
 
-    The 189 generated remedies are written by `tools/extract_smt_rules.py`
+    The generated remedies are written by `tools/extract_smt_rules.py`
     from four sentence shapes, and none of them was held by anything: the
     byte-compare gate holds table-against-generator, not
     sentence-against-decision, so editing the generator's wording and

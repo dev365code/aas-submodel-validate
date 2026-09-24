@@ -1617,8 +1617,8 @@ TABLE = [
 
     ('hs/a-copy-the-walk-reached-is-not-reported-missed',
      'src/aas_submodel_validate/rules/engine.py',
-     '            if judged and id(child) not in reached:\n',
-     '            if judged:\n',
+     '            if carried and judged and not claimed:\n',
+     '            if carried and judged:\n',
      ['tests/test_generated_rules_hs.py::test_a_defect_below_the_template_is_judged_where_it_is'],
      'every nested copy is found by the same walk that names the ones it did not reach; without the reached set the note says the run did not look inside copies it has just judged'),
 
@@ -1631,8 +1631,8 @@ TABLE = [
 
     ('hs/a-copy-below-a-missed-copy-is-counted',
      'src/aas_submodel_validate/rules/engine.py',
-     '                found.append((here, judged[0]))\n',
-     '                found.append((here, judged[0]))\n                continue\n',
+     '                found.append((here, sorted(carried)[0]))\n',
+     '                found.append((here, sorted(carried)[0]))\n                continue\n',
      ['tests/test_a_template_a_caller_supplied.py::test_a_copy_below_a_copy_the_walk_missed_is_counted_too'],
      'a copy the walk did not reach hides the copies inside it from the walk too; counting only the first of a chain reported one copy of two'),
 
@@ -1643,23 +1643,34 @@ TABLE = [
      ['tests/test_generated_rules_hs.py::test_what_the_walk_could_not_reach_in_a_bill_is_said'],
      "a node inside a collection wearing Node's identifier three levels down is reached by nothing, and what it carries went unjudged with nothing said"),
 
-    ('hs/a-node-nested-in-nothing-is-no-copy',
+    ('hs/a-node-inside-nothing-judged-is-not-counted',
      'src/aas_submodel_validate/rules/engine.py',
-     '            judged = sorted(value for value in carried if outermost.get(value))\n',
-     '            judged = sorted(value for value in carried if outermost.get(value, True))\n',
+     '    stack = [(elements, root, False)]\n',
+     '    stack = [(elements, root, True)]\n',
      ['tests/test_generated_rules_hs.py::test_a_node_beside_the_entry_is_not_a_nested_copy',
       'tests/test_generated_rules_hs.py::test_nodes_under_an_entry_the_run_could_not_place_are_said_once'],
      "a Node at the submodel's root, and the first-level Nodes under a drifted entry node, were "
-     "called nested copies: neither is nested, and the second is the place scopeNotExamined names"),
+     "called nested copies: the first is an element no row describes, and the second is the place "
+     "scopeNotExamined names"),
 
-    ('hs/a-copy-counts-inside-a-judged-occurrence-only',
+    ('hs/a-node-in-a-box-in-the-entry-is-counted',
      'src/aas_submodel_validate/rules/engine.py',
-     '            judged = sorted(value for value in carried if outermost.get(value))\n',
-     '            judged = sorted(value for value in carried if value in outermost)\n',
-     ['tests/test_generated_rules_hs.py::test_a_node_beside_the_entry_is_not_a_nested_copy',
-      'tests/test_generated_rules_hs.py::test_nodes_under_an_entry_the_run_could_not_place_are_said_once'],
-     "a Node inside a Node no row claimed -- at the submodel's root, or under an entry node the run "
-     "could not place -- was counted as a copy the run missed inside a hierarchy it never judged"),
+     '            stack.append((_sub_elements(child), here, judged or claimed))\n',
+     '            stack.append((_sub_elements(child), here, judged or (claimed and bool(carried))))\n',
+     ['tests/test_generated_rules_hs.py::test_a_node_in_a_container_the_entry_holds_is_counted',
+      'tests/test_generated_rules_hs.py::test_a_node_under_a_node_whose_identifier_drifted_is_counted'],
+     "a Node in a collection no row describes was counted inside a judged Node and not directly "
+     "inside the judged entry node, which carries another identifier -- the same container, told "
+     "apart by where it sat"),
+
+    ('hs/one-sibling-s-reach-is-not-another-s',
+     'src/aas_submodel_validate/rules/engine.py',
+     '            stack.append((_sub_elements(child), here, judged or claimed))\n',
+     '            judged = judged or claimed\n'
+     '            stack.append((_sub_elements(child), here, judged))\n',
+     ['tests/test_generated_rules_hs.py::test_a_stray_at_the_root_does_not_change_what_the_bill_is_told'],
+     "a flag kept for a level rather than a path let the entry node's reach stand for the stray Node "
+     "beside it at the root, which was then counted as a copy the run had missed"),
 
     ('tablegen/a-copy-reads-its-own-cardinality',
      'src/aas_submodel_validate/tablegen.py',

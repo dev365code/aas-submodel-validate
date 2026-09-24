@@ -194,6 +194,33 @@ def test_a_second_contact_draws_nothing(tmp_path):
     assert set(_ids(tmp_path, env)) == set()
 
 
+def test_the_specification_s_idshorts_cost_only_the_name_a_remedy_uses(tmp_path):
+    """The tables say the collections' idShorts "shall always be as stated":
+    `SoftwareNameplate_Type` and `SoftwareNameplate_Instance`. idShorts are
+    not matched (#1), so a file using them is judged exactly as the golden
+    one, and a remedy says where to put a missing element in the
+    template's spelling."""
+    env = copy.deepcopy(sn_env())
+    kind, instance = env["submodels"][0]["submodelElements"]
+    kind["idShort"], instance["idShort"] = "SoftwareNameplate_Type", "SoftwareNameplate_Instance"
+    assert set(_ids(tmp_path, env)) == set()
+    kind["value"] = [child for child in kind["value"] if child.get("idShort") != "Version"]
+    [finding] = [f for f in _run(tmp_path, env).findings if f.id == "SN-E09"]
+    assert finding.violation.subject.endswith("/SoftwareNameplate_Type"), finding.violation.subject
+    assert "under SoftwareNameplateType" in finding.rule.fix
+
+
+def test_a_serial_number_under_the_specification_s_second_identifier_is_not_asked(tmp_path):
+    """Table 3 gives `SerialNumber` a second identifier in parentheses,
+    `0112/2///61987#ABA951#007`, which the template does not carry. An
+    element identified by it alone matches no row, and the row being
+    optional, nothing asks for one."""
+    env = copy.deepcopy(sn_env())
+    serial = _named(_instance(env)["value"], "SerialNumber")
+    serial["semanticId"]["keys"][0]["value"] = "0112/2///61987#ABA951#007"
+    assert set(_ids(tmp_path, env)) == set()
+
+
 def test_an_ip_communication_with_the_contact_template_s_newer_identifier_is_not_asked(
         tmp_path):
     """`Contact` is 02002's collection copied in, with 02002 1.0's

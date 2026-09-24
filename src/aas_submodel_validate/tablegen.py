@@ -20,7 +20,7 @@ source it renders, and the `--check` that proves a table matches its
 generator byte for byte. Those are build-time and belong to the build.
 
 The functions below are the ones that were here, unchanged, so that the
-seven vendored tables regenerate to the same bytes. The one difference is
+vendored tables regenerate to the same bytes. The one difference is
 `DuplicateLabel`: the generator used to raise `SystemExit` with a
 sentence, which is a build tool's way of leaving by 1, and a run-time
 caller owes 2 — "could not judge the input" — instead. The exception
