@@ -323,11 +323,15 @@ def install_near_miss_lint(rule_id: str, tables):
 
     Five packs never asked it. In them an identifier one version suffix or
     one last segment off took rows out of the run with nothing among the
-    findings naming the element that did it: the one trace was a record in
-    `summary.unmatchedElements`, which a pipeline reading findings never
-    sees, and a drifted element with no rows beneath its own -- a
-    property, a file -- left not even that (`docs/divergences.md` #23). Same title, clause and remedy as `TDL1`,
-    so the finding reads alike whichever pack drew it."""
+    findings naming the element that did it: what did was in `summary`
+    -- a record in `unmatchedElements`, and `scopeNotExamined` where its
+    row went unentered -- which a pipeline reading findings never sees,
+    and a drifted element that left nothing unasked -- a property or a
+    file, with no rows beneath it, or a container beside an intact
+    sibling that had asked its rows -- left not even that
+    (`docs/divergences.md` #23).
+    Same title, clause and remedy as `TDL1`, so the finding reads alike
+    whichever pack drew it."""
     from ..registry import rule
 
     @rule(rule_id, kind="lint", prio="SHOULD",
@@ -1322,12 +1326,22 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         subject = _subject(path, element, index, shared)
         unplaced.setdefault(type(element).__name__, []).append(
             (subject, _identifier(element)))
+        # The nearest row, and the first of the nearest. The first row
+        # near enough used to win, and a pack whose sibling rows share a
+        # stem and differ by a few letters named the wrong one: 02007's
+        # `InstallationPaths` is one edit from `InstallationPath` and
+        # three from `InstallationDate`, which comes first, so the lint
+        # told the file to become the date it already carried -- and the
+        # file that followed it drew two errors.
+        nearest = None
         for row in rows:
-            near = _near_miss(candidates, row["match"])
-            if near:
-                result["near_misses"].append((subject,) + near)
-                near_here.append((subject, near[0], near[1], row, element))
-                break
+            near = _nearness(candidates, row["match"])
+            if near and (nearest is None or near[0] < nearest[0][0]):
+                nearest = (near, row)
+        if nearest:
+            (_distance, seen, expected), row = nearest
+            result["near_misses"].append((subject, seen, expected))
+            near_here.append((subject, seen, expected, row, element))
 
     # What each "too few" finding here would take to repair, now that the
     # scope is known. An element no row claimed that nearly carries the
@@ -1495,29 +1509,51 @@ def _near_miss(candidates, match_values):
     segment. Similarity is bounded (a small edit
     distance) so a genuine singular/plural typo is caught while an
     unrelated neighbour that merely shares a directory is not."""
+    near = _nearness(candidates, match_values)
+    return near[1:] if near else None
+
+
+def _nearness(candidates, match_values):
+    """`_near_miss`'s answer with how near it is, as (distance, seen,
+    expected) for the nearest pair and the first of the nearest: a
+    version drift is 0, an IRI's last segment its edit distance. None
+    when no pair is near."""
+    nearest = None
     for seen in sorted(candidates):
         for expected in match_values:
-            seen_stem, expected_stem = version_stem(seen), version_stem(expected)
-            if seen_stem and seen_stem == expected_stem and seen != expected:
-                return (seen, expected)
-            # The same element of the same SAMM namespace at another
-            # version: 02035-5 moved every identifier's version with each
-            # bugfix release, so a file written to the release before is
-            # this, element for element.
-            seen_samm = samm_stem(seen)
-            if seen_samm and seen_samm == samm_stem(expected) and seen != expected:
-                return (seen, expected)
-            if "://" in seen and "://" in expected and seen != expected:
-                seen_head, _, seen_tail = seen.rstrip("/").rpartition("/")
-                exp_head, _, exp_tail = expected.rstrip("/").rpartition("/")
-                # Counted as far as the bound. `edit_distance` stops at
-                # `cap` and answers `cap + 1`, and at its default of 6 a
-                # bound of 7 or more -- a last segment of 28 characters --
-                # was met by any pair at all (docs/divergences.md #43).
-                bound = max(3, len(exp_tail) // 4)
-                if (seen_head and seen_head == exp_head
-                        and edit_distance(seen_tail, exp_tail, cap=bound) <= bound):
-                    return (seen, expected)
+            distance = _distance(seen, expected)
+            if distance is not None and (nearest is None or distance < nearest[0]):
+                nearest = (distance, seen, expected)
+    return nearest
+
+
+def _distance(seen, expected):
+    """How far `seen` is from `expected` as a near miss, or None when it is
+    not one."""
+    if seen == expected:
+        return None
+    seen_stem = version_stem(seen)
+    if seen_stem and seen_stem == version_stem(expected):
+        return 0
+    # The same element of the same SAMM namespace at another version:
+    # 02035-5 moved every identifier's version with each bugfix release,
+    # so a file written to the release before is this, element for
+    # element.
+    seen_samm = samm_stem(seen)
+    if seen_samm and seen_samm == samm_stem(expected):
+        return 0
+    if "://" in seen and "://" in expected:
+        seen_head, _, seen_tail = seen.rstrip("/").rpartition("/")
+        exp_head, _, exp_tail = expected.rstrip("/").rpartition("/")
+        # Counted as far as the bound. `edit_distance` stops at `cap` and
+        # answers `cap + 1`, and at its default of 6 a bound of 7 or more
+        # -- a last segment of 28 characters -- was met by any pair at all
+        # (docs/divergences.md #43).
+        bound = max(3, len(exp_tail) // 4)
+        if seen_head and seen_head == exp_head:
+            distance = edit_distance(seen_tail, exp_tail, cap=bound)
+            if distance <= bound:
+                return distance
     return None
 
 

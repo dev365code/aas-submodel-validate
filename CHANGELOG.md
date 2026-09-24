@@ -8,15 +8,26 @@ and 02003's packs have registered a near-miss lint (`HDL2`, `TDL1`, and
 Nameplate, Contact Information, Carbon Footprint, Hierarchical Structures
 or Software Nameplate submodel, an element whose identifier was one
 version suffix or one last segment off matched no row and took the rows
-beneath it out of the run, and the only trace naming it was a record in
-`summary.unmatchedElements` -- no finding named it -- and there was none
-at all where the drifted element had no rows beneath its own, as a
-property or a file has none. Each now registers the same lint, `DNL1`,
-`CIL1`, `PCFL1`, `HSL1` and `SNL1`, with the same title, clause and
-remedy as `TDL1`: a SHOULD, reported as a warning.
+beneath it out of the run, and no finding named it. What did was in
+`summary` -- a record in `unmatchedElements`, and `scopeNotExamined`
+naming what sat where a row went unentered -- and nothing at all did
+where the drift left nothing unasked: a property or a file, with no rows
+beneath it, or a container beside an intact sibling that had asked its
+rows. Each now registers the same lint, `DNL1`, `CIL1`, `PCFL1`, `HSL1`
+and `SNL1`, with the same title, clause and remedy as `TDL1`: a SHOULD,
+reported as a warning.
 
-**What moves: one verdict in the corpus, and every such drift in five
-packs.** Measured against 0.7.0 across the corpus, one of the
+And the row a near miss is named against is the nearest one, the first
+of the nearest breaking a tie. It was the first row near enough, and
+where sibling rows share a stem and differ by a few letters that named
+the wrong one: 02007's `InstallationPath` written `InstallationPaths` is
+one edit from its row and three from `InstallationDate`, which comes
+first, so `SNL1` said the template has `InstallationDate` there, and a
+file that followed its remedy drew two errors. The rows a drift is
+charged in `rulesNotAsked` and `unmatchedElements` follow the same row.
+
+**What moves: one verdict in the corpus, and drifts of that kind in five
+packs.** Measured against 0.7.1 across the corpus, one of the
 seventy-four inputs is judged differently: a Software Nameplate whose
 `ConfigurationURI` carries the identifier its specification prints now
 draws `SNL1` beside `SN-E35` and still leaves by 1. The lint's remedy,

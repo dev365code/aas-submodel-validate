@@ -663,8 +663,8 @@ TABLE = [
 
     ("rules/the-near-miss-bound-is-counted-to-itself",
      "src/aas_submodel_validate/rules/engine.py",
-     "edit_distance(seen_tail, exp_tail, cap=bound) <= bound",
-     "edit_distance(seen_tail, exp_tail) <= bound",
+     "distance = edit_distance(seen_tail, exp_tail, cap=bound)",
+     "distance = edit_distance(seen_tail, exp_tail)",
      ["tests/test_engine_regressions.py::"
       "test_the_near_miss_bound_holds_at_both_edges"],
      "`edit_distance` stops counting at its cap and answers cap + 1. Left "
@@ -1695,10 +1695,39 @@ TABLE = [
      "one that reports nothing, and a drifted identifier is again named "
      "only in summary.unmatchedElements"),
 
+    ("near-miss/a-list-item-is-named-too",
+     "src/aas_submodel_validate/rules/engine.py",
+     "        yield from near_miss_violations(ctx, tables)\n    return check\n",
+     "        yield from (v for v in near_miss_violations(ctx, tables)\n"
+     "                    if not v.subject.endswith(']'))\n    return check\n",
+     ["tests/test_near_miss_lints.py::test_a_drifted_list_item_is_named_by_its_index"],
+     "a Carbon Footprint whose one footprint item carried the next "
+     "version's identifier drew nothing naming it: an item has no idShort, "
+     "and every case the tests drifted had one"),
+
+    ("near-miss/the-five-lints-are-tdl1",
+     "src/aas_submodel_validate/rules/engine.py",
+     '    @rule(rule_id, kind="lint", prio="SHOULD",\n',
+     '    @rule(rule_id, kind="template", prio="SHOULD",\n',
+     ["tests/test_near_miss_lints.py::test_the_five_lints_are_tdl1_under_other_names"],
+     "the five lints registered as template rules, `kind: template` in "
+     "the JSON, and nothing compared them with the TDL1 they are said to "
+     "copy"),
+
+    ("near-miss/the-nearest-row-is-named",
+     "src/aas_submodel_validate/rules/engine.py",
+     "            if near and (nearest is None or near[0] < nearest[0][0]):\n",
+     "            if near and nearest is None:\n",
+     ["tests/test_near_miss_lints.py::test_the_nearest_row_is_the_one_named"],
+     "a Software Nameplate whose InstallationPath drifted to "
+     "InstallationPaths was told the template says InstallationDate, the "
+     "first sibling within the bound, and the file that followed that "
+     "remedy drew two errors"),
+
     ("near-miss/a-samm-version-drift-is-a-near-miss",
      "src/aas_submodel_validate/rules/engine.py",
-     "            if seen_samm and seen_samm == samm_stem(expected) and seen != expected:\n",
-     "            if False and seen_samm == samm_stem(expected) and seen != expected:\n",
+     "    if seen_samm and seen_samm == samm_stem(expected):\n",
+     "    if False and seen_samm == samm_stem(expected):\n",
      ["tests/test_dbp_hand_rules.py::test_a_samm_version_drift_is_diagnosed"],
      "a Documents list carrying the SAMM identifier of 02035-2's next "
      "version matched no row and nothing named it"),

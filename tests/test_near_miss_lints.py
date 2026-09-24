@@ -4,11 +4,14 @@
 (`HDL2`, `TDL1`), and 02035-2's inherits 02004's (`DBP2L2`). The other
 five did not, so in them an identifier one version suffix or one last
 segment off took rows out of the run with nothing among the findings
-naming the element that did it: the only trace was a record in
-`summary.unmatchedElements`, which a pipeline reading findings never
-sees, and a drifted element with no rows beneath its own -- a
-property, a file -- left not even that (docs/divergences.md #23). Each now registers the same lint, with the
-same title, clause and remedy, so the finding reads alike whichever
+naming the element that did it: what did was in `summary` -- a record
+in `unmatchedElements`, and `scopeNotExamined` where its row went
+unentered -- which a pipeline reading findings never sees, and a drifted
+element that left nothing unasked -- a property or a file, with no rows
+beneath it, or a container beside an intact sibling that had asked its
+rows -- left not even that (docs/divergences.md #23). Each now
+registers the same lint, with the same title, clause and remedy, so the
+finding reads alike whichever
 pack drew it.
 """
 from __future__ import annotations
@@ -81,3 +84,79 @@ def test_a_drifted_identifier_is_named_by_the_pack_s_lint(tmp_path, lint, fixtur
 def test_the_golden_fixture_draws_no_near_miss(tmp_path, lint, fixture):
     report = _run(tmp_path, fixture(), "%s-golden.json" % lint)
     assert not [f for f in report.findings if f.id == lint], report.findings
+
+
+def _items(env, list_short):
+    return _find(env, list_short)["value"]
+
+
+def _bump(element, old, new):
+    key = element["semanticId"]["keys"][0]
+    assert old in key["value"], key["value"]
+    key["value"] = key["value"].replace(old, new)
+
+
+def test_a_drifted_list_item_is_named_by_its_index(tmp_path):
+    """Every case above drifts one element that has an idShort. A list
+    item has none, its subject ends in its index, and a version bump on
+    every item of a list is the likeliest drift there is."""
+    env = copy.deepcopy(pcf_env())
+    [footprint] = _items(env, "ProductCarbonFootprints")
+    _bump(footprint, "ProductCarbonFootprint/1/0", "ProductCarbonFootprint/1/1")
+    named = [f.violation.subject for f in _run(tmp_path, env, "pcf-item.json").findings
+             if f.id == "PCFL1"]
+    assert named == ["CarbonFootprint/ProductCarbonFootprints/[0]"], named
+
+    env = copy.deepcopy(dn_env())
+    [marking] = _items(env, "Markings")
+    _bump(marking, "#001", "#002")
+    named = [f.violation.subject for f in _run(tmp_path, env, "dn-item.json").findings
+             if f.id == "DNL1"]
+    assert named == ["Nameplate/Markings/[0]"], named
+
+
+def test_two_items_carrying_one_drift_are_both_named(tmp_path):
+    """Two elements, two findings. `summary.unmatchedElements` holds one
+    record for the pair -- they carry one drift between them -- and the
+    lint names each element it is about."""
+    env = copy.deepcopy(pcf_env())
+    items = _items(env, "ProductCarbonFootprints")
+    items.append(copy.deepcopy(items[0]))
+    for footprint in items:
+        _bump(footprint, "ProductCarbonFootprint/1/0", "ProductCarbonFootprint/1/1")
+    named = [f.violation.subject for f in _run(tmp_path, env, "pcf-items.json").findings
+             if f.id == "PCFL1"]
+    assert named == ["CarbonFootprint/ProductCarbonFootprints/[0]",
+                     "CarbonFootprint/ProductCarbonFootprints/[1]"], named
+
+
+def test_the_five_lints_are_tdl1_under_other_names():
+    """The same kind, severity, title, clause, remedy and route as `TDL1`,
+    compared with it rather than copied from it: a remedy pinned as a
+    literal held while `TDL1`'s own was reworded, and nothing held the
+    title, the clause or the kind -- a lint registered as a template rule
+    read `kind: template` in the JSON and every test passed."""
+    from aas_submodel_validate.registry import all_rules
+
+    rules = {rule.id: rule for rule in all_rules()}
+
+    def shape(rule):
+        return (rule.kind, rule.prio, rule.title, rule.spec, rule.fix, rule.path)
+    for lint in ("DNL1", "CIL1", "PCFL1", "HSL1", "SNL1"):
+        assert shape(rules[lint]) == shape(rules["TDL1"]), lint
+
+
+def test_the_nearest_row_is_the_one_named(tmp_path):
+    """02007's rows under one collection share a stem and differ by a few
+    letters. `InstallationPaths` is one edit from `InstallationPath` and
+    three from `InstallationDate`, which comes first in the table; the
+    first row near enough was the one named, and the remedy told the file
+    to become the date it already carried."""
+    env = copy.deepcopy(sn_env())
+    element = _find(env, "InstallationPath")
+    _bump(element, "SoftwareNameplateInstance/InstallationPath",
+          "SoftwareNameplateInstance/InstallationPaths")
+    report = _run(tmp_path, env, "sn-nearest.json")
+    [lint] = [f for f in report.findings if f.id == "SNL1"]
+    assert lint.violation.detail.endswith("SoftwareNameplateInstance/InstallationPath"), \
+        lint.violation.detail
