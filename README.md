@@ -141,7 +141,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=e7a8b392" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-2; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=76c2d273" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-2; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory; Upstream: pinned by commit" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
@@ -528,7 +528,14 @@ that move. If you gate a build on the exit code, read that file before
 upgrading.
 
 What has not moved is the report. `schemaVersion` is 1; keys are added
-without moving it, and nothing has been renamed or removed under it. No
+without moving it, and nothing has been renamed or removed under it.
+The values are held too. One whole report -- what `-f json` says about a
+package built from this repository's own fixtures, with a File value
+naming the wrong folder, a mandatory element left out and a list one
+version suffix off -- is kept in `docs/golden-report.json`, and every
+build compares it with what the tool says now, so a severity, a grade or
+a remedy that changes is a line in a diff before it is a surprise in
+your parser. No
 rule id this project publishes has been renamed or reused — the ids of
 the last release are written down in the test suite and checked against
 every build, because a rule id is a citation somebody else made. The

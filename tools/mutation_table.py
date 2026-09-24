@@ -1537,6 +1537,15 @@ TABLE = [
      "holds in /aasx/files/ was told its bytes were not in the input, "
      "because the grade was fixed per branch and no branch had looked"),
 
+    ("golden/a-value-that-changes-is-a-line-in-a-diff",
+     "src/aas_submodel_validate/rules/engine.py",
+     '        yield Violation("the container holds no part at this File\'s value",\n',
+     '        yield Violation("the container holds no part at this value",\n',
+     ["tests/test_golden_report.py::test_the_stored_report_is_the_one_this_tree_produces"],
+     "a finding's message reworded, every key where it was and every type "
+     "the same: the shape gate passes it, and a consumer matching on the "
+     "sentence finds out from their own pipeline"),
+
     ("fixability/one-file-under-two-names-is-nothing-to-choose",
      "src/aas_submodel_validate/rules/engine.py",
      "    if len(carrying) > 1 and container.alike(carrying):\n",

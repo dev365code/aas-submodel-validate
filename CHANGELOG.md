@@ -25,6 +25,16 @@ the walk hands them out; and in a template of the caller's that contains
 itself a nested copy is followed with the rows of the element it copies,
 as the walk follows it. No verdict moves.
 
+**One report is kept whole.** `docs/golden-report.json` is what `-f json`
+says about a package built from this repository's own fixtures -- five
+findings and every summary record -- and `make check` and CI compare it
+with what the tool says now. The report's shape was already held against
+`docs/report-schema.md`; its values were not, and a value that changes
+is now a line in that file's diff. `toolVersion` is the one marker, since
+every release moves it. The document in the package is metamodel-clean,
+so the file does not move when the upstream library words a relayed
+message differently.
+
 It is 305 rules, 262 generated from the vendored official template files,
 across eight template packs, as in 0.7.0. What this reader takes in is
 unchanged: one document at 64 MiB, a container's parts at 64 MiB each
