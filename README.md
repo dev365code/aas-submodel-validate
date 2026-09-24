@@ -534,8 +534,8 @@ package built from this repository's own fixtures, with a File value
 naming the wrong folder, a mandatory element left out and a list one
 version suffix off -- is kept in `docs/golden-report.json`, and every
 build compares it with what the tool says now, so a severity, a grade or
-a remedy that changes is a line in a diff before it is a surprise in
-your parser. No
+a remedy that changes in that report is a line in a diff before it is a
+surprise in your parser. No
 rule id this project publishes has been renamed or reused — the ids of
 the last release are written down in the test suite and checked against
 every build, because a rule id is a citation somebody else made. The

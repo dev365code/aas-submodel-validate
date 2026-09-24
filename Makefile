@@ -35,12 +35,15 @@ ci-axes:
 mutants:
 	$(PYTHON) tools/mutation_table.py --run
 
+# The second line is the whole report for one package, as a file.
+# docs/report-schema.md and its test hold the shape; this holds the
+# values, so a severity respelled or a grade moving is a line in a diff
+# rather than something a consumer finds. `toolVersion` is the one
+# marker, and the tool says why. Written above the target and not between
+# its lines: tests/test_ci_parity.py reads a recipe up to its first line
+# that is not a command, and a comment there hid this one from it.
 generated:
 	$(PYTHON) tools/extract_smt_rules.py --check
-# The whole report for one package, as a file. docs/report-schema.md and
-# its test hold the shape; this holds the values, so a severity respelled
-# or a grade moving is a line in a diff rather than something a
-# consumer finds. `toolVersion` is the one marker, and the tool says why.
 	$(PYTHON) tools/golden_report.py --check
 
 vendored:

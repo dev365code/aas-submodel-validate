@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import pathlib as _pathlib
 import subprocess
 import sys
@@ -113,14 +112,21 @@ def build(directory: Path) -> Path:
 
 def report() -> dict:
     """What `-f json` says about the package, from this tree."""
+    # This tree's package, put first on the path by the child itself and
+    # asked where it came from. Handed over in PYTHONPATH it was split on
+    # the path separator, so a checkout whose path holds one ran whatever
+    # release was installed instead -- and said nothing.
+    here = str(ROOT / "src")
+    child = ("import os, sys; sys.path.insert(0, sys.argv[1]); "
+             "import aas_submodel_validate as package; "
+             "got = os.path.realpath(package.__file__); "
+             "assert got.startswith(os.path.realpath(sys.argv[1]) + os.sep), "
+             "'this tree was not the package imported: ' + got; "
+             "from aas_submodel_validate.cli import main; sys.exit(main(sys.argv[2:]))")
     with tempfile.TemporaryDirectory() as scratch:
         build(Path(scratch))
-        environment = dict(os.environ)
-        environment["PYTHONPATH"] = os.pathsep.join(
-            [str(ROOT / "src")]
-            + ([environment["PYTHONPATH"]] if environment.get("PYTHONPATH") else []))
-        done = subprocess.run([sys.executable, "-m", "aas_submodel_validate", "-f", "json",
-                               PACKAGE], cwd=scratch, capture_output=True, env=environment)
+        done = subprocess.run([sys.executable, "-c", child, here, "-f", "json", PACKAGE],
+                              cwd=scratch, capture_output=True)
     # 0 is a clean package and 1 one with findings; anything else, and
     # whatever is on stdout is not a report. Said as a sentence, because a
     # gate that ends in a traceback is a gate whose failure nobody reads.
