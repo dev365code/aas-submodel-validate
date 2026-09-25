@@ -284,7 +284,7 @@ def test_the_vendored_templates_pass_the_tool_that_reads_them(tmp_path):
 
     vendored = sorted((ROOT / "src" / "aas_submodel_validate" / "data"
                        / "smt").rglob("template.json"))
-    assert len(vendored) == 10, vendored
+    assert len(vendored) == 11, vendored
     for template in vendored:
         assert main(["-q", "--allow-unmatched", str(template)]) == EXIT_OK, (
             "%s is the template this project reads its rules out of, and "
@@ -499,11 +499,11 @@ def test_an_empty_battery_nameplate_fails_its_template_and_nothing_else_moves(tm
             == [(f.id, f.violation.subject) for f in failing.findings if f.id == "BAT-R8"])
 
 
-def test_a_part_with_no_table_here_is_still_judged(tmp_path):
-    """The front page's example of a file this tool judges without a
-    template table: a package holding only the passport's part 4, which
-    the battery rules read and no table does, is judged -- `judged 1 of 1
-    submodel`, and no `SMT-D1`."""
+def test_a_part_the_battery_rules_read_is_judged_on_its_own(tmp_path):
+    """A package holding only the passport's part 4 is judged -- `judged 1
+    of 1 submodel`, and no `SMT-D1`. It was the front page's example of a
+    part judged by the battery rules without a table; since 0.9.0 it has
+    a table of its own, and the count is the same."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from test_battery_rules import _passport

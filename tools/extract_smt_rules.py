@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 333 rows is how one of them
+extracted, not hand-written: hand-copying 379 rows is how one of them
 silently goes stale. This sentence's number is pinned against the
 generator's own list of packs, and the README's beside it
 (`tests/test_readme_front.py`) -- pinned because it has been wrong
@@ -178,6 +178,15 @@ DBP1_ITEM_NAMES = {
     "ResultsOfTestReportsProvingCompliance": "DocumentIdentifier",
 }
 
+#: 02035-4's list items: the product images, and the power capability at
+#: each state of charge. The template gives both an idShort (AASd-120),
+#: which the generator takes first, so these name nothing today; they are
+#: here so an upstream repair of that defect renames no row.
+DBP4_ITEM_NAMES = {
+    "ProductImages": "ProductImage",
+    "OriginalPowerCapability": "PowerCapabilityAt",
+}
+
 #: 02035-5's two list items. The template gives both an idShort
 #: (AASd-120), which the generator takes first, so these name nothing
 #: today; they are here so an upstream repair of that defect renames no
@@ -317,6 +326,21 @@ PACKS = (
         "source": "IDTA 02035-1_DBP-Part-1_Digital Nameplate.json",
         "citation": "IDTA 02035-1 1.0 template",
         "item_names": DBP1_ITEM_NAMES,
+        "example_types": (),
+        "skip_sids": ARBITRARY,
+    },
+    # IDTA 02035-4 Technical Data 1.0.1, the Digital Battery Passport's part
+    # 4: forty-six elements -- 32 Properties, 10 collections, 2 lists, 2
+    # Files. Forty-one state their cardinality with a bare `Cardinality`,
+    # four with `SMT/Cardinality`, and `WarrantyInformation` with none,
+    # which reads 0..* (#50). Identifiers are ECLASS and SAMM.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-4/1.0.1/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/dbp4_tables.py",
+        "prefix": "DBP4-E",
+        "source": "IDTA 02035-4_DBP-Part-4_TechnicalData.json",
+        "citation": "IDTA 02035-4 1.0.1 template",
+        "item_names": DBP4_ITEM_NAMES,
         "example_types": (),
         "skip_sids": ARBITRARY,
     },

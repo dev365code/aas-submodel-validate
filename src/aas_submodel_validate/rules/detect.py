@@ -20,6 +20,7 @@ from . import (
     battery_tables,
     contact_tables,
     dbp1_tables,
+    dbp4_tables,
     dbp5_tables,
     dn_tables,
     hd_tables,
@@ -73,6 +74,7 @@ PACKS = (
     Pack("Software Nameplate (IDTA 02007)", sn_tables, "softwarenameplate"),
     Pack("Product Condition (IDTA 02035-5)", dbp5_tables, "productcondition"),
     Pack("Battery Nameplate (IDTA 02035-1)", dbp1_tables, "batterynameplate"),
+    Pack("Battery Technical Data (IDTA 02035-4)", dbp4_tables, "batterytechnicaldata"),
 )
 
 

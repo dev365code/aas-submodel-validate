@@ -390,7 +390,9 @@ def test_a_long_id_short_cannot_grow_the_report(tmp_path):
             child["semanticId"]["keys"][0]["value"] = PHONE_TAIL
     report = _run(tmp_path, env)
     assert len(report.unmatched[0].subject) == MAX_REPORTED_CHARACTERS
-    assert len(render(report)) < 6000
+    # A few bounded fields' worth, whatever the bound is: it was 2000 when
+    # this read `< 6000`, and moved to 3000 with the eleventh pack.
+    assert len(render(report)) < 3 * MAX_REPORTED_CHARACTERS
 
 
 def test_an_element_of_the_wrong_kind_is_named_too(tmp_path):

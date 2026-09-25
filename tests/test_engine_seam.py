@@ -74,8 +74,12 @@ def test_a_submodel_that_wears_our_anchor_in_a_supplemental_is_not_walked(tmp_pa
     path.write_bytes(wearing_our_anchor_as_a_supplemental(
         hd_tables.TEMPLATE_SEMANTIC_ID, "HandoverDocumentation"))
     ids = {finding.id for finding in runner.run(path).findings}
+    # Not Handover Documentation's rules, nor 02035-2's, which answer to
+    # the same anchor. The fixture declares 02035-4's own identity, which
+    # has a table since 0.9.0, so it is judged -- as what it is.
     assert not [rule_id for rule_id in ids
-                if rule_id.startswith(("HD", "DBP"))], sorted(ids)
+                if rule_id.startswith(("HD", "DBP2"))], sorted(ids)
+    assert [rule_id for rule_id in ids if rule_id.startswith("DBP4-")], sorted(ids)
 
 
 def test_the_builders_require_their_table_too():

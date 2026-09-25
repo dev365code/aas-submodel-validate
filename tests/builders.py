@@ -1155,6 +1155,115 @@ def dbp5_env() -> dict:
 DBP1 = "urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#"
 
 
+
+DBP4 = "urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#"
+DBP4_1 = "urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.1#"
+
+
+def dbp4_env() -> dict:
+    """The golden fixture for IDTA 02035-4 Technical Data 1.0.1, the battery
+    passport's part 4, written by hand like the others and carrying every
+    row the template declares. Values are the template's own where it gives
+    one, and a plausible value of the declared type where it gives none
+    (`ManufacturerIdentifier`, `ExpectedNumberOfCycles`,
+    `CRateOfRelevantCycleLifeTest`).
+
+    The elements' own identifiers are the template's -- ECLASS IRDIs and
+    SAMM URNs of the part's own namespace, 1.0.1's for the warranty the
+    1.0.1 release added and 1.0.0's for the rest -- and the identifiers it
+    puts beside them are left out: the rows match without them. One
+    element is the exception, and says why where it is written.
+    """
+    power_at = _smc(DBP4 + "PowerCapabilityAt", [
+        _prop("atSoc", DBP4 + "atSoC", "80", "xs:unsignedInt"),
+        _prop("powerCapabilityAt", DBP4 + "powerCapabilityAt", "500", "xs:float"),
+    ])
+    general = _smc("0173-1#02-ABK161#002/0173-1#01-AHX838#002", [
+        _prop("ManufacturerName", "0173-1#02-AAO677#004", "Example Company"),
+        {"idShort": "CompanyLogo", "modelType": "File",
+         "semanticId": _sid("0173-1#02-ABI776#002"),
+         "contentType": "image/png", "value": "/aasx/files/logo.png"},
+        _prop("ManufacturerIdentifier", DBP4 + "manufacturerIdentifier", "XYZ-123456"),
+        _prop("BatteryCategory", DBP4 + "batteryCategory", "ev"),
+        _prop("BatteryMass", DBP4 + "batteryMass", "1007", "xs:float"),
+        _sml("ProductImages", "0173-1#02-ABM220#001", "File", [
+            {"modelType": "File",
+             "semanticId": _sid("0173-1#02-ABM220#001/0173-1#01-AHY911#001"),
+             "contentType": "image/png", "value": "/aasx/files/product.png"},
+        ]),
+        _smc(DBP4_1 + "warrantyInformation", [
+            _prop("WarrantyPeriod", DBP4_1 + "warrantyPeriod", "P96M"),
+        ], id_short="WarrantyInformation"),
+    ], id_short="GeneralInformation")
+    areas = _smc("0173-1#02-ABK163#002", [
+        _smc(DBP4 + "capacityEnergyVoltage", [
+            _prop("NominalVoltage", "0173-1#02-ABL588#001", "4.3", "xs:float"),
+            _prop("MinVoltage", "0173-1#02-ABL587#001", "2.04", "xs:float"),
+            _prop("MaxVoltage", "0173-1#02-ABL589#001", "6", "xs:float"),
+            _prop("RatedCapacity", "0173-1#02-ABL869#002", "210", "xs:float"),
+            _prop("CapacityFade", "0173-1#02-ABL828#002", "10", "xs:float"),
+            _prop("CertifiedUsableBatteryEnergy", "0173-1#02-ABL829#002", "100", "xs:float"),
+        ], id_short="CapacityEnergyVoltage"),
+        _smc(DBP4 + "roundTripEnergyEfficiency", [
+            _prop("InitialRoundTripEnergyEfficiency", "0173-1#02-ABL833#002", "100",
+                  "xs:integer"),
+            _prop("RoundTripEnergyEfficiencyAt50PercentOfCycleLife", "0173-1#02-ABL866#002",
+                  "100", "xs:integer"),
+            _prop("EnergyRoundTripEfficiencyFade", "0173-1#02-ABL827#002", "10", "xs:float"),
+            _prop("InitialSelfDischargingRate", "0173-1#02-ABL834#002", "2", "xs:integer"),
+        ], id_short="RoundTripEnergyEfficiency"),
+        _smc(DBP4 + "resistance", [
+            _prop("InitialInternalResistanceOnBatteryCellLevel", "0173-1#02-ABL844#002", "67",
+                  "xs:float"),
+            _prop("InitialInternalResistanceOnBatteryPackLevel", "0173-1#02-ABL846#002", "23",
+                  "xs:float"),
+            _prop("InitialInternalResistanceOnBatteryModuleLevel", "0173-1#02-ABL832#002", "10",
+                  "xs:float"),
+            _prop("InternalResistanceIncreaseOfBatteryCellLevel",
+                  DBP4 + "internalResistanceIncreaseOfBatteryCell", "10", "xs:float"),
+            _prop("InternalResistanceIncreaseOfBatteryPackLevel",
+                  DBP4 + "internalResistanceIncreaseOfBatteryPack", "10", "xs:float"),
+            # Identified by the ECLASS IRDI the template puts beside its
+            # own identifier: its own, `...#initialInternalResistanceOfBatteryModule`,
+            # is also what the template gives the module's *initial*
+            # resistance as a supplemental, so an element carrying it counts
+            # as both and the file draws the template's defect
+            # (docs/divergences.md #60).
+            _prop("InternalResistanceIncreaseOfBatteryModuleLevel", "0173-1#02-ABL836#001",
+                  "10", "xs:float"),
+        ], id_short="Resistance"),
+        _smc(DBP4 + "powerCapability", [
+            _prop("MaximumPermittedBatteryPower", "0173-1#02-ABL843#002", "0", "xs:float"),
+            _prop("PowerFade", "0173-1#02-ABL852#002", "23", "xs:float"),
+            _prop("RatioNorminalBatteryPowerAndBatteryEnergy", DBP4 + "powerCapabilityRatio",
+                  "0.611", "xs:float"),
+            _sml("OriginalPowerCapability", "0173-1#02-ABL853#002",
+                 "SubmodelElementCollection", [power_at]),
+        ], id_short="PowerCapability"),
+        _smc(DBP4 + "temperature", [
+            _prop("TemperatureRangeIdleState_LowerBoundary", "0173-1#02-ABL842#002", "-19",
+                  "xs:float"),
+            _prop("TemperatureRangeIdleState_UpperBoundary", "0173-1#02-ABL871#002", "49",
+                  "xs:float"),
+        ], id_short="Temperature"),
+        _smc(DBP4 + "lifetime", [
+            _prop("ExpectedLifetimeInCalendarYears", DBP4 + "expectedLifetime", "15",
+                  "xs:unsignedInt"),
+            _prop("ExpectedNumberOfCycles", DBP4 + "expectedNumberOfCycles", "2000",
+                  "xs:unsignedInt"),
+            _prop("CapacityThresholdExhaustion", "0173-1#02-ABL838#002", "23", "xs:float"),
+            _prop("CRateOfRelevantCycleLifeTest", DBP4 + "cRateLifeCycleTest", "0.5",
+                  "xs:decimal"),
+        ], id_short="Lifetime"),
+    ], id_short="TechnicalPropertyAreas")
+    return {"submodels": [{
+        "id": "urn:example:battery-technical-data",
+        "idShort": "BatteryTechnicalData", "modelType": "Submodel",
+        "semanticId": _sid("https://admin-shell.io/idta/digitalbatterypassport/"
+                           "TechnicalData/1/0"),
+        "submodelElements": [general, areas],
+    }]}
+
 def dbp1_env() -> dict:
     """The golden fixture for IDTA 02035-1 Digital Nameplate 1.0, the
     battery passport's part 1, written by hand like the others and

@@ -104,12 +104,12 @@ the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 
-Ten official templates are given rule tables: IDTA 02004 Handover
+Eleven official templates are given rule tables: IDTA 02004 Handover
 Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
 part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact
 Information, 02011 Hierarchical Structures, 02007 Software Nameplate,
-02035-5 Digital Battery Passport part 5, and 02035-1 Digital Battery
-Passport part 1. A submodel of any other template is reported as not
+02035-5 Digital Battery Passport part 5, 02035-1 Digital Battery
+Passport part 1, and 02035-4 Digital Battery Passport part 4. A submodel of any other template is reported as not
 matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
@@ -306,3 +306,21 @@ never prints, and 02035-2 spells that element differently. Its
 suffix, where 02006 writes `#001`: a list whose identifier ends `#001`
 and that carries nothing else the row matches is no row's, and the
 mandatory `Markings` is reported missing (`docs/divergences.md` #59).
+
+IDTA 02035-4 Technical Data 1.0.1, the Digital Battery Passport's part
+4, gives the battery's general information -- manufacturer, category,
+mass, product images, warranty -- and its technical property areas:
+capacity, energy and voltage, round-trip efficiency, resistance, power
+capability, temperature and lifetime. Its pack is generated rows and the
+question every pack with a File row asks, whether the file a logo or a
+product image names is in the package; no value is checked for what it
+says, the battery category included, which the battery-data layer reads
+on its own terms. `WarrantyInformation` states no cardinality in the
+template or in its specification's table, and reads 0..*, although the
+specification's text says a passport must include it. Two of the
+template's identifiers belong to two elements each: the module-level
+resistance increase carries the identifier the module-level initial
+resistance carries beside its own, so a file written as the template
+writes it is told it has two initial module resistances, and the
+warranty carries the manufacturer name's own identifier beside its own
+(`docs/divergences.md` #60).

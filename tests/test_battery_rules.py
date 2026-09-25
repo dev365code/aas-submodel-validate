@@ -34,8 +34,14 @@ import re
 import pytest
 
 from aas_submodel_validate import runner
-from aas_submodel_validate.rules import battery, battery_tables, dbp1_tables, dbp5_tables
-from builders import dbp1_env, dbp5_env
+from aas_submodel_validate.rules import (
+    battery,
+    battery_tables,
+    dbp1_tables,
+    dbp4_tables,
+    dbp5_tables,
+)
+from builders import dbp1_env, dbp4_env, dbp5_env
 
 CARBON_FOOTPRINT = "https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0"
 #: An element BAT-R8 reads once a category is settled, and where it sits.
@@ -841,7 +847,24 @@ def _category_property(value: str) -> dict:
             "value": value}
 
 
-def _conformant(tables, golden_env, carried):
+def _mandatory_only(element, rows):
+    """`element` with every descendant the template makes optional left
+    out, at every depth. `rows` maps each identifier a row matches to the
+    row, so an element spelled by the identifier beside its own is still
+    known."""
+    children = element.get("value")
+    if not (isinstance(children, list) and children and isinstance(children[0], dict)
+            and "modelType" in children[0]):
+        return element
+    kept = []
+    for child in children:
+        row = rows.get(child["semanticId"]["keys"][0]["value"])
+        if row is None or row["card"][0] >= 1:
+            kept.append(_mandatory_only(child, rows))
+    return dict(element, value=kept)
+
+
+def _conformant(tables, golden_env, carried, deep=False):
     """A judged part's elements: what its template makes mandatory at the
     top, and each carried element as the template writes it rather than
     empty, both from the pack's golden fixture.
@@ -858,17 +881,24 @@ def _conformant(tables, golden_env, carried):
               for element in golden_env()["submodels"][0]["submodelElements"]}
     mandatory = {row["sid"] for row in tables.ROWS
                  if row["parent"] is None and row["card"][0] >= 1}
-    return ([element for sid, element in golden.items() if sid in mandatory]
-            + [golden.get(element["semanticId"]["keys"][0]["value"], element)
-               for element in carried])
+    top = [element for sid, element in golden.items() if sid in mandatory]
+    if deep:
+        rows = {}
+        for row in tables.ROWS:
+            for value in row["match"]:
+                rows.setdefault(value, row)
+        top = [_mandatory_only(element, rows) for element in top]
+    return (top + [golden.get(element["semanticId"]["keys"][0]["value"], element)
+                   for element in carried])
 
 
 def _passport(category=None, carrying=()):
     """Every submodel the conditional rows belong to, holding what
-    `carrying` names, and the category the file declares. The Product
-    Condition and Battery Nameplate submodels also hold what their
-    templates make mandatory (`_conformant`); the other holds nothing
-    else.
+    `carrying` names, and the category the file declares. Each also holds
+    what its template makes mandatory (`_conformant`) -- Product Condition
+    judged by a table since 0.8.0, and the Battery Nameplate and Technical
+    Data since 0.9.0 -- and Technical Data states the category in its own
+    `BatteryCategory`, or states none.
 
     Built from the table rather than from a list written here: the rows
     move when the indexes move, and a fixture with the identifiers typed
@@ -887,14 +917,35 @@ def _passport(category=None, carrying=()):
             value = _conformant(dbp5_tables, dbp5_env, value)
         if sid == dbp1_tables.TEMPLATE_SEMANTIC_ID:
             value = _conformant(dbp1_tables, dbp1_env, value)
-        if sid.endswith("TechnicalData/1/0") and category is not None:
-            value.append(_collection(
-                "GeneralInformation",
-                "urn:samm:io.admin-shell.idta.batterypass.technical_data:"
-                "1.0.0#generalInformation",
-                [_category_property(category)]))
+        if sid == dbp4_tables.TEMPLATE_SEMANTIC_ID:
+            # Mandatory all the way down: its mandatory collections hold
+            # the optional elements the battery rules ask about --
+            # `CapacityFade` and the like -- and a passport carrying the
+            # golden fixture's would answer every question they ask.
+            value = _declaring(_conformant(dbp4_tables, dbp4_env, value, deep=True), category)
         submodels.append(_submodel("Part%d" % index, sid, value))
     return _env(*submodels)
+
+
+def _declaring(elements, category):
+    """Technical Data's elements with the category the file declares in
+    the template's own `BatteryCategory`, or with that element holding no
+    value where the file declares none. The element is mandatory and its
+    value is not checked, so either way the part stays conformant and
+    only what the battery rules read moves."""
+    pending = list(elements)
+    while pending:
+        element = pending.pop()
+        if element.get("semanticId", {}).get("keys", [{}])[0].get("value") == CATEGORY_SID:
+            if category is None:
+                element.pop("value", None)
+            else:
+                element["value"] = category
+            return elements
+        children = element.get("value")
+        if isinstance(children, list):
+            pending.extend(child for child in children if isinstance(child, dict))
+    raise AssertionError("the Technical Data fixture holds no BatteryCategory")
 
 
 def _r8_subjects(report):
@@ -1342,8 +1393,11 @@ def _two_categories(first, second):
             if element.get("idShort") == "GeneralInformation":
                 general = element
     assert general is not None, "no GeneralInformation holding the category"
-    twin = json.loads(json.dumps(general["value"][0]).replace(
-        '"%s"' % first, '"%s"' % second))
+    # By its identifier, not its place: the part holds the template's own
+    # mandatory elements since 0.9.0, and the category is one of four.
+    stated = next(child for child in general["value"]
+                  if child["semanticId"]["keys"][0]["value"] == CATEGORY_SID)
+    twin = json.loads(json.dumps(stated).replace('"%s"' % first, '"%s"' % second))
     twin["idShort"] = twin.get("idShort", "BatteryCategory") + "2"
     general["value"].append(twin)
     return env
