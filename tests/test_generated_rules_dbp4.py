@@ -57,20 +57,6 @@ def _mismatched(row) -> dict:
     return wrong
 
 
-#: The one row whose own identifier another row also holds: stubs of it
-#: carry the ECLASS IRDI the template gives it beside its own, because an
-#: element carrying its own is counted by `DBP4-E27` too (#60, and the
-#: test of that below).
-_SPELLED_BY_ITS_OTHER_IDENTIFIER = {"DBP4-E30": "0173-1#02-ABL836#001"}
-
-
-def _stub(row) -> dict:
-    stub = stub_of(row)
-    if row["id"] in _SPELLED_BY_ITS_OTHER_IDENTIFIER:
-        stub["semanticId"]["keys"][0]["value"] = _SPELLED_BY_ITS_OTHER_IDENTIFIER[row["id"]]
-    return stub
-
-
 @pytest.mark.parametrize("row", dbp4_tables.ROWS, ids=[r["id"] for r in dbp4_tables.ROWS])
 def test_every_generated_rule_fires(tmp_path, row):
     env = copy.deepcopy(dbp4_env())
@@ -79,7 +65,7 @@ def test_every_generated_rule_fires(tmp_path, row):
     if low >= 1:
         strip_row(env, row, tables=dbp4_tables)
     elif high is not None:
-        inject(env, parent, [_stub(row), _stub(row)], tables=dbp4_tables)
+        inject(env, parent, [stub_of(row), stub_of(row)], tables=dbp4_tables)
     else:
         inject(env, parent, [_mismatched(row)], tables=dbp4_tables)
     assert row["id"] in _ids(tmp_path, env)
@@ -129,19 +115,24 @@ def _findings(report):
     return sorted((f.id, f.violation.message) for f in report.findings if f.rule.kind != "meta")
 
 
-def test_a_module_resistance_increase_spelled_as_the_template_spells_it_is_two(tmp_path):
+def test_the_module_resistance_increase_is_named_by_its_own_identifier(tmp_path):
     """The template gives `InternalResistanceIncreaseOfBatteryModuleLevel`
     the identifier `...#initialInternalResistanceOfBatteryModule`, which is
-    also what it gives `InitialInternalResistanceOnBatteryModuleLevel` as a
-    supplemental. An element carrying it counts as both, so a file written
-    as the template writes it is told it has two initial module
-    resistances: the template's defect, handed to the file."""
+    also what it gives `InitialInternalResistanceOnBatteryModuleLevel`
+    beside that one's own. Written as the template writes it -- its own
+    identifier, the ECLASS one beside it -- the increase is the increase.
+    Known only by the shared identifier as a supplemental, it is no row's
+    own, and the first row holding it takes it: beside a real initial
+    module resistance, the file is told it has two."""
     env = copy.deepcopy(dbp4_env())
     resistance = _element(_top(env, "TechnicalPropertyAreas")["value"], "Resistance")
     increase = _element(resistance["value"], "InternalResistanceIncreaseOfBatteryModuleLevel")
-    increase["semanticId"] = _reference(
-        "urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0"
-        "#initialInternalResistanceOfBatteryModule")
+    shared = ("urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0"
+              "#initialInternalResistanceOfBatteryModule")
+    increase["supplementalSemanticIds"] = [_reference("0173-1#02-ABL836#001")]
+    assert _findings(_run(tmp_path, env)) == []
+    increase["semanticId"] = _reference("urn:example:vendor-increase")
+    increase["supplementalSemanticIds"] = [_reference(shared)]
     assert _findings(_run(tmp_path, env)) == [(
         "DBP4-E27",
         "the template expects at most one 'InitialInternalResistanceOnBatteryModuleLevel' "
@@ -205,3 +196,71 @@ def test_a_samm_identifier_of_the_other_release_is_a_near_miss(tmp_path, element
         "urn:samm:io.admin-shell.idta.batterypass.technical_data:%s#%s" % (version, name))
     found = [finding for finding, _message in _findings(_run(tmp_path, env))]
     assert found == sorted(lost + ["DBP4L1"]), found
+
+
+
+# -- an element's own identifier says which row it is ---------------------
+
+def _template_supplementals():
+    """Each element's supplemental identifiers as the vendored template
+    writes them, keyed by the element's own identifier."""
+    import pathlib
+    template = json.loads((pathlib.Path(dbp4_tables.__file__).parent.parent / "data" / "smt"
+                           / "02035-4" / "1.0.1" / "template.json").read_text("utf-8"))
+    found = {}
+    pending = list(template["submodels"][0]["submodelElements"])
+    while pending:
+        element = pending.pop()
+        found[element["semanticId"]["keys"][0]["value"]] = element.get(
+            "supplementalSemanticIds", [])
+        value = element.get("value")
+        if isinstance(value, list):
+            pending.extend(child for child in value
+                           if isinstance(child, dict) and "modelType" in child)
+    return found
+
+
+def test_a_file_carrying_the_template_s_own_supplementals_is_judged_as_one_without(tmp_path):
+    """The template gives most elements identifiers beside their own, and
+    three of those are shared between sibling rows -- one by six technical
+    property areas. The first row holding a shared identifier used to claim
+    every element carrying it, whatever the element's own identifier said:
+    the golden fixture given the template's own supplementals drew
+    twenty-eight errors, and a missing temperature boundary among them went
+    unsaid. An element's own identifier -- its semanticId, not a
+    supplemental -- names its row."""
+    beside = _template_supplementals()
+    env = copy.deepcopy(dbp4_env())
+    pending = list(env["submodels"][0]["submodelElements"])
+    carried = 0
+    while pending:
+        element = pending.pop()
+        extra = beside.get(element["semanticId"]["keys"][0]["value"])
+        if extra:
+            element["supplementalSemanticIds"] = copy.deepcopy(extra)
+            carried += 1
+        value = element.get("value")
+        if isinstance(value, list):
+            pending.extend(child for child in value
+                           if isinstance(child, dict) and "modelType" in child)
+    assert carried >= 40, carried
+    assert _findings(_run(tmp_path, env)) == []
+    temperature = _element(_top(env, "TechnicalPropertyAreas")["value"], "Temperature")
+    temperature["value"] = [child for child in temperature["value"]
+                            if child["idShort"] != "TemperatureRangeIdleState_LowerBoundary"]
+    assert [f for f, _message in _findings(_run(tmp_path, env))] == ["DBP4-E40"]
+
+
+
+def test_each_file_row_is_asked_for_its_part(tmp_path):
+    """Both of the template's File rows -- the company logo and a product
+    image -- are asked whether the package holds what they name, each on
+    its own: the gate over every pack asks only that some file is asked
+    about, so a rule narrowed to one of the two passed it."""
+    from builders import build_aasx
+    payload = json.dumps(dbp4_env()).encode("utf-8")
+    for present, missing in (("logo.png", "ProductImages"), ("product.png", "CompanyLogo")):
+        path = tmp_path / ("holding-%s.aasx" % present)
+        build_aasx(path, payload=payload, files=[("aasx/files/%s" % present, b"\x89PNG")])
+        named = [f.violation.subject for f in runner.run(path).findings if f.id == "DBP4-D1"]
+        assert len(named) == 1 and missing in named[0], (present, named)

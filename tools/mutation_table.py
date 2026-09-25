@@ -1119,7 +1119,7 @@ TABLE = [
      "finding carries its rule's title, and its fix falls back to the "
      "rule's when the violation has none. Measured with this emptied: a "
      "rule whose text is 200,000 characters reaches the JSON at 200,014 "
-     "and 200,000, beside a violation cut at 2,000. Every generated pack "
+     "and 200,000, beside a violation cut at the bound. Every generated pack "
      "interpolates that text from the template's own strings, so the "
      "length is the template's to choose."),
     ("container/a-path-is-opened-only-after-the-descriptor-says-what-it-is",
@@ -2240,6 +2240,36 @@ TABLE = [
      "the synthetic passport's Technical Data part carried every optional "
      "element the golden fixture does, so it answered the questions the "
      "battery rules ask of an EV passport before they were asked"),
+
+    ("engine/an-element-s-own-identifier-names-its-row",
+     "src/aas_submodel_validate/rules/engine.py",
+     "                   and owned.get(index, row[\"id\"]) == row[\"id\"]\n",
+     "",
+     ["tests/test_generated_rules_dbp4.py::"
+      "test_a_file_carrying_the_template_s_own_supplementals_is_judged_as_one_without",
+      "tests/test_generated_rules_dn.py::"
+      "test_hardware_and_firmware_versions_each_keep_their_own_row"],
+     "a Technical Data file carrying the template's own supplementals drew "
+     "twenty-eight errors, and a Digital Nameplate carrying them was told it "
+     "had two hardware versions: the first row holding a shared identifier "
+     "claimed every element carrying it"),
+
+    ("battery/the-category-is-read-under-every-identifier",
+     "src/aas_submodel_validate/rules/battery.py",
+     "            if CATEGORY_IDENTIFIERS & element_candidate_values(element):\n",
+     "            if CATEGORY_ELEMENT in element_candidate_values(element):\n",
+     ["tests/test_battery_rules.py::"
+      "test_the_category_is_read_under_every_identifier_the_template_gives_it"],
+     "a category written with the ECLASS identifier the template gives it "
+     "passed the template and was reported as no category"),
+
+    ("dbp4/both-file-rows-are-asked",
+     "src/aas_submodel_validate/rules/dbp4.py",
+     'install_file_rule("DBP4-D1", dbp4_tables, dbp4_tables.TEMPLATE_CITATION)\n',
+     'install_file_rule("DBP4-D1", dbp4_tables, dbp4_tables.TEMPLATE_CITATION,\n'
+     '                  only=("CompanyLogo",))\n',
+     ["tests/test_generated_rules_dbp4.py::test_each_file_row_is_asked_for_its_part"],
+     "a product image naming a part the package does not hold drew nothing"),
 
     ("dbp1/the-pack-registers-its-lint",
      "src/aas_submodel_validate/rules/dbp1.py",

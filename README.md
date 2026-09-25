@@ -440,7 +440,7 @@ submodel identifier and something had to choose.
 | IDTA 02007 Software Nameplate 1.0.1 | 73 | the near-miss lint only (every row is read as the template writes it where the specification beside it disagrees: `docs/divergences.md` #57) |
 | IDTA 02035-5 Digital Battery Passport part 5 1.0.2 | 49 | the near-miss lint only (its identifiers are SAMM ones whose version moved with each release; a submodel of an earlier release, alone in its file, is told so: `docs/divergences.md` #58) |
 | IDTA 02035-1 Digital Battery Passport part 1 1.0 | 22 | files that exist in the container; the near-miss lint (identifiers mix IEC CDD, ECLASS, IRI and SAMM; `AddressInformation` is dropped in empty and not looked inside, though its specification requires four address fields in it: `docs/divergences.md` #59) |
-| IDTA 02035-4 Digital Battery Passport part 4 1.0.1 | 46 | files that exist in the container; the near-miss lint (`WarrantyInformation` states no cardinality and reads optional; two identifiers belong to two elements each, so a module-level resistance increase written as the template writes it reads as a second initial resistance: `docs/divergences.md` #60) |
+| IDTA 02035-4 Digital Battery Passport part 4 1.0.1 | 46 | files that exist in the container; the near-miss lint (`WarrantyInformation` states no cardinality and reads optional; three identifiers belong to more than one sibling, and an element's own identifier settles which it is: `docs/divergences.md` #60) |
 
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and

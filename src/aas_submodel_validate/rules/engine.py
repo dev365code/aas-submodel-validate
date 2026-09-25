@@ -38,6 +38,7 @@ from ..semantics import (
     edit_distance,
     element_candidate_values,
     key_values,
+    normalize,
     samm_stem,
     submodel_declares,
     version_stem,
@@ -426,6 +427,9 @@ def _matched_submodels(ctx, tables) -> List:
 def _analyze(ctx, tables) -> Dict:
     result = {
         "violations": {},      # row id -> [Violation]
+        #: id(rows) -> {own identifier: row id}, for the rows of each scope
+        #: this walk enters -- built once and read per submodel (`_scope`).
+        "owners": {},
         "instances": {},       # row id -> [(subject path, element)]
         "near_misses": [],     # (subject path, seen value, expected value)
         "idshort_drift": [],   # (subject, id_short, pattern, is a list child)
@@ -489,7 +493,10 @@ def _analyze(ctx, tables) -> Dict:
         per = {"violations": {}, "instances": {}, "near_misses": [],
                "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
                "unmatched": [], "not_entered": [], "not_examined": [],
-               "reached": set()}
+               "reached": set(),
+               # Shared, not per submodel: which row an identifier names is
+               # a fact about the table, and every submodel reads it.
+               "owners": result["owners"]}
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected,
                                          ("document", "submodel")))
@@ -1011,8 +1018,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     own rows, at whatever depth the copy sits (docs/divergences.md #48).
     The table stops one level down; an instance stops where it stops,
     and the walk follows the instance."""
-    indexed = [(index, element, element_candidate_values(element),
-                not candidate_values(element.semantic_id))
+    mains = [candidate_values(element.semantic_id) for element in elements]
+    indexed = [(index, element, element_candidate_values(element), not mains[index])
                for index, element in enumerate(elements)]
     #: idShorts more than one child of this scope carries. Counted once
     #: here rather than asked per element, and read by every `_subject`
@@ -1032,14 +1039,42 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     #: at the top of the walk, and the element it has reached below.
     here = ("document", "submodel") if top else None
 
+    #: The row each element's own identifier names. An element's
+    #: semanticId says what it is; its supplementals say what else it may
+    #: be read as, and a template can give sibling rows the same one --
+    #: 02035-4 gives six technical property areas one, and the warranty
+    #: the manufacturer name's own. Where an element's own identifier is a
+    #: row's own identifier, that row is the element's, whatever rows
+    #: before it hold the identifier beside theirs (docs/divergences.md #60).
+    #: Built once per row list and run: the same scope's rows are walked
+    #: once per submodel, and a caller's template can hold hundreds.
+    cache = result["owners"]
+    owners = cache.get(id(rows))
+    if owners is None:
+        owners = {}
+        for row in rows:
+            mine = normalize(row["sid"]) if row["sid"] else None
+            if mine and mine in row["match"]:
+                owners.setdefault(mine, row["id"])
+        cache[id(rows)] = owners
+    owned = {}
+    if owners:
+        for index, values in enumerate(mains):
+            for value in values:
+                if value in owners:
+                    owned[index] = owners[value]
+                    break
+
     for row in rows:
-        # One element belongs to at most one row: the first row it matches
-        # claims it. Without this a shared identifier would be counted
-        # under two rows and both cardinalities would be wrong. (Sibling
-        # rows in this template share no match value, so order is not load
-        # bearing today; the guard is what keeps a future template honest.)
+        # One element belongs to at most one row: the row its own
+        # identifier names, and failing that the first row it matches.
+        # Without this a shared identifier would be counted under two rows
+        # and both cardinalities would be wrong -- and taken first-come, an
+        # element the template writes with a sibling's identifier beside
+        # its own was counted under the sibling.
         matched = [(index, element) for index, element, candidates, main_empty in indexed
                    if index not in claimed
+                   and owned.get(index, row["id"]) == row["id"]
                    and _matches_row(candidates, main_empty, type(element).__name__,
                                     row, in_list)]
         claimed.update(index for index, _ in matched)

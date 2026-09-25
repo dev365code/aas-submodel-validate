@@ -390,9 +390,11 @@ def test_a_long_id_short_cannot_grow_the_report(tmp_path):
             child["semanticId"]["keys"][0]["value"] = PHONE_TAIL
     report = _run(tmp_path, env)
     assert len(report.unmatched[0].subject) == MAX_REPORTED_CHARACTERS
-    # A few bounded fields' worth, whatever the bound is: it was 2000 when
-    # this read `< 6000`, and moved to 3000 with the eleventh pack.
-    assert len(render(report)) < 3 * MAX_REPORTED_CHARACTERS
+    # Two bounded fields and the rest of the report, whatever the bound
+    # is: it was 2000 when this read `< 6000`, and moved to 3000 with the
+    # eleventh pack. The margin stays what it was, not a third field wide:
+    # a stray remedy-sized line leaking in still crosses it.
+    assert len(render(report)) < 2 * MAX_REPORTED_CHARACTERS + 2000
 
 
 def test_an_element_of_the_wrong_kind_is_named_too(tmp_path):

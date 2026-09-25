@@ -36,17 +36,33 @@ the battery-data layer already reads, and generates forty-six rules,
 `DBP4-E01` to `DBP4-E46`, with the near-miss lint `DBP4L1` and
 `DBP4-D1`, whose question is whether the file a logo or a product image
 names is in the package. `WarrantyInformation` states no cardinality, in
-the template or in its specification's table, and reads 0..*. Two of its
-identifiers belong to two elements each, in the template and in its
-specification alike: the module-level resistance increase carries the
-identifier the module-level initial resistance carries beside its own,
-so a file written as the template writes it is told it has two initial
-module resistances (`DBP4-E27`), and the warranty carries the
-manufacturer name's own identifier beside its own. Its SAMM identifiers
-are at 1.0.0 except the warranty's two, at 1.0.1, and one written at the
-other release is a near miss. A submodel *named* `BatteryTechnicalData`
-that carries another identifier is told that matching goes by
-semanticId. `docs/divergences.md` #60 has the rest.
+the template or in its specification's table, and reads 0..*. Its
+elements' own SAMM identifiers are at 1.0.0 except the warranty's two,
+at 1.0.1, and one written at the other release is a near miss. A
+submodel *named* `BatteryTechnicalData` that carries another identifier
+is told that matching goes by semanticId. `docs/divergences.md` #60 has
+the rest.
+
+**An element's own identifier names its row.** A template can give
+sibling elements the same identifier beside their own -- 02035-4 gives
+six technical property areas one, the warranty the manufacturer name's
+own, and the module-level resistance increase the one the initial
+resistance carries beside its own; 02006 gives `HardwareVersion` and
+`FirmwareVersion` one -- and the first row holding it used to claim
+every element carrying it, whatever the element's own semanticId said. A
+Technical Data file written as the template writes it, supplementals and
+all, would have drawn twenty-eight errors, and a Digital Nameplate
+carrying the shared identifier on both versions was told it had two
+hardware versions and left by 1; both are judged as files without the
+supplementals now. An element known by a shared identifier alone still
+goes to the first row holding it.
+
+**The battery category is read under every identifier the template gives
+it.** The battery rules read `BatteryCategory` by its SAMM identifier
+alone, so a category written with the ECLASS one beside it,
+`0173-1#02-AAR724#007`, passed the template and was reported as no
+category -- the rows that turn on it unasked. They read both now, off
+the Technical Data table's own row.
 
 **What moves: four verdicts in the corpus, and every Battery Nameplate
 or Battery Technical Data submodel that breaks its template.** Measured

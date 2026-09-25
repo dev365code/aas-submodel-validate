@@ -135,7 +135,10 @@ def matched(ctx):
 #: table for it. `PACKS` answers "there is a table generated from the
 #: published template"; this answers "there are rules about it", and the
 #: two are not the same question. The battery pack has rows for three
-#: submodels and a table for none of them.
+#: submodels, and since 0.9.0 each of the three has a table too -- parts
+#: 5, 1 and 4 -- so today this adds no submodel `PACKS` does not already
+#: judge. It stays because a battery row for a part without a table would
+#: need it the day it lands.
 #:
 #: Read from the tables rather than listed, so a row added for a fourth
 #: submodel is known here the day it lands.
