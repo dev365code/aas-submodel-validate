@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.3 — unreleased
+## 0.8.3 — 2026-09-25
 
 **What this tool says of IDTA's own samples is a page.** Every official
 sample this repository vendors -- IDTA's, pinned by upstream commit and

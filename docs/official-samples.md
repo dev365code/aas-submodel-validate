@@ -17,7 +17,7 @@ Every sample IDTA publishes that this repository vendors, with the verdict this 
 
 - Published as [`published/Handover Documentation/2/0/IDTA 02004-2-0_Example_HandoverDocumentation.aasx`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/published/Handover%20Documentation/2/0/IDTA%2002004-2-0_Example_HandoverDocumentation.aasx), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `6915ab783efeb21a1428287c2bad5c606761cdb5fbe27bd187c8c209bec9e045`.
-- Verdict, version 0.8.2: exit 0 -- 0 error(s), 87 warning(s), 0 info; judged 1 of 1 submodel.
+- Verdict, version 0.8.3: exit 0 -- 0 error(s), 87 warning(s), 0 info; judged 1 of 1 submodel.
 - Metamodel findings relayed (not this project's rules): 77.
 
 | Rule | Severity | Reads from | Findings |
@@ -31,7 +31,7 @@ Every sample IDTA publishes that this repository vendors, with the verdict this 
 
 - Published as [`published/Technical_Data/2/0/1/IDTA 02003_Sample_TechnicalData_forAASMetamodelV3.1.aasx`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/published/Technical_Data/2/0/1/IDTA%2002003_Sample_TechnicalData_forAASMetamodelV3.1.aasx), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `b85014f305fd4ab0416b3d63ec20c77fa79e9f16bdf85fef81ae4266682c9b27`.
-- Verdict, version 0.8.2: exit 2 -- refused, not judged.
+- Verdict, version 0.8.3: exit 2 -- refused, not judged.
 - Metamodel findings relayed (not this project's rules): 0.
 
 | Rule | Severity | Reads from | Findings |
@@ -42,7 +42,7 @@ Every sample IDTA publishes that this repository vendors, with the verdict this 
 
 - Published as [`published/Technical_Data/2/0/1/IDTA 02003_Sample_TechnicalData.aasx`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/published/Technical_Data/2/0/1/IDTA%2002003_Sample_TechnicalData.aasx), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `3a6981b3317005451e307c519fe78330dc54cea0d61ed070e7fd94461ece53a2`.
-- Verdict, version 0.8.2: exit 0 -- 0 error(s), 9 warning(s), 0 info; judged 1 of 1 submodel.
+- Verdict, version 0.8.3: exit 0 -- 0 error(s), 9 warning(s), 0 info; judged 1 of 1 submodel.
 - Metamodel findings relayed (not this project's rules): 9.
 
 No rule of this project fires.
@@ -51,7 +51,7 @@ No rule of this project fires.
 
 - Published as [`published/Technical_Data/2/0/IDTA 02003_Sample_TechnicalData.aasx`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/published/Technical_Data/2/0/IDTA%2002003_Sample_TechnicalData.aasx), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `26864988b934ae73b81f3289b49ef66934dc405577075ff38b54e3dc87b794de`.
-- Verdict, version 0.8.2: exit 0 -- 0 error(s), 60 warning(s), 0 info; judged 1 of 1 submodel.
+- Verdict, version 0.8.3: exit 0 -- 0 error(s), 60 warning(s), 0 info; judged 1 of 1 submodel.
 - Metamodel findings relayed (not this project's rules): 60.
 
 No rule of this project fires.
@@ -60,7 +60,7 @@ No rule of this project fires.
 
 - Published as [`published/Technical_Data/2/0/IDTA 02003_Sample_TechnicalData.json`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/published/Technical_Data/2/0/IDTA%2002003_Sample_TechnicalData.json), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `0aae6c3f8521ec4e34db963f6a673b8e34645b63416e858c87f9da9648feb78e`.
-- Verdict, version 0.8.2: exit 0 -- 0 error(s), 60 warning(s), 0 info; judged 1 of 1 submodel.
+- Verdict, version 0.8.3: exit 0 -- 0 error(s), 60 warning(s), 0 info; judged 1 of 1 submodel.
 - Metamodel findings relayed (not this project's rules): 60.
 
 No rule of this project fires.
@@ -69,7 +69,7 @@ No rule of this project fires.
 
 - Published as [`published/Handover Documentation/2/0/IDTA 02004-2-0_Example_HandoverDocumentation.json`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/published/Handover%20Documentation/2/0/IDTA%2002004-2-0_Example_HandoverDocumentation.json), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `a1b2cb353de054920ed5077766592347a327780c90c5197a3efc4a69a8c53d19`.
-- Verdict, version 0.8.2: exit 0 -- 0 error(s), 87 warning(s), 0 info; judged 1 of 1 submodel.
+- Verdict, version 0.8.3: exit 0 -- 0 error(s), 87 warning(s), 0 info; judged 1 of 1 submodel.
 - Metamodel findings relayed (not this project's rules): 77.
 
 | Rule | Severity | Reads from | Findings |
@@ -83,7 +83,7 @@ No rule of this project fires.
 
 - Published as [`published/Handover Documentation/2/0/1/IDTA 02004-2-0-1_Template_sample_HandoverDocumentation_forAASMetamodelV3.1.aasx`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/published/Handover%20Documentation/2/0/1/IDTA%2002004-2-0-1_Template_sample_HandoverDocumentation_forAASMetamodelV3.1.aasx), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `ba18b6b01826b592d768e74efdbb1e2ad287e5675d0fd15bda34cb926d90018c`.
-- Verdict, version 0.8.2: exit 2 -- refused, not judged.
+- Verdict, version 0.8.3: exit 2 -- refused, not judged.
 - Metamodel findings relayed (not this project's rules): 0.
 
 | Rule | Severity | Reads from | Findings |
@@ -94,7 +94,7 @@ No rule of this project fires.
 
 - Published as [`deprecated/Digital nameplate/2/0/IDTA 02006-2-0_Sample Digital Nameplate.aasx`](https://github.com/admin-shell-io/submodel-templates/blob/11ef3353124626e2dba4cb50767024df9a39928a/deprecated/Digital%20nameplate/2/0/IDTA%2002006-2-0_Sample%20Digital%20Nameplate.aasx), at upstream commit `11ef33531246`.
 - Licence: CC BY 4.0, © IDTA and contributors (THIRD_PARTY.md). sha256 `70f40b78b50f1d049aaab6a5f4352575c3e829c8e9dec74d66b69957dcfbadfa`.
-- Verdict, version 0.8.2: exit 2 -- refused, not judged.
+- Verdict, version 0.8.3: exit 2 -- refused, not judged.
 - Metamodel findings relayed (not this project's rules): 0.
 
 | Rule | Severity | Reads from | Findings |
