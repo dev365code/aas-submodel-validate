@@ -111,8 +111,13 @@ ADDED_SINCE_V1_PROVENANCE = set()
 #: them unasked. It carries no severity and moves no exit code, so a
 #: consumer that ignores it is not ignoring a verdict. Promote at the
 #: release that ships it.
+#: `metamodel` joins them the same way: the edition the input was read
+#: as, `3.0` for every input today. A JSON document names none, so this
+#: is the one place a consumer learns whose constraints the relayed
+#: `meta` findings are; a reader that ignores it reads what it read
+#: before. Promote at the release that ships it.
 ADDED_SINCE_V1_SUMMARY = {"submodelsSpecified", "rulesNotAsked",
-                          "unmatchedElements", "scopeNotExamined"}
+                          "unmatchedElements", "scopeNotExamined", "metamodel"}
 #: `meta` joins `strictMeta` rather than replacing it: a 0.1.0 reader
 #: parses the boolean and keeps working, and the boolean is derived from
 #: the level so the two cannot disagree. Promote at the release that
@@ -174,7 +179,8 @@ def test_the_summary_counts_what_it_says_it_counts():
     invisible. A consumer gates a build on these."""
     document = _report().as_dict()
     assert document["summary"] == {"errors": 1, "warnings": 2, "info": 3,
-                                   "rulesChecked": 123, "complete": True,
+                                   "rulesChecked": 123, "metamodel": "3.0",
+                                   "complete": True,
                                    "judged": True, "submodelsSeen": 0,
                                    "submodelsJudged": 0,
                                    "submodelsSpecified": 0,

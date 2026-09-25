@@ -13,7 +13,19 @@ the run. The test corpus holds three official IDTA files this reader
 refuses -- the 02004 2.0.1 template sample and the 02003 2.0.1 sample
 that upstream publishes a second time for metamodel 3.1, and the 02006
 2.0 sample, an AAS 2.0 package -- each pinned beside a mutation of
-itself that isolates why. No verdict moves.
+itself that isolates why.
+
+**A document written in another edition of the metamodel is told so.**
+An XML document names its edition in its namespace, and one naming
+3.1 -- or 2.0, or any edition but 3.0 -- was told the document could
+not be read as an AAS environment and to fix the syntax its parser
+rejects, of a syntax that may be sound. `X3` now says which edition the
+document names, that this reader reads 3.0, and that nothing in it was
+judged. The edition is read off the namespace and nothing else. And
+every report says which edition it read the input as,
+`summary.metamodel`, `3.0` for every input: a JSON document names none,
+and this is where a consumer learns whose constraints the metamodel
+findings are. No verdict moves: the same rule, severity and exit code.
 
 It is 360 rules, 311 generated from the vendored official template files,
 across nine template packs, as in 0.8.1. What this reader takes in is

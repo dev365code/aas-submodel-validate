@@ -719,10 +719,10 @@ TABLE = [
 
     ("loader/xml-is-asked-about-this-interpreters-limits",
      "src/aas_submodel_validate/loader.py",
-     "    except Exception as exc:\n"
-     "        _payload_error(loaded, part, exc, _out_of_room(exc, building=False))\n",
-     "    except Exception as exc:\n"
-     "        _payload_error(loaded, part, exc, None)\n",
+     "        _payload_error(loaded, part, exc,\n"
+     "                       _out_of_room(exc, building=False) or _other_edition(text))\n",
+     "        _payload_error(loaded, part, exc,\n"
+     "                       _other_edition(text))\n",
      ["tests/test_loader.py::"
       "test_xml_too_deep_to_follow_is_told_the_reader_stopped",
       "tests/test_loader.py::"
@@ -1035,8 +1035,8 @@ TABLE = [
 
     ("loader/a-bare-submodel-is-read-from-xml",
      "src/aas_submodel_validate/loader.py",
-     '                return isinstance(tag, str) and tag.rsplit("}", 1)[-1] == "submodel"',
-     '                return isinstance(tag, str) and tag.rsplit("}", 1)[-1] == "environment"',
+     '    return tag is not None and tag.rsplit("}", 1)[-1] == "submodel"',
+     '    return tag is not None and tag.rsplit("}", 1)[-1] == "environment"',
      ["tests/test_loader.py::test_a_bare_submodel_xml_file"],
      "the reader tells a bare Submodel from an environment by the XML root "
      "element; misread the root and a bare Submodel given as .xml is built "
@@ -2057,6 +2057,42 @@ TABLE = [
      "differs from the template's identifier in its SAMM version alone -- "
      "named ProductCondition, it was told only that matching goes by "
      "semanticId"),
+
+    ("edition/a-packaged-document-of-another-edition-is-told-which",
+     "src/aas_submodel_validate/loader.py",
+     "                       _out_of_room(exc, building=False) or _other_edition(text))\n",
+     "                       _out_of_room(exc, building=False))\n",
+     ["tests/test_metamodel_edition.py::"
+      "test_a_package_in_the_3_1_namespace_is_told_its_edition"],
+     "an IDTA sample written for metamodel 3.1 was told to fix the syntax its "
+     "parser rejects, of a document whose syntax may be sound"),
+
+    ("edition/a-bare-submodel-of-another-edition-is-told-which",
+     "src/aas_submodel_validate/loader.py",
+     "            message, fix = (_out_of_room(exc, building=False) or _other_edition(text)\n",
+     "            message, fix = (_out_of_room(exc, building=False)\n",
+     ["tests/test_metamodel_edition.py::"
+      "test_a_bare_submodel_in_the_3_1_namespace_is_told_its_edition"],
+     "a bare submodel in the 3.1 namespace was told only that it could not "
+     "be read as a Submodel"),
+
+    ("edition/the-edition-read-is-not-another",
+     "src/aas_submodel_validate/loader.py",
+     "    if edition == EDITION:\n        return None\n",
+     "",
+     ["tests/test_metamodel_edition.py::"
+      "test_a_3_0_document_its_parser_rejects_keeps_the_standing_remedy"],
+     "a 3.0 document its parser rejected was told it is written in metamodel "
+     "3.0, which this reader does not read"),
+
+    ("edition/the-report-says-which-edition",
+     "src/aas_submodel_validate/model.py",
+     '                "metamodel": EDITION,\n',
+     "",
+     ["tests/test_metamodel_edition.py::"
+      "test_every_report_says_which_edition_it_read_the_input_as"],
+     "a report did not say which edition of the metamodel the input was read "
+     "as, and a JSON document names none"),
 
     ("dbp5/the-name-an-author-reaches-for",
      "src/aas_submodel_validate/rules/detect.py",

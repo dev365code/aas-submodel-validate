@@ -44,6 +44,7 @@ needs to handle.
     "warnings": 0,
     "info": 0,
     "rulesChecked": 360,
+    "metamodel": "3.0",
     "complete": true,
     "judged": true,
     "submodelsSeen": 1,
@@ -162,6 +163,7 @@ not be.
 | `warnings` | integer | Findings at `warning` severity. |
 | `info` | integer | Findings at `info` severity. |
 | `rulesChecked` | integer | Every rule registered in this build. Not how many applied to your file — a Technical Data file is not judged by 02004's rules, and the number does not move when a different template answers — and not the number of findings. The relayed `meta` channel is not registered and is not counted. |
+| `metamodel` | string | The edition of the AAS metamodel this run read the input as, and whose constraints the `meta` channel relays: `3.0` in this version, for every input. An XML document names its edition in its namespace, and one naming another is refused (`X3`) with a remedy that says which it names; a JSON document names none and is read as 3.0 (`docs/scope.md`). So a relayed `AASd-120` on a JSON document written for 3.1, which deleted that constraint, is 3.0's rule applied, and this key is where a consumer can tell. Additive under `schemaVersion` 1. |
 | `judged` | boolean | Whether anything reached the rules at all. `false` means the input was refused or could not be opened, so there is no verdict here — only the reason. The run exits 2. |
 | `complete` | boolean | Whether everything this run was handed was read and built. `false` means something did not come out: a path that could not be opened, an archive that would not open, a relationship chain that went nowhere, a part refused for its size or for a DTD, a document that would not parse or could not be built, or a stop for this interpreter's stack or memory — what did not come out was not judged, and a report that only said `ok: false` could not tell you which. The container findings (`X1`–`X6`) say which. |
 | `submodelsSeen` | integer | How many submodels the input holds. |

@@ -20,7 +20,9 @@ finding.
 - **Not a reader of every metamodel edition.** It reads metamodel 3.0,
   through aas-core3.0: an XML document in the 3.1 namespace
   (`https://admin-shell.io/aas/3/1`) is refused (`X3`), not judged, and
-  an AAS 2.0 package is refused at its relationships (`X2`). A JSON
+  told which edition it names, and an AAS 2.0 package is refused at its
+  relationships (`X2`). Every report says which edition it read the
+  input as (`summary.metamodel`). A JSON
   document carries no edition, so one written for 3.1 is read as 3.0:
   what 3.1 relaxed is relayed as 3.0 states it -- an idShort on a list's
   item, which 3.1 permits, is a metamodel warning -- and what 3.1 alone

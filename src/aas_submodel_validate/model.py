@@ -14,6 +14,8 @@ import enum
 from dataclasses import dataclass, field
 from typing import Callable, Iterable, List, Optional
 
+from .upstream import EDITION
+
 
 class Severity(enum.Enum):
     ERROR = "error"
@@ -603,6 +605,10 @@ class Report:
                 "warnings": self.count(Severity.WARNING),
                 "info": self.count(Severity.INFO),
                 "rulesChecked": self.checked,
+                # Additive: the edition the input was read as, whose
+                # constraints the meta channel relays. A JSON document
+                # names none, so this is where a consumer learns it.
+                "metamodel": EDITION,
                 # Additive, so schemaVersion stays 1: a consumer that does
                 # not know the key reads exactly what it read before.
                 "complete": self.complete,

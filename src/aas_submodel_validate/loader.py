@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import codecs
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
@@ -35,6 +36,7 @@ from .container import (
     ran_out_of_memory,
     xml_as_utf8,
 )
+from .upstream import EDITION
 
 #: What a refusal concludes, after the sentence saying why it refused: the
 #: words the stop sentences below end on, for the refusals that are not
@@ -414,6 +416,39 @@ def _read_bounded(loaded: Loaded, path: Path):
     return raw
 
 
+#: IDTA 01001 gives each edition of the metamodel its XML namespace:
+#: `https://admin-shell.io/aas/<major>/<minor>`, and before 3.0
+#: `http://www.admin-shell.io/aas/<major>/<minor>`. Read off the root
+#: element's namespace and nothing else -- no file is known by name.
+_EDITION_NAMESPACE = re.compile(r"^https?://(?:www\.)?admin-shell\.io/aas/(\d+)/(\d+)$")
+
+OTHER_EDITION_REMEDY = (
+    "This reader reads AAS metamodel %s, and an XML document names its "
+    "edition in its namespace: this one names %s (`%s`), and was read no "
+    "further. To have it judged here, give this reader the same content "
+    "written in metamodel %s. %s")
+
+
+def _other_edition(text: str):
+    """(message, remedy) where the root element's namespace is another
+    edition's, or None -- and None too for any document this could not
+    read that far, which then meets the standing answer."""
+    tag = _root_tag(text)
+    if not tag or not tag.startswith("{"):
+        return None
+    namespace = tag[1:].split("}", 1)[0]
+    match = _EDITION_NAMESPACE.match(namespace)
+    if match is None:
+        return None
+    edition = "%s.%s" % match.groups()
+    if edition == EDITION:
+        return None
+    return ("the document is written in AAS metamodel %s, which this reader "
+            "does not read" % edition,
+            OTHER_EDITION_REMEDY % (EDITION, edition, namespace, EDITION,
+                                    REFUSED_NOT_JUDGED))
+
+
 def _payload_error(loaded: Loaded, part: Optional[str], exc, answered) -> None:
     """An environment document that did not come out, with the answer
     `_failure` or `_out_of_room` gave, or the standing one where they gave
@@ -473,7 +508,8 @@ def _build_environment(loaded: Loaded, text: str, part: Optional[str]) -> None:
     try:
         environment = xmlization.environment_from_str(text)
     except Exception as exc:
-        _payload_error(loaded, part, exc, _out_of_room(exc, building=False))
+        _payload_error(loaded, part, exc,
+                       _out_of_room(exc, building=False) or _other_edition(text))
         return
     loaded.environments.append(environment)
     loaded.submodels.extend(environment.submodels or [])
@@ -649,14 +685,13 @@ def _load_json(path: Path) -> Loaded:
 _PEEK_STEP = 65536
 
 
-def _root_is_submodel(text: str) -> bool:
-    """Whether the XML root element is a bare `submodel` rather than an
-    `environment` -- read only as far as the root's start tag, the way
-    `_load_json` reads `modelType` before it builds anything.
+def _root_tag(text: str) -> Optional[str]:
+    """The XML root element's tag, `{namespace}name`, read only as far as
+    the root's start tag, the way `_load_json` reads `modelType` before it
+    builds anything; None for anything it cannot parse that far.
 
-    Anything it cannot parse this far is answered False, so the document
-    goes to the environment reader and meets the same failure there. The
-    DOCTYPE was refused before this, so there are no entities to expand.
+    The DOCTYPE was refused before this, so there are no entities to
+    expand.
     """
     parser = ElementTree.XMLPullParser(events=("start",))
     try:
@@ -666,10 +701,19 @@ def _root_is_submodel(text: str) -> bool:
             # `read_events`, not where it was fed -- so both are guarded.
             for _event, element in parser.read_events():
                 tag = element.tag
-                return isinstance(tag, str) and tag.rsplit("}", 1)[-1] == "submodel"
+                return tag if isinstance(tag, str) else None
     except Exception:
-        return False
-    return False
+        return None
+    return None
+
+
+def _root_is_submodel(text: str) -> bool:
+    """Whether the XML root element is a bare `submodel` rather than an
+    `environment`. Anything unreadable that far is answered False, so the
+    document goes to the environment reader and meets the same failure
+    there."""
+    tag = _root_tag(text)
+    return tag is not None and tag.rsplit("}", 1)[-1] == "submodel"
 
 
 def _load_xml(path: Path) -> Loaded:
@@ -697,7 +741,7 @@ def _load_xml(path: Path) -> Loaded:
         try:
             loaded.submodels.append(xmlization.submodel_from_str(text))
         except Exception as exc:
-            message, fix = (_out_of_room(exc, building=False)
+            message, fix = (_out_of_room(exc, building=False) or _other_edition(text)
                             or ("the document could not be read as a Submodel", None))
             loaded.errors.append(LoadError(
                 "payload", message, subject=loaded.path,

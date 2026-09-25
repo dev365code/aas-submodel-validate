@@ -116,6 +116,7 @@
   "errors": 4,
   "info": 0,
   "judged": true,
+  "metamodel": "3.0",
   "rulesChecked": 360,
   "rulesNotAsked": [
    "HD-E09",
