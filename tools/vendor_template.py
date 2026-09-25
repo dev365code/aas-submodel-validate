@@ -70,6 +70,13 @@ FILES = {
     "src/aas_submodel_validate/data/example/idta-02004-2.0.aasx":
         "published/Handover Documentation/2/0/"
         "IDTA 02004-2-0_Example_HandoverDocumentation.aasx",
+    # Upstream publishes a 2.0.1 "template sample" for metamodel 3.1 -- a
+    # template (kind Template) whatever its name says, in the 3/1 XML
+    # namespace. This reader parses 3.0 and refuses it (X3); it is kept as
+    # the witness of that refusal (the corpus README says why).
+    "tests/corpus/idta/02004/template-sample-2.0.1-for-aas-3.1.aasx":
+        "published/Handover Documentation/2/0/1/"
+        "IDTA 02004-2-0-1_Template_sample_HandoverDocumentation_forAASMetamodelV3.1.aasx",
     # 02003 publishes its sample twice: once beside the 2.0 template and
     # again, repaired, beside the 2.0.1 one. Both are kept -- the pair is
     # the evidence for what upstream itself considered wrong.
@@ -79,6 +86,17 @@ FILES = {
         "published/Technical_Data/2/0/IDTA 02003_Sample_TechnicalData.aasx",
     "tests/corpus/idta/02003/sample-2.0.1.aasx":
         "published/Technical_Data/2/0/1/IDTA 02003_Sample_TechnicalData.aasx",
+    # And a third time, beside the second, for metamodel 3.1: refused (X3),
+    # kept as a witness, like the 02004 one above.
+    "tests/corpus/idta/02003/sample-2.0.1-for-aas-3.1.aasx":
+        "published/Technical_Data/2/0/1/"
+        "IDTA 02003_Sample_TechnicalData_forAASMetamodelV3.1.aasx",
+    # 02006 2.0's sample, which upstream has moved under deprecated/: an AAS
+    # 2.0 package, whose relationship types this reader does not follow
+    # (X2). Kept as a witness of that.
+    "tests/corpus/idta/02006/sample-2.0.aasx":
+        "deprecated/Digital nameplate/2/0/"
+        "IDTA 02006-2-0_Sample Digital Nameplate.aasx",
     "src/aas_submodel_validate/data/smt/02006/3.0/template.json":
         "published/Digital nameplate/3/0/"
         "IDTA 02006-3-0_Template_Digital Nameplate.json",

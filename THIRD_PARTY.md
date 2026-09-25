@@ -18,6 +18,9 @@
 | `tests/corpus/idta/02003/sample-2.0.json` | official 02003 2.0 sample (environment JSON) | no |
 | `tests/corpus/idta/02003/sample-2.0.aasx` | official 02003 2.0 sample (AASX) | no |
 | `tests/corpus/idta/02003/sample-2.0.1.aasx` | official 02003 2.0.1 sample (AASX) — upstream's own repair of the one above | no |
+| `tests/corpus/idta/02003/sample-2.0.1-for-aas-3.1.aasx` | official 02003 2.0.1 sample for metamodel 3.1 (AASX) — refused, and kept for that | no |
+| `tests/corpus/idta/02004/template-sample-2.0.1-for-aas-3.1.aasx` | official 02004 2.0.1 template sample for metamodel 3.1 (AASX) — refused, and kept for that | no |
+| `tests/corpus/idta/02006/sample-2.0.aasx` | official 02006 2.0 sample (AASX, AAS 2.0; under upstream's `deprecated/`) — refused, and kept for that | no |
 
 Source: [admin-shell-io/submodel-templates](https://github.com/admin-shell-io/submodel-templates),
 licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), © IDTA

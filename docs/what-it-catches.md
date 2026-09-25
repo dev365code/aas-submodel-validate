@@ -173,7 +173,7 @@ Before 1.0: every row of the mutation table killed on the tree it ships with, an
 **The vendored templates are pinned and hash-checked.**
 
 ```
-vendored material matches its recorded hashes, and the trees hold nothing else (14 files, pin 11ef33531246)
+vendored material matches its recorded hashes, and the trees hold nothing else (17 files, pin 11ef33531246)
 ```
 
 Reproduce: `python3 tools/vendor_template.py --check` in a clone; CI runs it

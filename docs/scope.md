@@ -17,6 +17,14 @@ finding.
   templates; it never writes one.
 - **Not a converter.** AASX, XML and JSON are read; nothing is
   transformed, migrated or re-serialised as a product feature.
+- **Not a reader of every metamodel edition.** It reads metamodel 3.0,
+  through aas-core3.0: an XML document in the 3.1 namespace
+  (`https://admin-shell.io/aas/3/1`) is refused (`X3`), not judged, and
+  an AAS 2.0 package is refused at its relationships (`X2`). A JSON
+  document carries no edition, so one written for 3.1 is read as 3.0:
+  what 3.1 relaxed is relayed as 3.0 states it -- an idShort on a list's
+  item, which 3.1 permits, is a metamodel warning -- and what 3.1 alone
+  permits, such as a File with no `contentType`, does not parse (`X3`).
 - **Not a Digital Product Passport platform.** IDTA 02035-2 is judged as
   what it is measured to be — a profile of the Handover Documentation
   template, twenty-two of its thirty-eight rows with two relaxed — and

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.2 — unreleased
+
+**The scope page says which metamodel edition is read.** This reader
+parses AAS metamodel 3.0: an XML document in the 3.1 namespace is
+refused (`X3`), and an AAS 2.0 package is refused at its relationships
+(`X2`). A JSON document carries no edition, so one written for 3.1 is
+read as 3.0 -- what 3.1 relaxed is relayed as 3.0 states it, and what
+3.1 alone permits does not parse. All of that was so and written
+nowhere; `docs/scope.md` says it now, and a test holds the sentence to
+the run. The test corpus holds three official IDTA files this reader
+refuses -- the 02004 2.0.1 template sample and the 02003 2.0.1 sample
+that upstream publishes a second time for metamodel 3.1, and the 02006
+2.0 sample, an AAS 2.0 package -- each pinned beside a mutation of
+itself that isolates why. No verdict moves.
+
+It is 360 rules, 311 generated from the vendored official template files,
+across nine template packs, as in 0.8.1. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.8.1 — 2026-09-25
 
 **A tie goes to the row nothing matched.** A near miss is taken for the
