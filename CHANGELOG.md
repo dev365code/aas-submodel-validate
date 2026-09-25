@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0 — unreleased
+## 0.9.0 — 2026-09-25
 
 **IDTA 02035-1 Digital Nameplate is the tenth template pack.** The
 Digital Battery Passport's part 1 -- the battery's product URI,
