@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.2 — unreleased
+## 0.8.2 — 2026-09-25
 
 **The scope page says which metamodel edition is read.** This reader
 parses AAS metamodel 3.0: an XML document in the 3.1 namespace is
