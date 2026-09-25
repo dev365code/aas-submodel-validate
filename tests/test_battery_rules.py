@@ -930,9 +930,10 @@ def _passport(category=None, carrying=()):
 def _declaring(elements, category):
     """Technical Data's elements with the category the file declares in
     the template's own `BatteryCategory`, or with that element holding no
-    value where the file declares none. The element is mandatory and its
-    value is not checked, so either way the part stays conformant and
-    only what the battery rules read moves."""
+    value where the file declares none. A category is mandatory and must
+    carry a value, so a passport declaring none cannot have a conformant
+    Technical Data part: that one draws `DBP4-E05`, and the tests that
+    build it read the battery rules' findings alone."""
     pending = list(elements)
     while pending:
         element = pending.pop()
@@ -977,6 +978,34 @@ def test_an_electric_vehicle_passport_is_asked_the_two_its_guidance_requires(tmp
     expected = _required_for("EV")
     assert expected == {"CapacityFade", "CapacityThresholdExhaustion"}, expected
     assert expected <= subjects, sorted(expected - subjects)
+
+
+@pytest.mark.parametrize("spelling", sorted(dbp4_tables.BY_ID["DBP4-E05"]["match"]))
+def test_the_category_is_read_under_every_identifier_the_template_gives_it(tmp_path, spelling):
+    """The template gives `BatteryCategory` its SAMM identifier and an ECLASS
+    one beside it, and its table matches either. The battery rules read the
+    SAMM spelling alone, so a category written with the ECLASS one passed
+    the template and was reported as no category at all -- the report
+    calling the element conformant and the file silent about it. Read off
+    the table's own row, so the two readings cannot disagree."""
+    env = _passport("ev")
+    stated = _declaring_element(env)
+    stated["semanticId"] = _external(spelling)
+    subjects = _r8_subjects(_run(tmp_path, env))
+    assert {"CapacityFade", "CapacityThresholdExhaustion"} <= subjects, sorted(subjects)
+
+
+def _declaring_element(env):
+    for submodel in env["submodels"]:
+        pending = list(submodel.get("submodelElements", []))
+        while pending:
+            element = pending.pop()
+            if element.get("semanticId", {}).get("keys", [{}])[0].get("value") == CATEGORY_SID:
+                return element
+            children = element.get("value")
+            if isinstance(children, list):
+                pending.extend(child for child in children if isinstance(child, dict))
+    raise AssertionError("no BatteryCategory in the passport")
 
 
 def test_a_light_transport_passport_is_not_asked_for_what_its_guidance_forbids(tmp_path):

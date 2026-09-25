@@ -392,7 +392,7 @@ def _battery(tmp_path, category="lmt"):
     """A passport of IDTA 02035-1/-4/-5 submodels. The battery rules read
     all three; 02035-5 has a template table of its own since 0.8.0 and
     02035-1 since 0.9.0, and the passport carries what those tables make
-    mandatory. 02035-4 has none."""
+    mandatory. 02035-4 has one since 0.9.0 too."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from test_battery_rules import _passport

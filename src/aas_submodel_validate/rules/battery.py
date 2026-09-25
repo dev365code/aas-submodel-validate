@@ -58,7 +58,7 @@ import re
 from ..model import Violation
 from ..registry import rule
 from ..semantics import candidate_values, element_candidate_values
-from . import battery_tables, detect
+from . import battery_tables, dbp4_tables, detect
 from .detect import judgeable
 
 R2_ID = "BAT-R2"
@@ -69,6 +69,13 @@ R8_ID = "BAT-R8"
 #: element's own description: "lmt", "ev", "industrial", "stationary".
 CATEGORY_ELEMENT = ("urn:samm:io.admin-shell.idta.batterypass."
                     "technical_data:1.0.0#batteryCategory")
+
+#: Every identifier the template lets that element answer to: its own and
+#: the ECLASS one beside it, read off 02035-4's table row rather than
+#: written again here. Reading the SAMM spelling alone, a category written
+#: with the other passed the template and was reported as no category.
+CATEGORY_IDENTIFIERS = frozenset(next(
+    row["match"] for row in dbp4_tables.ROWS if CATEGORY_ELEMENT in row["match"]))
 
 #: The template's vocabulary, and the guidance column each one settles.
 #:
@@ -105,7 +112,7 @@ def declared_categories(submodels) -> tuple:
         pending = list(getattr(submodel, "submodel_elements", None) or [])
         while pending:
             element = pending.pop()
-            if CATEGORY_ELEMENT in element_candidate_values(element):
+            if CATEGORY_IDENTIFIERS & element_candidate_values(element):
                 value = getattr(element, "value", None)
                 if isinstance(value, str) and value.strip():
                     word = value.strip().lower()

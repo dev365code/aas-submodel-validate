@@ -2660,7 +2660,8 @@ def test_a_rules_own_text_is_bounded_the_way_a_violations_is():
     when the violation has none, and `as_dict` prints `rule.title`
     unconditionally -- and neither went through it. Measured: a rule
     whose title and fix are 200,000 characters reaches the JSON at
-    200,014 and 200,000 while the violation beside it is cut at 2,000.
+    200,014 and 200,000 while the violation beside it was cut at the
+    bound, 2,000 then.
 
     Every generated pack builds its rules' text out of the template's
     own strings (`rules/dbp.py` and its siblings interpolate a row's

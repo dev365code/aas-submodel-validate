@@ -1171,8 +1171,7 @@ def dbp4_env() -> dict:
     The elements' own identifiers are the template's -- ECLASS IRDIs and
     SAMM URNs of the part's own namespace, 1.0.1's for the warranty the
     1.0.1 release added and 1.0.0's for the rest -- and the identifiers it
-    puts beside them are left out: the rows match without them. One
-    element is the exception, and says why where it is written.
+    puts beside them are left out: the rows match without them.
     """
     power_at = _smc(DBP4 + "PowerCapabilityAt", [
         _prop("atSoc", DBP4 + "atSoC", "80", "xs:unsignedInt"),
@@ -1223,14 +1222,11 @@ def dbp4_env() -> dict:
                   DBP4 + "internalResistanceIncreaseOfBatteryCell", "10", "xs:float"),
             _prop("InternalResistanceIncreaseOfBatteryPackLevel",
                   DBP4 + "internalResistanceIncreaseOfBatteryPack", "10", "xs:float"),
-            # Identified by the ECLASS IRDI the template puts beside its
-            # own identifier: its own, `...#initialInternalResistanceOfBatteryModule`,
-            # is also what the template gives the module's *initial*
-            # resistance as a supplemental, so an element carrying it counts
-            # as both and the file draws the template's defect
-            # (docs/divergences.md #60).
-            _prop("InternalResistanceIncreaseOfBatteryModuleLevel", "0173-1#02-ABL836#001",
-                  "10", "xs:float"),
+            # Its own identifier is also what the template gives the
+            # module's *initial* resistance beside that one's own; as its own
+            # it names this row (docs/divergences.md #60).
+            _prop("InternalResistanceIncreaseOfBatteryModuleLevel",
+                  DBP4 + "initialInternalResistanceOfBatteryModule", "10", "xs:float"),
         ], id_short="Resistance"),
         _smc(DBP4 + "powerCapability", [
             _prop("MaximumPermittedBatteryPower", "0173-1#02-ABL843#002", "0", "xs:float"),

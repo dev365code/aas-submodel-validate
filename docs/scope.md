@@ -317,10 +317,12 @@ product image names is in the package; no value is checked for what it
 says, the battery category included, which the battery-data layer reads
 on its own terms. `WarrantyInformation` states no cardinality in the
 template or in its specification's table, and reads 0..*, although the
-specification's text says a passport must include it. Two of the
-template's identifiers belong to two elements each: the module-level
-resistance increase carries the identifier the module-level initial
-resistance carries beside its own, so a file written as the template
-writes it is told it has two initial module resistances, and the
-warranty carries the manufacturer name's own identifier beside its own
-(`docs/divergences.md` #60).
+specification's text says a passport must include it. Three of the
+template's identifiers belong to more than one sibling element -- the
+module-level resistance increase's own is what the module-level initial
+resistance carries beside its own, the warranty carries the manufacturer
+name's own beside its own, and six technical property areas share one --
+and an element's own identifier settles which row it is, so a file
+written as the template writes it is judged as the template means; an
+element known by a shared identifier alone goes to the first row holding
+it (`docs/divergences.md` #60).
