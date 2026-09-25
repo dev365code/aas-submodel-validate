@@ -1,11 +1,11 @@
 """What this tool says about IDTA's own files that it refuses, pinned as
 it is.
 
-Three published files are refused rather than judged: the 02006 2.0
-sample, an AAS 2.0 package, and the samples upstream publishes beside
-02004 2.0.1 and 02003 2.0.1 a second time, for metamodel 3.1. They are
-what someone downloading IDTA's current material meets first, so the
-refusal is a regression surface like any verdict. Each is pinned beside
+Three published files are refused rather than judged: the samples
+upstream publishes beside 02004 2.0.1 and 02003 2.0.1 a second time, for
+metamodel 3.1, and the 02006 2.0 sample, an AAS 2.0 package upstream
+keeps under `deprecated/`. They are IDTA's own material, so the refusal
+is a regression surface like any verdict. Each is pinned beside
 a mutation of itself that isolates the reason: a change that moved one
 of them for another reason would pass the first test and fail the
 second.
@@ -21,13 +21,14 @@ from pathlib import Path
 import pytest
 
 from aas_submodel_validate import runner
-from builders import hd_env, td_env
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests" / "corpus" / "idta"
 DN_AAS2 = CORPUS / "02006" / "sample-2.0.aasx"
 HD_AAS31 = CORPUS / "02004" / "template-sample-2.0.1-for-aas-3.1.aasx"
 TD_AAS31 = CORPUS / "02003" / "sample-2.0.1-for-aas-3.1.aasx"
+TD_JSON = CORPUS / "02003" / "sample-2.0.json"
+ORIGIN_2 = b"http://www.admin-shell.io/aasx/relationships/aasx-origin"
 
 AAS30 = b"https://admin-shell.io/aas/3/0"
 AAS31 = b"https://admin-shell.io/aas/3/1"
@@ -51,11 +52,28 @@ def _own(report):
 
 def test_the_aas_2_sample_is_refused_at_its_relationships():
     """Its relationship types are AAS 2.0's, `http://www.admin-shell.io/
-    aasx/relationships/...`, and this reader follows 3.0's: the chain
-    reaches no payload (`X2`), and nothing is judged."""
+    aasx/relationships/...`, and this reader follows 3.0's: the chain is
+    not followed (`X2`), nothing is judged, and the report says which type
+    the package declared -- not that it declares none, and not to repair a
+    chain that may be whole in its own vocabulary."""
     report = runner.run(DN_AAS2)
     assert _own(report) == ["X2"], _own(report)
     assert (report.ok, report.submodels_seen) == (False, 0)
+    [finding] = report.findings
+    assert ORIGIN_2.decode() in finding.violation.message, finding.violation.message
+    assert "declares no aasx-origin relationship" not in finding.violation.message
+    assert finding.fix != finding.rule.fix, finding.fix
+
+
+def test_with_no_origin_relationship_at_all_the_chain_is_to_be_repaired(tmp_path):
+    """The control: the same package with its origin relationship removed
+    declares none, and that is what it is told, with the standing remedy."""
+    path = _rewritten(DN_AAS2, tmp_path, lambda name, data: data.replace(
+        ORIGIN_2, b"http://example.com/not-a-relationship") if name == "_rels/.rels" else data)
+    report = runner.run(path)
+    [finding] = report.findings
+    assert (finding.id, finding.fix) == ("X2", finding.rule.fix)
+    assert "declares no aasx-origin relationship" in finding.violation.message
 
 
 def test_given_3_0_relationships_the_aas_2_payload_is_refused_in_turn(tmp_path):
@@ -90,6 +108,7 @@ def test_in_the_3_0_namespace_the_technical_data_sample_is_judged_and_passes(tmp
     report = runner.run(path)
     assert _own(report) == [], _own(report)
     assert (report.submodels_seen, report.submodels_judged) == (1, 1)
+    assert report.ok
 
 
 def test_in_the_3_0_namespace_the_handover_sample_is_set_aside_as_a_template(tmp_path):
@@ -110,7 +129,8 @@ def test_the_scope_page_says_which_metamodel_is_read():
     says."""
     scope = " ".join((ROOT / "docs" / "scope.md").read_text("utf-8").split())
     assert "an XML document in the 3.1 namespace (`https://admin-shell.io/aas/3/1`) is refused (`X3`)" in scope
-    assert "an AAS 2.0 package is refused at its relationships (`X2`)" in scope
+    assert "an AAS 2.0 package, whose relationships are declared in 2.0's vocabulary, is refused at them (`X2`)" in scope
+
 
 
 
@@ -133,20 +153,28 @@ def _first(elements, kind):
     return None
 
 
+def _aasd_120(report):
+    return sum("AASd-120" in f.violation.message for f in report.findings
+               if f.rule.kind == "meta")
+
+
 def test_a_json_document_written_for_3_1_is_read_as_3_0(tmp_path):
-    """JSON carries no metamodel edition, so the scope page says a 3.1
-    one is read as 3.0, and these are the two halves of that: what 3.1
-    alone permits does not parse -- a File with no `contentType` -- and
-    what 3.1 relaxed is relayed as 3.0 states it -- an idShort on a list's
-    item, AASd-120, which 3.1 deleted."""
-    env = copy.deepcopy(hd_env())
+    """JSON carries no metamodel edition, so the scope page says a 3.1 one
+    is read as 3.0, and these are the two halves of that, on IDTA's own
+    02003 sample: what 3.1 alone permits does not parse -- a File with no
+    `contentType` -- and what 3.1 relaxed is relayed as 3.0 states it.
+    Every list in the sample gives its items idShorts, which 3.0 forbids
+    (AASd-120) and 3.1 no longer does; the relay says so once per list,
+    and a list whose items lose their idShorts drops out of the count."""
+    official = json.loads(TD_JSON.read_text("utf-8"))
+    env = copy.deepcopy(official)
     _first(env["submodels"][0]["submodelElements"], "File").pop("contentType")
     assert _own(_judged(tmp_path, env)) == ["X3"]
-    env = copy.deepcopy(td_env())
-    listed = _first(env["submodels"][0]["submodelElements"], "SubmodelElementList")
-    for index, item in enumerate(listed["value"]):
-        item["idShort"] = "Item%02d" % index
-    report = _judged(tmp_path, env)
-    assert _own(report) == [], _own(report)
-    assert any("AASd-120" in f.violation.message for f in report.findings
-               if f.rule.kind == "meta"), [f.violation.message for f in report.findings]
+    before = _judged(tmp_path, official)
+    assert _aasd_120(before) >= 1
+    env = copy.deepcopy(official)
+    for item in _first(env["submodels"][0]["submodelElements"], "SubmodelElementList")["value"]:
+        item.pop("idShort")
+    after = _judged(tmp_path, env)
+    assert _own(after) == _own(before)
+    assert _aasd_120(after) == _aasd_120(before) - 1, (_aasd_120(before), _aasd_120(after))

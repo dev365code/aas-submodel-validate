@@ -4,8 +4,9 @@
 
 **The scope page says which metamodel edition is read.** This reader
 parses AAS metamodel 3.0: an XML document in the 3.1 namespace is
-refused (`X3`), and an AAS 2.0 package is refused at its relationships
-(`X2`). A JSON document carries no edition, so one written for 3.1 is
+refused (`X3`), and an AAS 2.0 package, whose relationships are
+declared in 2.0's vocabulary, is refused at them (`X2`). A JSON
+document carries no edition, so one written for 3.1 is
 read as 3.0 -- what 3.1 relaxed is relayed as 3.0 states it, and what
 3.1 alone permits does not parse. All of that was so and written
 nowhere; `docs/scope.md` says it now, and a test holds the sentence to
@@ -21,11 +22,17 @@ An XML document names its edition in its namespace, and one naming
 not be read as an AAS environment and to fix the syntax its parser
 rejects, of a syntax that may be sound. `X3` now says which edition the
 document names, that this reader reads 3.0, and that nothing in it was
-judged. The edition is read off the namespace and nothing else. And
-every report says which edition it read the input as,
-`summary.metamodel`, `3.0` for every input: a JSON document names none,
-and this is where a consumer learns whose constraints the metamodel
-findings are. No verdict moves: the same rule, severity and exit code.
+judged. The edition is read off the namespace and nothing else, and a
+namespace that only resembles an edition's -- `.../aas/03/0`, other
+digits, another host form -- is quoted back with the standing remedy
+rather than named as an edition. An AAS 2.0 package, which declares its
+origin with 2.0's relationship type, was told it declares no
+aasx-origin relationship and to repair its chain; `X2` now says which
+type it declared and that this reader follows 3.0's. And the report's
+summary names the edition this reader reads, `summary.metamodel`,
+`3.0` whatever the input: a JSON document names none, and this is where
+a consumer learns whose constraints the metamodel findings are. No
+verdict moves: the same rules, severities and exit codes.
 
 It is 360 rules, 311 generated from the vendored official template files,
 across nine template packs, as in 0.8.1. What this reader takes in is

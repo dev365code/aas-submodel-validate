@@ -111,8 +111,8 @@ ADDED_SINCE_V1_PROVENANCE = set()
 #: them unasked. It carries no severity and moves no exit code, so a
 #: consumer that ignores it is not ignoring a verdict. Promote at the
 #: release that ships it.
-#: `metamodel` joins them the same way: the edition the input was read
-#: as, `3.0` for every input today. A JSON document names none, so this
+#: `metamodel` joins them the same way: the edition this reader reads,
+#: `3.0` whatever the input. A JSON document names none, so this
 #: is the one place a consumer learns whose constraints the relayed
 #: `meta` findings are; a reader that ignores it reads what it read
 #: before. Promote at the release that ships it.

@@ -23,8 +23,8 @@ import aas_core3.verification as _verification
 from aas_core3.types import MultiLanguageProperty as _MultiLanguageProperty
 
 #: The edition of the AAS metamodel the library reads, and so the one
-#: every run reads its input as: the report says so (`summary.metamodel`)
-#: and the loader tells a document of another edition which one it is.
+#: this reader reads: the report says so (`summary.metamodel`) and the
+#: loader tells a document of another edition which one it is.
 #: One place, because the day the dependency moves this is what moves.
 EDITION = "3.0"
 

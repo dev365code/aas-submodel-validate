@@ -21,10 +21,10 @@ directory's `sha256sums.txt` has the digests).
 
 Those last three are refused rather than judged -- this reader follows
 the 3.0 package relationships and parses metamodel 3.0 -- and they are
-kept for the refusal: they are what someone downloading IDTA's current
-material meets first, and the suite pins each beside a mutation of
-itself that isolates why, so a change that moved one for another reason
-fails.
+kept for the refusal: two sit beside the current 2.0.1 editions and the
+third in upstream's `deprecated/` folder, IDTA's own material all three,
+and the suite pins each beside a mutation of itself that isolates why,
+so a change that moved one for another reason fails.
 
 They are here *with their defects*: the suite pins what this validator
 reports against them by name, because the published reference material

@@ -551,6 +551,22 @@ class RefusedContent(ContainerError):
     """
 
 
+class ForeignOrigin(ContainerError):
+    """The package declares its origin with a relationship type this reader
+    does not follow.
+
+    Kept apart from "declares no aasx-origin relationship", which is what it
+    was told: it declares one, named `aasx-origin` like 3.0's, of another
+    type -- AAS 2.0's `http://www.admin-shell.io/aasx/relationships/...`
+    for the 2.0 sample in the test corpus -- and the chain may be whole in
+    the vocabulary it uses, so "repair the chain" is not its remedy.
+    """
+
+    def __init__(self, message, declared):
+        super().__init__(message)
+        self.declared = declared
+
+
 class NoRelationships(ContainerError):
     """The archive holds no relationships part for this source.
 
@@ -1180,9 +1196,19 @@ class AasxPackage:
     @property
     def origin(self) -> str:
         """The aasx-origin part the package-level relationships name."""
-        for rel_type, target, _external in self.relationships(""):
+        declared = self.relationships("")
+        for rel_type, target, _external in declared:
             if rel_type == ORIGIN_REL:
                 return target
+        # One of another type, named as 3.0's is: said as what it is. The
+        # name is the relationship's last path segment, the only part the
+        # two vocabularies share; nothing else about the type is assumed.
+        for rel_type, _target, _external in declared:
+            if rel_type.rsplit("/", 1)[-1] == ORIGIN_REL.rsplit("/", 1)[-1]:
+                raise ForeignOrigin(
+                    "%s declares its aasx-origin relationship with the type `%s`, "
+                    "not the one this reader follows (`%s`)"
+                    % (self.path, rel_type, ORIGIN_REL), rel_type)
         raise ContainerError("%s declares no aasx-origin relationship" % self.path)
 
     @property

@@ -27,6 +27,7 @@ from .container import (
     AasxPackage,
     ContainerError,
     DirectoryTooLarge,
+    ForeignOrigin,
     NoRelationships,
     OutOfMemory,
     PartTooLarge,
@@ -416,17 +417,35 @@ def _read_bounded(loaded: Loaded, path: Path):
     return raw
 
 
-#: IDTA 01001 gives each edition of the metamodel its XML namespace:
-#: `https://admin-shell.io/aas/<major>/<minor>`, and before 3.0
-#: `http://www.admin-shell.io/aas/<major>/<minor>`. Read off the root
-#: element's namespace and nothing else -- no file is known by name.
-_EDITION_NAMESPACE = re.compile(r"^https?://(?:www\.)?admin-shell\.io/aas/(\d+)/(\d+)$")
+#: Each edition of the metamodel has its XML namespace:
+#: `https://admin-shell.io/aas/<major>/<minor>` from 3.0 (IDTA 01001; 3.0's
+#: and 3.1's are the ones aas-core3.0 and aas-core3.1 read), and
+#: `http://www.admin-shell.io/aas/<major>/<minor>` before it, as the 2.0
+#: sample in the test corpus spells it. Read off the root element's
+#: namespace and nothing else -- no file is known by name -- and matched
+#: whole: ASCII digits with no leading zero and at most three of them, each
+#: host form with the majors that use it. No edition is `03.0`, written in
+#: fullwidth digits, or `http://admin-shell.io`, and a namespace that
+#: merely resembles an edition's is a typo to be quoted back, not an
+#: edition to be named. The bound on the digits is also a bound on what a
+#: remedy echoes.
+_EDITION_NAMESPACE = re.compile(
+    r"(https://admin-shell\.io|http://www\.admin-shell\.io)"
+    r"/aas/(0|[1-9][0-9]{0,2})/(0|[1-9][0-9]{0,2})")
 
 OTHER_EDITION_REMEDY = (
     "This reader reads AAS metamodel %s, and an XML document names its "
     "edition in its namespace: this one names %s (`%s`), and was read no "
-    "further. To have it judged here, give this reader the same content "
-    "written in metamodel %s. %s")
+    "further. To be judged here it has to be written in metamodel %s. %s")
+
+
+FOREIGN_ORIGIN_REMEDY = (
+    "This reader follows the AASX relationship types of IDTA 01005, the "
+    "packaging of metamodel 3.0, and this package declares its origin with "
+    "another type, so its chain was not followed and none of its parts was "
+    "read. The chain may be whole in the vocabulary it uses. To be judged "
+    "here the package has to use 3.0's relationship types. %s"
+    % REFUSED_NOT_JUDGED)
 
 
 def _other_edition(text: str):
@@ -437,10 +456,13 @@ def _other_edition(text: str):
     if not tag or not tag.startswith("{"):
         return None
     namespace = tag[1:].split("}", 1)[0]
-    match = _EDITION_NAMESPACE.match(namespace)
+    match = _EDITION_NAMESPACE.fullmatch(namespace)
     if match is None:
         return None
-    edition = "%s.%s" % match.groups()
+    host, major, minor = match.groups()
+    if host.startswith("https://") != (int(major) >= 3):
+        return None
+    edition = "%s.%s" % (major, minor)
     if edition == EDITION:
         return None
     return ("the document is written in AAS metamodel %s, which this reader "
@@ -802,6 +824,9 @@ def _load_aasx(path: Path) -> Loaded:
         return loaded
     except RefusedContent as exc:
         loaded.errors.append(LoadError("chain", str(exc), fix=RELATIONSHIP_DOCTYPE_REMEDY))
+        return loaded
+    except ForeignOrigin as exc:
+        loaded.errors.append(LoadError("chain", str(exc), fix=FOREIGN_ORIGIN_REMEDY))
         return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("chain", str(exc)))

@@ -627,6 +627,25 @@ def test_every_rule_offers_a_remedy():
 #: taken from the fixtures cannot see a sentence no fixture reaches, and
 #: those are the ones nothing else is watching either.
 SHIPPED_REMEDIES = {
+    "loader/other-edition/3.1":
+        "This reader reads AAS metamodel 3.0, and an XML document names its "
+        "edition in its namespace: this one names 3.1 "
+        "(`https://admin-shell.io/aas/3/1`), and was read no further. To be "
+        "judged here it has to be written in metamodel 3.0. Nothing here is a "
+        "verdict on the document -- it was refused, not judged.",
+    "loader/other-edition/2.0":
+        "This reader reads AAS metamodel 3.0, and an XML document names its "
+        "edition in its namespace: this one names 2.0 "
+        "(`http://www.admin-shell.io/aas/2/0`), and was read no further. To be "
+        "judged here it has to be written in metamodel 3.0. Nothing here is a "
+        "verdict on the document -- it was refused, not judged.",
+    "loader/foreign-origin":
+        "This reader follows the AASX relationship types of IDTA 01005, the "
+        "packaging of metamodel 3.0, and this package declares its origin with "
+        "another type, so its chain was not followed and none of its parts was "
+        "read. The chain may be whole in the vocabulary it uses. To be judged "
+        "here the package has to use 3.0's relationship types. Nothing here is "
+        "a verdict on the document -- it was refused, not judged.",
     "runner/the-metamodel-channel-stopped":
         "The metamodel channel stopped, so this report does not say "
         "whether the metamodel is satisfied; the rest of the verdict "
@@ -846,6 +865,14 @@ def _sentences_violations_carry() -> dict:
     built["loader/payload-doctype"] = loader.PAYLOAD_DOCTYPE_REMEDY
     built["loader/directory-bound"] = loader.directory_bound_remedy()
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY
+    # A document of another edition is told which, with a sentence built
+    # from what its namespace names: built here for the two editions a
+    # published file uses, so a swapped argument is a changed sentence.
+    for namespace, edition in (("https://admin-shell.io/aas/3/1", "3.1"),
+                               ("http://www.admin-shell.io/aas/2/0", "2.0")):
+        built["loader/other-edition/%s" % edition] = loader._other_edition(
+            '<environment xmlns="%s"/>' % namespace)[1]
+    built["loader/foreign-origin"] = loader.FOREIGN_ORIGIN_REMEDY
     # Every branch, and not only the one being changed: a census taken
     # of one answer cannot see its neighbours drift.
     for refusal in (PermissionError(13, "Permission denied"), MemoryError(),

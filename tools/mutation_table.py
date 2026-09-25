@@ -2090,9 +2090,62 @@ TABLE = [
      '                "metamodel": EDITION,\n',
      "",
      ["tests/test_metamodel_edition.py::"
-      "test_every_report_says_which_edition_it_read_the_input_as"],
-     "a report did not say which edition of the metamodel the input was read "
-     "as, and a JSON document names none"),
+      "test_every_report_names_the_edition_this_reader_reads"],
+     "a report did not name the edition of the metamodel this reader reads, "
+     "and a JSON document names none"),
+
+    ("edition/no-edition-is-written-with-a-leading-zero",
+     "src/aas_submodel_validate/loader.py",
+     '    r"/aas/(0|[1-9][0-9]{0,2})/(0|[1-9][0-9]{0,2})")\n',
+     '    r"/aas/(\\d+)/(\\d+)")\n',
+     ["tests/test_metamodel_edition.py::"
+      "test_a_namespace_that_only_resembles_an_edition_s_names_none"],
+     "a namespace typed `.../aas/03/0`, or in fullwidth digits, was told it "
+     "is written in metamodel 03.0, which this reader does not read"),
+
+    ("edition/only-the-host-forms-editions-use",
+     "src/aas_submodel_validate/loader.py",
+     "    if host.startswith(\"https://\") != (int(major) >= 3):\n",
+     "    if False:\n",
+     ["tests/test_metamodel_edition.py::"
+      "test_a_namespace_that_only_resembles_an_edition_s_names_none"],
+     "`http://www.admin-shell.io/aas/3/1`, a host form the 3.x editions do "
+     "not use, was named as metamodel 3.1"),
+
+    ("container/an-origin-of-another-type-is-named",
+     "src/aas_submodel_validate/container.py",
+     "            if rel_type.rsplit(\"/\", 1)[-1] == ORIGIN_REL.rsplit(\"/\", 1)[-1]:\n",
+     "            if False:\n",
+     ["tests/test_official_material_refused.py::"
+      "test_the_aas_2_sample_is_refused_at_its_relationships"],
+     "an AAS 2.0 package was told it declares no aasx-origin relationship, "
+     "and to repair a chain that may be whole in its own vocabulary"),
+
+    ("edition/the-namespace-is-matched-whole",
+     "src/aas_submodel_validate/loader.py",
+     "    match = _EDITION_NAMESPACE.fullmatch(namespace)\n",
+     "    match = _EDITION_NAMESPACE.match(namespace)\n",
+     ["tests/test_metamodel_edition.py::"
+      "test_a_namespace_that_only_resembles_an_edition_s_names_none"],
+     "`https://admin-shell.io/aas/3/1/extra`, and 3.1's namespace with a "
+     "newline after it, were named as metamodel 3.1"),
+
+    ("edition/the-edition-is-the-root-element-s",
+     "src/aas_submodel_validate/loader.py",
+     '    parser = ElementTree.XMLPullParser(events=("start",))\n',
+     '    parser = ElementTree.XMLPullParser(events=("end",))\n',
+     ["tests/test_metamodel_edition.py::"
+      "test_the_edition_is_the_root_element_s_and_nobody_else_s"],
+     "a 3.0 document whose first child wore the 3.1 namespace was told it is "
+     "written in metamodel 3.1"),
+
+    ("edition/the-remedy-says-which-edition-is-which",
+     "src/aas_submodel_validate/loader.py",
+     "            OTHER_EDITION_REMEDY % (EDITION, edition, namespace, EDITION,\n",
+     "            OTHER_EDITION_REMEDY % (edition, edition, namespace, EDITION,\n",
+     ["tests/test_registry.py::"
+      "test_every_sentence_a_violation_carries_is_the_one_that_was_decided"],
+     "a 3.1 document was told this reader reads metamodel 3.1"),
 
     ("dbp5/the-name-an-author-reaches-for",
      "src/aas_submodel_validate/rules/detect.py",
