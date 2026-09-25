@@ -211,6 +211,9 @@ def test_nothing_a_sender_wrote_is_in_the_bundle_of_a_package(tmp_path, capsys):
     data = written[0].read_bytes()
     leaks = _leaks(data)
     assert not leaks, "the bundle carries the canary as %s" % leaks[:3]
+    # The bytes on the disk are the bytes the limit was measured on, on every
+    # platform: no line ending translated on the way out.
+    assert data == bundling.dumps(json.loads(data)).encode("utf-8")
     assert CANARY not in written[0].name
     # And what it does carry is there: the shape, the rule ids, the note.
     bundle = json.loads(data)

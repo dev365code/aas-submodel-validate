@@ -442,13 +442,17 @@ def write(bundle: Dict, out_dir: Optional[str]) -> Path:
     """Written beside its name and moved over it, never written through it:
     the name is predictable from the input's hash, and one planted in a shared
     directory as a link to somebody's file would otherwise have that file
-    overwritten with this one. `os.replace` replaces the link itself."""
+    overwritten with this one. `os.replace` replaces the link itself.
+
+    Written as bytes, the bytes the limit was measured on. Written as text,
+    Windows turned every line ending into two characters, and a bundle held
+    to 256 KiB came out larger on the disk than it was when measured."""
     folder = Path(out_dir or ".")
     target = folder / file_name(bundle)
     handle, temporary = tempfile.mkstemp(prefix=".bug-report-", suffix=".tmp", dir=str(folder))
     try:
-        with os.fdopen(handle, "w", encoding="utf-8") as stream:
-            stream.write(dumps(bundle))
+        with os.fdopen(handle, "wb") as stream:
+            stream.write(dumps(bundle).encode("utf-8"))
         os.replace(temporary, target)
     except BaseException:
         with contextlib.suppress(OSError):

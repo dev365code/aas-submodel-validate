@@ -2467,6 +2467,15 @@ TABLE = [
      ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_link_planted_under_the_bundle_s_name_is_replaced_not_written_through'],
      "a link planted under the bundle's name had the file it pointed at overwritten"),
 
+    ("bundle/written-as-text",
+     "src/aas_submodel_validate/bundle.py",
+     '        with os.fdopen(handle, "wb") as stream:\n            stream.write(dumps(bundle).encode("utf-8"))\n',
+     '        with os.fdopen(handle, "w", encoding="utf-8", newline="\\r\\n") as stream:\n            stream.write(dumps(bundle))\n',
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::"
+      "test_nothing_a_sender_wrote_is_in_the_bundle_of_a_package"],
+     "the bundle was written as text, and on Windows every line ending grew "
+     "a byte past what the limit had measured"),
+
     ("changelog/the-entry-counts-its-packs",
      "tests/test_readme_front.py",
      '    assert ("across %s template packs" % _TEMPLATE_WORDS[vendored]\n',
