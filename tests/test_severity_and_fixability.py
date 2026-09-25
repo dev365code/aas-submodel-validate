@@ -121,9 +121,10 @@ def test_the_positional_fields_a_caller_had_keep_their_places():
 
 
 def test_the_reason_is_bounded_like_every_other_text_field():
-    long = "x" * 5000
+    from aas_submodel_validate.model import MAX_REPORTED_CHARACTERS
+    long = "x" * (MAX_REPORTED_CHARACTERS * 3)
     kept = Violation("x", fixability=5, fixability_why=long).fixability_why
-    assert len(kept) <= 2000 and "more characters, not shown" in kept
+    assert len(kept) <= MAX_REPORTED_CHARACTERS and "more characters, not shown" in kept
 
 
 @pytest.mark.allow_crash

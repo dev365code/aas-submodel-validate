@@ -25,6 +25,7 @@ from aas_submodel_validate.rules import (
     battery_tables,
     contact_tables,
     dbp1_tables,
+    dbp4_tables,
     dbp5_tables,
     dbp_tables,
     dn_tables,
@@ -77,13 +78,15 @@ def test_the_rule_counts_are_the_registrys():
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS) + len(hs_tables.ROWS)
-                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS))
-    assert len(all_rules()) == 384
+                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS)
+                 + len(dbp4_tables.ROWS))
+    assert len(all_rules()) == 432
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS),
             len(dn_tables.ROWS), len(pcf_tables.ROWS),
             len(contact_tables.ROWS), len(hs_tables.ROWS),
             len(sn_tables.ROWS), len(dbp5_tables.ROWS),
-            len(dbp1_tables.ROWS)) == (38, 26, 22, 30, 26, 36, 11, 73, 49, 22)
+            len(dbp1_tables.ROWS), len(dbp4_tables.ROWS)) == (
+        38, 26, 22, 30, 26, 36, 11, 73, 49, 22, 46)
     # Every place the page says it, not "somewhere on the page". The
     # count appears six times -- the badge, the gallery, the roadmap,
     # the table's heading and the sentence that says which numbers are
@@ -94,8 +97,9 @@ def test_the_rule_counts_are_the_registrys():
     # third, deliberately: what holds the table's heading on its own is
     # the count of occurrences underneath.
     total = len(all_rules())
+    vendored = len(list((ROOT / "src/aas_submodel_validate/data/smt").rglob("template.json")))
     for where in ("[![templates](https://img.shields.io/badge/"
-                  "IDTA_templates-10_\u00b7_%d_rules" % total,
+                  "IDTA_templates-%d_\u00b7_%d_rules" % (vendored, total),
                   # The count of rows in the table underneath, not a
                   # word written twice. `8dbc1bc` changed "Five of the
                   # 183" to "Six of the 219" without adding a sixth row,
@@ -141,8 +145,8 @@ def test_the_rule_counts_are_the_registrys():
     template_rules = (families["HD"] + families["TD"] + families["DBP"]
                       + families["DN"] + families["PCF"] + families["CI"]
                       + families["HS"] + families["SN"])
-    assert template_rules == 374, families
-    assert "%d of them across ten IDTA templates" % template_rules in FLOWED
+    assert template_rules == 422, families
+    assert "%d of them across eleven IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2
     # Counts, not a description. The sentence beneath this one said
@@ -501,7 +505,8 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
     generated = (len(hd_tables.ROWS) + len(td_tables.ROWS) + len(dbp_tables.ROWS)
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS) + len(hs_tables.ROWS)
-                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS))
+                 + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS)
+                 + len(dbp4_tables.ROWS))
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
     # The bounds are on this page too, and were the only prose numbers on

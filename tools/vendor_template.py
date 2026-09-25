@@ -135,6 +135,14 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02035-1/1.0/template.json":
         "published/Digital Battery Passport/1_Digital Nameplate/1/0/"
         "IDTA 02035-1_DBP-Part-1_Digital Nameplate.json",
+    # 02035-4 is the Digital Battery Passport's part 4, Technical Data,
+    # published at 1.0 and 1.0.1; 1.0.1, the bug-fix release, is the newest
+    # at the pin and the edition the battery-data layer already reads. It
+    # declares an identity of its own and carries 02003's submodel
+    # identifier as a supplemental (docs/divergences.md #28).
+    "src/aas_submodel_validate/data/smt/02035-4/1.0.1/template.json":
+        "published/Digital Battery Passport/4_Technical Data/1/0/1/"
+        "IDTA 02035-4_DBP-Part-4_TechnicalData.json",
     # 02035-5 is the Digital Battery Passport's part 5, Product Condition,
     # published at 1.0, 1.0.1 and 1.0.2; 1.0.2 is the newest at the pin,
     # and the edition the battery-data layer already reads. Its directory

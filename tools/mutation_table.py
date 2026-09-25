@@ -2203,6 +2203,44 @@ TABLE = [
      "listed as an unknown identifier, where the other packs' namesakes are "
      "told the name is not what matches"),
 
+    ("dbp4/the-name-an-author-reaches-for",
+     "src/aas_submodel_validate/rules/detect.py",
+     '"batterytechnicaldata")',
+     '"batterytechnicaldatas")',
+     ["tests/test_generated_rules_dbp4.py::"
+      "test_a_submodel_named_as_the_template_is_told_matching_goes_by_identifier"],
+     "a submodel named BatteryTechnicalData that carried another identifier "
+     "was listed as an unknown identifier, where the other packs' namesakes "
+     "are told the name is not what matches"),
+
+    ("dbp4/the-pack-registers-its-lint",
+     "src/aas_submodel_validate/rules/dbp4.py",
+     'install_near_miss_lint("DBP4L1", dbp4_tables)\n',
+     "\n",
+     ["tests/test_near_miss_lints.py::"
+      "test_a_drifted_identifier_is_named_by_the_pack_s_lint[DBP4L1]"],
+     "a Battery Technical Data element one version suffix off its row drew "
+     "no finding naming it"),
+
+    ("dbp4/the-passport-states-its-category-in-the-template-s-element",
+     "tests/test_battery_rules.py",
+     "            value = _declaring(_conformant(dbp4_tables, dbp4_env, value, deep=True), category)\n",
+     "            value = _conformant(dbp4_tables, dbp4_env, value, deep=True)\n",
+     ["tests/test_battery_rules.py::"
+      "test_a_light_transport_passport_is_not_asked_for_what_its_guidance_forbids"],
+     "the synthetic passport's Technical Data part stated the golden "
+     "fixture's category, `ev`, whatever the test asked for"),
+
+    ("dbp4/the-passport-s-technical-data-is-mandatory-all-the-way-down",
+     "tests/test_battery_rules.py",
+     "_conformant(dbp4_tables, dbp4_env, value, deep=True)",
+     "_conformant(dbp4_tables, dbp4_env, value, deep=False)",
+     ["tests/test_battery_rules.py::"
+      "test_an_electric_vehicle_passport_is_asked_the_two_its_guidance_requires"],
+     "the synthetic passport's Technical Data part carried every optional "
+     "element the golden fixture does, so it answered the questions the "
+     "battery rules ask of an EV passport before they were asked"),
+
     ("dbp1/the-pack-registers-its-lint",
      "src/aas_submodel_validate/rules/dbp1.py",
      'install_near_miss_lint("DBP1L1", dbp1_tables)\n',

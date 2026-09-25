@@ -14,6 +14,7 @@
 | `aas_submodel_validate/data/smt/02007/1.0.1/template.json` | IDTA 02007-1-0-1 *Software Nameplate* template | no |
 | `aas_submodel_validate/data/smt/02035-5/1.0.2/template.json` | IDTA 02035-5 *Digital Battery Passport, Part 5: Product Condition* template, V1.0.2 | no |
 | `aas_submodel_validate/data/smt/02035-1/1.0/template.json` | IDTA 02035-1 *Digital Battery Passport, Part 1: Digital Nameplate* template, V1.0 | no |
+| `aas_submodel_validate/data/smt/02035-4/1.0.1/template.json` | IDTA 02035-4 *Digital Battery Passport, Part 4: Technical Data* template, V1.0.1 | no |
 | `tests/corpus/idta/02004/example.json` | official 02004 2.0 example (environment JSON) | no |
 | `aas_submodel_validate/data/example/idta-02004-2.0.aasx` | official 02004 2.0 example (AASX) — ships in the wheel, and `smtv --example` judges it | no |
 | `tests/corpus/idta/02003/sample-2.0.json` | official 02003 2.0 sample (environment JSON) | no |

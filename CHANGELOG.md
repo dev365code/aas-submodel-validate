@@ -27,27 +27,58 @@ among the ones it lists. Where the template disagrees with itself or
 with its specification, and what that costs a file, is
 `docs/divergences.md` #59.
 
-**What moves: four verdicts in the corpus, and every Battery Nameplate
-submodel that breaks its template.** Measured against 0.8.1 across the
-corpus -- seventy-nine inputs now, the vendored 02035-1 template and a
-Battery Nameplate submodel added -- four are judged differently: the
-battery passports whose Battery Nameplate submodel is empty now draw
-eleven errors for the elements that template makes mandatory, beside the
-four their empty Product Condition has drawn since 0.8.0, and still
-leave by 1, `summary.scopeNotExamined` naming that part's sections as
-well. Outside the corpus, a Battery Nameplate submodel that breaks its
-template -- a mandatory element missing, an element of the wrong kind, a
-`valueType` other than the template's, a marking naming a file the
-package does not hold -- leaves by 1 where it left by 0 when nothing
-else in the file failed, and an element one version suffix or one last
-segment off a row's draws `DBP1L1`, a warning -- but not a `Markings`
-list, whose row's identifier has no suffix to compare.
-`summary.rulesChecked` counts the twenty-four new rules.
+**IDTA 02035-4 Technical Data is the eleventh.** The passport's part 4
+-- general information, the category the battery rules read among it,
+and the technical property areas: capacity, energy and voltage,
+round-trip efficiency, resistance, power capability, temperature and
+lifetime -- is vendored at 1.0.1, the bug-fix release and the edition
+the battery-data layer already reads, and generates forty-six rules,
+`DBP4-E01` to `DBP4-E46`, with the near-miss lint `DBP4L1` and
+`DBP4-D1`, whose question is whether the file a logo or a product image
+names is in the package. `WarrantyInformation` states no cardinality, in
+the template or in its specification's table, and reads 0..*. Two of its
+identifiers belong to two elements each, in the template and in its
+specification alike: the module-level resistance increase carries the
+identifier the module-level initial resistance carries beside its own,
+so a file written as the template writes it is told it has two initial
+module resistances (`DBP4-E27`), and the warranty carries the
+manufacturer name's own identifier beside its own. Its SAMM identifiers
+are at 1.0.0 except the warranty's two, at 1.0.1, and one written at the
+other release is a near miss. A submodel *named* `BatteryTechnicalData`
+that carries another identifier is told that matching goes by
+semanticId. `docs/divergences.md` #60 has the rest.
 
-It is 384 rules, 333 generated from the vendored official template files,
-across ten template packs. What this reader takes in is unchanged: one
-document at 64 MiB, a container's parts at 64 MiB each and 256 MiB
-together, and a container's directory of names at 16 MiB.
+**What moves: four verdicts in the corpus, and every Battery Nameplate
+or Battery Technical Data submodel that breaks its template.** Measured
+against 0.8.3 across the corpus -- eighty-one inputs now, the two
+vendored templates and a submodel of each added -- four are judged
+differently: the battery passports, whose empty Battery Nameplate
+submodel now draws eleven errors for the elements that template makes
+mandatory and whose Technical Data submodel, holding only its category,
+draws four (five where it states two categories: `BatteryCategory` is
+one), beside the four their empty Product Condition has drawn since
+0.8.0; they still leave by 1, `summary.scopeNotExamined` naming those
+parts' sections as well. Outside the corpus, a Battery Nameplate or
+Battery Technical Data submodel that breaks its template -- a mandatory
+element missing, an element of the wrong kind, a `valueType` other than
+the template's, a file the package does not hold -- leaves by 1 where it
+left by 0 when nothing else in the file failed, and an element one
+version suffix, one SAMM release or one last segment off a row's draws
+`DBP1L1` or `DBP4L1`, a warning -- but not a `Markings` list, whose
+row's identifier has no suffix to compare. `summary.rulesChecked` counts
+the seventy-two new rules.
+
+**Every text field of a finding is bounded at 3000 characters, where it
+was 2000.** `SMT-D1`'s remedy names every template this tool has a table
+for, and with the eleventh it reached 1,228 characters, past the margin
+the bound keeps above anything this tool writes; the bound is raised
+rather than the sentence cut, so that it only ever cuts what a file
+supplied (`docs/report-schema.md`).
+
+It is 432 rules, 379 generated from the vendored official template
+files, across eleven template packs. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
 
 ## 0.8.3 — 2026-09-25
 
