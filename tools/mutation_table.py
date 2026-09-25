@@ -1080,9 +1080,11 @@ TABLE = [
     ("cli/could-not-run-did-not-quietly-become-called-wrong",
      "src/aas_submodel_validate/cli.py",
      "              % (refusal or \"nothing in %s was judged\" % path), "
-     "file=sys.stderr)\n        return EXIT_ERROR",
+     "file=sys.stderr)\n        _after(args, path, report, EXIT_ERROR, started)\n"
+     "        return EXIT_ERROR",
      "              % (refusal or \"nothing in %s was judged\" % path), "
-     "file=sys.stderr)\n        return EXIT_USAGE",
+     "file=sys.stderr)\n        _after(args, path, report, EXIT_ERROR, started)\n"
+     "        return EXIT_USAGE",
      ["tests/test_a_usage_error_exits_64.py::test_could_not_run_still_exits_2"],
      "the other half of the same release, and the half a change like this "
      "loses by accident: moving usage errors off 2 buys nothing if a path "
@@ -1345,8 +1347,8 @@ TABLE = [
 
     ("cli/the-value-taking-flags-are-counted-not-recalled",
      "src/aas_submodel_validate/cli.py",
-     "            # listing and left by 0. Four entries on this list take a",
-     "            # listing and left by 0. Three entries on this list take a",
+     "            # listing and left by 0. Six entries on this list take a",
+     "            # listing and left by 0. Five entries on this list take a",
      ["tests/test_cli_flags.py::"
       "test_the_list_that_refuses_rules_counts_its_own_value_taking_flags"],
      "which entries of the `--rules` refusal list consume the next word "
@@ -2202,6 +2204,277 @@ TABLE = [
      "a submodel named BatteryNameplate that carried another identifier was "
      "listed as an unknown identifier, where the other packs' namesakes are "
      "told the name is not what matches"),
+
+    ("bundle/a-member-s-name-rides-in-its-row",
+     "src/aas_submodel_validate/bundle.py",
+     "_extra_ids(info.extra), bool(info.flag_bits & 0x800)])",
+     "_extra_ids(info.extra), bool(info.flag_bits & 0x800), name])",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_nothing_a_sender_wrote_is_in_the_bundle_of_a_package"],
+     "a bundle carried the name of every member of the package it described"),
+
+    ("bundle/the-summary-s-lists-are-kept-whole",
+     "src/aas_submodel_validate/bundle.py",
+     "            kept[key] = len(value)\n",
+     "            kept[key] = value\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::"
+      "test_what_the_run_did_not_examine_is_counted_and_not_named"],
+     "a bundle carried the report's lists of unexamined places and unclaimed "
+     "elements, each named by the file's own idShorts"),
+
+    ("bundle/a-defect-s-message-not-its-hash",
+     "src/aas_submodel_validate/bundle.py",
+     '"messageSha256": _sha256(str(exc).encode("utf-8", "replace"))}',
+     '"messageSha256": str(exc)}',
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_failure_of_this_tool_writes_a_bundle_and_leaves_as_it_did"],
+     "a bundle written for a defect carried the exception's message, which "
+     "quotes what the file said"),
+
+    ("bundle/the-directory-it-was-told-to-use",
+     "src/aas_submodel_validate/cli.py",
+     "        made = bundling.build(path=path, options=_options(args),\n",
+     "        made = bundling.build(path=path, options=_options(args) + [str(args.bundle_out)],\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_path_given_in_one_word_stays_out_too"],
+     "a bundle carried the directory it was written to, and the user name in it"),
+
+    ("bundle/a-defect-leaves-as-it-did",
+     "src/aas_submodel_validate/cli.py",
+     "                _say(SENT)\n        raise\n",
+     "                _say(SENT)\n        return EXIT_ERROR\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_failure_of_this_tool_writes_a_bundle_and_leaves_as_it_did",
+      "tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_process_that_fails_leaves_by_the_same_code_with_or_without_the_bundle"],
+     "writing a bundle for a defect swallowed it: no traceback, and exit 2 "
+     "where the process had left by 1"),
+
+    ("bundle/a-refused-input-is-told-how-to-report-it",
+     "src/aas_submodel_validate/cli.py",
+     "    elif refused and report is not None:\n        _say(REFUSED)\n",
+     "    elif refused and report is not None:\n        pass\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_refused_file_is_told_how_to_report_it_once[text]"],
+     "an input this reader refused was reported with no word on how to report "
+     "the refusal"),
+
+    ("bundle/a-mistyped-path-is-not-a-refusal",
+     "src/aas_submodel_validate/cli.py",
+     'REFUSALS = ("X1", "X2", "X3", "X5")',
+     'REFUSALS = ("X1", "X2", "X3", "X5", "X6")',
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_path_that_is_not_there_is_not_called_a_defect_or_a_refusal"],
+     "a path with nothing behind it was asked to be reported as a bug"),
+
+    ("bundle/an-unpublished-extra-id-is-not-told",
+     "src/aas_submodel_validate/bundle.py",
+     "        ids.append(header if header in PUBLISHED_EXTRA_IDS else -1)\n",
+     "        ids.append(header)\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_an_extra_field_s_ids_cannot_carry_text"],
+     "an extra field of empty records carried two bytes of text in each "
+     "record's id, and the bundle read them all back out"),
+
+    ("bundle/running-out-of-room-is-not-asked-to-be-reported",
+     "src/aas_submodel_validate/cli.py",
+     "                   and finding.violation.fix != runner.RESOURCE_REMEDY)\n",
+     "                   and True)\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_rule_that_ran_out_of_room_is_not_asked_to_be_reported"],
+     "a run that ran out of memory or stack, whose remedy says that is not a "
+     "defect, was followed by a sentence asking for a bug report"),
+
+    ("bundle/only-a-closed-pipe-is-not-a-defect",
+     "src/aas_submodel_validate/cli.py",
+     "        if not isinstance(exc, BrokenPipeError) and not args.no_bundle:\n",
+     "        if not isinstance(exc, OSError) and not args.no_bundle:\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_which_os_errors_are_this_tool_s_defect[this-tool-s-own-file]"],
+     "this tool failing to open one of its own files wrote no bundle, because "
+     "every OSError was taken for the caller's path"),
+
+    ("bundle/past-the-size-bound-it-is-not-hashed",
+     "src/aas_submodel_validate/bundle.py",
+     "                if read > container.MAX_TOTAL_PART_BYTES:\n",
+     "                if False:\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_file_past_the_reader_s_bounds_is_not_read_again_past_them"],
+     "the bundle hashed a file past the bound the run holds an input to"),
+
+    ("bundle/past-the-directory-bound-it-is-counted-not-listed",
+     "src/aas_submodel_validate/bundle.py",
+     "    if end[zipfile._ECD_SIZE] > container.MAX_DIRECTORY_BYTES:\n",
+     "    if False:\n",
+     ["tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_file_past_the_reader_s_bounds_is_not_read_again_past_them"],
+     "the bundle listed a central directory past the bound the run holds a "
+     "directory to"),
+
+    ('bundle/a-name-as-a-number',
+     'src/aas_submodel_validate/bundle.py',
+     'info.flag_bits, len(name), same if same != i else None,',
+     'info.flag_bits, int.from_bytes(name.encode()[-6:], "big"), same if same != i else None,',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_two_files_that_differ_only_in_what_their_senders_wrote_give_one_bundle'],
+     "a member's length column carried the last six bytes of its name as a number"),
+
+    ('bundle/a-hash-of-a-name',
+     'src/aas_submodel_validate/bundle.py',
+     'info.flag_bits, len(name), same if same != i else None,',
+     'info.flag_bits, len(name), int(hashlib.sha256(name.encode()).hexdigest()[:12], 16),',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_two_files_that_differ_only_in_what_their_senders_wrote_give_one_bundle'],
+     "a member's row carried a hash of its name, which a guess can be checked against"),
+
+    ('bundle/an-extension-as-a-kind',
+     'src/aas_submodel_validate/bundle.py',
+     '        kinds[KINDS.get(suffix, "other")] += 1\n',
+     '        kinds[KINDS.get(suffix, suffix)] = kinds.get(KINDS.get(suffix, suffix), 0) + 1\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_two_files_that_differ_only_in_what_their_senders_wrote_give_one_bundle'],
+     "the kinds of file a package holds were counted under each member's own extension"),
+
+    ('bundle/the-environment-s-values',
+     'src/aas_submodel_validate/bundle.py',
+     '    return {"argv": shown, "env": sorted(name for name in ENVIRONMENT if name in os.environ)}',
+     '    return {"argv": shown, "env": sorted("%s=%s" % pair for pair in os.environ.items())}',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_the_environment_the_user_and_the_host_stay_out'],
+     'the bundle carried every environment variable with its value'),
+
+    ('bundle/the-host-s-name',
+     'src/aas_submodel_validate/bundle.py',
+     '"machine": platform.machine()},',
+     '"machine": platform.machine(), "node": platform.node()},',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_the_environment_the_user_and_the_host_stay_out'],
+     'the bundle carried the name of the machine it ran on'),
+
+    ('bundle/a-frame-outside-the-package',
+     'src/aas_submodel_validate/bundle.py',
+     '            rel = Path(frame.filename).resolve().relative_to(_PACKAGE)\n',
+     '            rel = Path(Path(frame.filename).name)\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_frame_outside_this_package_is_not_kept'],
+     "a defect's bundle kept frames from outside this package, with their names"),
+
+    ('bundle/rows-cut-short',
+     'src/aas_submodel_validate/bundle.py',
+     '    keep_rows(_largest(len(rows), keep_rows))\n',
+     '    keep_rows(_largest(len(rows), keep_rows) // 2)\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_member_rows_are_trimmed_to_as_many_as_fit'],
+     'past the limit, the bundle kept half the rows that would have fitted'),
+
+    ('bundle/no-limit-at-all',
+     'src/aas_submodel_validate/bundle.py',
+     '    if fits():\n        return bundle\n    members = ',
+     '    if True:\n        return bundle\n    members = ',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_member_rows_are_trimmed_to_as_many_as_fit'],
+     'a bundle of a large archive passed 256 KiB'),
+
+    ('bundle/every-rule-kept',
+     'src/aas_submodel_validate/bundle.py',
+     '    keep_rules(_largest(len(ranked), keep_rules))\n',
+     '    keep_rules(len(ranked))\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_caller_template_whose_every_row_fires_stays_within_the_limit'],
+     "a caller's template whose every row fired took the bundle past 256 KiB"),
+
+    ('bundle/the-hash-of-other-bytes',
+     'src/aas_submodel_validate/bundle.py',
+     '                digest.update(block)\n',
+     '                digest.update(block[:-1])\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_what_the_bundle_says_of_an_archive_is_what_the_archive_holds'],
+     "the input's hash was taken of bytes other than the input's"),
+
+    ('bundle/the-utf8-flag-unread',
+     'src/aas_submodel_validate/bundle.py',
+     '_extra_ids(info.extra), bool(info.flag_bits & 0x800)])',
+     '_extra_ids(info.extra), False])',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_what_the_bundle_says_of_an_archive_is_what_the_archive_holds'],
+     "a member's UTF-8 flag was said to be off whatever the archive said"),
+
+    ('bundle/containers-inside-uncounted',
+     'src/aas_submodel_validate/bundle.py',
+     '        inside += suffix in CONTAINERS\n',
+     '        inside += 0\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_what_the_bundle_says_of_an_archive_is_what_the_archive_holds'],
+     'a package inside the package went uncounted'),
+
+    ('bundle/example-unnamed',
+     'src/aas_submodel_validate/bundle.py',
+     '    if example:\n        shown.append("--example")\n',
+     '    if False:\n        shown.append("--example")\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_what_the_bundle_says_of_the_run_is_what_the_run_said'],
+     'a bundle of the bundled example did not say that is what was judged'),
+
+    ('bundle/where-a-finding-points-unread',
+     'src/aas_submodel_validate/bundle.py',
+     '        slot["whereKinds"][_where_kind(f)] += 1\n',
+     '        slot["whereKinds"]["none"] += 1\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_what_the_bundle_says_of_the_run_is_what_the_run_said'],
+     'every finding was said to point nowhere'),
+
+    ('bundle/the-bound-met-unnamed',
+     'src/aas_submodel_validate/bundle.py',
+     '        "budgets": {"hit": sorted({"X5"} & set(findings))},',
+     '        "budgets": {"hit": []},',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_the_bound_the_run_met_is_named'],
+     "a run that met the reader's bound did not say so"),
+
+    ('bundle/a-defect-s-code-misstated',
+     'src/aas_submodel_validate/cli.py',
+     '            where = _bundle(args, path, None, 1, started, trigger="crash", error=exc)',
+     '            where = _bundle(args, path, None, 2, started, trigger="crash", error=exc)',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_frame_outside_this_package_is_not_kept'],
+     "a defect's bundle said the run left by 2 where the process leaves by 1"),
+
+    ('bundle/show-bundle-writes-anyway',
+     'src/aas_submodel_validate/cli.py',
+     '            _say(SENT)\n            return None\n        return bundling.write(made, args.bundle_out)',
+     '            _say(SENT)\n            return bundling.write(made, args.bundle_out)\n        return bundling.write(made, args.bundle_out)',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_show_bundle_writes_nothing_on_a_run_that_did_not_fail'],
+     '--show-bundle wrote the bundle it was asked only to show'),
+
+    ('bundle/an-interrupt-taken-for-a-defect',
+     'src/aas_submodel_validate/cli.py',
+     '    except Exception as exc:\n        if not isinstance(exc, BrokenPipeError)',
+     '    except BaseException as exc:\n        if not isinstance(exc, BrokenPipeError)',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_an_interrupt_is_not_a_defect'],
+     'Ctrl-C wrote a bundle calling itself a defect in this tool'),
+
+    ('bundle/a-refused-template-taken-for-a-refused-file',
+     'src/aas_submodel_validate/cli.py',
+     '    elif refused and report is not None:\n',
+     '    elif refused:\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_refused_template_is_not_a_refused_file'],
+     'a template this reader refused was followed by the sentence about reporting a file'),
+
+    ('bundle/only-one-kind-of-refusal',
+     'src/aas_submodel_validate/cli.py',
+     'REFUSALS = ("X1", "X2", "X3", "X5")',
+     'REFUSALS = ("X1",)',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_each_kind_of_refusal_is_told_how_to_report_it[X2]'],
+     'a part of a package that was refused was not followed by how to report it'),
+
+    ('bundle/rules-ignores-the-bundle-switches',
+     'src/aas_submodel_validate/cli.py',
+     '            ("--bug-report", args.bug_report), ("--show-bundle", args.show_bundle),\n            ("--no-bundle", args.no_bundle), ("--note", args.note is not None),\n',
+     '            ("--note", args.note is not None),\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_rules_refuses_every_bundle_switch[--bug-report]'],
+     '--rules --bug-report printed the listing and wrote nothing, without a word'),
+
+    ('bundle/a-dead-stderr-raises',
+     'src/aas_submodel_validate/cli.py',
+     '    except (OSError, ValueError):\n        sys.stderr = None\n',
+     '    except (OSError, ValueError):\n        raise\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_stderr_nobody_reads_moves_no_exit_code'],
+     "a stderr whose reader had gone turned a bundle's lines into exit 120"),
+
+    ('bundle/stdout-not-first',
+     'src/aas_submodel_validate/cli.py',
+     '    with contextlib.suppress(OSError, ValueError, AttributeError):\n        sys.stdout.flush()\n',
+     '    with contextlib.suppress(OSError, ValueError, AttributeError):\n        pass\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_the_report_comes_before_the_lines_after_it_in_a_merged_log'],
+     'in a log merging both streams, the sentence after the report came before it'),
+
+    ('bundle/written-through-a-link',
+     'src/aas_submodel_validate/bundle.py',
+     '        os.replace(temporary, target)\n',
+     '        target.write_text(dumps(bundle), encoding="utf-8")\n',
+     ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_link_planted_under_the_bundle_s_name_is_replaced_not_written_through'],
+     "a link planted under the bundle's name had the file it pointed at overwritten"),
+
+    ("changelog/the-entry-counts-its-packs",
+     "tests/test_readme_front.py",
+     '    assert ("across %s template packs" % _TEMPLATE_WORDS[vendored]\n',
+     '    assert ("across %s template packs" % _TEMPLATE_WORDS[vendored - 1]\n',
+     ["tests/test_readme_front.py::"
+      "test_the_newest_changelog_entry_is_a_draft_or_a_dated_release"],
+     "the newest entry's count of template packs was held to a number one "
+     "short of the tree's"),
 
     ("dbp4/the-name-an-author-reaches-for",
      "src/aas_submodel_validate/rules/detect.py",

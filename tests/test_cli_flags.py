@@ -814,7 +814,7 @@ def test_rules_does_not_answer_before_the_contradiction_is_caught(capsys):
 #: out of the comment that carries them.
 _TAKES_A_VALUE = re.compile(
     r"(\w+) entries on this list take a value -- (.*?) -- and the other "
-    r"(\w+) were already safe")
+    r"(\w+) (?:were already|are) safe")
 _NUMERALS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
              "six": 6, "seven": 7, "eight": 8, "nine": 9}
 

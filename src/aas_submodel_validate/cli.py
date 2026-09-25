@@ -16,9 +16,11 @@ import argparse
 import contextlib
 import json
 import sys
+import time
 from typing import Optional
 
 from . import __version__, runner, tablegen
+from . import bundle as bundling
 from ._terminal import survive
 from .example import NotBundled, bundled_example, example_name
 from .report import render
@@ -27,6 +29,115 @@ EXIT_OK = 0
 EXIT_FINDINGS = 1
 EXIT_ERROR = 2
 EXIT_USAGE = 64
+
+#: What a person is told when a file was refused or a rule could not run:
+#: once, on stderr, after the report -- never in a finding's remedy, so that
+#: the report itself is the same bytes with or without it.
+REFUSED = ("If you believe this file is valid, run the same command again with "
+           "--bug-report and attach the bundle to an issue.")
+CRASHED = ("This is a defect in this tool, not in your file. A diagnostic bundle was "
+           "written to {path}. Attach it to an issue: "
+           "https://github.com/dev365code/aas-submodel-validate/issues")
+SHOWN = ("This is a defect in this tool, not in your file. The diagnostic bundle is "
+         "above and was not written, as --show-bundle asks. Attach it to an issue: "
+         "https://github.com/dev365code/aas-submodel-validate/issues")
+SENT = "Nothing was sent."
+#: The findings that say an input, or part of it, was refused rather than
+#: judged: the package (X1, X2), a document that would not parse -- or names
+#: another metamodel edition -- (X3), and this reader's own bound (X5). Not X6:
+#: a path this reader could not open as an input at all -- nothing there, not
+#: a regular file, not permitted, not a kind it reads -- is the caller's to
+#: correct, and nothing is gained by asking them to report it.
+REFUSALS = ("X1", "X2", "X3", "X5")
+
+
+def _say(*parts) -> None:
+    """A line for the person running the check: on stderr, or nowhere when
+    there is no stderr. `print(file=None)` writes to stdout, which is where the
+    report is -- with stderr closed (`2>&-`, or pythonw with no console) a line
+    meant for a person would land inside the JSON a machine was about to read.
+
+    The report goes first: stdout is flushed before the line is written, so a
+    log that merges the two streams reads report, then line. And a stderr that
+    is there and cannot be written -- a pipe whose reader has gone, a full disk
+    -- is let go of rather than raised: the line was for a person who is not
+    reading, and without this, it or the interpreter's own flush at exit moved
+    the exit code to 120."""
+    if sys.stderr is None:
+        return
+    with contextlib.suppress(OSError, ValueError, AttributeError):
+        sys.stdout.flush()
+    try:
+        print(*parts, file=sys.stderr)
+        sys.stderr.flush()
+    except (OSError, ValueError):
+        sys.stderr = None
+
+
+def _refused(report) -> bool:
+    """A refusal, or a rule that could not run -- but not one that ran out of
+    memory or stack, whose remedy says that is not a defect in the file or in
+    this tool, and a sentence asking for a bug report would contradict it."""
+    return any(finding.id in REFUSALS
+               or (finding.violation.message == runner.COULD_NOT_RUN
+                   and finding.violation.fix != runner.RESOURCE_REMEDY)
+               for finding in report.findings)
+
+
+def _options(args) -> list:
+    """The options a run was given, by name and chosen value only."""
+    chosen = [flag for flag, on in (
+        ("--quiet", args.quiet), ("--warnings-as-errors", args.warnings_as_errors),
+        ("--strict-meta", args.strict_meta), ("--allow-unmatched", args.allow_unmatched),
+        ("--show-meta", args.show_meta), ("--require-all-judged", args.require_all_judged),
+        ("--bug-report", args.bug_report), ("--show-bundle", args.show_bundle),
+        ("--no-bundle", args.no_bundle)) if on]
+    # Values from a closed list only: each is one of the parser's choices.
+    for flag, value in (("--format", args.format if args.format != "text" else None),
+                        ("--meta", args.meta), ("--profile", args.profile)):
+        if value is not None:
+            chosen.append("%s=%s" % (flag, value))
+    return chosen
+
+
+def _bundle(args, path, report, exit_code, started, *, trigger, error=None):
+    """Draw the bundle, then write it unless only drawing was asked for. A
+    bundle that cannot be drawn or written is said so, once, and the run goes
+    on: it is never a reason for the exit code to move. Not only a directory
+    nobody can write to -- anything in here that fails."""
+    try:
+        made = bundling.build(path=path, options=_options(args),
+                              report=report.as_dict() if report is not None else None,
+                              exit_code=exit_code, seconds=time.perf_counter() - started,
+                              trigger=trigger, note=args.note, out=args.bundle_out,
+                              template=args.template is not None, example=args.example,
+                              error=error)
+        _say(bundling.dumps(made) if args.show_bundle else made["readable"])
+        if args.show_bundle:
+            if trigger == "crash":
+                _say(SHOWN)
+            _say(SENT)
+            return None
+        return bundling.write(made, args.bundle_out)
+    except Exception as exc:                # noqa: BLE001 -- the run's report and exit code are not the bundle's to change
+        reason = ((exc.strerror if isinstance(exc, OSError) else None)
+                  or "%s in this tool" % type(exc).__name__)
+        _say("The diagnostic bundle could not be written: %s. %s" % (reason, SENT))
+        return None
+
+
+def _after(args, path, report, exit_code, started) -> None:
+    """What follows a run on stderr: the bundle, where one was asked for, or
+    one sentence saying how to ask for it, where the input was refused."""
+    refused = report is None or _refused(report)
+    if args.bug_report or args.show_bundle:
+        where = _bundle(args, path, report, exit_code, started,
+                        trigger="refusal" if refused else "manual")
+        if where is not None:
+            _say("A diagnostic bundle was written to %s." % where)
+            _say(SENT)
+    elif refused and report is not None:
+        _say(REFUSED)
 
 
 class _Parser(argparse.ArgumentParser):
@@ -152,6 +263,19 @@ def main(argv: Optional[list] = None) -> int:
                              "own, no repository and no network")
     parser.add_argument("--rules", action="store_true",
                         help="list every rule and exit")
+    parser.add_argument("--bug-report", action="store_true",
+                        help="write a diagnostic bundle for this run: structure, "
+                             "counts and rule ids, nothing from the file. A "
+                             "summary is shown, the bundle is written here, and "
+                             "nothing is sent")
+    parser.add_argument("--note", metavar="TEXT",
+                        help="a sentence of your own to put in the bundle")
+    parser.add_argument("--bundle-out", metavar="DIR",
+                        help="where to write the bundle (default: here)")
+    parser.add_argument("--show-bundle", action="store_true",
+                        help="show the bundle and write nothing")
+    parser.add_argument("--no-bundle", action="store_true",
+                        help="do not write a bundle when this tool fails on a file")
     parser.add_argument("--version", action="version",
                         version="aas-submodel-validate %s" % __version__)
     args = parser.parse_args(argv)
@@ -203,9 +327,10 @@ def main(argv: Optional[list] = None) -> int:
             # the one that carries the paragraph about why that is
             # wrong: `--template ""` is what a shell hands over from
             # `--template "$TPL"` with `TPL` unset, and it printed the
-            # listing and left by 0. Four entries on this list take a
-            # value -- a path, `--profile`, `-f` and `--template` -- and
-            # the other three were already safe: the path by the same
+            # listing and left by 0. Six entries on this list take a
+            # value -- a path, `--profile`, `-f`, `--template`, `--note`
+            # and `--bundle-out` -- and the other five are safe:
+            # the path, `--note` and `--bundle-out` by the same
             # `is not None` the paragraph above is about, and `--profile`
             # and `-f` by `choices`, which refuses an empty string before
             # this runs.
@@ -216,7 +341,12 @@ def main(argv: Optional[list] = None) -> int:
             # from this list and asks each `add_argument` whether it
             # takes a value, so the sentence cannot be the only witness
             # to its own number.
-            ("--template", args.template is not None)) if given]
+            ("--template", args.template is not None),
+            # Everything about the bundle describes a run, and `--rules`
+            # is not one.
+            ("--bug-report", args.bug_report), ("--show-bundle", args.show_bundle),
+            ("--no-bundle", args.no_bundle), ("--note", args.note is not None),
+            ("--bundle-out", args.bundle_out is not None)) if given]
         if ignored:
             parser.error("--rules lists the rules and judges nothing, so it "
                          "would ignore %s; --meta (or --strict-meta) is what "
@@ -276,14 +406,34 @@ def main(argv: Optional[list] = None) -> int:
                     print("judging IDTA's published 02004 2.0 example, "
                           "carried in this package -- unmodified, defects "
                           "and all.")
-                return _judge(str(path), args, shown_as=example_name())
+                return _judged(str(path), args, shown_as=example_name())
         except NotBundled as exc:
             print("smtv: %s" % exc, file=sys.stderr)
             return EXIT_ERROR
-    return _judge(args.path, args)
+    return _judged(args.path, args)
 
 
-def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
+def _judged(path: str, args, shown_as: Optional[str] = None) -> int:
+    """The run, and the one place a defect escaping it is met. The bundle is
+    written and the exception raised again, so the process leaves as it did
+    before any bundle existed: a traceback and exit 1. A path the caller gave
+    never arrives here as an exception -- the loader makes it `X6` -- so an
+    `OSError` that does is this tool's, one of its own files it could not
+    open. A pipe closed on the output is the exception: that is the reader of
+    the output leaving, and it writes nothing."""
+    started = time.perf_counter()
+    try:
+        return _judge(path, args, shown_as, started)
+    except Exception as exc:
+        if not isinstance(exc, BrokenPipeError) and not args.no_bundle:
+            where = _bundle(args, path, None, 1, started, trigger="crash", error=exc)
+            if where is not None:
+                _say(CRASHED.format(path=where))
+                _say(SENT)
+        raise
+
+
+def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
     try:
         report = runner.run(path, strict_meta=args.meta or args.strict_meta,
                             allow_unmatched=args.allow_unmatched,
@@ -295,6 +445,7 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         # This is "could not judge the input", which is what every other
         # unreadable input here gets.
         print("smtv: %s" % refused, file=sys.stderr)
+        _after(args, path, None, EXIT_ERROR, started)
         return EXIT_ERROR
     if shown_as:
         report.path = shown_as
@@ -354,6 +505,7 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
                         if finding.id == "X6"), None)
         print("smtv: %s"
               % (refusal or "nothing in %s was judged" % path), file=sys.stderr)
+        _after(args, path, report, EXIT_ERROR, started)
         return EXIT_ERROR
     if short:
         # The report has carried this number since day one; a caller
@@ -367,4 +519,6 @@ def _judge(path: str, args, shown_as: Optional[str] = None) -> int:
         print("smtv: judged %d of %d submodel%s; --require-all-judged was given"
               % (report.submodels_judged, expected,
                  "" if expected == 1 else "s"), file=sys.stderr)
-    return EXIT_FINDINGS if failed else EXIT_OK
+    code = EXIT_FINDINGS if failed else EXIT_OK
+    _after(args, path, report, code, started)
+    return code

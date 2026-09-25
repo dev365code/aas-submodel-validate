@@ -509,6 +509,11 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
                  + len(dbp4_tables.ROWS))
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
+    # And the packs, which the entry counts in a word: 0.9.0's said "across
+    # eleven template packs" with nothing holding it to the tree.
+    vendored = len(list((ROOT / "src/aas_submodel_validate/data/smt").rglob("template.json")))
+    assert ("across %s template packs" % _TEMPLATE_WORDS[vendored]
+            in " ".join(unreleased.split())), "the entry counts the template packs wrongly"
     # The bounds are on this page too, and were the only prose numbers on
     # it with nothing watching them: SECURITY.md derives its copy and this
     # one would have gone quietly stale beside it.

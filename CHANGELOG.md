@@ -1,5 +1,70 @@
 # Changelog
 
+## 0.9.1 — unreleased
+
+**A bug report a person can attach, with nothing from the file in it.**
+`smtv FILE --bug-report` writes a diagnostic bundle for that run -- the
+shape of the input, what the run said by rule id and count, the release,
+metamodel library, Python and operating system it ran on, the options it
+was given by name, and a sentence of the person's own if they add one
+with `--note` -- prints a summary of it, writes it where the check ran
+(`--bundle-out DIR` puts it elsewhere), and sends nothing;
+`--show-bundle` prints all of it and writes nothing. It does not carry a
+member's name, a file path, an idShort, an identifier or a value from
+the file, a finding's message, subject, detail or remedy, any byte of
+the document or of a file the package holds, a ZIP comment or what an
+extra field holds, or a user or host name: a test writes a marker into
+member names and folders, idShorts, identifiers, values, descriptions,
+an XML comment, the ZIP comment, two extra fields, a PDF's text, the
+directory the file sat in, the template's path and the output
+directory, and looks for it in the bundle as text in either case,
+UTF-16, hex and base64, and in any list of numbers read back as bytes.
+Two entries with one name are marked by the index of the first, not by
+the name or a hash of it, and an extra field is told by the ids ZIP's
+application note publishes. What the bundle reads again to describe the
+input is held to the bounds the run holds the input to: past the size
+bound it is not hashed, and a directory past the directory bound is
+counted and not listed. The same input, run with the same options by
+the same release on the same machine, gives the same bytes, apart from
+how long the run took, in whole seconds rounded up. The bundle stays
+under 256 KiB: past it, member rows go first, as many kept as fit, then
+the rules that fired least -- a caller's template may declare ten
+thousand rows, and each can fire -- their findings counted as not
+listed. It is written beside its name and moved over it, so a link
+planted under that name in a shared directory is replaced rather than
+written through. When this tool fails on a file with an error of its own,
+it writes the same bundle without being asked -- adding the error's
+type, where in this tool it happened and a SHA-256 of its message,
+which for a message as short as a missing key's name can be checked
+against a guess -- says so on stderr, and then stops as it always has,
+with the traceback and exit 1; `--no-bundle` stops the writing, and a
+pipe closed on the output is not taken for a failure. The report comes
+first in a log that merges the two streams, and a stderr that cannot be
+written -- its reader gone -- is let go of rather than allowed to move
+the exit code. After the report
+on an input this reader refused -- a package or a document it would not
+take in (`X1`, `X2`, `X3`, `X5`), or a rule that could not run -- one
+sentence on stderr says how to report it. It is not said of a path
+this reader could not open as an input at all (`X6`: nothing there,
+not a regular file, not permitted, or not a kind it reads), nor of a
+rule that ran out of memory or stack, whose remedy says that is not a
+defect. The issue template for a bundle is in the repository.
+
+**No verdict, exit code or report field moves.** The report is the same
+bytes with or without a bundle on every file in the corpus, as text and
+as JSON, and the exit code is the same. What moves is stderr and, when
+this tool fails, the working directory: the sentence after a refused
+input; the bundle's summary, where it was written and
+`Nothing was sent.` when one is asked for; on a failure of this tool,
+those lines and one saying it is a defect in this tool with the address
+to report it, and the bundle written where the check ran unless
+`--no-bundle` is given; and one line if a bundle could not be written.
+
+It is 432 rules, 379 generated from the vendored official template
+files, across eleven template packs. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.9.0 — 2026-09-25
 
 **IDTA 02035-1 Digital Nameplate is the tenth template pack.** The

@@ -291,6 +291,35 @@ timeline
             : Cross-checks with neighbouring standards — VDI 2770, iiRDS
 ```
 
+## When it gets something wrong
+
+`smtv FILE --bug-report` writes a diagnostic bundle for that run: it prints a
+summary of it, writes it where you ran the check, and sends nothing;
+`--show-bundle` prints all of it and writes nothing. It carries the shape of
+the file -- its size and SHA-256, and for each member of a package its size
+and compressed size, compression method and flags as the archive declares
+them, the length of its name and which earlier member has the same one, never
+the name -- what the run said by
+rule id and count, the release, metamodel library, Python, operating system
+and console encoding it ran on, the options it was given by name, the names
+but not the values of the environment variables that change how it writes,
+and a sentence of your own if you add one with `--note`. It does not carry a
+member's name, a file path, an idShort, an identifier or a value from the
+file, a finding's message, subject, detail or remedy, any byte of the document
+or of a file the package holds, a ZIP comment or what an extra field holds, or
+a user or host name. What it reads again to describe the file is held to the
+bounds the run holds the file to. When this tool fails on a file with an error
+of its own, it writes the same bundle without being asked, adding the error's
+type, where in this tool it happened and a SHA-256 of its message -- which,
+for a message as short as a missing key's name, can be checked against a
+guess -- says so, and then stops as it always has; `--no-bundle` stops the
+writing. After the report on an input this reader refused -- a package or a
+document it would not take in, or a rule that could not run for any reason
+but running out of memory -- one sentence says how to report it.
+
+Attach the bundle to an issue; do not attach the file itself, since an issue
+is public.
+
 ## Releases and version numbers
 
 This is a 0.x tool, and a release goes out when a unit of judgement is
