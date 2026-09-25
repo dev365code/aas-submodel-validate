@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.1 — unreleased
+## 0.9.1 — 2026-09-25
 
 **A bug report a person can attach, with nothing from the file in it.**
 `smtv FILE --bug-report` writes a diagnostic bundle for that run -- the
