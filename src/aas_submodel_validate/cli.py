@@ -408,7 +408,7 @@ def main(argv: Optional[list] = None) -> int:
                           "and all.")
                 return _judged(str(path), args, shown_as=example_name())
         except NotBundled as exc:
-            print("smtv: %s" % exc, file=sys.stderr)
+            _say("smtv: %s" % exc)
             return EXIT_ERROR
     return _judged(args.path, args)
 
@@ -444,7 +444,7 @@ def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
         # given -- and the build tool's own 1 is a build tool's answer.
         # This is "could not judge the input", which is what every other
         # unreadable input here gets.
-        print("smtv: %s" % refused, file=sys.stderr)
+        _say("smtv: %s" % refused)
         _after(args, path, None, EXIT_ERROR, started)
         return EXIT_ERROR
     if shown_as:
@@ -503,8 +503,7 @@ def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
         # nothing was judged.
         refusal = next((finding.violation.message for finding in report.findings
                         if finding.id == "X6"), None)
-        print("smtv: %s"
-              % (refusal or "nothing in %s was judged" % path), file=sys.stderr)
+        _say("smtv: %s" % (refusal or "nothing in %s was judged" % path))
         _after(args, path, report, EXIT_ERROR, started)
         return EXIT_ERROR
     if short:
@@ -516,9 +515,8 @@ def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
         # The number compared, not the number seen: with a template in
         # the file those differ, and a caller reading only this line was
         # told two were missing when one was.
-        print("smtv: judged %d of %d submodel%s; --require-all-judged was given"
-              % (report.submodels_judged, expected,
-                 "" if expected == 1 else "s"), file=sys.stderr)
+        _say("smtv: judged %d of %d submodel%s; --require-all-judged was given"
+             % (report.submodels_judged, expected, "" if expected == 1 else "s"))
     code = EXIT_FINDINGS if failed else EXIT_OK
     _after(args, path, report, code, started)
     return code

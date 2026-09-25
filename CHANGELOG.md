@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.9.2 — unreleased
+
+**A line for the person running the check stays off stdout, and off the
+exit code.** Four sentences this tool writes for a person -- why nothing
+was judged, a template it refused, how many submodels
+`--require-all-judged` found judged, and a package that carries no
+example -- were printed straight to `sys.stderr`. With stderr closed
+(`2>&-`, or pythonw with no console) that is None, and the sentence
+landed on stdout, after the JSON a pipeline was about to parse; with a
+stderr whose reader had gone, the write raised and the process left by
+120 rather than by the code the run had decided. They are written the
+way 0.9.1's bug-report lines are: on stderr or nowhere, after stdout is
+flushed, and a stderr that cannot be written is let go of.
+
+**No verdict or report field moves.** What moves is stdout with stderr
+closed, which no longer carries those sentences, and the exit code with
+a stderr nobody reads, which is now the run's own.
+
+It is 432 rules, 379 generated from the vendored official template
+files, across eleven template packs. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.9.1 — 2026-09-25
 
 **A bug report a person can attach, with nothing from the file in it.**

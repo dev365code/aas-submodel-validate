@@ -1079,11 +1079,11 @@ TABLE = [
      "disproved it in one run."),
     ("cli/could-not-run-did-not-quietly-become-called-wrong",
      "src/aas_submodel_validate/cli.py",
-     "              % (refusal or \"nothing in %s was judged\" % path), "
-     "file=sys.stderr)\n        _after(args, path, report, EXIT_ERROR, started)\n"
+     "        _say(\"smtv: %s\" % (refusal or \"nothing in %s was judged\" % path))\n"
+     "        _after(args, path, report, EXIT_ERROR, started)\n"
      "        return EXIT_ERROR",
-     "              % (refusal or \"nothing in %s was judged\" % path), "
-     "file=sys.stderr)\n        _after(args, path, report, EXIT_ERROR, started)\n"
+     "        _say(\"smtv: %s\" % (refusal or \"nothing in %s was judged\" % path))\n"
+     "        _after(args, path, report, EXIT_ERROR, started)\n"
      "        return EXIT_USAGE",
      ["tests/test_a_usage_error_exits_64.py::test_could_not_run_still_exits_2"],
      "the other half of the same release, and the half a change like this "
@@ -2475,6 +2475,15 @@ TABLE = [
       "test_nothing_a_sender_wrote_is_in_the_bundle_of_a_package"],
      "the bundle was written as text, and on Windows every line ending grew "
      "a byte past what the limit had measured"),
+
+    ("cli/a-line-for-a-person-goes-through-say",
+     "src/aas_submodel_validate/cli.py",
+     '        _say("smtv: %s" % (refusal or "nothing in %s was judged" % path))\n',
+     '        print("smtv: %s" % (refusal or "nothing in %s was judged" % path), file=sys.stderr)\n',
+     ["tests/test_a_line_for_a_person_stays_off_the_report.py::"
+      "test_with_stderr_closed_no_line_reaches_stdout"],
+     "with stderr closed, the sentence saying why nothing was judged was "
+     "written into the JSON on stdout"),
 
     ("changelog/the-entry-counts-its-packs",
      "tests/test_readme_front.py",
