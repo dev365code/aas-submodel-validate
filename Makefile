@@ -50,6 +50,7 @@ vendored:
 	$(PYTHON) tools/vendor_template.py --check
 	$(PYTHON) tools/gen_door.py --check
 	$(PYTHON) tools/capabilities_svg.py docs/capabilities.json --check
+	$(PYTHON) tools/gen_official_samples.py --check
 
 exercised:
 	$(PYTHON) tools/rule_coverage.py --check

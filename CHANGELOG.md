@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.3 — unreleased
+
+**What this tool says of IDTA's own samples is a page.** Every official
+sample this repository vendors -- IDTA's, pinned by upstream commit and
+hash -- is listed in `docs/official-samples.md` with the verdict this
+version gives it: the exit code with no flags, the rules that fire with
+their severity and the requirement each reads from, and the metamodel
+findings relayed. The page is generated from a run
+(`tools/gen_official_samples.py`), and `make check` and CI fail when the
+two disagree. And the front page said "the complementary layer for the
+eight it supports" through 0.8.0, 0.8.1 and 0.8.2, which vendored nine;
+it says nine, and every phrase on it that counts the templates is now
+held to the number vendored. No verdict moves.
+
+It is 360 rules, 311 generated from the vendored official template files,
+across nine template packs, as in 0.8.2. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.8.2 — 2026-09-25
 
 **The scope page says which metamodel edition is read.** This reader

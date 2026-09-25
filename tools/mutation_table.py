@@ -2147,6 +2147,25 @@ TABLE = [
       "test_every_sentence_a_violation_carries_is_the_one_that_was_decided"],
      "a 3.1 document was told this reader reads metamodel 3.1"),
 
+    ("samples/the-page-holds-every-sample",
+     "tools/gen_official_samples.py",
+     '_SAMPLE_TREES = ("tests/corpus/idta/", "src/aas_submodel_validate/data/example/")\n',
+     '_SAMPLE_TREES = ("tests/corpus/idta/",)\n',
+     ["tests/test_official_samples_page.py::"
+      "test_every_official_sample_here_is_on_the_page_and_no_template_is"],
+     "the bundled example, the sample `smtv --example` judges, was left off "
+     "the page of official samples"),
+
+    ("samples/the-exit-code-is-the-command-line-s",
+     "tools/gen_official_samples.py",
+     "    return 0 if report.ok else 1\n",
+     "    return 1 if report.ok else 0\n",
+     ["tests/test_official_samples_page.py::test_the_committed_page_is_what_a_run_writes",
+      "tests/test_official_samples_page.py::"
+      "test_every_exit_code_on_the_page_is_the_command_line_s"],
+     "the page of official samples said exit 1 of every sample the command "
+     "line passes, and a regenerated page said so with every gate green"),
+
     ("dbp5/the-name-an-author-reaches-for",
      "src/aas_submodel_validate/rules/detect.py",
      '"productcondition")',

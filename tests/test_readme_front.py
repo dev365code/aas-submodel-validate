@@ -1170,3 +1170,21 @@ def test_which_changelog_headings_are_checked_against_this_tree(heading, version
     is caught by the shape assertion rather than silently checked.
     """
     assert _numbers_are_this_trees(heading, version) is checked
+
+
+#: How the page spells a count of templates. Lower case: the sentences
+#: capitalise it only when it opens one.
+_TEMPLATE_WORDS = {8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}
+
+
+def test_every_count_of_the_templates_on_the_page_is_the_same():
+    """The page counts the templates it supports in several sentences,
+    and nothing compared them with each other or with the tree: one said
+    "the complementary layer for the eight it supports" through 0.8.0,
+    0.8.1 and 0.8.2, which vendored nine. Every phrase that counts them
+    is held to the number of vendored templates."""
+    vendored = len(list((ROOT / "src/aas_submodel_validate/data/smt").rglob("template.json")))
+    phrases = re.findall(
+        r"\b(\w+) (?:IDTA templates|it supports|templates already supported)\b", FLOWED)
+    assert phrases, "no phrase counts the templates any more; update the pattern with the page"
+    assert {phrase.lower() for phrase in phrases} == {_TEMPLATE_WORDS[vendored]}, phrases

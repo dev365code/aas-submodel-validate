@@ -16,6 +16,7 @@ include docs/capabilities.json
 include docs/capabilities.svg
 include docs/capabilities.md
 include docs/what-it-catches.md
+include docs/official-samples.md
 graft .github
 include Makefile MANIFEST.in
 include CONTRIBUTING.md SECURITY.md SUPPORT.md NOTICE THIRD_PARTY.md CHANGELOG.md

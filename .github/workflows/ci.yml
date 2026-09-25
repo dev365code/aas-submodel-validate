@@ -86,6 +86,11 @@ jobs:
         # what the generator writes, and whether every file the data cites
         # as evidence still says what it is cited for.
         run: python tools/capabilities_svg.py docs/capabilities.json --check
+      - name: the official samples page is what a run says of them
+        # IDTA's own samples vendored here, each with the verdict this
+        # version gives it. The page is generated from a run, so a rule
+        # that starts or stops firing on one of them is a diff here.
+        run: python tools/gen_official_samples.py --check
 
   test:
     name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}

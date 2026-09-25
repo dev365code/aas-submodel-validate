@@ -266,6 +266,7 @@ breath.
 - **Bounded by what it opens, not by what arrives.** A container declares far more than it holds: a few hundred kilobytes can declare hundreds of megabytes. This reader opens only what the relationship chain hands it, asks whether a supplemental part exists by *name* rather than by reading it, and compares a member's declared size against its limits before anything is decompressed — so a member it will not use costs it nothing, and there is no point at which one is inflated and then discarded. Measured on an archive of two hundred members declaring 400 MB: the bytes it charged itself are three orders of magnitude below what the file claimed, and the suite holds that as a ledger assertion rather than a stopwatch.
 - **Deterministic.** Two builds of one tree produce the same bytes; two runs over one file produce the same report, ordered.
 - **Every chosen reading is written down.** Where the published template and its own published example disagree — and they do — [docs/divergences.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/divergences.md) records which reading this tool follows and the evidence for it.
+- **What it says of IDTA's own samples is published.** Every official sample vendored here -- IDTA's own, pinned by upstream commit and hash -- is listed in [docs/official-samples.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/official-samples.md) with the verdict this version gives it, rule by rule; the page is generated from a run, and the build fails when the two disagree.
 - **A gate is not trusted here until it has been made to fail.** One that has never failed is one nobody has tested, and it is indistinguishable from one that cannot.
 
 ## Roadmap
@@ -331,7 +332,7 @@ Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02
 
 ## When aas-submodel-validate is not the tool
 
-- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the eight it supports.
+- **You need metamodel conformance.** That is [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python)'s job, and [aas-test-engines](https://github.com/admin-shell-io/aas-test-engines) is the official conformance tooling for the metamodel, serialisation, AASX packaging and APIs. As of v1.0.3 its submodel-template layer covers two templates (Contact Information, Digital Nameplate); this project is the complementary layer for the nine it supports.
 - **You need a file repaired.** There is no `--fix`. A validator that edits your file has to be trusted twice.
 - **Your submodel is of a kind not listed above.** It will say so — clearly, and as an error — rather than pass it quietly. If you have the template file, `--template` judges against it: what a template states, and not the hand-written rules or the recorded readings that come with a pack. The report says the table was yours.
 - **You want a hosted check.** There is none, on purpose.
