@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from ..model import Violation
 from ..registry import rule
+from ..tablegen import qualifier_said
 from . import td_tables
 from .engine import (
     analyze,
@@ -46,9 +47,9 @@ for _row in td_tables.ROWS:
                % (_row["label"], _row["sid"] or "by structure"),
          # The four unnamed list items carry no qualifier at all; the
          # PDF's element tables are what give them 0..*.
-         spec="%s, SMT/Cardinality qualifier (unnamed list items: "
-              "0..* per the PDF's element tables)"
-              % td_tables.TEMPLATE_CITATION,
+         spec="%s, %s" % (td_tables.TEMPLATE_CITATION, qualifier_said(_row)
+                          + (", as the PDF's element tables give it"
+                             if _row.get("card_qualifier", "") is None else "")),
          fix=_row["fix"],
          # A generated row always speaks about an element inside a
          # submodel of this document, so the route is the same for

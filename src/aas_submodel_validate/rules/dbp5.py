@@ -40,6 +40,7 @@ It registers the near-miss lint every pack has (`DBP5L1`).
 from __future__ import annotations
 
 from ..registry import rule
+from ..tablegen import qualifier_said
 from . import dbp5_tables
 from .engine import analyze, install_near_miss_lint, matched_submodels
 
@@ -65,7 +66,7 @@ for _row in dbp5_tables.ROWS:
     rule(_row["id"], kind="template", prio="MUST",
          title="'%s' as the template declares it (%s)"
                % (_row["label"], _row["sid"] or "by structure"),
-         spec="%s, SMT/Cardinality qualifier" % dbp5_tables.TEMPLATE_CITATION,
+         spec="%s, %s" % (dbp5_tables.TEMPLATE_CITATION, qualifier_said(_row)),
          fix=_row["fix"],
          # A generated row always speaks about an element inside a
          # submodel of this document, so the route is the same for every

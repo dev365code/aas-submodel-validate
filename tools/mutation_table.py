@@ -2485,6 +2485,26 @@ TABLE = [
      "with stderr closed, the sentence saying why nothing was judged was "
      "written into the JSON on stdout"),
 
+    ("tablegen/the-clause-names-the-qualifier-as-written",
+     "src/aas_submodel_validate/tablegen.py",
+     '    return "%s qualifier" % written\n',
+     '    return "SMT/Cardinality qualifier"\n',
+     ["tests/test_a_rule_names_the_qualifier_its_template_wrote.py::test_each_pack_s_rules_name_the_qualifier_as_its_template_wrote_it",
+      "tests/test_a_rule_names_the_qualifier_its_template_wrote.py::test_a_caller_s_template_is_cited_the_same_way"],
+     "a rule whose template stated its cardinality with a bare Cardinality, or "
+     "with Multiplicity, cited SMT/Cardinality"),
+
+    ("tablegen/the-row-keeps-the-qualifier-it-was-read-from",
+     "src/aas_submodel_validate/tablegen.py",
+     '    if written != "SMT/Cardinality":\n',
+     '    if False:\n',
+     ["tests/test_a_rule_names_the_qualifier_its_template_wrote.py::"
+      "test_a_caller_s_template_is_cited_the_same_way"],
+     "a row built from a template that stated no cardinality qualifier, or "
+     "another spelling, cited SMT/Cardinality -- held where the generator "
+     "runs, a caller's template, since the vendored tables are its output "
+     "and `extract_smt_rules.py --check` holds those"),
+
     ("changelog/the-entry-counts-its-packs",
      "tests/test_readme_front.py",
      '    assert ("across %s template packs" % _TEMPLATE_WORDS[vendored]\n',

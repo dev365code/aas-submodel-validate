@@ -18,6 +18,7 @@ refused unless the table agrees, in both directions.
 from __future__ import annotations
 
 from ..registry import rule
+from ..tablegen import qualifier_said
 from . import dbp_tables, handover
 from .engine import analyze, matched_submodels
 
@@ -38,7 +39,7 @@ for _row in dbp_tables.ROWS:
     rule(_row["id"], kind="template", prio="MUST",
          title="'%s' as the template declares it (%s)"
                % (_row["label"], _row["sid"] or "by structure"),
-         spec="%s, SMT/Cardinality qualifier" % dbp_tables.TEMPLATE_CITATION,
+         spec="%s, %s" % (dbp_tables.TEMPLATE_CITATION, qualifier_said(_row)),
          fix=_row["fix"],
          # A generated row always speaks about an element inside a
          # submodel of this document, so the route is the same for

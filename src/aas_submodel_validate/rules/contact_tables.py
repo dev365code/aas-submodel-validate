@@ -40,6 +40,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'RoleOfContactPerson' element(s) under ContactInformation with semanticId 0173-1#02-AAO204#003.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E03',
@@ -56,6 +57,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'NationalCode' element(s) under ContactInformation with semanticId 0173-1#02-AAO134#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E04',
@@ -72,6 +74,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide any number of 'Language' element(s) under ContactInformation with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/Language.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E05',
@@ -88,6 +91,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'TimeZone' element(s) under ContactInformation with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/TimeZone.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E06',
@@ -104,6 +108,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'CityTown' element(s) under ContactInformation with semanticId 0173-1#02-AAO132#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E07',
@@ -120,6 +125,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'Company' element(s) under ContactInformation with semanticId 0173-1#02-AAW001#001.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E08',
@@ -136,6 +142,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'Department' element(s) under ContactInformation with semanticId 0173-1#02-AAO127#003.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E09',
@@ -167,6 +174,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'TelephoneNumber' element(s) under Phone with semanticId 0173-1#02-AAO136#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E11',
@@ -183,6 +191,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'TypeOfTelephone' element(s) under Phone with semanticId 0173-1#02-AAO137#003.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E12',
@@ -199,8 +208,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'AvailableTime' element(s) under Phone with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/AvailableTime/.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                 ),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E13',
@@ -232,6 +243,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'FaxNumber' element(s) under Fax with semanticId 0173-1#02-AAO195#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E15',
@@ -248,8 +260,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'TypeOfFaxNumber' element(s) under Fax with semanticId 0173-1#02-AAO196#003.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                 ),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E16',
@@ -281,6 +295,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'EmailAddress' element(s) under Email with semanticId 0173-1#02-AAO198#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E18',
@@ -297,6 +312,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'PublicKey' element(s) under Email with semanticId 0173-1#02-AAO200#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E19',
@@ -313,6 +329,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'TypeOfEmailAddress' element(s) under Email with semanticId 0173-1#02-AAO199#003.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E20',
@@ -329,8 +346,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'TypeOfPublicKey' element(s) under Email with semanticId 0173-1#02-AAO201#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                 ),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E21',
@@ -362,6 +381,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'AddressOfAdditionalLink' element(s) under IPCommunication__00__ with semanticId 0173-1#02-AAQ326#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E23',
@@ -378,6 +398,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'TypeOfCommunication' element(s) under IPCommunication__00__ with semanticId https://admin-shell.io/zvei/nameplate/1/0/ ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'CI-E24',
@@ -394,8 +415,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'AvailableTime' element(s) under IPCommunication__00__ with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/AvailableTime/.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                 ),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E25',
@@ -412,6 +435,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'Street' element(s) under ContactInformation with semanticId 0173-1#02-AAO128#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E26',
@@ -428,6 +452,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'Zipcode' element(s) under ContactInformation with semanticId 0173-1#02-AAO129#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E27',
@@ -444,6 +469,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'POBox' element(s) under ContactInformation with semanticId 0173-1#02-AAO130#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E28',
@@ -460,6 +486,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'ZipCodeOfPOBox' element(s) under ContactInformation with semanticId 0173-1#02-AAO131#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E29',
@@ -476,6 +503,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'StateCounty' element(s) under ContactInformation with semanticId 0173-1#02-AAO133#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E30',
@@ -492,6 +520,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'NameOfContact' element(s) under ContactInformation with semanticId 0173-1#02-AAO205#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E31',
@@ -508,6 +537,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'FirstName' element(s) under ContactInformation with semanticId 0173-1#02-AAO206#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E32',
@@ -524,6 +554,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'MiddleNames' element(s) under ContactInformation with semanticId 0173-1#02-AAO207#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E33',
@@ -540,6 +571,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'Title' element(s) under ContactInformation with semanticId 0173-1#02-AAO208#003.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E34',
@@ -556,6 +588,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'AcademicTitle' element(s) under ContactInformation with semanticId 0173-1#02-AAO209#003.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E35',
@@ -572,6 +605,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'FurtherDetailsOfContact' element(s) under ContactInformation with semanticId 0173-1#02-AAO210#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'CI-E36',
@@ -588,8 +622,10 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'AddressOfAdditionalLink' element(s) under ContactInformation with semanticId 0173-1#02-AAQ326#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
         ),
+        'card_qualifier': 'Multiplicity',
     },
 )
 

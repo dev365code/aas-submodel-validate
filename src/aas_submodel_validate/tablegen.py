@@ -337,9 +337,11 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
     # is read rather than defaulted to 0..* (docs/divergences.md #50). The
     # first spelling present wins; absent all three is 0..*.
     card = (0, None)
+    written = None
     for _card_type in _CARDINALITY_TYPES:
         if _card_type in qualifiers:
             card = CARDINALITY.get(qualifiers[_card_type], (0, None))
+            written = _card_type
             break
     # A copy the template makes mandatory makes every copy need one of its
     # own, and no finite file has that many: a tree three deep with
@@ -450,6 +452,11 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
         "fix": fix,
         "children": tuple(children),
     }
+    if written != "SMT/Cardinality":
+        # Which qualifier the template stated this row's cardinality with,
+        # as it wrote it, where that is not the current spelling -- or
+        # None, where it stated none. A rule's clause names it.
+        row["card_qualifier"] = written
     if repeats:
         row["recurses"] = repeats
     if endless:
@@ -470,6 +477,17 @@ def _labels(rows, out):
         out.append(row["label"])
         _labels(row["children"], out)
     return out
+
+
+def qualifier_said(row) -> str:
+    """The qualifier a row's cardinality was read from, as the template
+    wrote it, for the clause a rule cites. The generator reads three
+    spellings alike and no qualifier as 0..* (docs/divergences.md #50);
+    the clause says which one the template actually carries."""
+    written = row.get("card_qualifier", "SMT/Cardinality")
+    if written is None:
+        return "no cardinality qualifier (read as 0..*)"
+    return "%s qualifier" % written
 
 
 def _qualify_repeats(tree):
@@ -740,7 +758,7 @@ def rules_for(table, pack):
     # row's `["document", "submodel", "element"]` from a vendored pack.
     return [Rule(id=row["id"], kind="template", prio="MUST",
                  title=_title_of(row),
-                 spec="%s, SMT/Cardinality qualifier" % table.TEMPLATE_CITATION,
+                 spec="%s, %s" % (table.TEMPLATE_CITATION, qualifier_said(row)),
                  fn=check_for(row["id"]), fix=row["fix"],
                  path=("document", "submodel", "element"))
             for row in table.ROWS]

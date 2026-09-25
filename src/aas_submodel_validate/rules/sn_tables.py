@@ -40,6 +40,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'URIOfTheProduct' element(s) under SoftwareNameplateType with semanticId 0173-1#02-AAY811#001.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E03',
@@ -56,6 +57,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'ManufacturerName' element(s) under SoftwareNameplateType with semanticId 0173-1#02-AAO677#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E04',
@@ -72,6 +74,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'ManufacturerProductDesignation' element(s) under SoftwareNameplateType with semanticId 0173-1#02-AAW338#001.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E05',
@@ -88,6 +91,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'ManufacturerProductDescription' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/ManufacturerProductDescription.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E06',
@@ -104,6 +108,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'ManufacturerProductFamily' element(s) under SoftwareNameplateType with semanticId 0173-1#02-AAU731#001.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E07',
@@ -120,6 +125,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'ManufacturerProductType' element(s) under SoftwareNameplateType with semanticId 0173-1#02-AAO057#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E08',
@@ -136,6 +142,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'SoftwareType' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/SoftwareType.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E09',
@@ -152,6 +159,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'Version' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/Version.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E10',
@@ -168,6 +176,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'VersionName' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/VersionName.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E11',
@@ -184,6 +193,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'VersionInfo' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/VersionInfo.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E12',
@@ -200,6 +210,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'ReleaseDate' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/ReleaseDate.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E13',
@@ -216,6 +227,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'ReleaseNotes' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/ReleaseNotes.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E14',
@@ -232,6 +244,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'ReleaseInformation' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/ReleaseInformation.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E15',
@@ -248,6 +261,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'BuildDate' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/BuildDate.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E16',
@@ -264,6 +278,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstallationURI' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/InstallationURI.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E17',
@@ -280,6 +295,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstallationFile' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/InstallationFile.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E18',
@@ -296,6 +312,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstallerType' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/InstallerType.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E19',
@@ -312,8 +329,10 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstallationChecksum' element(s) under SoftwareNameplateType with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateType/InstallationChecksum.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
         ),
+        'card_qualifier': 'Multiplicity',
     },
     {
         'id': 'SN-E20',
@@ -345,6 +364,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'SerialNumber' element(s) under SoftwareNameplateInstance with semanticId 0173-1#02-AAM556#002.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E22',
@@ -361,6 +381,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InventoryTag' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InventoryTag.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E23',
@@ -377,6 +398,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstanceName' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstanceName.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E24',
@@ -393,6 +415,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstalledVersion' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstalledVersion.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E25',
@@ -409,6 +432,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'InstallationDate' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstallationDate.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E26',
@@ -425,6 +449,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstallationPath' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstallationPath.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E27',
@@ -441,6 +466,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstallationSource' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstallationSource.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E28',
@@ -457,6 +483,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstalledOnArchitecture' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstalledOnArchitecture.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E29',
@@ -473,6 +500,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstalledOnOS' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstalledOnOS.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E30',
@@ -489,6 +517,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'InstalledOnHost' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstalledOnHost.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E31',
@@ -520,8 +549,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide one or more 'InstalledModule' element(s) under InstalledModules with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/InstalledModule.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                 ),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E33',
@@ -568,6 +599,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide exactly one 'ConfigurationURI' element(s) under ConfigurationPath with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPath.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E36',
@@ -584,10 +616,13 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'ConfigurationType' element(s) under ConfigurationPath with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/ConfigurationType.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                         ),
+                        'card_qualifier': 'Multiplicity',
                     },
                 ),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E37',
@@ -604,6 +639,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'SLAInformation' element(s) under SoftwareNameplateInstance with semanticId https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/SLAInformation.",
                 'children': (),
+                'card_qualifier': 'Multiplicity',
             },
             {
                 'id': 'SN-E38',
@@ -635,6 +671,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'RoleOfContactPerson' element(s) under Contact with semanticId 0173-1#02-AAO204#003.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E40',
@@ -651,6 +688,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'NationalCode' element(s) under Contact with semanticId 0173-1#02-AAO134#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E41',
@@ -667,6 +705,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide any number of 'Language' element(s) under Contact with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/Language.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E42',
@@ -683,6 +722,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'TimeZone' element(s) under Contact with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/TimeZone.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E43',
@@ -699,6 +739,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'CityTown' element(s) under Contact with semanticId 0173-1#02-AAO132#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E44',
@@ -715,6 +756,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'Company' element(s) under Contact with semanticId 0173-1#02-AAW001#001.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E45',
@@ -731,6 +773,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'Department' element(s) under Contact with semanticId 0173-1#02-AAO127#003.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E46',
@@ -762,6 +805,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide exactly one 'TelephoneNumber' element(s) under Phone with semanticId 0173-1#02-AAO136#002.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E48',
@@ -778,6 +822,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'TypeOfTelephone' element(s) under Phone with semanticId 0173-1#02-AAO137#003.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E49',
@@ -794,8 +839,10 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'AvailableTime' element(s) under Phone with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/AvailableTime/.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                         ),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E50',
@@ -827,6 +874,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide exactly one 'FaxNumber' element(s) under Fax with semanticId 0173-1#02-AAO195#002.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E52',
@@ -843,8 +891,10 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'TypeOfFaxNumber' element(s) under Fax with semanticId 0173-1#02-AAO196#003.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                         ),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E53',
@@ -876,6 +926,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide exactly one 'EmailAddress' element(s) under Email with semanticId 0173-1#02-AAO198#002.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E55',
@@ -892,6 +943,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'PublicKey' element(s) under Email with semanticId 0173-1#02-AAO200#002.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E56',
@@ -908,6 +960,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'TypeOfEmailAddress' element(s) under Email with semanticId 0173-1#02-AAO199#003.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E57',
@@ -924,8 +977,10 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'TypeOfPublicKey' element(s) under Email with semanticId 0173-1#02-AAO201#002.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                         ),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E58',
@@ -957,6 +1012,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide exactly one 'AddressOfAdditionalLink' element(s) under IPCommunication__00__ with semanticId 0173-1#02-AAQ326#002.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E60',
@@ -973,6 +1029,7 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'TypeOfCommunication' element(s) under IPCommunication__00__ with semanticId https://admin-shell.io/zvei/nameplate/1/0/ ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                             {
                                 'id': 'SN-E61',
@@ -989,8 +1046,10 @@ TREE = (
                                 'example': None,
                                 'fix': "Provide at most one 'AvailableTime' element(s) under IPCommunication__00__ with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/AvailableTime/.",
                                 'children': (),
+                                'card_qualifier': 'Multiplicity',
                             },
                         ),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E62',
@@ -1007,6 +1066,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'Street' element(s) under Contact with semanticId 0173-1#02-AAO128#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E63',
@@ -1023,6 +1083,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'Zipcode' element(s) under Contact with semanticId 0173-1#02-AAO129#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E64',
@@ -1039,6 +1100,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'POBox' element(s) under Contact with semanticId 0173-1#02-AAO130#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E65',
@@ -1055,6 +1117,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'ZipCodeOfPOBox' element(s) under Contact with semanticId 0173-1#02-AAO131#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E66',
@@ -1071,6 +1134,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'StateCounty' element(s) under Contact with semanticId 0173-1#02-AAO133#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E67',
@@ -1087,6 +1151,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'NameOfContact' element(s) under Contact with semanticId 0173-1#02-AAO205#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E68',
@@ -1103,6 +1168,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'FirstName' element(s) under Contact with semanticId 0173-1#02-AAO206#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E69',
@@ -1119,6 +1185,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'MiddleNames' element(s) under Contact with semanticId 0173-1#02-AAO207#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E70',
@@ -1135,6 +1202,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'Title' element(s) under Contact with semanticId 0173-1#02-AAO208#003.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E71',
@@ -1151,6 +1219,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'AcademicTitle' element(s) under Contact with semanticId 0173-1#02-AAO209#003.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E72',
@@ -1167,6 +1236,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'FurtherDetailsOfContact' element(s) under Contact with semanticId 0173-1#02-AAO210#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                     {
                         'id': 'SN-E73',
@@ -1183,10 +1253,13 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'AddressOfAdditionalLink' element(s) under Contact with semanticId 0173-1#02-AAQ326#002.",
                         'children': (),
+                        'card_qualifier': 'Multiplicity',
                     },
                 ),
+                'card_qualifier': 'Multiplicity',
             },
         ),
+        'card_qualifier': 'Multiplicity',
     },
 )
 

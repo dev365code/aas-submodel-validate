@@ -40,6 +40,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'ManufacturerName' element(s) under GeneralInformation with semanticId 0173-1#02-AAO677#004.",
                 'children': (),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E03',
@@ -56,6 +57,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide at most one 'CompanyLogo' element(s) under GeneralInformation with semanticId 0173-1#02-ABI776#002.",
                 'children': (),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E04',
@@ -72,6 +74,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'ManufacturerIdentifier' element(s) under GeneralInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#manufacturerIdentifier.",
                 'children': (),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E05',
@@ -88,6 +91,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'BatteryCategory' element(s) under GeneralInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#batteryCategory.",
                 'children': (),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E06',
@@ -104,6 +108,7 @@ TREE = (
                 'example': None,
                 'fix': "Provide exactly one 'BatteryMass' element(s) under GeneralInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#batteryMass.",
                 'children': (),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E07',
@@ -137,6 +142,7 @@ TREE = (
                         'children': (),
                     },
                 ),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E09',
@@ -168,10 +174,13 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'WarrantyPeriod' element(s) under WarrantyInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.1#warrantyPeriod.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                 ),
+                'card_qualifier': None,
             },
         ),
+        'card_qualifier': 'Cardinality',
     },
     {
         'id': 'DBP4-E11',
@@ -218,6 +227,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'NominalVoltage' element(s) under CapacityEnergyVoltage with semanticId 0173-1#02-ABL588#001.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E14',
@@ -234,6 +244,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'MinVoltage' element(s) under CapacityEnergyVoltage with semanticId 0173-1#02-ABL587#001.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E15',
@@ -250,6 +261,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'MaxVoltage' element(s) under CapacityEnergyVoltage with semanticId 0173-1#02-ABL589#001.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E16',
@@ -266,6 +278,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'RatedCapacity' element(s) under CapacityEnergyVoltage with semanticId 0173-1#02-ABL869#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E17',
@@ -282,6 +295,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'CapacityFade' element(s) under CapacityEnergyVoltage with semanticId 0173-1#02-ABL828#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E18',
@@ -298,8 +312,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'CertifiedUsableBatteryEnergy' element(s) under CapacityEnergyVoltage with semanticId 0173-1#02-ABL829#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                 ),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E19',
@@ -331,6 +347,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'InitialRoundTripEnergyEfficiency' element(s) under RoundTripEnergyEfficiency with semanticId 0173-1#02-ABL833#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E21',
@@ -347,6 +364,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'RoundTripEnergyEfficiencyAt50PercentOfCycleLife' element(s) under RoundTripEnergyEfficiency with semanticId 0173-1#02-ABL866#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E22',
@@ -363,6 +381,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'EnergyRoundTripEfficiencyFade' element(s) under RoundTripEnergyEfficiency with semanticId 0173-1#02-ABL827#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E23',
@@ -379,8 +398,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'InitialSelfDischargingRate' element(s) under RoundTripEnergyEfficiency with semanticId 0173-1#02-ABL834#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                 ),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E24',
@@ -412,6 +433,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'InitialInternalResistanceOnBatteryCellLevel' element(s) under Resistance with semanticId 0173-1#02-ABL844#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E26',
@@ -428,6 +450,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'InitialInternalResistanceOnBatteryPackLevel' element(s) under Resistance with semanticId 0173-1#02-ABL846#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E27',
@@ -444,6 +467,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'InitialInternalResistanceOnBatteryModuleLevel' element(s) under Resistance with semanticId 0173-1#02-ABL832#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E28',
@@ -460,6 +484,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'InternalResistanceIncreaseOfBatteryCellLevel' element(s) under Resistance with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#internalResistanceIncreaseOfBatteryCell.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E29',
@@ -476,6 +501,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'InternalResistanceIncreaseOfBatteryPackLevel' element(s) under Resistance with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#internalResistanceIncreaseOfBatteryPack.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E30',
@@ -492,8 +518,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'InternalResistanceIncreaseOfBatteryModuleLevel' element(s) under Resistance with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#initialInternalResistanceOfBatteryModule.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                 ),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E31',
@@ -525,6 +553,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'MaximumPermittedBatteryPower' element(s) under PowerCapability with semanticId 0173-1#02-ABL843#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E33',
@@ -541,6 +570,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'PowerFade' element(s) under PowerCapability with semanticId 0173-1#02-ABL852#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E34',
@@ -557,6 +587,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'RatioNorminalBatteryPowerAndBatteryEnergy' element(s) under PowerCapability with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#powerCapabilityRatio.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E35',
@@ -623,8 +654,10 @@ TREE = (
                                 ),
                             },
                         ),
+                        'card_qualifier': 'Cardinality',
                     },
                 ),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E39',
@@ -656,6 +689,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'TemperatureRangeIdleState_LowerBoundary' element(s) under Temperature with semanticId 0173-1#02-ABL842#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E41',
@@ -672,8 +706,10 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'TemperatureRangeIdleState_UpperBoundary' element(s) under Temperature with semanticId 0173-1#02-ABL871#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                 ),
+                'card_qualifier': 'Cardinality',
             },
             {
                 'id': 'DBP4-E42',
@@ -705,6 +741,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'ExpectedLifetimeInCalendarYears' element(s) under Lifetime with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#expectedLifetime.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E44',
@@ -721,6 +758,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'ExpectedNumberOfCycles' element(s) under Lifetime with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#expectedNumberOfCycles.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E45',
@@ -737,6 +775,7 @@ TREE = (
                         'example': None,
                         'fix': "Provide at most one 'CapacityThresholdExhaustion' element(s) under Lifetime with semanticId 0173-1#02-ABL838#002.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                     {
                         'id': 'DBP4-E46',
@@ -753,10 +792,13 @@ TREE = (
                         'example': None,
                         'fix': "Provide exactly one 'CRateOfRelevantCycleLifeTest' element(s) under Lifetime with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#cRateLifeCycleTest.",
                         'children': (),
+                        'card_qualifier': 'Cardinality',
                     },
                 ),
+                'card_qualifier': 'Cardinality',
             },
         ),
+        'card_qualifier': 'Cardinality',
     },
 )
 

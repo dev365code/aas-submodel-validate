@@ -169,6 +169,7 @@ TREE = (
         'example': None,
         'fix': "Provide exactly one 'ManufacturerIdentifier' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#manufacturerIdentifier.",
         'children': (),
+        'card_qualifier': 'Cardinality',
     },
     {
         'id': 'DBP1-E11',

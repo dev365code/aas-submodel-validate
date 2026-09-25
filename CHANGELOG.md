@@ -14,9 +14,23 @@ stderr whose reader had gone, the write raised and the process left by
 way 0.9.1's bug-report lines are: on stderr or nowhere, after stdout is
 flushed, and a stderr that cannot be written is let go of.
 
-**No verdict or report field moves.** What moves is stdout with stderr
-closed, which no longer carries those sentences, and the exit code with
-a stderr nobody reads, which is now the run's own.
+**A rule's clause names the qualifier its template wrote.** Every
+generated rule cited "SMT/Cardinality qualifier" -- two packs'
+"Multiplicity" -- whatever the element carried. IDTA 02035-4 states
+forty-one of its cardinalities with a bare `Cardinality` and one with
+none at all, 02035-1 one with a bare `Cardinality`, and four of 02003's
+and two of 02023's rows carry no cardinality qualifier: the generator
+reads the three spellings alike and none as 0..*
+(`docs/divergences.md` #50), and the clause said otherwise. The `spec`
+field and the report's `per` line now name the qualifier as the template
+wrote it, or say it wrote none and that the row reads 0..*. That moves
+the `spec` of seventy-one rules -- forty-two of 02035-4's, twenty-six of
+02003's, which also no longer carry a sentence about list items on every
+row, two of 02023's and one of 02035-1's -- and no verdict.
+
+**No verdict moves.** What moves is the `spec` text above; stdout with
+stderr closed, which no longer carries those sentences; and the exit
+code with a stderr nobody reads, which is now the run's own.
 
 It is 432 rules, 379 generated from the vendored official template
 files, across eleven template packs. What this reader takes in is
