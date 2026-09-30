@@ -2,17 +2,23 @@
 
 ## 0.9.2 — unreleased
 
-**A line for the person running the check stays off stdout, and off the
-exit code.** Four sentences this tool writes for a person -- why nothing
-was judged, a template it refused, how many submodels
+**Four lines for the person running the check stay off stdout, and off
+the exit code.** Four sentences this tool writes for a person -- why
+nothing was judged, a template it refused, how many submodels
 `--require-all-judged` found judged, and a package that carries no
 example -- were printed straight to `sys.stderr`. With stderr closed
 (`2>&-`, or pythonw with no console) that is None, and the sentence
-landed on stdout, after the JSON a pipeline was about to parse; with a
-stderr whose reader had gone, the write raised and the process left by
-120 rather than by the code the run had decided. They are written the
-way 0.9.1's bug-report lines are: on stderr or nowhere, after stdout is
-flushed, and a stderr that cannot be written is let go of.
+landed on stdout, after the JSON a pipeline was about to parse. With a
+stderr that could not be written, the failed write chose the exit code
+instead of the run: 120 where a pipe's reader had gone and the write was
+buffered, 1 where it was not, and where the error was not a broken pipe --
+a full disk, or the error Windows gives for a pipe with no reader -- the
+run also wrote a crash bundle calling itself defective. They are written
+the way 0.9.1's bug-report lines are: on stderr or nowhere, after stdout
+is flushed, and a stderr that cannot be written is let go of. A program
+that calls `main` itself gets the line on a stderr that has `write` and
+nothing else, and a stderr let go of is not handed back to it as None,
+which sent that program's own lines for stderr to its stdout.
 
 **A rule's clause names the qualifier its template wrote.** Every
 generated rule cited "SMT/Cardinality qualifier" -- two packs'
@@ -21,16 +27,28 @@ forty-one of its cardinalities with a bare `Cardinality` and one with
 none at all, 02035-1 one with a bare `Cardinality`, and four of 02003's
 and two of 02023's rows carry no cardinality qualifier: the generator
 reads the three spellings alike and none as 0..*
-(`docs/divergences.md` #50), and the clause said otherwise. The `spec`
-field and the report's `per` line now name the qualifier as the template
-wrote it, or say it wrote none and that the row reads 0..*. That moves
-the `spec` of seventy-one rules -- forty-two of 02035-4's, twenty-six of
-02003's, which also no longer carry a sentence about list items on every
-row, two of 02023's and one of 02035-1's -- and no verdict.
+(`docs/divergences.md` #50, #20), and the clause said otherwise. The
+`spec` field and the report's `per` line now name the qualifier as the
+template wrote it. Where it wrote none, the rule's `spec` says so and
+that the row reads 0..* -- which no report shows: a row read as 0..*
+raises no finding about how many, and the findings it can raise each
+cite a clause of their own. That moves the `spec` of seventy-one rules
+-- forty-two of 02035-4's, twenty-six of 02003's, which also no longer
+carry a sentence about list items on every row, two of 02023's and one
+of 02035-1's -- and no verdict. A template handed in with `--template`
+is read the same way, so the clause its findings cite moves alike: to
+"Multiplicity qualifier" for 02002's and 02007's elements, and to
+"Cardinality qualifier" for the elements 02035-1 and 02035-4 write with
+a bare `Cardinality`.
 
 **No verdict moves.** What moves is the `spec` text above; stdout with
-stderr closed, which no longer carries those sentences; and the exit
-code with a stderr nobody reads, which is now the run's own.
+stderr closed, which no longer carries those four sentences; the exit
+code when one of them meets a stderr that cannot be written, which is now
+the run's own, with no crash bundle; and, in a log that merges both
+streams into a file or a pipe, where the sentence falls -- 0.9.1 wrote it
+before the report there, and it now comes after. A usage error and a
+crash under `--no-bundle` still write to stderr as Python does, and are
+not among the four.
 
 It is 432 rules, 379 generated from the vendored official template
 files, across eleven template packs. What this reader takes in is

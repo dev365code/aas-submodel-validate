@@ -939,8 +939,9 @@ def test_a_kind_finding_does_not_cite_the_cardinality_qualifier(tmp_path):
     """`per` is the line the front page tells a reader to cite, and on a
     wrong-kind finding it cited the clause about how many.
 
-    Every generated row's rule carries one `spec`, the SMT/Cardinality
-    qualifier, because that is what the row's own rule is about. The
+    Every generated row's rule carries one `spec`, the qualifier its
+    template states the cardinality with -- `SMT/Cardinality`, or as the
+    template spelled it -- because that is what the row's own rule is about. The
     kind, valueType and typeValueListElement violations are built
     beside it without a `spec` of their own and inherit that one --
     sending a reader who is arguing about an element's *type* to the
@@ -953,7 +954,7 @@ def test_a_kind_finding_does_not_cite_the_cardinality_qualifier(tmp_path):
                   if f.id == row["id"] and "must be a" in f.violation.message]
     assert wrong_kind, "no wrong-kind finding to read `per` off"
     for finding in wrong_kind:
-        assert "Cardinality" not in (finding.spec or ""), (
+        assert "qualifier" not in (finding.spec or ""), (
             "a finding about what kind of element this is cites the "
             "clause about how many there must be: per = %r" % finding.spec)
         assert finding.spec, "the finding cites nothing at all"

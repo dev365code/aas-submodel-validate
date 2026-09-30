@@ -479,14 +479,16 @@ def _labels(rows, out):
     return out
 
 
-def qualifier_said(row) -> str:
+def qualifier_said(row, why: str = "") -> str:
     """The qualifier a row's cardinality was read from, as the template
     wrote it, for the clause a rule cites. The generator reads three
     spellings alike and no qualifier as 0..* (docs/divergences.md #50);
-    the clause says which one the template actually carries."""
+    the clause says which one the template actually carries. `why` is
+    where a pack has more than the generator's reading for that 0..*,
+    and goes inside the parenthesis it explains."""
     written = row.get("card_qualifier", "SMT/Cardinality")
     if written is None:
-        return "no cardinality qualifier (read as 0..*)"
+        return "no cardinality qualifier (read as 0..*%s)" % (", " + why if why else "")
     return "%s qualifier" % written
 
 

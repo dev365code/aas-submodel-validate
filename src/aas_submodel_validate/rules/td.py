@@ -47,9 +47,8 @@ for _row in td_tables.ROWS:
                % (_row["label"], _row["sid"] or "by structure"),
          # The four unnamed list items carry no qualifier at all; the
          # PDF's element tables are what give them 0..*.
-         spec="%s, %s" % (td_tables.TEMPLATE_CITATION, qualifier_said(_row)
-                          + (", as the PDF's element tables give it"
-                             if _row.get("card_qualifier", "") is None else "")),
+         spec="%s, %s" % (td_tables.TEMPLATE_CITATION,
+                          qualifier_said(_row, why="as the PDF's element tables give it")),
          fix=_row["fix"],
          # A generated row always speaks about an element inside a
          # submodel of this document, so the route is the same for

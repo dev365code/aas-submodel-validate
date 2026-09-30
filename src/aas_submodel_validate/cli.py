@@ -51,6 +51,22 @@ SENT = "Nothing was sent."
 REFUSALS = ("X1", "X2", "X3", "X5")
 
 
+class _Nowhere:
+    """Where a person's lines go once stderr has shown it cannot take them:
+    a stream that takes everything and keeps nothing. Not None -- `print`
+    handed None writes to stdout, and a program that called `main` goes on
+    running after it returns, with its own lines for stderr to write."""
+
+    def write(self, text: str) -> int:
+        return len(text)
+
+    def flush(self) -> None:
+        pass
+
+
+_NOWHERE = _Nowhere()
+
+
 def _say(*parts) -> None:
     """A line for the person running the check: on stderr, or nowhere when
     there is no stderr. `print(file=None)` writes to stdout, which is where the
@@ -62,16 +78,22 @@ def _say(*parts) -> None:
     is there and cannot be written -- a pipe whose reader has gone, a full disk
     -- is let go of rather than raised: the line was for a person who is not
     reading, and without this, it or the interpreter's own flush at exit moved
-    the exit code to 120."""
+    the exit code to 120.
+
+    `write` is all `print` asks of a stream, and all a writer handed to
+    `contextlib.redirect_stderr` may have: one with no `flush` still gets
+    the line."""
     if sys.stderr is None:
         return
     with contextlib.suppress(OSError, ValueError, AttributeError):
         sys.stdout.flush()
     try:
         print(*parts, file=sys.stderr)
-        sys.stderr.flush()
+        flush = getattr(sys.stderr, "flush", None)
+        if flush is not None:
+            flush()
     except (OSError, ValueError):
-        sys.stderr = None
+        sys.stderr = _NOWHERE
 
 
 def _refused(report) -> bool:

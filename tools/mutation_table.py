@@ -2448,7 +2448,7 @@ TABLE = [
 
     ('bundle/a-dead-stderr-raises',
      'src/aas_submodel_validate/cli.py',
-     '    except (OSError, ValueError):\n        sys.stderr = None\n',
+     '    except (OSError, ValueError):\n        sys.stderr = _NOWHERE\n',
      '    except (OSError, ValueError):\n        raise\n',
      ['tests/test_a_bug_report_carries_nothing_from_the_files.py::test_a_stderr_nobody_reads_moves_no_exit_code'],
      "a stderr whose reader had gone turned a bundle's lines into exit 120"),
@@ -2485,6 +2485,66 @@ TABLE = [
      "with stderr closed, the sentence saying why nothing was judged was "
      "written into the JSON on stdout"),
 
+    ("cli/the-template-refusal-goes-through-say",
+     "src/aas_submodel_validate/cli.py",
+     '        _say("smtv: %s" % refused)\n',
+     '        print("smtv: %s" % refused, file=sys.stderr)\n',
+     ["tests/test_a_line_for_a_person_stays_off_the_report.py::"
+      "test_with_stderr_closed_no_line_reaches_stdout"],
+     "with stderr closed, the sentence saying a template was refused was "
+     "written to stdout"),
+
+    ("cli/the-judged-count-goes-through-say",
+     "src/aas_submodel_validate/cli.py",
+     '        _say("smtv: judged %d of %d submodel%s; --require-all-judged was given"\n'
+     '             % (report.submodels_judged, expected, "" if expected == 1 else "s"))\n',
+     '        print("smtv: judged %d of %d submodel%s; --require-all-judged was given"\n'
+     '              % (report.submodels_judged, expected, "" if expected == 1 else "s"),\n'
+     '              file=sys.stderr)\n',
+     ["tests/test_a_line_for_a_person_stays_off_the_report.py::"
+      "test_with_stderr_closed_no_line_reaches_stdout"],
+     "with stderr closed, the count --require-all-judged reports was "
+     "written into the JSON on stdout"),
+
+    ("cli/the-missing-example-line-survives-a-dead-stderr",
+     "src/aas_submodel_validate/cli.py",
+     '            _say("smtv: %s" % exc)\n            return EXIT_ERROR\n',
+     '            if sys.stderr is not None:\n'
+     '                print("smtv: %s" % exc, file=sys.stderr)\n'
+     '            return EXIT_ERROR\n',
+     ["tests/test_a_line_for_a_person_stays_off_the_report.py::"
+      "test_a_stderr_nobody_reads_leaves_a_package_without_its_example_its_exit_code"],
+     "a package without its example, run with a stderr nobody reads, left "
+     "by 120 -- safe from a closed stderr, not from a dead one"),
+
+    ("cli/a-writer-with-no-flush-is-still-written-to",
+     "src/aas_submodel_validate/cli.py",
+     '        flush = getattr(sys.stderr, "flush", None)\n'
+     '        if flush is not None:\n'
+     '            flush()\n',
+     '        sys.stderr.flush()\n',
+     ["tests/test_a_line_for_a_person_stays_off_the_report.py::"
+      "test_a_stderr_that_only_writes_gets_the_line_and_the_run_keeps_its_code"],
+     "a program that handed redirect_stderr a writer with no flush had main "
+     "raise AttributeError and leave by 1 instead of the run's code"),
+
+    ("cli/a-stderr-let-go-of-is-handed-back-as-none",
+     "src/aas_submodel_validate/cli.py",
+     '        sys.stderr = _NOWHERE\n',
+     '        sys.stderr = None\n',
+     ["tests/test_a_line_for_a_person_stays_off_the_report.py::"
+      "test_a_stderr_let_go_of_is_not_handed_back_as_none"],
+     "after main returned, the calling program's own lines for stderr went "
+     "to its stdout"),
+
+    ("cli/a-closed-stderr-raises",
+     "src/aas_submodel_validate/cli.py",
+     '    except (OSError, ValueError):\n        sys.stderr = _NOWHERE\n',
+     '    except OSError:\n        sys.stderr = _NOWHERE\n',
+     ["tests/test_a_line_for_a_person_stays_off_the_report.py::"
+      "test_a_stderr_already_closed_is_let_go_of_too"],
+     "a stderr closed in-process raised ValueError out of main"),
+
     ("tablegen/the-clause-names-the-qualifier-as-written",
      "src/aas_submodel_validate/tablegen.py",
      '    return "%s qualifier" % written\n',
@@ -2504,6 +2564,24 @@ TABLE = [
      "another spelling, cited SMT/Cardinality -- held where the generator "
      "runs, a caller's template, since the vendored tables are its output "
      "and `extract_smt_rules.py --check` holds those"),
+
+    ("tablegen/a-pack-cites-a-fixed-spelling",
+     "src/aas_submodel_validate/rules/pcf.py",
+     '         spec="%s, %s" % (pcf_tables.TEMPLATE_CITATION, qualifier_said(_row)),\n',
+     '         spec="%s, SMT/Cardinality qualifier" % pcf_tables.TEMPLATE_CITATION,\n',
+     ["tests/test_a_rule_names_the_qualifier_its_template_wrote.py::"
+      "test_each_pack_s_rules_name_the_qualifier_as_its_template_wrote_it"],
+     "02023's two unqualified list items cited SMT/Cardinality, and no test "
+     "counted that pack"),
+
+    ("tablegen/the-reason-sits-outside-its-parenthesis",
+     "src/aas_submodel_validate/rules/td.py",
+     '                          qualifier_said(_row, why="as the PDF\'s element tables give it")),\n',
+     '                          qualifier_said(_row)),\n',
+     ["tests/test_a_rule_names_the_qualifier_its_template_wrote.py::"
+      "test_02003_s_unqualified_items_say_where_their_0_to_many_comes_from"],
+     "02003's four list items no longer said the PDF's element tables are "
+     "where their 0..* comes from"),
 
     ("changelog/the-entry-counts-its-packs",
      "tests/test_readme_front.py",
