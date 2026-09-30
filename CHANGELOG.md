@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.2 — unreleased
+## 0.9.2 — 2026-09-30
 
 **Four lines for the person running the check stay off stdout, and off
 the exit code.** Four sentences this tool writes for a person -- why
