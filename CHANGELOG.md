@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.10.0 — unreleased
+## 0.10.0 — 2026-10-06
 
 **IDTA 02035-7 Circularity is the twelfth template pack.** The Digital
 Battery Passport's part 7 -- the documents on the battery's dismantling

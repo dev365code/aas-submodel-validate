@@ -1,4 +1,4 @@
-# The rule ids the last release published, taken at v0.9.2.
+# The rule ids the last release published, taken at v0.10.0.
 #
 # The front page says no rule id has been renamed or reused. A promise in
 # prose goes quietly false -- the sentence beside this one used to say a
@@ -204,6 +204,44 @@ DBP5-E47
 DBP5-E48
 DBP5-E49
 DBP5L1
+DBP7-E01
+DBP7-E02
+DBP7-E03
+DBP7-E04
+DBP7-E05
+DBP7-E06
+DBP7-E07
+DBP7-E08
+DBP7-E09
+DBP7-E10
+DBP7-E11
+DBP7-E12
+DBP7-E13
+DBP7-E14
+DBP7-E15
+DBP7-E16
+DBP7-E17
+DBP7-E18
+DBP7-E19
+DBP7-E20
+DBP7-E21
+DBP7-E22
+DBP7-E23
+DBP7-E24
+DBP7-E25
+DBP7-E26
+DBP7-E27
+DBP7-E28
+DBP7-E29
+DBP7-E30
+DBP7-E31
+DBP7-E32
+DBP7-E33
+DBP7-E34
+DBP7-E35
+DBP7-E36
+DBP7-E37
+DBP7L1
 DN-D1
 DN-D2
 DN-E01
