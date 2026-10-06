@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.10.0 — unreleased
+
+**IDTA 02035-7 Circularity is the twelfth template pack.** The Digital
+Battery Passport's part 7 -- the documents on the battery's dismantling
+and removal, the sources of its spare parts, the recycled content of its
+active materials, its safety instructions and usable extinguishing
+agents, the documents on waste prevention and separate collection, and
+its share of renewable content -- is vendored at 1.0.1, the bug-fix
+release of 1.0, and generates thirty-seven rules, `DBP7-E01` to
+`DBP7-E37`, with the near-miss lint `DBP7L1`. The template declares no
+File row, so no file is asked for; no value is checked for what it says,
+and the battery-data layer reads nothing of this part. Every element's
+own identifier is a SAMM URN, and a spare part supplier's name, address
+fields, e-mail and web address are borrowed from a contact information
+namespace, with ECLASS identifiers beside them written `urn:irdi:...`:
+a supplier identified as 02002 Contact Information writes those
+elements -- by the same ECLASS identifiers, without the prefix -- matches
+no row, and those fields are reported missing. Document list items spelt
+as 02035-2 spells a document identifier leave all five document lists
+reported empty. A submodel *named* `Circularity` that carries another
+identifier is told, as for the other packs, that matching goes by
+semanticId, and `SMT-D1`'s remedy names this template's identifier among
+the ones it lists. Where the template disagrees with its neighbours and
+its specification, and what that costs a file, is
+`docs/divergences.md` #61.
+
+**What moves: one verdict in the corpus, and every Battery Circularity
+submodel.** Measured against 0.9.2 across the corpus -- eighty-three
+inputs now, the vendored template and a submodel of it added -- one is
+judged differently: the valid Circularity submodel, which drew `SMT-D1`
+and left by 1, draws nothing and leaves by 0. Outside the corpus, a
+Circularity submodel alone in its file that keeps its template leaves by
+0 where it left by 1, so a pipeline red on one today goes quiet; one
+that breaks its template -- a mandatory element missing, an element of
+the wrong kind, a `valueType` other than the template's -- leaves by 1
+where it left by 0 beside a submodel that was judged, or under
+`--allow-unmatched`; and an element one SAMM release off a row's draws
+`DBP7L1`, a warning. `summary.rulesChecked` counts the thirty-eight new
+rules.
+
+It is 470 rules, 416 generated from the vendored official template
+files, across twelve template packs. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.9.2 — 2026-09-30
 
 **Four lines for the person running the check stay off stdout, and off

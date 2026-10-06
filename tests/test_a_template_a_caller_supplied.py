@@ -1768,7 +1768,7 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
     against 26 for 02023, and every one of those extra rows was an
     open-content placeholder the pack drops.
 
-    Asked of all eleven rather than of the one that failed, because the
+    Asked of all twelve rather than of the one that failed, because the
     difference was a list the two readers kept separately.
     """
     from aas_submodel_validate.rules import (
@@ -1776,6 +1776,7 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
         dbp1_tables,
         dbp4_tables,
         dbp5_tables,
+        dbp7_tables,
         dbp_tables,
         dn_tables,
         hd_tables,
@@ -1788,7 +1789,8 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
     packs = {"02002": contact_tables, "02003": td_tables, "02004": hd_tables,
              "02006": dn_tables, "02007": sn_tables, "02011": hs_tables,
              "02023": pcf_tables, "02035-2": dbp_tables, "02035-5": dbp5_tables,
-             "02035-1": dbp1_tables, "02035-4": dbp4_tables}
+             "02035-1": dbp1_tables, "02035-4": dbp4_tables,
+             "02035-7": dbp7_tables}
     data = pathlib.Path(runner.__file__).parent / "data" / "smt"
     seen = 0
     for document in sorted(data.glob("*/*/template.json")):

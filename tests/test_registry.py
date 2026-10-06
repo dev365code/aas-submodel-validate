@@ -13,6 +13,7 @@ from aas_submodel_validate.rules import (
     dbp1_tables,
     dbp4_tables,
     dbp5_tables,
+    dbp7_tables,
     dbp_tables,
     dn_tables,
     engine,
@@ -198,6 +199,7 @@ SHOULD_RULES = {
     # The near-miss lint every pack registers since 0.8.0, 02004's and
     # 02003's by hand before then: SHOULD, as TDL1 has always been.
     "CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1", "DBP1L1", "DBP4L1",
+    "DBP7L1",
 }
 MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 
@@ -231,7 +233,7 @@ MAY_RULES = {"DBP2L1", "DBP2L3", "HDL1", "HDL3", "SMT-D2", "TDL2"}
 #: truncated repr of 87 Rule objects names nothing. Widening the pattern
 #: without moving that assertion would have made the case it was widened
 #: for worse.
-GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI|HS|SN|DBP5|DBP1|DBP4)-E\d+$")
+GENERATED_ID = re.compile(r"^(HD|TD|DBP2|DN|PCF|CI|HS|SN|DBP5|DBP1|DBP4|DBP7)-E\d+$")
 
 
 def test_every_generated_rule_stops_a_build():
@@ -245,9 +247,9 @@ def test_every_generated_rule_stops_a_build():
     assert {rule.id for rule in generated} == {
         row["id"] for tables in (hd_tables, td_tables, dbp_tables, dn_tables,
                                 pcf_tables, contact_tables, hs_tables, sn_tables,
-                                dbp5_tables, dbp1_tables, dbp4_tables)
+                                dbp5_tables, dbp1_tables, dbp4_tables, dbp7_tables)
         for row in tables.ROWS}
-    assert len(generated) == 379
+    assert len(generated) == 416
     assert {rule.prio for rule in generated} == {"MUST"}
 
 
@@ -313,6 +315,8 @@ NAMESPACES = {
     r"DBP4-E\d+": "IDTA 02035-4, generated from the template's rows",
     r"DBP4L\d+": "IDTA 02035-4, informational lints",
     r"DBP4-D\d+": "IDTA 02035-4, what the template file cannot say",
+    r"DBP7-E\d+": "IDTA 02035-7, generated from the template's rows",
+    r"DBP7L\d+": "IDTA 02035-7, informational lints",
 }
 
 
@@ -534,7 +538,9 @@ REMEDIES = {
         "https://admin-shell.io/idta/digitalbatterypassport/nameplate/1/0/Nameplate "
         "for Battery Nameplate (IDTA 02035-1); "
         "https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0 "
-        "for Battery Technical Data (IDTA 02035-4). "
+        "for Battery Technical Data (IDTA 02035-4); "
+        "urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#Circularity "
+        "for Battery Circularity (IDTA 02035-7). "
         "If it means a template "
         "this tool has no table for, "
         "leave the identifier alone -- it is doing its job, and this "
@@ -560,7 +566,8 @@ REMEDIES = {
         "Correct the semanticId to the template's spelling; a near-miss "
         "matches nothing, and every rule that would have applied to the "
         "element silently stops applying.",
-    **dict.fromkeys(("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1", "DBP1L1", "DBP4L1"),
+    **dict.fromkeys(("CIL1", "DNL1", "HSL1", "PCFL1", "SNL1", "DBP5L1", "DBP1L1", "DBP4L1",
+                      "DBP7L1"),
                     "Correct the semanticId to the template's spelling; a near-miss "
                     "matches nothing, and every rule that would have applied to the "
                     "element silently stops applying."),

@@ -104,13 +104,14 @@ the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 
-Eleven official templates are given rule tables: IDTA 02004 Handover
+Twelve official templates are given rule tables: IDTA 02004 Handover
 Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport
 part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact
 Information, 02011 Hierarchical Structures, 02007 Software Nameplate,
 02035-5 Digital Battery Passport part 5, 02035-1 Digital Battery
-Passport part 1, and 02035-4 Digital Battery Passport part 4. A submodel of any other template is reported as not
-matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
+Passport part 1, 02035-4 Digital Battery Passport part 4, and 02035-7
+Digital Battery Passport part 7. A submodel of any other template is
+reported as not matched (`SMT-D1`), not judged; `--allow-unmatched` turns that from an
 error into a note.
 
 `--template FILE` is the other answer. Give it an IDTA-shaped template
@@ -136,7 +137,7 @@ submodel judged against that. What that buys and what it does not:
   your file and is not a published IDTA template. **A verdict against a
   template you supplied is not a statement about conformance to a
   published one.**
-- Where your template claims an identifier one of the ten packs also
+- Where your template claims an identifier one of the twelve packs also
   answers for, yours answers and the pack stands down — the report says
   which identifier that was.
 - The `TPL-E*` ids such a run uses are **not ids this project
@@ -326,3 +327,27 @@ and an element's own identifier settles which row it is, so a file
 written as the template writes it is judged as the template means; an
 element known by a shared identifier alone goes to the first row holding
 it (`docs/divergences.md` #60).
+
+IDTA 02035-7 Circularity 1.0.1, the Digital Battery Passport's part 7,
+says how the battery is taken apart and what becomes of it: the
+documents on its dismantling and removal, the sources of its spare
+parts, the recycled content of its active materials, its safety
+instructions and usable extinguishing agents, the documents on waste
+prevention and separate collection, and its share of renewable
+content. All six of its top-level elements are mandatory. The list of
+spare part suppliers may be empty; a supplier that is given needs a
+name, a postal address, an e-mail address, a web address and at least
+one component with its name and part number. Its pack is generated rows
+only: no value is checked for what it says -- a recycled material
+outside the four its concept description lists, or a share above 100,
+draws nothing -- and the battery-data layer reads nothing of this part.
+Every element's own identifier is a SAMM URN, and a supplier's name,
+address fields, e-mail and web address are borrowed from a contact
+information namespace, with ECLASS identifiers beside them written
+`urn:irdi:...`.
+A supplier identified as 02002 Contact Information writes those
+elements, by the same ECLASS identifiers without the prefix, matches no
+row, and its name, address fields, e-mail and web address are reported
+missing; document list items spelt as 02035-2 spells a document
+identifier match nothing either, and the five document lists are
+reported empty (`docs/divergences.md` #61).

@@ -35,6 +35,7 @@ COVERED = {
     "#ProductCondition",                                                # 02035-5
     "https://admin-shell.io/idta/digitalbatterypassport/nameplate/1/0/Nameplate",  # 02035-1
     "https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0",       # 02035-4
+    "urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#Circularity",  # 02035-7
 }
 
 
@@ -106,13 +107,14 @@ def test_scope_md_names_every_template_the_tool_has_a_table_for():
     assert "SMT-D1" in section
     assert "Multiplicity" in section
     head, _, _ = section.partition("A submodel of any other template")
-    assert "Eleven official templates are given rule tables" in head, head[:200]
+    assert "Twelve official templates are given rule tables" in head, head[:200]
     for name in ("02004 Handover Documentation", "02003 Technical Data",
                  "02035-2 Digital Battery Passport", "02006 Digital Nameplate",
                  "02023 Carbon Footprint", "02002 Contact Information",
                  "02011 Hierarchical Structures", "02007 Software Nameplate",
                  "02035-5 Digital Battery Passport part 5",
                  "02035-1 Digital Battery Passport part 1",
-                 "02035-4 Digital Battery Passport part 4"):
+                 "02035-4 Digital Battery Passport part 4",
+                 "02035-7 Digital Battery Passport part 7"):
         assert name in head, name
     assert "still not vendored" not in section.partition("## ")[0]

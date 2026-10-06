@@ -4,7 +4,7 @@
 Every element in an IDTA submodel template carries its own machine-readable
 constraints -- an SMT/Cardinality qualifier, a semanticId, a valueType,
 sometimes an AllowedIdShort pattern -- so the structural rule layer is
-extracted, not hand-written: hand-copying 379 rows is how one of them
+extracted, not hand-written: hand-copying 416 rows is how one of them
 silently goes stale. This sentence's number is pinned against the
 generator's own list of packs, and the README's beside it
 (`tests/test_readme_front.py`) -- pinned because it has been wrong
@@ -187,6 +187,22 @@ DBP4_ITEM_NAMES = {
     "OriginalPowerCapability": "PowerCapabilityAt",
 }
 
+#: 02035-7's nine list items. The template gives every one an idShort
+#: (AASd-120), which the generator takes first, so these name nothing
+#: today; they are here so an upstream repair of that defect renames no
+#: row.
+DBP7_ITEM_NAMES = {
+    "DismantlingAndRemovalInformation": "DocumentIdentifier",
+    "SparePartSources": "SparePartSupplier",
+    "Components": "Component",
+    "RecycledContentInformation": "RecycledContent",
+    "SafetyInstructions": "DocumentIdentifier",
+    "ExtinguishingAgents": "ExtinguishingAgent",
+    "WastePrevention": "DocumentIdentifier",
+    "SeparateCollection": "DocumentIdentifier",
+    "InformationOnCollection": "DocumentIdentifier",
+}
+
 #: 02035-5's two list items. The template gives both an idShort
 #: (AASd-120), which the generator takes first, so these name nothing
 #: today; they are here so an upstream repair of that defect renames no
@@ -341,6 +357,20 @@ PACKS = (
         "source": "IDTA 02035-4_DBP-Part-4_TechnicalData.json",
         "citation": "IDTA 02035-4 1.0.1 template",
         "item_names": DBP4_ITEM_NAMES,
+        "example_types": (),
+        "skip_sids": ARBITRARY,
+    },
+    # IDTA 02035-7 Circularity 1.0.1, the Digital Battery Passport's part
+    # 7: thirty-seven elements -- 15 Properties, 9 lists, 7 collections, 6
+    # MultiLanguageProperties -- each with the `SMT/Cardinality` qualifier.
+    # Every identifier is a SAMM URN.
+    {
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-7/1.0.1/template.json",
+        "output": ROOT / "src/aas_submodel_validate/rules/dbp7_tables.py",
+        "prefix": "DBP7-E",
+        "source": "IDTA 02035-7_DBP-Part-7_Circularity.json",
+        "citation": "IDTA 02035-7 1.0.1 template",
+        "item_names": DBP7_ITEM_NAMES,
         "example_types": (),
         "skip_sids": ARBITRARY,
     },

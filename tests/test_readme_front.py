@@ -27,6 +27,7 @@ from aas_submodel_validate.rules import (
     dbp1_tables,
     dbp4_tables,
     dbp5_tables,
+    dbp7_tables,
     dbp_tables,
     dn_tables,
     hd_tables,
@@ -79,14 +80,14 @@ def test_the_rule_counts_are_the_registrys():
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS) + len(hs_tables.ROWS)
                  + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS)
-                 + len(dbp4_tables.ROWS))
-    assert len(all_rules()) == 432
+                 + len(dbp4_tables.ROWS) + len(dbp7_tables.ROWS))
+    assert len(all_rules()) == 470
     assert (len(hd_tables.ROWS), len(td_tables.ROWS), len(dbp_tables.ROWS),
             len(dn_tables.ROWS), len(pcf_tables.ROWS),
             len(contact_tables.ROWS), len(hs_tables.ROWS),
             len(sn_tables.ROWS), len(dbp5_tables.ROWS),
-            len(dbp1_tables.ROWS), len(dbp4_tables.ROWS)) == (
-        38, 26, 22, 30, 26, 36, 11, 73, 49, 22, 46)
+            len(dbp1_tables.ROWS), len(dbp4_tables.ROWS), len(dbp7_tables.ROWS)) == (
+        38, 26, 22, 30, 26, 36, 11, 73, 49, 22, 46, 37)
     # Every place the page says it, not "somewhere on the page". The
     # count appears six times -- the badge, the gallery, the roadmap,
     # the table's heading and the sentence that says which numbers are
@@ -145,8 +146,8 @@ def test_the_rule_counts_are_the_registrys():
     template_rules = (families["HD"] + families["TD"] + families["DBP"]
                       + families["DN"] + families["PCF"] + families["CI"]
                       + families["HS"] + families["SN"])
-    assert template_rules == 422, families
-    assert "%d of them across eleven IDTA templates" % template_rules in FLOWED
+    assert template_rules == 460, families
+    assert "%d of them across twelve IDTA templates" % template_rules in FLOWED
     assert "%d hand-written" % (template_rules - generated) in FLOWED
     assert families["X"] == 6 and families["SMT"] == 2 and families["BAT"] == 2
     # Counts, not a description. The sentence beneath this one said
@@ -506,7 +507,7 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
                  + len(dn_tables.ROWS) + len(pcf_tables.ROWS)
                  + len(contact_tables.ROWS) + len(hs_tables.ROWS)
                  + len(sn_tables.ROWS) + len(dbp5_tables.ROWS) + len(dbp1_tables.ROWS)
-                 + len(dbp4_tables.ROWS))
+                 + len(dbp4_tables.ROWS) + len(dbp7_tables.ROWS))
     assert "%d rules" % len(all_rules()) in unreleased
     assert "%d are" % generated in unreleased or "%d generated" % generated in unreleased
     # And the packs, which the entry counts in a word: 0.9.0's said "across

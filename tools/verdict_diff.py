@@ -413,6 +413,12 @@ def build_corpus(into: Path):
     technical.write_text(json.dumps(dbp4_env()), encoding="utf-8")
     cases.append(Case("a valid Battery Technical Data submodel", technical))
 
+    # A Battery Circularity submodel, IDTA 02035-7's, landing.
+    from builders import dbp7_env  # noqa: E402
+    circularity = into / "battery-circularity-valid.json"
+    circularity.write_text(json.dumps(dbp7_env()), encoding="utf-8")
+    cases.append(Case("a valid Battery Circularity submodel", circularity))
+
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
     # refusing the file, so a file like this is judged -- and what it is

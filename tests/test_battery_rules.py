@@ -662,7 +662,7 @@ def test_the_divergence_row_counts_the_index_it_cites():
     numbers = re.search(r"indexes (\w+) template editions; this repository "
                         r"vendors (\w+) of those", row[0])
     assert numbers, "row 36 no longer states both counts in a readable shape"
-    words = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "ten": 10, "eleven": 11,
+    words = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "ten": 10, "eleven": 11,
              "twelve": 12, "thirteen": 13}
     assert words[numbers.group(1)] == len(editions)
     assert words[numbers.group(2)] == shared

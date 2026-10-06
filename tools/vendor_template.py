@@ -143,6 +143,14 @@ FILES = {
     "src/aas_submodel_validate/data/smt/02035-4/1.0.1/template.json":
         "published/Digital Battery Passport/4_Technical Data/1/0/1/"
         "IDTA 02035-4_DBP-Part-4_TechnicalData.json",
+    # 02035-7 is the Digital Battery Passport's part 7, Circularity,
+    # published at 1.0 and 1.0.1; 1.0.1, the bug-fix release, is the newest
+    # at the pin. Every identifier is a SAMM URN: its own namespace's, the
+    # Handover Documentation one for its document lists' items, and a
+    # contact information one for the addresses it holds.
+    "src/aas_submodel_validate/data/smt/02035-7/1.0.1/template.json":
+        "published/Digital Battery Passport/7_Circularity/1/0/1/"
+        "IDTA 02035-7_DBP-Part-7_Circularity.json",
     # 02035-5 is the Digital Battery Passport's part 5, Product Condition,
     # published at 1.0, 1.0.1 and 1.0.2; 1.0.2 is the newest at the pin,
     # and the edition the battery-data layer already reads. Its directory

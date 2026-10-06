@@ -22,7 +22,7 @@ import json
 import pytest
 
 from aas_submodel_validate import runner
-from builders import contact_env, dbp1_env, dbp4_env, dn_env, hs_env, pcf_env, sn_env
+from builders import contact_env, dbp1_env, dbp4_env, dbp7_env, dn_env, hs_env, pcf_env, sn_env
 
 
 def _find(node, short):
@@ -57,6 +57,9 @@ CASES = [
      "0112/2///61987#ABA951#008"),
     ("DBP4L1", dbp4_env, "ManufacturerName", "0173-1#02-AAO677#004",
      "0173-1#02-AAO677#003"),
+    ("DBP7L1", dbp7_env, "RecycledMaterial",
+     "urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#recycledMaterial",
+     "urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.1#recycledMaterial"),
 ]
 
 
@@ -146,7 +149,8 @@ def test_every_pack_s_near_miss_lint_is_tdl1_under_another_name():
 
     def shape(rule):
         return (rule.kind, rule.prio, rule.title, rule.spec, rule.fix, rule.path)
-    for lint in ("DNL1", "CIL1", "PCFL1", "HSL1", "SNL1", "DBP5L1", "DBP1L1", "DBP4L1"):
+    for lint in ("DNL1", "CIL1", "PCFL1", "HSL1", "SNL1", "DBP5L1", "DBP1L1", "DBP4L1",
+                 "DBP7L1"):
         assert shape(rules[lint]) == shape(rules["TDL1"]), lint
 
 

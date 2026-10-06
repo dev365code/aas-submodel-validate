@@ -1260,6 +1260,81 @@ def dbp4_env() -> dict:
         "submodelElements": [general, areas],
     }]}
 
+
+DBP7 = "urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#"
+DBP7_CONTACT = "urn:samm:io.admin-shell.idta.contact_information:1.0.0#"
+DBP7_DOCUMENT = "urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier"
+
+
+def dbp7_env() -> dict:
+    """The golden fixture for IDTA 02035-7 Circularity 1.0.1, the battery
+    passport's part 7, written by hand like the others and carrying every
+    row the template declares. The template gives no example values, so
+    each is a plausible value of the declared type -- the recycled material
+    one of the four its concept description lists, which no rule reads.
+
+    Every identifier is the template's own SAMM URN: the circularity
+    namespace's, the Handover Documentation one for the document lists'
+    items, and the contact information one for a supplier's name and
+    addresses. List items carry no idShort (AASd-120).
+    """
+    def documents(id_short, name, identifier):
+        return _sml(id_short, DBP7 + name, "Property",
+                    [_prop(None, DBP7_DOCUMENT, identifier)], value_type="xs:string")
+    supplier = _smc(DBP7 + "SparePartSupplier", [
+        _mlp("NameOfSupplier", DBP7_CONTACT + "company", "Muster Parts GmbH"),
+        _smc(DBP7 + "addressOfSupplier", [
+            _mlp("NationalCode", DBP7_CONTACT + "nationalCode", "DE"),
+            _mlp("PostalCode", DBP7_CONTACT + "postalCode", "12345"),
+            _mlp("Street", DBP7_CONTACT + "street", "Musterstrasse 1"),
+        ], id_short="AddressOfSupplier"),
+        _smc(DBP7_CONTACT + "email", [
+            _prop("EmailAddress", DBP7_CONTACT + "emailAddress", "parts@example.com"),
+            _mlp("PublicKey", DBP7_CONTACT + "publicKey", "none"),
+            _prop("TypeOfEmailAddress", DBP7_CONTACT + "typeOfEmailAddress", "office"),
+            _mlp("TypeOfPublicKey", DBP7_CONTACT + "typeOfPublicKey", "none"),
+        ], id_short="EmailAddressOfSupplier"),
+        _prop("SupplierWebAddress", DBP7_CONTACT + "addressOfAdditionalLink",
+              "https://parts.example.com"),
+        _sml("Components", DBP7 + "components", "SubmodelElementCollection", [
+            _smc(DBP7 + "Component", [
+                _prop("PartName", DBP7 + "partName", "Battery module"),
+                _prop("PartNumber", DBP7 + "partNumber", "BM-100"),
+            ]),
+        ]),
+    ])
+    elements = [
+        documents("DismantlingAndRemovalInformation", "dismantlingAndRemovalInformation",
+                  "DISMANTLING-0001"),
+        _sml("SparePartSources", DBP7 + "sparePartSources", "SubmodelElementCollection",
+             [supplier]),
+        _sml("RecycledContentInformation", DBP7 + "recycledContent",
+             "SubmodelElementCollection", [
+                 _smc(DBP7 + "RecycledContent", [
+                     _prop("PreConsumerShare", DBP7 + "preConsumerShare", "5", "xs:float"),
+                     _prop("RecycledMaterial", DBP7 + "recycledMaterial", "Cobalt"),
+                     _prop("PostConsumerShare", DBP7 + "postConsumerShare", "12", "xs:float"),
+                 ]),
+             ]),
+        _smc(DBP7 + "safetyMeasures", [
+            documents("SafetyInstructions", "safetyInstructions", "SAFETY-0001"),
+            _sml("ExtinguishingAgents", DBP7 + "extinguishingAgents", "Property",
+                 [_prop(None, DBP7 + "ExtinguishingAgent", "water")], value_type="xs:string"),
+        ], id_short="SafetyMeasures"),
+        _smc(DBP7 + "endOfLifeInformation", [
+            documents("WastePrevention", "wastePrevention", "WASTE-0001"),
+            documents("SeparateCollection", "separateCollection", "COLLECTION-0001"),
+            documents("InformationOnCollection", "informationOnCollection", "INFO-0001"),
+        ], id_short="EndOfLifeInformation"),
+        _prop("RenewableContent", DBP7 + "renewableContent", "3", "xs:float"),
+    ]
+    return {"submodels": [{
+        "id": "urn:example:battery-circularity",
+        "idShort": "Circularity", "modelType": "Submodel",
+        "semanticId": _sid(DBP7 + "Circularity"),
+        "submodelElements": elements,
+    }]}
+
 def dbp1_env() -> dict:
     """The golden fixture for IDTA 02035-1 Digital Nameplate 1.0, the
     battery passport's part 1, written by hand like the others and
