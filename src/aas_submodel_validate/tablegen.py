@@ -457,6 +457,19 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
         # as it wrote it, where that is not the current spelling -- or
         # None, where it stated none. A rule's clause names it.
         row["card_qualifier"] = written
+    # The comparison form of the row's own identifier, where reading the
+    # joined string as one value is not it: a reference of more than one
+    # key, one of which the comparison reads differently -- an ECLASS-CDP
+    # address, an IRDI under SAMM's prefix. Read key by key and joined, as
+    # every match value is (`_values_of`); read as one string, only the
+    # first key's spelling came off, the result was nobody's identifier,
+    # and the element lost the row its own identifier names
+    # (docs/divergences.md #60). Present only where it differs, so a table
+    # whose identifiers read as written is the table it always was.
+    compared = "/".join(normalize(key["value"])
+                        for key in element.get("semanticId", {}).get("keys", []))
+    if my_sid and compared != normalize(my_sid):
+        row["sid_compared"] = compared
     if repeats:
         row["recurses"] = repeats
     if endless:

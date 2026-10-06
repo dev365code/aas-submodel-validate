@@ -7,30 +7,44 @@ IDTA's templates spell one ECLASS identifier two ways: nine of the
 twelve vendored here write it bare, `0173-1#02-AAO134#002`, and the
 battery passport's parts 5 and 7, generated from SAMM models, write it
 `urn:irdi:0173-1#02-AAO134#002` -- the synthetic URN SAMM uses for an
-IRDI, whose guideline writes the IRDI's second `#` as `%23`. The prefix
-is read away, and `%23` after it read as `#`, in a file's identifiers and
-in a template's alike. Nothing else about an identifier is read -- no
-other namespace, case or escape -- and what the prefix wraps is read no
-further. IDTA-01001's annex on matching semantic identifiers makes exact
-matching the default and lists reading two syntaxes of one IRDI as one
-among the wider matches a reader may make; this reader already read an
-ECLASS-CDP address as its IRDI. Where a match rests on the prefix being
-read away, the report does not say so. `docs/divergences.md` #62.
+IRDI, whose guideline writes the IRDI's second `#` as `%23`. Before an
+IRDI the prefix is read away, and a `#` written `%23` read as `#`, in a
+file's identifiers and in a template's alike; before anything else -- an
+IRI, a SAMM URN, an open-content marker -- the prefix stays, and what it
+wraps matches nothing it would not match bare. Nothing else about an
+identifier is read: no other namespace, case or escape. IDTA-01001's
+annex on matching semantic identifiers makes exact matching the default
+and lists reading two syntaxes of one IRDI as one among the wider
+matches a reader may make; this reader already read an ECLASS-CDP
+address as its IRDI. Where a match rests on the prefix being read away
+the report does not say so, and a finding quotes an identifier in the
+form it was compared in. `docs/divergences.md` #62.
 
-**What moves: three corpus inputs, each from exit 1 to exit 0.** Measured
-against 0.10.0 across the corpus -- eighty-six inputs now, the three
-spellings that disagree added. A Battery Circularity spare part supplier
+**What moves: five corpus inputs, four of them from exit 1 to exit 0 and
+one the other way.** Measured against 0.10.0 across the corpus --
+eighty-eight inputs now, five that spell one IRDI the other way from
+their template added. A Battery Circularity spare part supplier
 identified as 02002 Contact Information identifies one, by bare ECLASS
 identifiers, drew six errors for missing fields (`DBP7-E05`, `DBP7-E07`
 to `DBP7-E10`, `DBP7-E15`) and draws nothing; a Contact Information
 e-mail address known by its identifier under the prefix drew `CI-E17`
-and draws nothing; and a Product Condition value known only by the bare
-identifier its template writes under the prefix drew `DBP5-E05` and draws
-nothing. A pipeline red on one of those today goes quiet. An element that
-matches now is judged like any other, so what sat under it unexamined is
-asked: the supplier's e-mail container, left unexamined before, is
-examined. No rule id, rule count or table row moves; the vendored 02035-5
-and 02035-7 tables hold their ECLASS identifiers bare.
+and draws nothing; a Product Condition value known only by the bare
+identifier its template writes under the prefix drew `DBP5-E05` and
+draws nothing; and a Handover Documentation submodel whose own
+identifier is written under the prefix drew `SMT-D1` and is judged by its
+template. A pipeline red on one of those today goes quiet. The fifth goes
+the other way, because an element that matches now is judged like any
+other: an optional Contact Information element of the wrong `valueType`,
+known under the prefix and judged by nothing before, draws `CI-E19` and
+leaves by 1. Outside the corpus the same holds for every template -- a
+submodel or element written in the other spelling is the template's to
+judge now, the battery-data layer's reading included, where a category
+or a capacity figure known only under the prefix is read and the rows
+that depend on it follow -- and an element one version off its row's
+IRDI draws its pack's near-miss lint whichever way either is spelt. No
+rule id, rule count or table row moves; the vendored 02035-5 and
+02035-7 tables hold the IRDIs they wrote under the prefix bare, and
+02035-5's misspelt `urn:iridi:` as written (#58).
 
 It is 470 rules, 416 generated from the vendored official template
 files, across twelve template packs. What this reader takes in is

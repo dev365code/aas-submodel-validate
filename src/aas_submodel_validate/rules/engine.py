@@ -509,7 +509,12 @@ def _analyze(ctx, tables) -> Dict:
         # container no row describes or beneath a copy of the wrong kind or
         # one whose identifier drifted, was reached by nothing, and saying
         # so is what keeps the reach of the check on the page (#48).
-        copied = {row["recurses"] for row in tables.ROWS if row.get("recurses")}
+        # In the comparison form, as the candidates it meets are: an
+        # identifier the comparison reads differently from how the
+        # template writes it -- an ECLASS-CDP address, an IRDI under
+        # SAMM's prefix -- met none, and the note went unsaid.
+        copied = {row.get("sid_compared") or normalize(row["recurses"])
+                  for row in tables.ROWS if row.get("recurses")}
         if copied:
             per["not_entered"] = _copies_not_reached(
                 submodel.submodel_elements or [], root, copied, per["reached"])
@@ -1053,7 +1058,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
     if owners is None:
         owners = {}
         for row in rows:
-            mine = normalize(row["sid"]) if row["sid"] else None
+            mine = row.get("sid_compared") or (
+                normalize(row["sid"]) if row["sid"] else None)
             if mine and mine in row["match"]:
                 owners.setdefault(mine, row["id"])
         cache[id(rows)] = owners

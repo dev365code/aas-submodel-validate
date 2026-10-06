@@ -26,6 +26,13 @@ _CDP_TAIL = re.compile(r"^(\d{4}-\d)-(\d{2}-[A-Z]{3}\d{3})-(\d{3})$")
 #: it, and its second `#` escaped as `%23` (docs/divergences.md #62).
 _IRDI_URN = "urn:irdi:"
 
+#: What that prefix stands before: an IRDI, in the three parts ISO/IEC
+#: 11179-6 gives one -- a registration authority opening with its
+#: organisation's four-digit ICD, then a data identifier and a version,
+#: each after a `#`. ECLASS's `0173-1#02-AAO134#002` and IEC CDD's
+#: `0112/2///61360_4#AAA001#001` are both this shape.
+_IRDI = re.compile(r"^\d{4}[^#]*#[^#]+#[^#]+$")
+
 
 def normalize(value: str) -> str:
     """The comparison form of one semanticId key value.
@@ -34,13 +41,18 @@ def normalize(value: str) -> str:
     ECLASS-CDP address (docs/divergences.md #4), and SAMM's synthetic URN,
     which the battery passport's parts 5 and 7 write where every other
     vendored template writes the IRDI bare (#62). Each is read where it
-    stands and the result is read no further: what the prefix wraps comes
-    back with `%23` unescaped and nothing else done to it. No other
-    namespace, case or escape is read.
+    stands and the result is read no further. The prefix is read only
+    before an IRDI -- `%23` unescaped first, as SAMM writes one -- and
+    around anything else it stays, so an IRI or a URN wearing it matches
+    nothing it would not match bare. No other namespace, case or escape is
+    read.
     """
     value = value.strip()
-    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):
-        return value[len(_IRDI_URN):].replace("%23", "#")
+    if value.startswith(_IRDI_URN):
+        wrapped = value[len(_IRDI_URN):].replace("%23", "#")
+        if _IRDI.match(wrapped):
+            return wrapped
+        return value
     url = _CDP_URL.match(value)
     if url:
         tail = _CDP_TAIL.match(url.group(1))

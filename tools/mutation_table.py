@@ -1737,7 +1737,7 @@ TABLE = [
 
     ("semantics/an-irdi-under-samm-s-prefix-is-the-irdi",
      "src/aas_submodel_validate/semantics.py",
-     "    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
+     "    if value.startswith(_IRDI_URN):\n",
      "    if False:\n",
      ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_a_02002_e_mail_address_written_under_the_prefix_answers_its_row"],
      "a 02002 e-mail address written under SAMM's urn:irdi: prefix was "
@@ -1745,35 +1745,35 @@ TABLE = [
 
     ("semantics/samm-s-escape-is-read-as-the-hash",
      "src/aas_submodel_validate/semantics.py",
-     '        return value[len(_IRDI_URN):].replace("%23", "#")\n',
-     "        return value[len(_IRDI_URN):]\n",
+     '        wrapped = value[len(_IRDI_URN):].replace("%23", "#")\n',
+     "        wrapped = value[len(_IRDI_URN):]\n",
      ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_the_prefix_and_its_escape_are_read_and_nothing_further"],
      "an IRDI written as SAMM's guideline writes it, its second # as %23, "
      "was not the IRDI"),
 
     ("semantics/a-prefix-alone-is-no-identifier",
      "src/aas_submodel_validate/semantics.py",
-     "    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
-     "    if value.startswith(_IRDI_URN):\n",
+     "        if _IRDI.match(wrapped):\n",
+     "        if _IRDI.match(wrapped) or not wrapped:\n",
      ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_no_other_spelling_is_read_away"],
      "a key reading urn:irdi: and nothing after it was read as the empty "
      "identifier"),
 
     ("semantics/the-prefix-is-read-as-written",
      "src/aas_submodel_validate/semantics.py",
-     "    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
-     "    if value.lower().startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
+     "    if value.startswith(_IRDI_URN):\n",
+     "    if value.lower().startswith(_IRDI_URN):\n",
      ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_no_other_spelling_is_read_away"],
      "URN:IRDI: in capitals was read away too, a case this reader says it "
      "does not read"),
 
-    ("semantics/what-the-prefix-wraps-is-read-no-further",
+    ("semantics/what-is-not-an-irdi-keeps-the-prefix",
      "src/aas_submodel_validate/semantics.py",
-     '        return value[len(_IRDI_URN):].replace("%23", "#")\n',
-     '        value = value[len(_IRDI_URN):].replace("%23", "#")\n',
-     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_the_prefix_and_its_escape_are_read_and_nothing_further"],
-     "a CDP address under the prefix was read as its IRDI: two readings "
-     "stacked, which neither the annex nor SAMM writes"),
+     "            return wrapped\n        return value\n",
+     "            return wrapped\n        return wrapped\n",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_no_other_spelling_is_read_away"],
+     "an IRI or a URN under the prefix lost it, and matched what it would "
+     "not match bare"),
 
     ("dbp7/the-table-holds-the-irdi-bare",
      "src/aas_submodel_validate/rules/dbp7_tables.py",
@@ -1782,6 +1782,39 @@ TABLE = [
      ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_a_vendored_table_holds_what_the_comparison_reads"],
      "a table generated before the prefix was read away kept it, and a "
      "file written as the template writes it stopped matching"),
+
+    ("semantics/the-prefix-stands-before-an-irdi-only",
+     "src/aas_submodel_validate/semantics.py",
+     "        if _IRDI.match(wrapped):\n",
+     "        if True:\n",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_a_submodel_naming_an_iri_under_the_prefix_is_not_taken_for_its_template"],
+     "the prefix came off whatever it stood before, and a submodel saying "
+     "urn:irdi: before 02006's own IRI was judged as a Digital Nameplate"),
+
+    ("engine/an-own-identifier-is-compared-key-by-key",
+     "src/aas_submodel_validate/rules/engine.py",
+     '            mine = row.get("sid_compared") or (\n',
+     '            mine = None or (\n',
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_an_element_known_by_two_keys_keeps_its_own_row_however_they_are_spelt"],
+     "an element known by two keys under the prefix lost the row its own "
+     "identifier names, and a file written as its template drew found 2 and "
+     "found 0"),
+
+    ("tablegen/a-row-carries-its-identifier-as-compared",
+     "src/aas_submodel_validate/tablegen.py",
+     "    if my_sid and compared != normalize(my_sid):\n",
+     "    if False:\n",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_an_element_known_by_two_keys_keeps_its_own_row_however_they_are_spelt"],
+     "a caller's template row known by two keys under the prefix carried "
+     "nothing the walk could compare its own identifier by"),
+
+    ("engine/a-copy-is-compared-as-read",
+     "src/aas_submodel_validate/rules/engine.py",
+     '        copied = {row.get("sid_compared") or normalize(row["recurses"])\n',
+     '        copied = {row["recurses"]\n',
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_a_copy_the_walk_did_not_reach_is_said_however_its_identifier_is_spelt"],
+     "a self-containing element written under the prefix lost the note "
+     "naming the copies the walk did not reach"),
 
     ("near-miss/a-samm-near-miss-stays-in-its-namespace",
      "src/aas_submodel_validate/semantics.py",

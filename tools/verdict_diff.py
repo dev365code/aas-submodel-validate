@@ -436,6 +436,33 @@ def build_corpus(into: Path):
         crossed = into / name
         crossed.write_text(json.dumps(env), encoding="utf-8")
         cases.append(Case(label, crossed))
+    # And what an element matching through that reading is then asked: an
+    # optional 02002 element of the wrong valueType written under the
+    # prefix, judged by nothing before; and a Handover Documentation
+    # submodel whose own identifier is written under it.
+    from builders import contact_env, hd_env  # noqa: E402
+    optional = contact_env()
+    pending = list(optional["submodels"][0]["submodelElements"])
+    while pending:
+        element = pending.pop(0)
+        if element["semanticId"]["keys"][0]["value"] == "0173-1#02-AAO199#003":
+            element["semanticId"]["keys"][0]["value"] = "urn:irdi:0173-1#02-AAO199#003"
+            element["valueType"], element["value"] = "xs:int", "1"
+            break
+        if isinstance(element.get("value"), list):
+            pending.extend(c for c in element["value"] if isinstance(c, dict) and "modelType" in c)
+    else:
+        raise SystemExit("the Contact Information fixture no longer holds TypeOfEmailAddress")
+    wrong_type = into / "contact-optional-under-irdi-urn-wrong-type.json"
+    wrong_type.write_text(json.dumps(optional), encoding="utf-8")
+    cases.append(Case("an optional Contact Information element of the wrong valueType, "
+                      "known under SAMM's urn:irdi: prefix", wrong_type))
+    handover = hd_env()
+    handover["submodels"][0]["semanticId"]["keys"][0]["value"] = "urn:irdi:0173-1#01-AHF578#003"
+    submodel = into / "handover-submodel-under-irdi-urn.json"
+    submodel.write_text(json.dumps(handover), encoding="utf-8")
+    cases.append(Case("a Handover Documentation submodel whose own identifier is "
+                      "written under SAMM's urn:irdi: prefix", submodel))
 
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than

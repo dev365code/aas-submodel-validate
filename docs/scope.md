@@ -174,11 +174,12 @@ submodel judged against that. What that buys and what it does not:
   one.
 - An IRDI written under SAMM's **`urn:irdi:` prefix** — the synthetic
   URN the battery passport's parts 5 and 7 use where the other templates
-  write the IRDI bare, its second `#` as `#` or as `%23` — is read as the
-  IRDI, in your file and in the template alike, as an ECLASS-CDP
-  address is (`docs/divergences.md` #62, #4). That is the whole of it: no
-  other namespace, case or escape is read, and what the prefix wraps is
-  read no further. A match can rest on that reading, and the report does
+  write the IRDI bare, with a `#` written as `#` or as `%23` — is read as
+  the IRDI, in your file and in the template alike, as an ECLASS-CDP
+  address is (`docs/divergences.md` #62, #4). Before anything that is not
+  an IRDI the prefix stays. That is the whole of it: no other namespace,
+  case or escape is read, and what the prefix wraps is then read as any
+  identifier is. A match can rest on that reading, and the report does
   not say when it does: an element whose own identifier is spelt one way
   answers a row the template spells the other.
 - An element a template declares **inside itself** — 02011 Hierarchical
