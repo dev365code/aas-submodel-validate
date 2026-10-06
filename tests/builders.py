@@ -1404,3 +1404,78 @@ def dbp1_env() -> dict:
                            "nameplate/1/0/Nameplate"),
         "submodelElements": elements,
     }]}
+
+
+# --- one ECLASS identifier, spelt the two ways IDTA's templates spell it ------
+#
+# Most vendored templates write an ECLASS identifier bare; the battery
+# passport's parts 5 and 7, generated from SAMM models, write it
+# `urn:irdi:...`. A file can spell either one the other way. These are the
+# three shapes in which that cost a file a finding while an IRDI under
+# SAMM's prefix was not read as the IRDI.
+
+#: 02002 Contact Information's own identifiers for the ten contact elements
+#: 02035-7 borrows: 02035-7 writes each beside its own under the prefix,
+#: 02002 writes them bare.
+CONTACT_ECLASS = {
+    "company": "0173-1#02-AAW001#001", "nationalCode": "0173-1#02-AAO134#002",
+    "postalCode": "0173-1#02-AAO129#002", "street": "0173-1#02-AAO128#002",
+    "email": "0173-1#02-AAQ836#005", "emailAddress": "0173-1#02-AAO198#002",
+    "publicKey": "0173-1#02-AAO200#002", "typeOfEmailAddress": "0173-1#02-AAO199#003",
+    "typeOfPublicKey": "0173-1#02-AAO201#002",
+    "addressOfAdditionalLink": "0173-1#02-AAQ326#002",
+}
+
+
+def _each_element(env):
+    pending = list(env["submodels"][0]["submodelElements"])
+    while pending:
+        element = pending.pop(0)
+        yield element
+        value = element.get("value")
+        if isinstance(value, list):
+            pending.extend(child for child in value
+                           if isinstance(child, dict) and "modelType" in child)
+
+
+def _known_as(env, own):
+    hits = [element for element in _each_element(env)
+            if element["semanticId"]["keys"][0]["value"] == own]
+    assert len(hits) == 1, (own, len(hits))
+    return hits[0]
+
+
+def dbp7_supplier_env(spell=lambda irdi: irdi) -> dict:
+    """The golden Circularity fixture with its spare part supplier
+    identified the way 02002 Contact Information identifies one: each of
+    the ten contact elements known by its ECLASS identifier alone, written
+    as `spell` writes it -- bare, as 02002 does, by default."""
+    env = dbp7_env()
+    replaced = 0
+    for element in _each_element(env):
+        own = element["semanticId"]["keys"][0]["value"]
+        if own.startswith(DBP7_CONTACT):
+            element["semanticId"] = _sid(spell(CONTACT_ECLASS[own.rsplit("#", 1)[1]]))
+            replaced += 1
+    assert replaced == len(CONTACT_ECLASS), replaced
+    return env
+
+
+def contact_prefixed_env() -> dict:
+    """The golden Contact Information fixture with the e-mail address it
+    requires known by its own identifier under SAMM's prefix."""
+    env = contact_env()
+    _known_as(env, "0173-1#02-AAO198#002")["semanticId"] = _sid(
+        "urn:irdi:0173-1#02-AAO198#002")
+    return env
+
+
+def dbp5_bare_irdi_env() -> dict:
+    """The golden Product Condition fixture with a state of charge's value
+    known only by the ECLASS identifier the template writes beside it under
+    the prefix, written bare."""
+    env = dbp5_env()
+    element = _known_as(env, PC + "stateOfChargeValue")
+    element["semanticId"] = _sid("0173-1#02-ABL821#001")
+    element.pop("supplementalSemanticIds", None)
+    return env

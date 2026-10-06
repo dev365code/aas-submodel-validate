@@ -172,6 +172,15 @@ submodel judged against that. What that buys and what it does not:
   rule. A list's item row is the exception and not an instance of this:
   it is matched by its kind, which is how the published templates write
   one.
+- An IRDI written under SAMM's **`urn:irdi:` prefix** — the synthetic
+  URN the battery passport's parts 5 and 7 use where the other templates
+  write the IRDI bare, its second `#` as `#` or as `%23` — is read as the
+  IRDI, in your file and in the template alike, as an ECLASS-CDP
+  address is (`docs/divergences.md` #62, #4). That is the whole of it: no
+  other namespace, case or escape is read, and what the prefix wraps is
+  read no further. A match can rest on that reading, and the report does
+  not say when it does: an element whose own identifier is spelt one way
+  answers a row the template spells the other.
 - An element a template declares **inside itself** — 02011 Hierarchical
   Structures is the published case — is judged at every depth. The table
   stops at the repeat so that it stays finite, the repeat is a row of its
@@ -345,12 +354,8 @@ Every element's own identifier is a SAMM URN, and a supplier's name,
 address fields, e-mail and web address are borrowed from a contact
 information namespace, with ECLASS identifiers beside them written
 `urn:irdi:...`.
-A supplier identified as 02002 Contact Information writes those
-elements, by the same ECLASS identifiers without the prefix, matches no
-row, and its name, address fields, e-mail and web address are reported
-missing; document list items spelt as 02035-2 spells a document
-identifier match nothing either, and the five document lists are
-reported empty (`docs/divergences.md` #61). Whether a `urn:irdi:` prefix and the bare
-identifier it wraps are one identifier is an open question this
-project has not settled; until it is, the template's own spelling is
-what a file is matched against.
+A supplier identified as 02002 Contact Information identifies one, by
+the same ECLASS identifiers without the prefix, answers those rows: an
+IRDI under the prefix is read as the IRDI (`docs/divergences.md` #62).
+Document list items spelt as 02035-2 spells a document identifier match
+nothing, and the five document lists are reported empty (#61).

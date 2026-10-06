@@ -419,6 +419,24 @@ def build_corpus(into: Path):
     circularity.write_text(json.dumps(dbp7_env()), encoding="utf-8")
     cases.append(Case("a valid Battery Circularity submodel", circularity))
 
+    # One ECLASS identifier spelt the two ways IDTA's templates spell it: a
+    # file writing it bare where the template writes SAMM's `urn:irdi:`, and
+    # the other way round (docs/divergences.md #62).
+    from builders import contact_prefixed_env, dbp5_bare_irdi_env, dbp7_supplier_env  # noqa: E402
+    for name, label, env in (
+            ("battery-circularity-supplier-as-02002.json",
+             "a Battery Circularity spare part supplier identified as 02002 "
+             "identifies one, by bare ECLASS identifiers", dbp7_supplier_env()),
+            ("contact-email-under-irdi-urn.json",
+             "a Contact Information e-mail address known by its identifier "
+             "under SAMM's urn:irdi: prefix", contact_prefixed_env()),
+            ("product-condition-value-by-bare-irdi.json",
+             "a Product Condition value known only by the bare ECLASS "
+             "identifier the template writes under the prefix", dbp5_bare_irdi_env())):
+        crossed = into / name
+        crossed.write_text(json.dumps(env), encoding="utf-8")
+        cases.append(Case(label, crossed))
+
     # Two children of one scope carrying the same idShort. The metamodel
     # forbids it and this reader relays that as a warning rather than
     # refusing the file, so a file like this is judged -- and what it is

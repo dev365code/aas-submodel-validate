@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.11.0 — unreleased
+
+**An IRDI written under SAMM's `urn:irdi:` prefix is read as that IRDI.**
+IDTA's templates spell one ECLASS identifier two ways: nine of the
+twelve vendored here write it bare, `0173-1#02-AAO134#002`, and the
+battery passport's parts 5 and 7, generated from SAMM models, write it
+`urn:irdi:0173-1#02-AAO134#002` -- the synthetic URN SAMM uses for an
+IRDI, whose guideline writes the IRDI's second `#` as `%23`. The prefix
+is read away, and `%23` after it read as `#`, in a file's identifiers and
+in a template's alike. Nothing else about an identifier is read -- no
+other namespace, case or escape -- and what the prefix wraps is read no
+further. IDTA-01001's annex on matching semantic identifiers makes exact
+matching the default and lists reading two syntaxes of one IRDI as one
+among the wider matches a reader may make; this reader already read an
+ECLASS-CDP address as its IRDI. Where a match rests on the prefix being
+read away, the report does not say so. `docs/divergences.md` #62.
+
+**What moves: three corpus inputs, each from exit 1 to exit 0.** Measured
+against 0.10.0 across the corpus -- eighty-six inputs now, the three
+spellings that disagree added. A Battery Circularity spare part supplier
+identified as 02002 Contact Information identifies one, by bare ECLASS
+identifiers, drew six errors for missing fields (`DBP7-E05`, `DBP7-E07`
+to `DBP7-E10`, `DBP7-E15`) and draws nothing; a Contact Information
+e-mail address known by its identifier under the prefix drew `CI-E17`
+and draws nothing; and a Product Condition value known only by the bare
+identifier its template writes under the prefix drew `DBP5-E05` and draws
+nothing. A pipeline red on one of those today goes quiet. An element that
+matches now is judged like any other, so what sat under it unexamined is
+asked: the supplier's e-mail container, left unexamined before, is
+examined. No rule id, rule count or table row moves; the vendored 02035-5
+and 02035-7 tables hold their ECLASS identifiers bare.
+
+It is 470 rules, 416 generated from the vendored official template
+files, across twelve template packs. What this reader takes in is
+unchanged: one document at 64 MiB, a container's parts at 64 MiB each
+and 256 MiB together, and a container's directory of names at 16 MiB.
+
 ## 0.10.0 — 2026-10-06
 
 **IDTA 02035-7 Circularity is the twelfth template pack.** The Digital

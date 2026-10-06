@@ -22,9 +22,25 @@ _CDP_URL = re.compile(r"^https?://api\.eclass-cdp\.com/([0-9A-Za-z.-]+)/?$", re.
 _CDP_TAIL = re.compile(r"^(\d{4}-\d)-(\d{2}-[A-Z]{3}\d{3})-(\d{3})$")
 
 
+#: SAMM's synthetic URN for an IRDI, which is not a URI: this prefix before
+#: it, and its second `#` escaped as `%23` (docs/divergences.md #62).
+_IRDI_URN = "urn:irdi:"
+
+
 def normalize(value: str) -> str:
-    """The comparison form of one semanticId key value."""
+    """The comparison form of one semanticId key value.
+
+    Two spellings of an IRDI besides its own are read as the IRDI: an
+    ECLASS-CDP address (docs/divergences.md #4), and SAMM's synthetic URN,
+    which the battery passport's parts 5 and 7 write where every other
+    vendored template writes the IRDI bare (#62). Each is read where it
+    stands and the result is read no further: what the prefix wraps comes
+    back with `%23` unescaped and nothing else done to it. No other
+    namespace, case or escape is read.
+    """
     value = value.strip()
+    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):
+        return value[len(_IRDI_URN):].replace("%23", "#")
     url = _CDP_URL.match(value)
     if url:
         tail = _CDP_TAIL.match(url.group(1))

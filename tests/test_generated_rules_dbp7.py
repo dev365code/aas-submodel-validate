@@ -119,42 +119,20 @@ def _findings(report):
     return sorted(f.id for f in report.findings if f.rule.kind != "meta")
 
 
-#: 02002 Contact Information's own identifiers for the ten elements this
-#: template borrows from the contact information namespace: the ECLASS
-#: identifiers this template carries beside its own, without the prefix.
-_CONTACT_ECLASS = {
-    "company": "0173-1#02-AAW001#001", "nationalCode": "0173-1#02-AAO134#002",
-    "postalCode": "0173-1#02-AAO129#002", "street": "0173-1#02-AAO128#002",
-    "email": "0173-1#02-AAQ836#005", "emailAddress": "0173-1#02-AAO198#002",
-    "publicKey": "0173-1#02-AAO200#002", "typeOfEmailAddress": "0173-1#02-AAO199#003",
-    "typeOfPublicKey": "0173-1#02-AAO201#002",
-    "addressOfAdditionalLink": "0173-1#02-AAQ326#002",
-}
-
-
-@pytest.mark.parametrize("prefix, lost", [
-    ("", ["DBP7-E05", "DBP7-E07", "DBP7-E08", "DBP7-E09", "DBP7-E10", "DBP7-E15"]),
-    ("urn:irdi:", []),
-], ids=["as-02002-writes-them", "as-this-template-writes-them"])
-def test_a_supplier_identified_the_contact_template_s_way_is_missing_its_fields(tmp_path,
-                                                                                prefix, lost):
+@pytest.mark.parametrize("prefix", ["", "urn:irdi:"],
+                         ids=["as-02002-writes-them", "as-this-template-writes-them"])
+def test_a_supplier_identified_the_contact_template_s_way_answers_its_rows(tmp_path, prefix):
     """The supplier's name, address fields and e-mail are the contact
     information namespace's, with the ECLASS identifier beside each
     written `urn:irdi:0173-1#...`; 02002's template writes the same
-    identifiers bare, as its own. A supplier built the 02002 way matches
-    no row: its name, three address fields, e-mail and web address are
-    reported missing, and no near miss is named. Written with the prefix,
-    they match."""
-    from builders import DBP7_CONTACT
-    env = copy.deepcopy(dbp7_env())
-    replaced = 0
-    for element in _elements(env):
-        if _own(element).startswith(DBP7_CONTACT):
-            element["semanticId"]["keys"][0]["value"] = (
-                prefix + _CONTACT_ECLASS[_own(element).rsplit("#", 1)[1]])
-            replaced += 1
-    assert replaced == len(_CONTACT_ECLASS)
-    assert _findings(_run(tmp_path, env)) == lost
+    identifiers bare, as its own. They are one IRDI spelt two ways
+    (docs/divergences.md #62), so a supplier built the 02002 way answers
+    every row, as one written with the prefix does. Until 0.11.0 the first
+    was reported missing its name, three address fields, e-mail and web
+    address."""
+    from builders import dbp7_supplier_env
+    env = dbp7_supplier_env(lambda irdi: prefix + irdi)
+    assert _findings(_run(tmp_path, env)) == []
 
 
 def test_separate_collection_known_by_the_specification_s_identifier_alone_is_missing(

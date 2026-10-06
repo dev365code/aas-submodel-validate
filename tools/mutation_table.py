@@ -1735,6 +1735,54 @@ TABLE = [
      "a re-recording pasted over the recorded block deleted the history of "
      "every earlier one, and nothing noticed"),
 
+    ("semantics/an-irdi-under-samm-s-prefix-is-the-irdi",
+     "src/aas_submodel_validate/semantics.py",
+     "    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
+     "    if False:\n",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_a_02002_e_mail_address_written_under_the_prefix_answers_its_row"],
+     "a 02002 e-mail address written under SAMM's urn:irdi: prefix was "
+     "reported missing from 02002, whose template writes the same IRDI bare"),
+
+    ("semantics/samm-s-escape-is-read-as-the-hash",
+     "src/aas_submodel_validate/semantics.py",
+     '        return value[len(_IRDI_URN):].replace("%23", "#")\n',
+     "        return value[len(_IRDI_URN):]\n",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_the_prefix_and_its_escape_are_read_and_nothing_further"],
+     "an IRDI written as SAMM's guideline writes it, its second # as %23, "
+     "was not the IRDI"),
+
+    ("semantics/a-prefix-alone-is-no-identifier",
+     "src/aas_submodel_validate/semantics.py",
+     "    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
+     "    if value.startswith(_IRDI_URN):\n",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_no_other_spelling_is_read_away"],
+     "a key reading urn:irdi: and nothing after it was read as the empty "
+     "identifier"),
+
+    ("semantics/the-prefix-is-read-as-written",
+     "src/aas_submodel_validate/semantics.py",
+     "    if value.startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
+     "    if value.lower().startswith(_IRDI_URN) and len(value) > len(_IRDI_URN):\n",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_no_other_spelling_is_read_away"],
+     "URN:IRDI: in capitals was read away too, a case this reader says it "
+     "does not read"),
+
+    ("semantics/what-the-prefix-wraps-is-read-no-further",
+     "src/aas_submodel_validate/semantics.py",
+     '        return value[len(_IRDI_URN):].replace("%23", "#")\n',
+     '        value = value[len(_IRDI_URN):].replace("%23", "#")\n',
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_the_prefix_and_its_escape_are_read_and_nothing_further"],
+     "a CDP address under the prefix was read as its IRDI: two readings "
+     "stacked, which neither the annex nor SAMM writes"),
+
+    ("dbp7/the-table-holds-the-irdi-bare",
+     "src/aas_submodel_validate/rules/dbp7_tables.py",
+     "'match': ('0173-1#02-AAO128#002', 'https://schema.org/streetAddress', ",
+     "'match': ('https://schema.org/streetAddress', 'urn:irdi:0173-1#02-AAO128#002', ",
+     ["tests/test_an_irdi_under_samm_s_prefix_is_the_irdi.py::test_a_vendored_table_holds_what_the_comparison_reads"],
+     "a table generated before the prefix was read away kept it, and a "
+     "file written as the template writes it stopped matching"),
+
     ("near-miss/a-samm-near-miss-stays-in-its-namespace",
      "src/aas_submodel_validate/semantics.py",
      '        return "%s#%s" % (match.group(1), match.group(3))\n',
