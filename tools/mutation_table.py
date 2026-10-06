@@ -2574,6 +2574,15 @@ TABLE = [
      "02023's two unqualified list items cited SMT/Cardinality, and no test "
      "counted that pack"),
 
+    ("dbp7/the-clause-is-read-off-the-row",
+     "src/aas_submodel_validate/rules/dbp7.py",
+     '         spec="%s, %s" % (dbp7_tables.TEMPLATE_CITATION, qualifier_said(_row)),\n',
+     '         spec="%s, SMT/Cardinality qualifier" % dbp7_tables.TEMPLATE_CITATION,\n',
+     ["tests/test_a_rule_names_the_qualifier_its_template_wrote.py::"
+      "test_a_pack_reads_the_qualifier_off_the_row_where_every_row_agrees_too[dbp7]"],
+     "02035-7's rules cited SMT/Cardinality whatever its row carried; every "
+     "row there says so, so no count could tell"),
+
     ("tablegen/the-reason-sits-outside-its-parenthesis",
      "src/aas_submodel_validate/rules/td.py",
      '                          qualifier_said(_row, why="as the PDF\'s element tables give it")),\n',

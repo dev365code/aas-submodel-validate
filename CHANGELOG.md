@@ -26,19 +26,26 @@ the ones it lists. Where the template disagrees with its neighbours and
 its specification, and what that costs a file, is
 `docs/divergences.md` #61.
 
-**What moves: one verdict in the corpus, and every Battery Circularity
-submodel.** Measured against 0.9.2 across the corpus -- eighty-three
+**What moves: one verdict in the corpus, and Battery Circularity
+submodels.** Measured against 0.9.2 across the corpus -- eighty-three
 inputs now, the vendored template and a submodel of it added -- one is
 judged differently: the valid Circularity submodel, which drew `SMT-D1`
 and left by 1, draws nothing and leaves by 0. Outside the corpus, a
 Circularity submodel alone in its file that keeps its template leaves by
-0 where it left by 1, so a pipeline red on one today goes quiet; one
-that breaks its template -- a mandatory element missing, an element of
-the wrong kind, a `valueType` other than the template's -- leaves by 1
-where it left by 0 beside a submodel that was judged, or under
-`--allow-unmatched`; and an element one SAMM release off a row's draws
-`DBP7L1`, a warning. `summary.rulesChecked` counts the thirty-eight new
-rules.
+0 where it left by 1, so a pipeline red on one today goes quiet; under
+`--allow-unmatched` it left by 0 already. Beside a submodel that was
+judged, one that keeps its template is judged as before, except under
+`--require-all-judged`, where it left by 1 and leaves by 0. One that
+breaks its template -- a mandatory element missing, an element of the
+wrong kind, a `valueType` other than the template's -- leaves by 1 where
+it left by 0 beside a submodel that was judged, or under
+`--allow-unmatched`; alone in its file it left by 1 and still does, with
+what it breaks named in place of `SMT-D1`. An element one SAMM
+release off its row's identifier draws `DBP7L1`, a warning, and a
+mandatory one draws its row's error as well -- unless the row also
+carries an ECLASS identifier and the element carries it too, which
+matches it first and draws nothing. `summary.rulesChecked` counts the
+thirty-eight new rules.
 
 It is 470 rules, 416 generated from the vendored official template
 files, across twelve template packs. What this reader takes in is

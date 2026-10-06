@@ -350,4 +350,7 @@ elements, by the same ECLASS identifiers without the prefix, matches no
 row, and its name, address fields, e-mail and web address are reported
 missing; document list items spelt as 02035-2 spells a document
 identifier match nothing either, and the five document lists are
-reported empty (`docs/divergences.md` #61).
+reported empty (`docs/divergences.md` #61). Whether a `urn:irdi:` prefix and the bare
+identifier it wraps are one identifier is an open question this
+project has not settled; until it is, the template's own spelling is
+what a file is matched against.

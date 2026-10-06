@@ -13,25 +13,42 @@ one that cites a fixed spelling again changes its count here.
 """
 from __future__ import annotations
 
+import importlib
 import json
 
+import pytest
+
 from aas_submodel_validate import (
+    registry,
     rules,  # noqa: F401 - importing registers
     runner,
     tablegen,
 )
 from aas_submodel_validate.registry import all_rules
 from aas_submodel_validate.rules import (
+    contact,
     contact_tables,
+    dbp,
+    dbp1,
     dbp1_tables,
+    dbp4,
     dbp4_tables,
+    dbp5,
     dbp5_tables,
+    dbp7,
+    dbp7_tables,
     dbp_tables,
+    dn,
     dn_tables,
+    hd,
     hd_tables,
+    hs,
     hs_tables,
+    pcf,
     pcf_tables,
+    sn,
     sn_tables,
+    td,
     td_tables,
 )
 
@@ -62,6 +79,50 @@ def test_each_pack_s_rules_name_the_qualifier_as_its_template_wrote_it():
     assert _said(hs_tables) == {"SMT/Cardinality": 11}
     assert _said(dbp_tables) == {"SMT/Cardinality": 22}
     assert _said(dbp5_tables) == {"SMT/Cardinality": 49}
+    assert _said(dbp7_tables) == {"SMT/Cardinality": 37}
+
+
+#: Every vendored pack, beside the table it builds its rules from.
+_PACKS = {"hd": (hd, hd_tables), "td": (td, td_tables), "dbp": (dbp, dbp_tables),
+          "dn": (dn, dn_tables), "pcf": (pcf, pcf_tables),
+          "contact": (contact, contact_tables), "hs": (hs, hs_tables),
+          "sn": (sn, sn_tables), "dbp5": (dbp5, dbp5_tables), "dbp1": (dbp1, dbp1_tables),
+          "dbp4": (dbp4, dbp4_tables), "dbp7": (dbp7, dbp7_tables)}
+
+
+def _built_from(module, tables, rows):
+    """The rules `module` registers when its table holds `rows`, in a
+    registry of their own. The module is then built once more from its own
+    rows, into a registry that is thrown away, so nothing it keeps goes on
+    holding the changed ones, and the session's registry is put back."""
+    kept_rows, kept_registry = tables.ROWS, registry._registry
+    try:
+        tables.ROWS, registry._registry = rows, {}
+        importlib.reload(module)
+        return registry._registry
+    finally:
+        tables.ROWS, registry._registry = kept_rows, {}
+        importlib.reload(module)
+        registry._registry = kept_registry
+
+
+@pytest.mark.parametrize("name", sorted(_PACKS))
+def test_a_pack_reads_the_qualifier_off_the_row_where_every_row_agrees_too(name):
+    """The counts above hold a pack whose template mixes its spellings. One
+    whose rows all say the same thing reads alike through a fixed string,
+    and would go on saying it of a template re-vendored with another
+    spelling: 02035-7's pack carried such a string in from before the
+    clause was read off the row, and every row there says
+    `SMT/Cardinality`. So one row is given another spelling and the pack
+    is built again from it."""
+    module, tables = _PACKS[name]
+    row = dict(tables.ROWS[0])
+    other = ("Cardinality" if row.get("card_qualifier", "SMT/Cardinality") == "Multiplicity"
+             else "Multiplicity")
+    row["card_qualifier"] = other
+    built = _built_from(module, tables, (row,) + tuple(tables.ROWS[1:]))
+    assert built[row["id"]].spec == "%s, %s qualifier" % (tables.TEMPLATE_CITATION, other), (
+        "the pack cites a spelling its row does not carry: %r" % built[row["id"]].spec)
 
 
 def test_02003_s_unqualified_items_say_where_their_0_to_many_comes_from():

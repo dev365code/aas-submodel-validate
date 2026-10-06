@@ -57,8 +57,8 @@ easiest, and a name says which documents a reader can bring. Which
 templates come next is decided by what people bring (the README's
 roadmap); the battery passport's parts 5, 1 and 4 came next, and joined
 the list with their packs, because the battery-data layer already reads
-them. Part 7, Circularity, followed, the first part here that layer does
-not read.
+them. Part 7, Circularity, followed, and that layer does not read it, as
+it does not read part 2.
 
 ## Explanation
 
