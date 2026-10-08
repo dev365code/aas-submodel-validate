@@ -182,6 +182,8 @@ submodel judged against that. What that buys and what it does not:
   identifier is. A match can rest on that reading, and the report does
   not say when it does: an element whose own identifier is spelt one way
   answers a row the template spells the other.
+  A version component is required for this prefix reading; wrapped
+  ECLASS-CDP addresses and nested prefixes are not read further.
 - An element a template declares **inside itself** — 02011 Hierarchical
   Structures is the published case — is judged at every depth. The table
   stops at the repeat so that it stays finite, the repeat is a row of its

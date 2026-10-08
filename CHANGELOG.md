@@ -1,18 +1,21 @@
 # Changelog
 
-## 0.11.0 — unreleased
+## 0.11.0 — 2026-10-09
 
 **An IRDI written under SAMM's `urn:irdi:` prefix is read as that IRDI.**
-IDTA's templates spell one ECLASS identifier two ways: nine of the
-twelve vendored here write it bare, `0173-1#02-AAO134#002`, and the
-battery passport's parts 5 and 7, generated from SAMM models, write it
-`urn:irdi:0173-1#02-AAO134#002` -- the synthetic URN SAMM uses for an
-IRDI, whose guideline writes the IRDI's second `#` as `%23`. Before an
+ECLASS IRDIs appear in two forms across IDTA's templates: nine of the
+twelve vendored here write them bare, for example
+`0173-1#02-AAO134#002`, and the battery passport's parts 5 and 7,
+generated from SAMM models, write IRDIs under `urn:irdi:` -- for
+example, `urn:irdi:0173-1#02-AAO134#002` in part 7 -- the synthetic
+URN SAMM uses for an IRDI, whose guideline writes the IRDI's second
+`#` as `%23`. Before an
 IRDI the prefix is read away, and a `#` written `%23` read as `#`, in a
 file's identifiers and in a template's alike; before anything else -- an
 IRI, a SAMM URN, an open-content marker -- the prefix stays, and what it
-wraps matches nothing it would not match bare. Nothing else about an
-identifier is read: no other namespace, case or escape. IDTA-01001's
+wraps matches nothing it would not match bare. This prefix reading changes no other
+namespace, case or escape; existing template aliases still apply
+(`docs/divergences.md` #8). IDTA-01001's
 annex on matching semantic identifiers makes exact matching the default
 and lists reading two syntaxes of one IRDI as one among the wider
 matches a reader may make; this reader already read an ECLASS-CDP
@@ -54,6 +57,10 @@ It is 470 rules, 416 generated from the vendored official template
 files, across twelve template packs. What this reader takes in is
 unchanged: one document at 64 MiB, a container's parts at 64 MiB each
 and 256 MiB together, and a container's directory of names at 16 MiB.
+
+This project chooses to compare an IRDI under `urn:irdi:` with the bare IRDI, accepting the unescaped spelling used by the vendored AAS templates as well as SAMM's `%23` spelling. Files supplying those identifiers in the other form may now pass, including part 7 supplier contacts written as Contact Information writes them. Newly matched elements and submodels are now checked against their templates, so a previously passing file can fail on its `valueType`, kind, or missing children; version near-miss warnings can also affect runs using `-W`. Before upgrading a gated pipeline, rerun its actual inputs and inspect the newly reported rows. The report does not identify matches that depended on this reading.
+
+Generators now write committed text artifacts as UTF-8 with LF on every platform, and `--check` compares the stored bytes. Regenerate artifacts with the updated tools if a check reports newline drift.
 
 ## 0.10.0 — 2026-10-06
 
