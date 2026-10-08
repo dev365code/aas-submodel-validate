@@ -20,6 +20,10 @@ address as its IRDI. Where a match rests on the prefix being read away
 the report does not say so, and a finding quotes an identifier in the
 form it was compared in. `docs/divergences.md` #62.
 
+A row's own identifier is now compared key by key as it is read, so an
+element known by several keys under the prefix or by ECLASS-CDP
+addresses keeps its row in a caller's `--template`.
+
 **What moves: five corpus inputs, four of them from exit 1 to exit 0 and
 one the other way.** Measured against 0.10.0 across the corpus --
 eighty-eight inputs now, five that spell one IRDI the other way from
