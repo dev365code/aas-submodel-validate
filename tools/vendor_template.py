@@ -191,7 +191,8 @@ def _record(destination: Path) -> None:
     lines = [line for line in (sums.read_text("utf-8").splitlines() if sums.exists() else [])
              if not line.endswith("  " + destination.name)]
     lines.append("%s  %s" % (digest, destination.name))
-    sums.write_text("\n".join(sorted(lines)) + "\n", "utf-8")
+    with open(sums, "w", encoding="utf-8", newline="\n") as stream:
+        stream.write("\n".join(sorted(lines)) + "\n")
 
 
 def refresh() -> int:
@@ -227,6 +228,7 @@ def undeclared() -> list:
 
 def check() -> int:
     bad = 0
+    fresh_sums = {}
     for stray in undeclared():
         print("vendored but not declared in FILES: %s (its bytes ship and "
               "nothing records their hash)" % stray, file=sys.stderr)
@@ -237,11 +239,17 @@ def check() -> int:
             print("missing: %s (run tools/vendor_template.py --refresh)" % rel, file=sys.stderr)
             bad = 1
             continue
-        recorded = {name: digest for line in _sums_path(destination).read_text("utf-8").splitlines()
+        sums = _sums_path(destination)
+        recorded = {name: digest for line in sums.read_bytes().decode("utf-8").splitlines()
                     for digest, _, name in [line.partition("  ")]}
         actual = hashlib.sha256(destination.read_bytes()).hexdigest()
+        fresh_sums.setdefault(sums, []).append("%s  %s" % (actual, destination.name))
         if recorded.get(destination.name) != actual:
             print("hash mismatch: %s" % rel, file=sys.stderr)
+            bad = 1
+    for sums, lines in fresh_sums.items():
+        if sums.read_bytes() != ("\n".join(sorted(lines)) + "\n").encode("utf-8"):
+            print("hash record differs: %s" % sums.relative_to(ROOT).as_posix(), file=sys.stderr)
             bad = 1
     if not bad:
         print("vendored material matches its recorded hashes, and the trees "

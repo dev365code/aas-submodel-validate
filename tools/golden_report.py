@@ -162,20 +162,21 @@ def main(argv=None) -> int:
 
     fresh = rendered(report())
     if not args.check:
-        GOLDEN.write_text(fresh, encoding="utf-8")
+        with open(GOLDEN, "w", encoding="utf-8", newline="\n") as stream:
+            stream.write(fresh)
         print("%s: written" % GOLDEN.relative_to(ROOT))
         return 0
     if not GOLDEN.exists():
         print("%s does not exist; run tools/golden_report.py"
               % GOLDEN.relative_to(ROOT), file=sys.stderr)
         return 1
-    stored = GOLDEN.read_text(encoding="utf-8")
-    if stored == fresh:
+    stored = GOLDEN.read_bytes()
+    if stored == fresh.encode("utf-8"):
         print("the stored report is the one this tree produces")
         return 0
 
     import difflib
-    diff = list(difflib.unified_diff(stored.splitlines(True), fresh.splitlines(True),
+    diff = list(difflib.unified_diff(stored.decode("utf-8").splitlines(True), fresh.splitlines(True),
                                      fromfile="docs/golden-report.json",
                                      tofile="what this tree says", n=2))
     sys.stderr.writelines(diff[:60])

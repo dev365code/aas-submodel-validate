@@ -510,7 +510,7 @@ def main() -> int:
         output = pack["output"]
         text = generate(pack)
         if args.check:
-            if not output.exists() or output.read_text("utf-8") != text:
+            if not output.exists() or output.read_bytes() != text.encode("utf-8"):
                 print("rules/%s is stale: run tools/extract_smt_rules.py"
                       % output.name, file=sys.stderr)
                 bad = 1
@@ -518,7 +518,8 @@ def main() -> int:
             print("%s matches its generator (%d rows)"
                   % (output.name, text.count("'id':")))
         else:
-            output.write_text(text, "utf-8")
+            with open(output, "w", encoding="utf-8", newline="\n") as stream:
+                stream.write(text)
             print("wrote %s" % output)
     return bad
 

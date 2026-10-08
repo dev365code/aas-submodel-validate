@@ -315,10 +315,11 @@ def main() -> int:
         return 0
     written = render()
     if not args.check:
-        OUT.write_text(written, "utf-8")
+        with open(OUT, "w", encoding="utf-8", newline="\n") as stream:
+            stream.write(written)
         print("battery rules: wrote %s" % OUT.relative_to(ROOT))
         return 0
-    if OUT.read_text("utf-8") != written:
+    if OUT.read_bytes() != written.encode("utf-8"):
         print("battery rules: %s is not what the generator would write; "
               "run tools/extract_battery_rules.py" % OUT.relative_to(ROOT),
               file=sys.stderr)

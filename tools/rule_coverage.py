@@ -53,13 +53,18 @@ def main() -> int:
     observed = set(json.loads(observed_path.read_text("utf-8")))
 
     if args.write:
-        (ROOT / "docs" / "rule-coverage.json").write_text(
-            json.dumps(sorted(observed), indent=0) + "\n", "utf-8")
+        with open(ROOT / "docs" / "rule-coverage.json", "w",
+                  encoding="utf-8", newline="\n") as stream:
+            stream.write(json.dumps(sorted(observed), indent=0) + "\n")
         print("baseline written: %d ids" % len(observed))
         return 0
 
-    baseline = set(json.loads((ROOT / "docs" / "rule-coverage.json").read_text("utf-8")))
+    stored = (ROOT / "docs" / "rule-coverage.json").read_bytes()
+    baseline = set(json.loads(stored))
     bad = 0
+    if stored != (json.dumps(sorted(observed), indent=0) + "\n").encode("utf-8"):
+        print("the baseline bytes differ -- run tools/rule_coverage.py --write", file=sys.stderr)
+        bad = 1
     for silent in sorted(registered - observed):
         print("never fired in the suite: %s" % silent, file=sys.stderr)
         bad = 1

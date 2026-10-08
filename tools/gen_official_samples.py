@@ -135,14 +135,15 @@ def main() -> int:
     args = parser.parse_args()
     text = render()
     if args.check:
-        if not PAGE.exists() or PAGE.read_text("utf-8") != text:
+        if not PAGE.exists() or PAGE.read_bytes() != text.encode("utf-8"):
             print("docs/official-samples.md is not what a run writes; "
                   "`python3 tools/gen_official_samples.py` writes it", file=_sys.stderr)
             return 1
         print("official samples page matches a run (%d samples)"
               % sum(1 for rel in vendor_template.FILES if is_sample(rel)))
         return 0
-    PAGE.write_text(text, "utf-8")
+    with open(PAGE, "w", encoding="utf-8", newline="\n") as stream:
+        stream.write(text)
     print("wrote docs/official-samples.md")
     return 0
 

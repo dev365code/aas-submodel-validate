@@ -239,13 +239,19 @@ def main(argv) -> int:
                     README.read_text(encoding="utf-8"):
                 stale.append("%s (the front page's ?v= is not its hash)" % name)
         if checking:
-            if not path.is_file() or path.read_text(encoding="utf-8") != drawn:
+            if not path.is_file() or path.read_bytes() != drawn.encode("utf-8"):
                 stale.append(name)
             continue
-        path.write_text(drawn, encoding="utf-8")
+        with open(path, "w", encoding="utf-8", newline="\n") as stream:
+            stream.write(drawn)
         print("%s  %d KB" % (name, len(drawn) // 1024))
-    if page is not None and not checking:
-        README.write_text(page, encoding="utf-8")
+    if page is not None:
+        if checking:
+            if README.read_bytes() != page.encode("utf-8"):
+                stale.append("README.md")
+        else:
+            with open(README, "w", encoding="utf-8", newline="\n") as stream:
+                stream.write(page)
     if stale:
         print("out of date, regenerate with tools/gen_door.py: %s"
               % ", ".join(stale), file=sys.stderr)

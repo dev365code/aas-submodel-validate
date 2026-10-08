@@ -452,8 +452,11 @@ def main(argv):
     if "--check" in argv:
         bad = []
         for path, want in ((svg_path, svg), (md_path, md)):
-            have = _read(path) if os.path.exists(path) else None
-            if have != want:
+            have = None
+            if os.path.exists(path):
+                with open(path, "rb") as f:
+                    have = f.read()
+            if have != want.encode("utf-8"):
                 bad.append(f"{os.path.relpath(path, ROOT)} is stale or missing: rerun the generator")
         for ax in data["axes"]:
             for ev in ax["evidence"]:
@@ -463,7 +466,13 @@ def main(argv):
         if not os.path.isfile(os.path.join(ROOT, data["detail"])):
             bad.append(f"detail page {data['detail']} does not exist (the picture would link to a 404)")
         if os.path.exists(readme):
-            page = visible(_read(readme))
+            text = _read(readme)
+            stamped = STAMP.sub(lambda m: m.group(1) + digest_of(svg), text)
+            stamped = ALT.sub(lambda m: m.group(1) + summary_line(data) + m.group(2), stamped)
+            with open(readme, "rb") as f:
+                if f.read() != stamped.encode("utf-8"):
+                    bad.append("README.md is stale: rerun the generator")
+            page = visible(text)
             if STAMP.search(page) and f"capabilities.svg?v={digest_of(svg)}" not in page:
                 bad.append("README.md: the ?v= stamp is not the committed picture's hash; rerun the generator")
             if "capabilities.svg" not in page:
