@@ -346,7 +346,7 @@ jobs:
             `python3 -m pip install --no-index --find-links . aas-submodel-validate`
             (`pip3` works too, where that is the spelling). The
             `aas_core3_0-…` wheel is the one dependency; without it that
-            command has nothing to resolve. Under 400 KB together.
+            command has nothing to resolve. Both wheels are carried above for that offline install.
           - the `.tar.gz` — the source, for anyone building it themselves,
             and the only asset carrying `docs/`. Building it needs an
             index of its own (`setuptools`), so it is not the offline

@@ -33,7 +33,7 @@ ci-axes:
 # into `check` -- it runs the suite once per gate, which is too slow for
 # every edit. `tools/mutation_table.py` (no --run) lists what it checks.
 mutants:
-	$(PYTHON) tools/mutation_table.py --run
+	"$(PYTHON)" tools/mutation_table.py --run
 
 # The second line is the whole report for one package, as a file.
 # docs/report-schema.md and its test hold the shape; this holds the
@@ -43,31 +43,34 @@ mutants:
 # lines it once hid the second from tests/test_ci_parity.py, which reads a
 # recipe past comments and blank lines now, as make does.
 generated:
-	$(PYTHON) tools/extract_smt_rules.py --check
-	$(PYTHON) tools/golden_report.py --check
+	"$(PYTHON)" tools/extract_smt_rules.py --check
+	"$(PYTHON)" tools/golden_report.py --check
 
 vendored:
-	$(PYTHON) tools/vendor_template.py --check
-	$(PYTHON) tools/gen_door.py --check
-	$(PYTHON) tools/capabilities_svg.py docs/capabilities.json --check
-	$(PYTHON) tools/gen_official_samples.py --check
+	"$(PYTHON)" tools/vendor_template.py --check
+	"$(PYTHON)" tools/gen_door.py --check
+	"$(PYTHON)" tools/capabilities_svg.py docs/capabilities.json --check
+	"$(PYTHON)" tools/gen_official_samples.py --check
 
 exercised:
-	$(PYTHON) tools/rule_coverage.py --check
+	"$(PYTHON)" tools/rule_coverage.py --check
 
 # Correct and unusable is a state a validator can ship: every other
 # gate here asks whether the verdict is right, none of them asks
 # whether it arrived. Budgets are ratios against a yardstick measured
 # in the same run, so a slow machine does not fail and a slow layer
-# does.
+# does. Cold invocations prepare bytecode in a private writable cache,
+# matching the already-compiled yardstick; each timed interpreter is fresh.
 time-budget:
-	$(PYTHON) tools/time_budget.py --check
+	"$(PYTHON)" tools/time_budget.py --check
 
 battery-data:
-	$(PYTHON) tools/battery_data_check.py
-	cd data/battery-passport && $(PYTHON) tools/join_requirements.py --dir . \
-		--out requirements-join.json --md requirements-join.md --check
-	$(PYTHON) tools/extract_battery_rules.py --check
+	"$(PYTHON)" tools/battery_data_check.py
+	@if [ -d data/battery-passport ]; then \
+		cd data/battery-passport && "$(PYTHON)" tools/join_requirements.py --dir . \
+			--out requirements-join.json --md requirements-join.md --check; \
+	else echo "battery-data: join skipped; this tree carries no requirements indexes"; fi
+	"$(PYTHON)" tools/extract_battery_rules.py --check
 
 # `--no-cache` on both sides. A linter that answers from a cache can
 # answer about a file that has moved, and then the local gate is green
@@ -77,18 +80,18 @@ battery-data:
 # way: the two invocations have to be the same check, and a cache is a
 # difference between them that nobody can see.
 lint:
-	@$(PYTHON) -m ruff --version | grep -qx "ruff $(RUFF_VERSION)" \
+	@"$(PYTHON)" -m ruff --version | grep -qx "ruff $(RUFF_VERSION)" \
 		|| { echo "ruff $(RUFF_VERSION) required (make dev)"; exit 1; }
-	$(PYTHON) -m ruff check --no-cache .
+	"$(PYTHON)" -m ruff check --no-cache .
 
 test:
 	# `-rs` names every skip and why. A skipped test is a gate that did
 	# not run, and the summary counts them without saying which: one
 	# gate sat behind "1 skipped" on this floor for a day.
-	$(PYTHON) -m pytest -q -rs
+	"$(PYTHON)" -m pytest -q -rs
 
 fix:
-	$(PYTHON) -m ruff check --no-cache --fix .
+	"$(PYTHON)" -m ruff check --no-cache --fix .
 
 dev:
 # `--user` is refused inside a virtualenv -- "Can not perform a '--user'
@@ -96,4 +99,4 @@ dev:
 # installed neither the package nor the battery readers, so `make check`
 # straight after `make dev` could not pass. The extras are the
 # declaration; this target is one way of reading it.
-	$(PYTHON) -m pip install -e ".[dev,battery]"
+	"$(PYTHON)" -m pip install -e ".[dev,battery]"

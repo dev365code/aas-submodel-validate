@@ -58,9 +58,9 @@ def _commands_of(target: str, makefile: str = MAKEFILE):
                      makefile, re.M)
     if not body:
         return []
-    return [raw.strip().replace("$(PYTHON)", "").strip()
+    return [re.sub(r'^"?\$\(PYTHON\)"?\s+', "", raw.strip())
             for raw in body.group(1).splitlines()
-            if raw.strip().startswith("$(PYTHON)")]
+            if raw.strip().startswith(("$(PYTHON)", '"$(PYTHON)"'))]
 
 
 def test_a_recipe_is_read_past_its_comments_and_blank_lines():
@@ -80,6 +80,13 @@ def test_a_recipe_is_read_past_its_comments_and_blank_lines():
                 "\t$(PYTHON) tools/three.py\n")
     assert _commands_of("generated", makefile) == ["tools/one.py --check",
                                                    "tools/two.py --check"]
+
+
+def test_the_makefile_quotes_every_interpreter_expansion():
+    """A caller can select an interpreter whose absolute path has spaces."""
+    assert not re.search(r'(?<!")\$\(PYTHON\)(?!")', MAKEFILE)
+    assert _commands_of("generated", 'generated:\n\t"$(PYTHON)" tools/x.py --check\n') == [
+        "tools/x.py --check"]
 
 
 def _normalise(command: str) -> str:
@@ -815,7 +822,7 @@ def _ruff_version():
 def _the_version_guard():
     """The Makefile's `ruff --version` guard, as a runnable shell line."""
     found = re.search(
-        r"(?m)^\t@\$\(PYTHON\) -m ruff --version \| (grep.*?)\s*\\\n\s*(\|\|.*)$",
+        r'(?m)^\t@"?\$\(PYTHON\)"? -m ruff --version \| (grep.*?)\s*\\\n\s*(\|\|.*)$',
         MAKEFILE)
     assert found, "the lint target no longer guards the ruff version"
     return "%s %s" % (found.group(1), found.group(2))
