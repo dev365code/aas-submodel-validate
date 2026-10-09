@@ -11,14 +11,14 @@ tool overwrites this file.
 | annex-xiii | 34 | `eurlex/02023R1542-20250731_EN.html` | `cbca54f9ae84` | consolidated text 02023R1542-20250731 |
 | ec-datapoints | 71 | `ec-dg-grow/digital-batteries-passport-data-point-by-category_v2.0.pdf` | `e045a7668015` | Version 2.0 |
 | longlist | 100 | `batterypass/2026_BatteryPass-Ready_DataAttributeLongList_v1.3.xlsx` | `2be2585bb29b` | v1.3 |
-| idta-smt | 221 | `idta/02035-1_v1.0/IDTA 02035-1_DBP-Part-1_Digital Nameplate.json` | `0eec79b05fde` | IDTA 02035-1 V1.0 |
-|  |  | `idta/02035-2_v1.0/IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json` | `c7124116bd10` | IDTA 02035-2 V1.0 |
+| idta-smt | 221 | `idta/02035-1_v1.1/IDTA 02035-1_DBP-Part-1_Digital Nameplate.json` | `35db3506124c` | IDTA 02035-1 V1.1 |
+|  |  | `idta/02035-2_v1.1/IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json` | `66ef2bcbed8b` | IDTA 02035-2 V1.1 |
 |  |  | `idta/02035-3_v1.0/IDTA 02035-3_DBP-Part-3_ProductCarbonFootprint.json` | `1555443c771b` | IDTA 02035-3 V1.0 |
-|  |  | `idta/02035-4_v1.0.1/IDTA 02035-4_DBP-Part-4_TechnicalData.json` | `a90774b959c7` | IDTA 02035-4 V1.0.1 |
+|  |  | `idta/02035-4_v1.0.2/IDTA 02035-4_DBP-Part-4_TechnicalData.json` | `9a83026d2893` | IDTA 02035-4 V1.0.2 |
 |  |  | `idta/02035-5_v1.0.1/IDTA 02035-5_DBP-Part-5_ProductCondition.json` | `62f5dc99b7f0` | IDTA 02035-5 V1.0.1 |
 |  |  | `idta/02035-5_v1.0.2/IDTA 02035-5_DBP-Part-5_ProductCondition_V1.0.2.json` | `fc3c81609ca4` | IDTA 02035-5 V1.0.2 |
 |  |  | `idta/02035-6_v1.0.1/IDTA 02035-6_DBP-Part-6_MaterialComposition.json` | `e9197b3a2a3e` | IDTA 02035-6 V1.0.1 |
-|  |  | `idta/02035-7_v1.0.1/IDTA 02035-7_DBP-Part-7_Circularity.json` | `f3dd40ec1b8f` | IDTA 02035-7 V1.0.1 |
+|  |  | `idta/02035-7_v1.0.2/IDTA 02035-7_DBP-Part-7_Circularity.json` | `fa1ad2a5fb12` | IDTA 02035-7 V1.0.2 |
 |  |  | `idta/02099-1_v1.0.0/IDTA 02099-1_Template Digital Product Passport - Part 1.json` | `541cfd526ead` | IDTA 02099-1 V1.0 |
 |  |  | `idta/02099-1_v1.0.1/IDTA 02099-1_Template Digital Product Passport - Part 1.json` | `541cfd526ead` | IDTA 02099-1 V1.0.1 |
 |  |  | `idta/_base_02004_v2.0/IDTA 02004-2-0_Template_HandoverDocumentation.json` | `1be559fbf04c` | IDTA 02004 V2.0 |
@@ -43,13 +43,13 @@ lower bounds until a citation-bearing bridge exists.
 | citations checked against the annex | 115 |
 | citations no index here can resolve | 53 |
 | template elements | 221 |
-| template elements matched by name | 43 |
-| distinct attribute names those elements reach | 38 |
-| template elements matched by nothing | 178 |
+| template elements matched by name | 42 |
+| distinct attribute names those elements reach | 37 |
+| template elements matched by nothing | 179 |
 | guidance data points matched by name | 12 |
 | guidance data points unmatched | 59 |
-| longlist rows matched by name | 37 |
-| longlist rows unmatched | 63 |
+| longlist rows matched by name | 36 |
+| longlist rows unmatched | 64 |
 | name matches where the readings differ | 10 |
 | citations where the readings differ | 8 |
 

@@ -163,10 +163,8 @@ runs the test that holds the summary line.
 From 0.3.0 on, a security fix that ships has an advisory; `SECURITY.md`
 names the two earlier repairs that have a changelog entry only. Each gate
 names the mistake it stops, and `make mutants` makes each mistake and checks
-a test fails (`tools/mutation_table.py` lists them) -- but not yet every
-one: two rows about a release that predates `--template` survive, because
-their tests can fail only against such a release and the last release has
-the option. XML in UTF-8, UTF-16
+a test fails (`tools/mutation_table.py` lists them) -- availability of `--template` is exercised with local readers with and
+without the option, so the comparison tests require no older installation. XML in UTF-8, UTF-16
 and the single-byte encodings it declares is read and judged, but UTF-32 is
 refused, and a JSON document -- which declares no encoding -- is read as
 UTF-8.
@@ -178,7 +176,7 @@ Before 1.0: every row of the mutation table killed on the tree it ships with, an
 **The vendored templates are pinned and hash-checked.**
 
 ```
-vendored material matches its recorded hashes, and the trees hold nothing else (20 files, pin 11ef33531246)
+vendored material matches its recorded hashes, and the trees hold nothing else (20 files, pin f3790038b6c9)
 ```
 
 Reproduce: `python3 tools/vendor_template.py --check` in a clone; CI runs it

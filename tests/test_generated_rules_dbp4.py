@@ -206,7 +206,7 @@ def _template_supplementals():
     writes them, keyed by the element's own identifier."""
     import pathlib
     template = json.loads((pathlib.Path(dbp4_tables.__file__).parent.parent / "data" / "smt"
-                           / "02035-4" / "1.0.1" / "template.json").read_text("utf-8"))
+                           / "02035-4" / "1.0.2" / "template.json").read_text("utf-8"))
     found = {}
     pending = list(template["submodels"][0]["submodelElements"])
     while pending:

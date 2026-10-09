@@ -4,7 +4,7 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02035-1_DBP-Part-1_Digital Nameplate.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
-TEMPLATE_CITATION = 'IDTA 02035-1 1.0 template'
+TEMPLATE_CITATION = 'IDTA 02035-1 1.1 template'
 TEMPLATE_SEMANTIC_ID = 'https://admin-shell.io/idta/digitalbatterypassport/nameplate/1/0/Nameplate'
 TEMPLATE_SUBMODEL_SID_TYPE = 'ExternalReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('https://admin-shell.io/idta/nameplate/3/0/Nameplate', 'urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0', 'urn:samm:io.admin-shell.idta.digital_nameplate:3.0.0')
@@ -47,7 +47,7 @@ TREE = (
         'label': 'AddressInformation',
         'parent': None,
         'kind': 'SubmodelElementCollection',
-        'match': ('0112/2///61360_7#AAS002#001', '0173-1#02-AAQ837#008/0173-1#01-ADR448#008', 'https://admin-shell.io/smt-dropin/smt-dropin-use/1/0', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation', 'urn:samm:io.admin-shell.idta.digital_nameplate:3.0.0#addressInformation'),
+        'match': ('0112/2///61360_7#AAS002#001', '0173-1#02-AAQ837#008/0173-1#01-ADR448#008', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation', 'urn:samm:io.admin-shell.idta.digital_nameplate:3.0.0#addressInformation'),
         'sid': 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation',
         'sid_type': 'ExternalReference',
         'card': (1, 1),
@@ -188,7 +188,7 @@ TREE = (
         'children': (
             {
                 'id': 'DBP1-E12',
-                'label': 'Markings__00__',
+                'label': 'Marking',
                 'parent': 'DBP1-E11',
                 'kind': 'SubmodelElementCollection',
                 'match': ('0112/2///61360_7#AAS009#001', '0173-1#02-ABI564#003/0173-1#01-AHF850#003', 'urn:samm:io.admin-shell.idta.shared:3.1.0#Marking'),
@@ -199,7 +199,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'Markings__00__' element(s) under Markings with semanticId 0112/2///61360_7#AAS009#001.",
+                'fix': "Provide one or more 'Marking' element(s) under Markings with semanticId 0112/2///61360_7#AAS009#001.",
                 'children': (
                     {
                         'id': 'DBP1-E13',
@@ -214,7 +214,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'MarkingName' element(s) under Markings__00__ with semanticId 0112/2///61987#ABA231#009.",
+                        'fix': "Provide exactly one 'MarkingName' element(s) under Marking with semanticId 0112/2///61987#ABA231#009.",
                         'children': (),
                     },
                     {
@@ -230,7 +230,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'DesignationOfCertificateOrApproval' element(s) under Markings__00__ with semanticId 0112/2///61987#ABH783#003.",
+                        'fix': "Provide at most one 'DesignationOfCertificateOrApproval' element(s) under Marking with semanticId 0112/2///61987#ABH783#003.",
                         'children': (),
                     },
                     {
@@ -246,7 +246,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'IssueDate' element(s) under Markings__00__ with semanticId 0112/2///61987#ABO097#001.",
+                        'fix': "Provide at most one 'IssueDate' element(s) under Marking with semanticId 0112/2///61987#ABO097#001.",
                         'children': (),
                     },
                     {
@@ -262,7 +262,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ExpiryDate' element(s) under Markings__00__ with semanticId 0112/2///61987#ABH830#002.",
+                        'fix': "Provide at most one 'ExpiryDate' element(s) under Marking with semanticId 0112/2///61987#ABH830#002.",
                         'children': (),
                     },
                     {
@@ -278,7 +278,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'MarkingFile' element(s) under Markings__00__ with semanticId 0112/2///61987#ABO100#002.",
+                        'fix': "Provide at most one 'MarkingFile' element(s) under Marking with semanticId 0112/2///61987#ABO100#002.",
                         'children': (),
                     },
                     {
@@ -294,7 +294,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number of 'MarkingAdditionalText' element(s) under Markings__00__ with semanticId 0112/2///61987#ABB146#007.",
+                        'fix': "Provide any number of 'MarkingAdditionalText' element(s) under Marking with semanticId 0112/2///61987#ABB146#007.",
                         'children': (),
                     },
                 ),

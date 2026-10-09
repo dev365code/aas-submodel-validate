@@ -14,6 +14,7 @@ import json
 import os
 import re
 import runpy
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -44,10 +45,17 @@ def archived_tree(tmp_path_factory):
     if archive.returncode:
         pytest.skip("not a git checkout (an unpacked sdist is not one)")
     subprocess.run(["tar", "-x", "-C", str(tree)], input=archive.stdout, check=True)
-    # Exercise source edits before they have a commit, too. Everything the
-    # generators read or overwrite remains the archive's committed input.
-    for tool, _flags in GENERATORS:
-        (tree / "tools" / tool).write_bytes((ROOT / "tools" / tool).read_bytes())
+    # Exercise the working tree before a commit, including a pin move's
+    # new destinations. A new emitter over old archived input is neither
+    # version and cannot say whether this tree writes identical bytes.
+    for rel in ("src", "tools", "docs", "data/battery-passport"):
+        if (tree / rel).exists():
+            shutil.rmtree(tree / rel)
+        if (ROOT / rel).exists():
+            shutil.copytree(ROOT / rel, tree / rel,
+                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    for rel in ("README.md", "THIRD_PARTY.md", "NOTICE"):
+        (tree / rel).write_bytes((ROOT / rel).read_bytes())
     (tree / ".rule-coverage.json").write_bytes(
         (tree / "docs" / "rule-coverage.json").read_bytes())
     from tools import vendor_template

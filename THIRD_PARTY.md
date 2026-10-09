@@ -4,18 +4,18 @@
 
 | file | what it is | modified? |
 |---|---|---|
-| `aas_submodel_validate/data/smt/02004/2.0.1/template.json` | IDTA 02004-2-0-1 *Handover Documentation* template | no |
-| `aas_submodel_validate/data/smt/02003/2.0.1/template.json` | IDTA 02003 2.0.1 *Technical Data* template | no |
-| `aas_submodel_validate/data/smt/02035-2/1.0/template.json` | IDTA 02035-2 1.0 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
-| `aas_submodel_validate/data/smt/02006/3.0/template.json` | IDTA 02006-3-0 *Digital Nameplate* template | no |
-| `aas_submodel_validate/data/smt/02023/1.0/template.json` | IDTA 02023 1.0 *Carbon Footprint* template | no |
-| `aas_submodel_validate/data/smt/02002/1.0.1/template.json` | IDTA 02002-1-0-1 *Contact Information* template | no |
-| `aas_submodel_validate/data/smt/02011/1.1.1/template.json` | IDTA 02011-1-1-1 *Hierarchical Structures enabling Bills of Material* template | no |
-| `aas_submodel_validate/data/smt/02007/1.0.1/template.json` | IDTA 02007-1-0-1 *Software Nameplate* template | no |
+| `aas_submodel_validate/data/smt/02004/2.0.2/template.json` | IDTA 02004-2-0-2 *Handover Documentation* template | no |
+| `aas_submodel_validate/data/smt/02003/2.0.2/template.json` | IDTA 02003 2.0.2 *Technical Data* template | no |
+| `aas_submodel_validate/data/smt/02035-2/1.1/template.json` | IDTA 02035-2 1.1 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
+| `aas_submodel_validate/data/smt/02006/3.0.2/template.json` | IDTA 02006-3-0-2 *Digital Nameplate* template | no |
+| `aas_submodel_validate/data/smt/02023/1.0.2/template.json` | IDTA 02023 1.0.2 *Carbon Footprint* template | no |
+| `aas_submodel_validate/data/smt/02002/1.0.2/template.json` | IDTA 02002-1-0-2 *Contact Information* template | no |
+| `aas_submodel_validate/data/smt/02011/1.1.2/template.json` | IDTA 02011-1-1-2 *Hierarchical Structures enabling Bills of Material* template | no |
+| `aas_submodel_validate/data/smt/02007/1.0.2/template.json` | IDTA 02007-1-0-2 *Software Nameplate* template | no |
 | `aas_submodel_validate/data/smt/02035-5/1.0.2/template.json` | IDTA 02035-5 *Digital Battery Passport, Part 5: Product Condition* template, V1.0.2 | no |
-| `aas_submodel_validate/data/smt/02035-1/1.0/template.json` | IDTA 02035-1 *Digital Battery Passport, Part 1: Digital Nameplate* template, V1.0 | no |
-| `aas_submodel_validate/data/smt/02035-4/1.0.1/template.json` | IDTA 02035-4 *Digital Battery Passport, Part 4: Technical Data* template, V1.0.1 | no |
-| `aas_submodel_validate/data/smt/02035-7/1.0.1/template.json` | IDTA 02035-7 *Digital Battery Passport, Part 7: Circularity* template, V1.0.1 | no |
+| `aas_submodel_validate/data/smt/02035-1/1.1/template.json` | IDTA 02035-1 *Digital Battery Passport, Part 1: Digital Nameplate* template, V1.1 | no |
+| `aas_submodel_validate/data/smt/02035-4/1.0.2/template.json` | IDTA 02035-4 *Digital Battery Passport, Part 4: Technical Data* template, V1.0.2 | no |
+| `aas_submodel_validate/data/smt/02035-7/1.0.2/template.json` | IDTA 02035-7 *Digital Battery Passport, Part 7: Circularity* template, V1.0.2 | no |
 | `tests/corpus/idta/02004/example.json` | official 02004 2.0 example (environment JSON) | no |
 | `aas_submodel_validate/data/example/idta-02004-2.0.aasx` | official 02004 2.0 example (AASX) — ships in the wheel, and `smtv --example` judges it | no |
 | `tests/corpus/idta/02003/sample-2.0.json` | official 02003 2.0 sample (environment JSON) | no |
@@ -27,7 +27,7 @@
 
 Source: [admin-shell-io/submodel-templates](https://github.com/admin-shell-io/submodel-templates),
 licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), © IDTA
-and contributors. Taken from commit `11ef3353124626e2dba4cb50767024df9a39928a` and
+and contributors. Taken from commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (commit date 2026-10-05T14:26:16Z) and
 hash-verified on every CI run by `tools/vendor_template.py --check`,
 which also sweeps those trees for anything this table does not list. The
 SHA-256 digest of each file is recorded in a `sha256sums.txt` in its own

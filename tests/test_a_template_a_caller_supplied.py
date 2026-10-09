@@ -20,7 +20,7 @@ from aas_submodel_validate import runner
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 VENDORED = (pathlib.Path(runner.__file__).parent / "data" / "smt"
-            / "02003" / "2.0.1" / "template.json")
+            / "02003" / "2.0.2" / "template.json")
 
 
 def _instance(tmp_path):
@@ -506,7 +506,7 @@ def test_no_pack_describes_a_run_it_stood_down_from(tmp_path):
     from aas_submodel_validate.cli import main
 
     vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
-                / "02004" / "2.0.1" / "template.json")
+                / "02004" / "2.0.2" / "template.json")
     from builders import env_json
 
     instance = tmp_path / "hd.json"
@@ -587,7 +587,7 @@ def test_standing_down_says_what_it_cost(tmp_path):
     improving.
     """
     vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
-                / "02003" / "2.0.1" / "template.json")
+                / "02003" / "2.0.2" / "template.json")
     without = runner.run(_instance(tmp_path))
     with_it = runner.run(_instance(tmp_path), template=vendored)
 
@@ -1155,7 +1155,7 @@ def test_a_profile_the_supplied_template_overrode_is_not_left_unsaid(tmp_path):
     instance = tmp_path / "handover.json"
     instance.write_bytes(json.dumps(copy.deepcopy(hd_env())).encode("utf-8"))
     vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
-                / "02004" / "2.0.1" / "template.json")
+                / "02004" / "2.0.2" / "template.json")
 
     report = runner.run(instance, profile="02035-2", template=vendored)
     said = " ".join(report.notes)
@@ -1185,7 +1185,7 @@ def test_the_two_notes_about_who_judged_cannot_both_be_said(tmp_path):
     instance = tmp_path / "handover.json"
     instance.write_bytes(json.dumps(copy.deepcopy(hd_env())).encode("utf-8"))
     vendored = (pathlib.Path(runner.__file__).parent / "data" / "smt"
-                / "02004" / "2.0.1" / "template.json")
+                / "02004" / "2.0.2" / "template.json")
 
     claimed = "judged against the template you supplied"
     # There are two sentences for "it answered nothing" -- one for an

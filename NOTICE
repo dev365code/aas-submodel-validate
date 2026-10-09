@@ -6,36 +6,36 @@ repository (https://github.com/admin-shell-io/submodel-templates),
 licensed under the Creative Commons Attribution 4.0 International
 License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
 
-  - aas_submodel_validate/data/smt/02004/2.0.1/template.json
-    (IDTA 02004-2-0-1 Handover Documentation template, unmodified)
-  - aas_submodel_validate/data/smt/02003/2.0.1/template.json
-    (IDTA 02003 2.0.1 Technical Data template, unmodified)
-  - aas_submodel_validate/data/smt/02035-2/1.0/template.json
-    (IDTA 02035-2 1.0 Digital Battery Passport part 2, Handover
+  - aas_submodel_validate/data/smt/02004/2.0.2/template.json
+    (IDTA 02004-2-0-2 Handover Documentation template, unmodified)
+  - aas_submodel_validate/data/smt/02003/2.0.2/template.json
+    (IDTA 02003 2.0.2 Technical Data template, unmodified)
+  - aas_submodel_validate/data/smt/02035-2/1.1/template.json
+    (IDTA 02035-2 1.1 Digital Battery Passport part 2, Handover
     Documentation template, unmodified)
-  - aas_submodel_validate/data/smt/02006/3.0/template.json
-    (IDTA 02006-3-0 Digital Nameplate template, unmodified)
-  - aas_submodel_validate/data/smt/02023/1.0/template.json
-    (IDTA 02023 1.0 Carbon Footprint template, unmodified)
-  - aas_submodel_validate/data/smt/02002/1.0.1/template.json
-    (IDTA 02002-1-0-1 Contact Information template, unmodified)
-  - aas_submodel_validate/data/smt/02011/1.1.1/template.json
-    (IDTA 02011-1-1-1 Hierarchical Structures enabling Bills of Material
+  - aas_submodel_validate/data/smt/02006/3.0.2/template.json
+    (IDTA 02006-3-0-2 Digital Nameplate template, unmodified)
+  - aas_submodel_validate/data/smt/02023/1.0.2/template.json
+    (IDTA 02023 1.0.2 Carbon Footprint template, unmodified)
+  - aas_submodel_validate/data/smt/02002/1.0.2/template.json
+    (IDTA 02002-1-0-2 Contact Information template, unmodified)
+  - aas_submodel_validate/data/smt/02011/1.1.2/template.json
+    (IDTA 02011-1-1-2 Hierarchical Structures enabling Bills of Material
     template, unmodified)
-  - aas_submodel_validate/data/smt/02007/1.0.1/template.json
-    (IDTA 02007-1-0-1 Software Nameplate template, unmodified)
+  - aas_submodel_validate/data/smt/02007/1.0.2/template.json
+    (IDTA 02007-1-0-2 Software Nameplate template, unmodified)
   - aas_submodel_validate/data/smt/02035-5/1.0.2/template.json
     (IDTA 02035-5 Digital Battery Passport part 5 Product Condition
     template, V1.0.2, unmodified)
-  - aas_submodel_validate/data/smt/02035-1/1.0/template.json
+  - aas_submodel_validate/data/smt/02035-1/1.1/template.json
     (IDTA 02035-1 Digital Battery Passport part 1 Digital Nameplate
-    template, V1.0, unmodified)
-  - aas_submodel_validate/data/smt/02035-4/1.0.1/template.json
+    template, V1.1, unmodified)
+  - aas_submodel_validate/data/smt/02035-4/1.0.2/template.json
     (IDTA 02035-4 Digital Battery Passport part 4 Technical Data
-    template, V1.0.1, unmodified)
-  - aas_submodel_validate/data/smt/02035-7/1.0.1/template.json
+    template, V1.0.2, unmodified)
+  - aas_submodel_validate/data/smt/02035-7/1.0.2/template.json
     (IDTA 02035-7 Digital Battery Passport part 7 Circularity
-    template, V1.0.1, unmodified)
+    template, V1.0.2, unmodified)
   - aas_submodel_validate/data/example/idta-02004-2.0.aasx
     (IDTA 02004 2.0 Handover Documentation example package, unmodified
     -- defects and all, which is why it is worth shipping)

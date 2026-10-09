@@ -556,6 +556,22 @@ def _analyze(ctx, tables) -> Dict:
                     "lost_candidates", "unmatched", "not_entered",
                     "not_examined"):
             result[key].extend(per[key])
+    # The repaired official editions retain earlier identifier spellings.
+    # Name the spelling that opened this row (or its parent) on each
+    # finding, so the compatibility match is visible in `saw`.
+    spellings = [(where, _identifier(element))
+                 for row in tables.ROWS if row.get("legacy_identifiers")
+                 for where, element in result["instances"].get(row["id"], ())]
+    for violations in result["violations"].values():
+        for index, violation in enumerate(violations):
+            matched = ["matched semanticId %s at %s" % (identifier, where)
+                       for where, identifier in spellings
+                       if violation.subject == where
+                       or (violation.subject or "").startswith(where + "/")]
+            if matched:
+                violations[index] = replace(
+                    violation, detail="; ".join(
+                        ([violation.detail] if violation.detail else []) + matched))
     return result
 
 
@@ -810,7 +826,7 @@ def _all_rows(ctx, analysed) -> List:
     return rows
 
 
-def idshort_remedy(in_list: bool, pattern: str) -> str:
+def idshort_remedy(in_list: bool, pattern: str, as_written: str = None) -> str:
     """Two sentences, because the lint reads two situations and only one
     of them is about tidiness.
 
@@ -827,6 +843,8 @@ def idshort_remedy(in_list: bool, pattern: str) -> str:
                 "a SubmodelElementList must not carry one (AASd-120), so "
                 "renaming it to the template's suggestion leaves a "
                 "metamodel violation the file already has.")
+    pattern = ("%s; the template writes it %s" % (pattern, as_written)
+               if as_written is not None else pattern)
     return ("Rename to the template's suggested pattern (%s). Any unique "
             "idShort is legal here; this is tidiness, not conformance."
             % pattern)
@@ -1277,6 +1295,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' is required here and carries no value" % row["label"],
                     subject=subject,
+                    spec="%s; docs/divergences.md #40" % citation,
                     # The element is here and the value is not, and the
                     # template does not say what it is.
                     fixability=5,
@@ -1292,7 +1311,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             if row["allowed_idshort"] and element.id_short \
                     and not re.match(row["allowed_idshort"], element.id_short):
                 result["idshort_drift"].append(
-                    (subject, element.id_short, row["allowed_idshort"], in_list))
+                    (subject, element.id_short, row["allowed_idshort"], in_list,
+                     row.get("allowed_idshort_raw")))
             reference = element.semantic_id
             if row["sid_type"] and reference is not None \
                     and reference.type.value != row["sid_type"]:

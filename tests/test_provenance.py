@@ -41,9 +41,9 @@ def test_a_vendored_file_no_entry_names_is_reported(tmp_path, monkeypatch, capsy
     forgotten. Every gate stays green -- the generator reads the pack's
     path directly, the hash gate reads FILES -- and an unverified CC BY
     file ships in the wheel."""
-    rel = "src/aas_submodel_validate/data/smt/02004/2.0.1/template.json"
+    rel = "src/aas_submodel_validate/data/smt/02004/2.0.2/template.json"
     _declared(tmp_path, rel)
-    stray = tmp_path / "src/aas_submodel_validate/data/smt/02035-2/1.0/template.json"
+    stray = tmp_path / "src/aas_submodel_validate/data/smt/02035-2/1.1/template.json"
     stray.parent.mkdir(parents=True)
     stray.write_bytes(b"{}\n")
 

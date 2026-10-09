@@ -256,13 +256,13 @@ def test_regenerate_holds_the_commands_the_readme_promises():
 def test_entry_nine_adds_up(join):
     counts = join["counts"]
     assert counts["template_elements"] == 221
-    assert counts["template_elements_matched_by_name"] == 43
-    assert counts["template_elements_matched_by_nothing"] == 178
+    assert counts["template_elements_matched_by_name"] == 42
+    assert counts["template_elements_matched_by_nothing"] == 179
     assert counts["template_elements_matched_by_name"] + counts[
         "template_elements_matched_by_nothing"
     ] == counts["template_elements"]
     assert counts["guidance_data_points_unmatched"] == 59
-    assert counts["longlist_rows_unmatched"] == 63
+    assert counts["longlist_rows_unmatched"] == 64
     # Summed, not compared to a number written here twice. The 63 in
     # this line used to be the guidance's unmatched count and stopped
     # being it, while the line above went on asserting the real one --
@@ -352,9 +352,9 @@ def test_the_join_says_how_many_names_its_matched_elements_actually_reach(join):
     reading it invites is, and the reader who spots it has spotted it in
     the table on the same page. So the join states both numbers."""
     counts = join["counts"]
-    assert counts["template_elements_matched_by_name"] == len(join["name_matches"]) == 43
+    assert counts["template_elements_matched_by_name"] == len(join["name_matches"]) == 42
     named = counts["distinct_attribute_names_those_elements_reach"]
-    assert named == 38, named
+    assert named == 37, named
     assert len(join["name_matches"]) - named == 5
 
     # The pairs that make the difference, so the number cannot drift into
@@ -463,7 +463,7 @@ def test_the_only_non_uri_claim_states_which_templates_it_is_about():
     assert len(templates) == 12
     assert len(not_uri) == 4, not_uri
     parts = [k for k in not_uri if re.search(r"02035-\d", k)]
-    assert parts == ["IDTA 02035-4 V1.0.1"], parts
+    assert parts == ["IDTA 02035-4 V1.0.2"], parts
     entry = _squeezed("divergences-public.md")
     assert "Among the seven parts, Part 4's value is also the only one that is not a URI" in entry
     assert "holds twelve templates, not seven" in entry

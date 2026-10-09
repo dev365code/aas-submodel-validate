@@ -726,10 +726,11 @@ def test_the_clause_line_carries_no_working_note_from_the_index(tmp_path):
 #: Frozen rather than pattern-matched: see the test below for why.
 BAT_R8_SENTENCES = {
     "saw":
-        "IDTA 02035-4 V1.0.1 makes it ZeroToOne. Read as expected for LMT "
+        "IDTA 02035-4 V1.0.2 makes it ZeroToOne. Read as expected for LMT "
         "by: European Commission guidance, Digital Batteries Passport -- "
         "data point by category v2.0, data point 52; BatteryPass-Ready Data "
         "Attribute Longlist v1.3 (draft) row 61. "
+        "Template element path: TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/CapacityFade. "
         "Asked anywhere under the submodel: this rule is about the data "
         "being present, not about where the template puts it",
     "fix":

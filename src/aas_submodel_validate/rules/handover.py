@@ -338,11 +338,11 @@ def _d10(tables):
 
 def _l1(tables):
     def check(ctx):
-        for subject, id_short, pattern, in_list in analyze(ctx, tables)["idshort_drift"]:
+        for subject, id_short, pattern, in_list, raw in analyze(ctx, tables)["idshort_drift"]:
             yield Violation("idShort does not follow the template's suggestion",
                             subject=subject,
                             detail="%r does not match %s" % (id_short, pattern),
-                            fix=idshort_remedy(in_list, pattern))
+                            fix=idshort_remedy(in_list, pattern, raw))
     return check
 
 

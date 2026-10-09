@@ -116,7 +116,7 @@ def test_provenance_is_described_key_by_key_too():
     # `provenance` and built its widest case by hand.
     root = _pathlib.Path(__file__).resolve().parents[1]
     template = (root / "src" / "aas_submodel_validate" / "data" / "smt"
-                / "02003" / "2.0.1" / "template.json")
+                / "02003" / "2.0.2" / "template.json")
     scratch = _pathlib.Path(tempfile.mkdtemp())
     instance = scratch / "env.json"
     instance.write_text(_json.dumps({"assetAdministrationShells": [],

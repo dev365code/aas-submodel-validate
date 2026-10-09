@@ -9,7 +9,7 @@ being true without saying so.
 
 
 #: The edition of every template a row below was read from.
-SOURCE_EDITION = 'IDTA 02035-1 V1.0, IDTA 02035-4 V1.0.1, IDTA 02035-5 V1.0.2'
+SOURCE_EDITION = 'IDTA 02035-1 V1.1, IDTA 02035-4 V1.0.2, IDTA 02035-5 V1.0.2'
 
 #: Submodel identifiers more than one published template claims.
 SHARED_SUBMODEL_IDS = {
@@ -37,9 +37,9 @@ CONDITIONAL_ON_CATEGORY = (
     {
         'element': 'idta-smt:idta-02035-1:BatteryNameplate/DateOfPuttingIntoService',
         'template': 'IDTA 02035-1',
-        'template_version': 'V1.0',
+        'template_version': 'V1.1',
         'submodel_semantic_id': 'https://admin-shell.io/idta/digitalbatterypassport/nameplate/1/0/Nameplate',
-        'submodel_sha256': '0eec79b05fde3d62a287248d6dd8d17643bfa2b0bb8e2e4cecad04a28b90ccfe',
+        'submodel_sha256': '35db3506124c5db7c98c16158d4979125e7d17ac05f5a456aa7dbedf1e0f920a',
         'element_id_short': 'DateOfPuttingIntoService',
         'element_semantic_id': 'urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#dateOfPuttingIntoService',
         'cardinality': 'ZeroToOne',
@@ -52,9 +52,9 @@ CONDITIONAL_ON_CATEGORY = (
     {
         'element': 'idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/CapacityEnergyVoltage/CapacityFade',
         'template': 'IDTA 02035-4',
-        'template_version': 'V1.0.1',
+        'template_version': 'V1.0.2',
         'submodel_semantic_id': 'https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0',
-        'submodel_sha256': 'a90774b959c766efe596243c39934df266ee34ce1132ba85f4b382efff842cb0',
+        'submodel_sha256': '9a83026d28931d6a045f57e039c3dd3a46fdd2c63db5ead77b8986df6ef246d3',
         'element_id_short': 'CapacityFade',
         'element_semantic_id': '0173-1#02-ABL828#002',
         'cardinality': 'ZeroToOne',
@@ -67,9 +67,9 @@ CONDITIONAL_ON_CATEGORY = (
     {
         'element': 'idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/RoundTripEnergyEfficiency/EnergyRoundTripEfficiencyFade',
         'template': 'IDTA 02035-4',
-        'template_version': 'V1.0.1',
+        'template_version': 'V1.0.2',
         'submodel_semantic_id': 'https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0',
-        'submodel_sha256': 'a90774b959c766efe596243c39934df266ee34ce1132ba85f4b382efff842cb0',
+        'submodel_sha256': '9a83026d28931d6a045f57e039c3dd3a46fdd2c63db5ead77b8986df6ef246d3',
         'element_id_short': 'EnergyRoundTripEfficiencyFade',
         'element_semantic_id': '0173-1#02-ABL827#002',
         'cardinality': 'ZeroToOne',
@@ -82,9 +82,9 @@ CONDITIONAL_ON_CATEGORY = (
     {
         'element': 'idta-smt:idta-02035-4:TechnicalData/TechnicalPropertyAreas/Lifetime/CapacityThresholdExhaustion',
         'template': 'IDTA 02035-4',
-        'template_version': 'V1.0.1',
+        'template_version': 'V1.0.2',
         'submodel_semantic_id': 'https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0',
-        'submodel_sha256': 'a90774b959c766efe596243c39934df266ee34ce1132ba85f4b382efff842cb0',
+        'submodel_sha256': '9a83026d28931d6a045f57e039c3dd3a46fdd2c63db5ead77b8986df6ef246d3',
         'element_id_short': 'CapacityThresholdExhaustion',
         'element_semantic_id': '0173-1#02-ABL838#002',
         'cardinality': 'ZeroToOne',

@@ -4,7 +4,7 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
-TEMPLATE_CITATION = 'IDTA 02035-2 1.0 template'
+TEMPLATE_CITATION = 'IDTA 02035-2 1.1 template'
 TEMPLATE_SEMANTIC_ID = '0173-1#01-AHF578#003'
 TEMPLATE_SUBMODEL_SID_TYPE = 'ModelReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('0173-1#01-AHF578#003', 'urn:samm:io.admin-shell.idta.batterypass.handover_documentation:1.0.0#HandoverDocumentation')
@@ -361,6 +361,7 @@ TREE = (
                                                 'example': 'docu_cecc_fullmanual_DE.PDF',
                                                 'fix': "Provide one or more 'DigitalFile' element(s) under DigitalFiles with semanticId 0173-1#02-ABK126#002; example value: 'docu_cecc_fullmanual_DE.PDF'.",
                                                 'children': (),
+                                                'allowed_idshort_raw': 'DigitalFile[\\d{2,3}]',
                                             },
                                         ),
                                     },

@@ -10,17 +10,12 @@ Whether a Contact Information submodel is present is *not* here: that
 question belongs to the tool rather than to this template, and it is
 asked once for every template in `rules/detect.py`.
 
-The edition is 1.0.1 because it is the current release, not because it
-fixes anything here: 1.0 gives `IPCommunication` the submodel's own
-identifier, 1.0.1 gives it `.../ContactInformations/IPCommunication/`, and
-the published specification gives it `.../ContactInformation/IPCommunication/`
--- three spellings, no two alike. A file built to the specification
-therefore matches no row at either edition, and since that collection is
-`0..*` the mandatory `AddressOfAdditionalLink` beneath it is never asked
-for and nothing says so (docs/divergences.md #51). 1.0.1 also carries a
-space inside `TypeOfCommunication`'s identifier, so that row is dead
-against a specification-conformant file and live against one that mirrors
-the template.
+The edition is 1.0.2. Upstream repaired IPCommunication and the space in
+TypeOfCommunication in that edition. In 1.0 the collection carried the
+submodel's own identifier; 1.0.1 used `.../ContactInformations/IPCommunication/`;
+1.0.2 uses `.../ContactInformations/ContactInformation/IPCommunication`.
+All three spellings still open the collection's required children, and a
+finding's `saw` names the spelling that matched (docs/divergences.md #51).
 
 This pack is generated rows only. What that covers is real -- cardinality,
 element kind, `valueType`, and the semanticId at every level, though a

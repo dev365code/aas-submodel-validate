@@ -200,10 +200,10 @@ bare `Cardinality`, the same vocabulary (`One`, `ZeroToOne`, `OneToMany`,
 `ZeroToMany`) in each (`docs/divergences.md` #50) -- and reads an element
 carrying none of them as `0..*` (#20). So a template that states its
 obligations in any of the three is judgeable once its table is vendored.
-IDTA 02002 Contact Information 1.0.1 is the first such template vendored
-here: all thirty-six of its elements state their cardinality in
+IDTA 02002 Contact Information, first vendored at 1.0.1 and now read at
+1.0.2, is one such template: all thirty-six of its elements state their cardinality in
 `Multiplicity` and none in `SMT/Cardinality`. IDTA 02007 Software
-Nameplate 1.0.1 is the second, all seventy-three of its elements in the
+Nameplate 1.0.2 is another, all seventy-three of its elements in the
 same spelling.
 
 IDTA 02002's pack is generated rows only, and what that leaves unchecked
@@ -248,7 +248,7 @@ editor's convenience and not a stated constraint. And whether the tree the
 relationships draw agrees with the tree the nodes nest is a question this
 pack does not ask.
 
-IDTA 02007 Software Nameplate 1.0.1 describes software twice over: one
+IDTA 02007 Software Nameplate 1.0.2 describes software twice over: one
 collection for the software as a type, one for an installed instance.
 The template makes both optional, and every one of its fourteen mandatory
 elements sits beneath one of them, so a Software Nameplate holding
@@ -260,14 +260,13 @@ Nameplate's hand rule and not this template's; no version, date,
 checksum or path is checked for what it says; and the specification's
 instruction that a contact's role be the technical-contact code is not a
 rule here. Its `Contact` is 02002's collection copied in, but with 02002
-1.0's identifier for `IPCommunication` rather than 1.0.1's, so the same
-collection is not judged the same way under the two packs
-(`docs/divergences.md` #51).
+1.0's identifier for `IPCommunication` even after 02002 repaired it in
+1.0.2. Both packs also recognize the published older spellings and the
+repaired 02002 spelling (`docs/divergences.md` #51).
 
 The rows are the template's, and the specification beside it disagrees
 with the template in several places: the two collections' own
-identifiers, `ConfigurationURI`'s identifier, `ConfigurationType`'s value
-type, whether `InstallationDate` is mandatory, how many `InventoryTag`s
+identifiers, whether `InstallationDate` is mandatory, how many `InventoryTag`s
 and `Contact`s there may be, two elements the specification makes a
 `Blob`, and a second identifier for `SerialNumber`. A file built to the
 specification's tables rather than to the template has both of its
@@ -275,7 +274,9 @@ collections left unexamined, which `scopeNotExamined` says, and draws no
 finding; one that follows the template's collections and the
 specification inside them can draw an error the template's own defect
 put there. `docs/divergences.md` #57 lists each one and what the
-run does with it.
+run does with it. Upstream repaired ConfigurationURI and the string
+ConfigurationType in 1.0.2; older ConfigurationURI spellings still open
+the row, while integer ConfigurationType declarations draw an error.
 
 IDTA 02035-5 Product Condition 1.0.2, the Digital Battery Passport's
 part 5, holds a battery's dynamic data: energy and capacity throughput,
@@ -320,7 +321,7 @@ suffix, where 02006 writes `#001`: a list whose identifier ends `#001`
 and that carries nothing else the row matches is no row's, and the
 mandatory `Markings` is reported missing (`docs/divergences.md` #59).
 
-IDTA 02035-4 Technical Data 1.0.1, the Digital Battery Passport's part
+IDTA 02035-4 Technical Data 1.0.2, the Digital Battery Passport's part
 4, gives the battery's general information -- manufacturer, category,
 mass, product images, warranty -- and its technical property areas:
 capacity, energy and voltage, round-trip efficiency, resistance, power
@@ -340,7 +341,7 @@ written as the template writes it is judged as the template means; an
 element known by a shared identifier alone goes to the first row holding
 it (`docs/divergences.md` #60).
 
-IDTA 02035-7 Circularity 1.0.1, the Digital Battery Passport's part 7,
+IDTA 02035-7 Circularity 1.0.2, the Digital Battery Passport's part 7,
 says how the battery is taken apart and what becomes of it: the
 documents on its dismantling and removal, the sources of its spare
 parts, the recycled content of its active materials, its safety

@@ -27,7 +27,7 @@ import pytest  # noqa: E402,F401  (kept for future xfail markers)
 import extract_smt_rules as g  # noqa: E402
 from aas_submodel_validate import tablegen  # noqa: E402
 
-TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02023/1.0/template.json"
+TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02023/1.0.2/template.json"
 
 
 def _pack(skip):

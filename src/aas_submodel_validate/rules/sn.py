@@ -20,15 +20,15 @@ specification beside it disagree (docs/divergences.md #57). The two
 collections' own identifiers carry a `SoftwareNameplate/` segment the
 specification's tables leave out, so a file spelling them as the
 specification does has neither collection examined -- which the run says
-in `scopeNotExamined`. `ConfigurationURI` carries the identifier of the
-`ConfigurationPath` it sits in, so a file giving it the identifier the
-specification prints draws an error for a missing `ConfigurationURI`.
-Where the specification's diagram and its tables disagree -- whether
-`InstallationDate` is mandatory, how many `InventoryTag`s there may be,
-whether `ConfigurationType` is an integer -- the template sides with the
-diagram and so does this pack. `Contact` is 02002's `ContactInformation`
-copied in, carrying 02002's two identifier defects with it
-(docs/divergences.md #51).
+in `scopeNotExamined`. Upstream 1.0.2 repaired ConfigurationURI's
+identifier and ConfigurationType's valueType to xs:string. Files using the
+parent's old ConfigurationURI identifier still reach that row; an integer
+ConfigurationType is still judged and draws the current edition's type
+finding. The IPCommunication collection copied from 02002 keeps the old
+submodel identifier even in 1.0.2; the 1.0/1.0.1 and repaired 02002
+spellings all open its children here, with the matched spelling in `saw`.
+InstallationDate, InventoryTag and Contact still follow the template's
+bounds where the specification's diagram and tables disagree (#57).
 
 This pack is generated rows only. What that covers is real -- cardinality,
 element kind, `valueType`, and the semanticId at every level, though a

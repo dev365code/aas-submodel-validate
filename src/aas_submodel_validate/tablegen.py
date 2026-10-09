@@ -75,6 +75,12 @@ OPEN_CONTENT_MARKERS = frozenset((
     "https://admin-shell.io/SMT/General/ArbitraryFile",
 ))
 
+# A drop-in marker describes how a template includes content, not an
+# identity of that content. It must not match another supplier element.
+DROP_IN_MARKERS = frozenset((
+    "https://admin-shell.io/smt-dropin/smt-dropin-use/1/0",
+))
+
 
 class TemplateRefused(Exception):
     """This is not a template this reader will build a table from.
@@ -188,7 +194,7 @@ def _values_of(reference):
         stripped = re.sub(r"~\d+", "", value)
         if stripped != value:
             out.add(stripped)
-    return out
+    return out - DROP_IN_MARKERS
 
 
 def _declared_values(element):
@@ -457,6 +463,8 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
         # as it wrote it, where that is not the current spelling -- or
         # None, where it stated none. A rule's clause names it.
         row["card_qualifier"] = written
+    if declares_idshort:
+        row["allowed_idshort_raw"] = qualifiers["AllowedIdShort"]
     # The comparison form of the row's own identifier, where reading the
     # joined string as one value is not it: a reference of more than one
     # key, one of which the comparison reads differently -- an ECLASS-CDP
@@ -648,6 +656,14 @@ def build(document, pack):
     # sub-structure (02023 does) still gets one BY_LABEL entry per row; a
     # template that does not is left untouched.
     _qualify_repeats(tree)
+    # Published earlier identifiers are pack policy, shared by both the
+    # emitter and a table built with the same pack settings. A caller's
+    # own template has no such settings and keeps its declared identities.
+    for row in _flatten(tree, []):
+        previous = pack.get("aliases", {}).get(row["sid"], ())
+        if previous:
+            row["legacy_identifiers"] = previous
+            row["match"] = tuple(sorted(set(row["match"]) | set(previous)))
     labels = _labels(tree, [])
     seen = Counter(labels)
     if len(seen) != len(labels):

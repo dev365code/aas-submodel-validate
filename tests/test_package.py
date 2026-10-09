@@ -169,7 +169,7 @@ def test_a_table_can_be_built_from_the_package_alone():
         "import importlib.util as u\n"
         "assert u.find_spec('tools') is None, 'tools is reachable; ask again'\n"
         "here = pathlib.Path(tablegen.__file__).parent\n"
-        "t = here / 'data' / 'smt' / '02003' / '2.0.1' / 'template.json'\n"
+        "t = here / 'data' / 'smt' / '02003' / '2.0.2' / 'template.json'\n"
         "assert t.is_file(), 'the vendored template does not travel'\n"
         "b = tablegen.build(json.loads(t.read_text('utf-8-sig')),\n"
         "                   {'prefix': 'TD-E', 'citation': 'c',\n"

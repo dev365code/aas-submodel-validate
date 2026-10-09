@@ -215,7 +215,7 @@ def test_a_copy_the_walk_did_not_reach_is_said_however_its_identifier_is_spelt(t
     identifier the comparison reads differently -- under the prefix --
     lost the note while everything else about the run stayed the same."""
     from aas_submodel_validate import tablegen
-    vendored = (Path(tablegen.__file__).parent / "data" / "smt" / "02011" / "1.1.1"
+    vendored = (Path(tablegen.__file__).parent / "data" / "smt" / "02011" / "1.1.2"
                 / "template.json").read_text(encoding="utf-8")
     assert vendored.count(_NODE) == 3
     template = tmp_path / "template.json"

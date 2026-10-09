@@ -179,9 +179,7 @@ def test_document_identifiers_spelled_as_the_handover_part_spells_them_are_missi
 
 
 def test_another_element_wearing_the_drop_in_marker_is_a_second_address(tmp_path):
-    """`AddressInformation`'s row matches the drop-in marker among its
-    supplementals, as 02006's does (`DN-E04`), so any other element that
-    carries the marker is counted as a second address."""
+    """The marker is not an identity and cannot supply a required address."""
     env = copy.deepcopy(dbp1_env())
     other = copy.deepcopy(_element(env, "SerialNumber"))
     other["idShort"] = "Other"
@@ -191,8 +189,11 @@ def test_another_element_wearing_the_drop_in_marker_is_a_second_address(tmp_path
     env["submodels"][0]["submodelElements"].append(other)
     messages = [f.violation.message for f in _run(tmp_path, env).findings
                 if f.id == "DBP1-E03"]
-    assert "the template expects exactly one 'AddressInformation' here; found 2" in messages, \
-        messages
+    assert not messages, messages
+    env["submodels"][0]["submodelElements"] = [
+        e for e in env["submodels"][0]["submodelElements"]
+        if e.get("idShort") != "AddressInformation"]
+    assert "DBP1-E03" in [f.id for f in _run(tmp_path, env).findings]
 
 
 @pytest.mark.parametrize("value", ["Original", "banana"])

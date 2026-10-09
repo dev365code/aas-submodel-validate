@@ -21,7 +21,7 @@ from pathlib import Path
 from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.0/template.json"
+TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.1/template.json"
 
 #: 02004 rows that 02035-2 does not have. Named rather than counted: a
 #: count would survive the template swapping one for another.
@@ -78,10 +78,9 @@ def test_exactly_two_rows_relax_a_cardinality_02004_requires():
 
 
 def test_no_row_disagrees_with_02004_about_what_it_matches():
-    """A mask over the existing table would have been invisible here:
-    nothing is narrowed, so matching alone cannot tell the two apart.
-    What a mask cannot do is give one rule id a second remedy sentence --
-    which is why there are two tables and not one with exceptions."""
+    """Part 2 keeps SAMM identifiers and the older multi-key joins that
+    02004 2.0.2 removed. Every current 02004 match is still a part 2 match;
+    the exact additional joins are held here rather than ignored."""
     for label, row in dbp_tables.BY_LABEL.items():
         other = _hd(label)
         assert row["sid"] == other["sid"]
@@ -89,7 +88,14 @@ def test_no_row_disagrees_with_02004_about_what_it_matches():
         assert row["value_type"] == other["value_type"]
         assert set(other["match"]) < set(row["match"])
         added = set(row["match"]) - set(other["match"])
-        assert all(value.startswith("urn:samm:") for value in added), added
+        joined = {value for value in added if not value.startswith("urn:samm:")}
+        expected = set()
+        if label in ("Document", "DocumentId", "DocumentClassification", "DocumentVersion"):
+            cdp = next(value for value in other["match"] if value.startswith("https:"))
+            expected = {row["sid"] + "/" + cdp,
+                        row["sid"].replace("#003/", "#003~0/", 1) + "/" + cdp}
+        assert joined == expected, (label, joined, expected)
+        assert added - joined, "part 2's SAMM alias disappeared"
 
 
 def test_the_example_values_are_this_templates_own():
@@ -103,12 +109,9 @@ def test_the_example_values_are_this_templates_own():
     assert "Certificates, declarations" in dbp_tables.BY_LABEL["ClassName"]["fix"]
 
 
-def test_four_labels_come_from_a_defect_in_the_published_template():
-    """AASd-120 forbids a direct child of a SubmodelElementList an
-    idShort; 02035-2 gives one to four of its six. Those names are the
-    artefact's own, so a finding names something a reader can find in the
-    file. Read from the vendored bytes, so that an upstream repair turns
-    this red rather than passing unnoticed."""
+def test_repaired_list_items_keep_stable_labels_without_published_idshorts():
+    """1.1 repairs AASd-120 on all six list items. The generated stable
+    item labels still let a caller locate each row without an idShort."""
     document = json.loads(TEMPLATE.read_text("utf-8-sig"))
     named, unnamed = [], []
     def walk(element):
@@ -120,10 +123,10 @@ def test_four_labels_come_from_a_defect_in_the_published_template():
                 walk(child)
     for element in document["submodels"][0]["submodelElements"]:
         walk(element)
-    assert named == ["Document", "DocumentClassification",
-                     "DocumentId", "DocumentVersion"]
-    assert unnamed == ["Language", "DigitalFiles"]
-    for label in named:
+    assert named == []
+    assert unnamed == ["Documents", "DocumentClassifications", "DocumentIds",
+                       "DocumentVersions", "Language", "DigitalFiles"]
+    for label in ("Document", "DocumentClassification", "DocumentId", "DocumentVersion"):
         assert label in dbp_tables.BY_LABEL
 
 
@@ -138,10 +141,10 @@ def test_the_generated_header_names_this_templates_own_file():
 def test_the_vendored_file_is_the_published_one_not_its_twin():
     """Upstream's `_without_examplevalues` copy carries every ExampleValue
     the published one does (divergences #25) and generates a table with
-    the same bytes, so `make generated` and `make vendored` are both green
-    on the wrong file. These are the two bytes that differ."""
+    the same table. In 1.1 neither file has a final newline; the Property
+    value remains the byte-level distinction (#25)."""
     raw = TEMPLATE.read_bytes()
-    assert raw.endswith(b"}\n")
+    assert raw.endswith(b"}") and not raw.endswith(b"}\n")
     document = json.loads(raw.decode("utf-8-sig"))
     languages = [element for element in _every(document["submodels"][0])
                  if element.get("idShort") == "Language"]

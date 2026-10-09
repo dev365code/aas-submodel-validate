@@ -137,39 +137,30 @@ def test_collections_spelled_as_the_specification_spells_them_are_not_examined(t
                       "SoftwareNameplateInstance": both}, places
 
 
-def test_a_configuration_uri_with_its_own_identifier_is_charged_to_the_file(tmp_path):
-    """The template gives `ConfigurationURI` the identifier of the
-    `ConfigurationPath` it sits in; the specification's Table 6 gives it
-    `.../SoftwareNameplateInstance/ConfigurationURI`. A file that follows
-    the specification is told its `ConfigurationURI` is missing, and the
-    remedy names the parent's identifier -- the template's defect, handed
-    to the file. Held here so the page that says so stays true."""
+def test_a_configuration_uri_with_its_own_identifier_is_judged(tmp_path):
+    """1.0.2 repairs the parent's identifier that 1.0/1.0.1 used here."""
     env = copy.deepcopy(sn_env())
     path = _named(_named(_instance(env)["value"], "ConfigurationPaths")["value"],
                   "ConfigurationPath")
     uri = _named(path["value"], "ConfigurationURI")
     uri["semanticId"]["keys"][0]["value"] = SN + "SoftwareNameplateInstance/ConfigurationURI"
     report = _run(tmp_path, env)
-    [finding] = [f for f in report.findings if f.id == "SN-E35"]
-    assert finding.violation.subject.endswith("ConfigurationPaths/ConfigurationPath")
-    assert (SN + "SoftwareNameplateInstance/ConfigurationPath") in finding.rule.fix
-    # And the near-miss lint names the element, pointing the same way:
-    # the template's spelling, which is the parent's identifier.
-    [lint] = [f for f in report.findings if f.id == "SNL1"]
-    assert lint.violation.subject.endswith("ConfigurationPath/ConfigurationURI")
-    assert (SN + "SoftwareNameplateInstance/ConfigurationPath") in lint.violation.detail
+    assert not [f for f in report.findings if f.id in ("SN-E35", "SNL1")]
+    uri["valueType"] = "xs:string"
+    [finding] = [f for f in _run(tmp_path, env).findings if f.id == "SN-E35"]
+    assert finding.violation.subject.endswith("ConfigurationPath/ConfigurationURI")
+    assert "valueType xs:anyURI" in finding.violation.message
 
 
-def test_a_configuration_type_given_as_text_is_charged_to_the_file(tmp_path):
-    """The specification's Table 6 types `ConfigurationType` as a string
-    and gives `initial configuration` as its example; its diagram, and the
-    template, make it an integer. The template's reading is the one
-    judged."""
+def test_a_configuration_type_given_as_text_is_the_repaired_type(tmp_path):
+    """1.0.2 follows Table 6's string type; an integer still gets judged."""
     env = copy.deepcopy(sn_env())
     path = _named(_named(_instance(env)["value"], "ConfigurationPaths")["value"],
                   "ConfigurationPath")
     kind = _named(path["value"], "ConfigurationType")
     kind["valueType"], kind["value"] = "xs:string", "initial configuration"
+    assert "SN-E36" not in _ids(tmp_path, env)
+    kind["valueType"], kind["value"] = "xs:integer", "1"
     assert "SN-E36" in _ids(tmp_path, env)
 
 
@@ -226,7 +217,7 @@ def test_a_serial_number_under_the_specification_s_second_identifier_is_not_aske
     assert set(_ids(tmp_path, env)) == set()
 
 
-def test_an_ip_communication_with_the_contact_template_s_newer_identifier_is_not_asked(
+def test_an_ip_communication_with_the_contact_template_s_newer_identifier_is_asked(
         tmp_path):
     """`Contact` is 02002's collection copied in, with 02002 1.0's
     identifier for `IPCommunication` -- the Contact Information submodel's
@@ -239,4 +230,4 @@ def test_an_ip_communication_with_the_contact_template_s_newer_identifier_is_not
     link["semanticId"]["keys"][0]["value"] = SN_CONTACT + "IPCommunication/"
     link["value"] = [child for child in link["value"]
                      if child.get("idShort") != "AddressOfAdditionalLink"]
-    assert set(_ids(tmp_path, env)) == set()
+    assert "SN-E59" in _ids(tmp_path, env)

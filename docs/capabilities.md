@@ -48,7 +48,7 @@
 - declared encodings read without loss — not yet
 
 **Upstream** — 1 of 3:
-- upstream templates pinned by commit — done (`THIRD_PARTY.md`: "Taken from commit `11ef3353124626e2dba4cb50767024df9a39928a` and hash-verified")
+- upstream templates pinned by commit — done (`THIRD_PARTY.md`: "Taken from commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (commit date 2026-10-05T14:26:16Z) and hash-verified")
 - checked for upstream change — not yet
 - one pin move shipped — not yet
 

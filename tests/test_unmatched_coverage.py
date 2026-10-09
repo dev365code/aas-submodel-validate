@@ -45,9 +45,9 @@ PHONE_MIDDLE = ("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
                 "ContactInformaton/Phone")
 
 #: The specification's spelling of 02002's `IPCommunication` collection,
-#: which the vendored template does not carry (docs/divergences.md #51).
+#: repaired in the vendored 1.0.2 template (docs/divergences.md #51).
 SPEC_IPCOMMUNICATION = ("https://admin-shell.io/zvei/nameplate/1/0/"
-                        "ContactInformations/ContactInformation/IPCommunication/")
+                        "ContactInformations/ContactInformation/IPCommunication")
 
 
 def _run(tmp_path, env, name="env.json", **options):
@@ -305,7 +305,7 @@ def test_an_element_two_tables_walked_is_charged_with_both(tmp_path):
     import glob
 
     source = glob.glob(str(ROOT / "src" / "aas_submodel_validate" / "data"
-                           / "smt" / "02006" / "3.0" / "*.json"))[0]
+                           / "smt" / "02006" / "3.0.2" / "*.json"))[0]
     template = json.loads(Path(source).read_text(encoding="utf-8-sig"))
     template["submodels"][0]["semanticId"]["keys"][0]["value"] = "urn:x:dn-copy"
     supplied = tmp_path / "copy.json"

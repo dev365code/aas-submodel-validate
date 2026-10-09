@@ -4,7 +4,7 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02035-7_DBP-Part-7_Circularity.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
-TEMPLATE_CITATION = 'IDTA 02035-7 1.0.1 template'
+TEMPLATE_CITATION = 'IDTA 02035-7 1.0.2 template'
 TEMPLATE_SEMANTIC_ID = 'urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#Circularity'
 TEMPLATE_SUBMODEL_SID_TYPE = 'ExternalReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ()

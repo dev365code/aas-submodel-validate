@@ -69,7 +69,7 @@ _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:")
 @rule("DN-D1", kind="template", prio="MUST",
      path=("document", "submodel", "element"),
       title="URIOfTheProduct is an absolute URI",
-      spec="IDTA 02006-3-0 (URIOfTheProduct: 'unique global identification "
+      spec="IDTA 02006-3-0-2 (URIOfTheProduct: 'unique global identification "
            "... using a URI'); RFC 3986 §3.1 (scheme)",
       fix="Give URIOfTheProduct an absolute URI -- one with a scheme, e.g. "
           "https://example.com/model-1234/serial-5678. A relative reference "

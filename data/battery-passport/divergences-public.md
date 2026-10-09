@@ -30,7 +30,7 @@ template V2.0. Part 3 carries
 `https://admin-shell.io/idta/CarbonFootprint/CarbonFootprint/1/0`, the same
 identifier as the Carbon Footprint template V1.0.
 
-**Where:** `idta/02035-2_v1.0/…HandoverDocumentation.json` `c7124116` against
+**Where:** `idta/02035-2_v1.1/…HandoverDocumentation.json` `66ef2bcb` against
 `idta/_base_02004_v2.0/…json` `1be559fb`; `idta/02035-3_v1.0/…ProductCarbonFootprint.json`
 `1555443c` against `idta/_base_02023_v1.0/…json` `a6f19f6e`.
 
@@ -212,18 +212,18 @@ each pair should be read before being relied on.
 
 ## 9. Most of the template surface cannot be reached from the other three sources
 
-**Read:** Of 221 indexed template elements, 43 match an attribute name in the
-guidance or the longlist and 178 match nothing. In the other direction, 59 of 71
-guidance data points and 63 of 100 longlist rows match no element.
+**Read:** Of 221 indexed template elements, 42 match an attribute name in the
+guidance or the longlist and 179 match nothing. In the other direction, 59 of 71
+guidance data points and 64 of 100 longlist rows match no element.
 
-**Those 43 carry 38 distinct names between them.** Four are the value child of
-another of the 43 — `RemainingCapacity` and `RemainingCapacityValue` reduce to
+**Those 42 carry 37 distinct names between them.** Four are the value child of
+another of the 42 — `RemainingCapacity` and `RemainingCapacityValue` reduce to
 one name, because `value` says nothing about which attribute an element is — and
 a fifth pair is two elements in two templates landing on one attribute.
-Forty-three elements matched, and they reach thirty-eight names; read as
+Forty-two elements matched, and they reach thirty-seven names; read as
 coverage the first number is the one that flatters, so the join publishes both.
 
-**Where:** `requirements-join.json`, counts.
+**Where:** `requirements-join.json`, counts. The current Part 7 edition labels the extinguisher list item `ExtinguishingAgent__00__`; the name join no longer treats that label as the longlist attribute `ExtinguishingAgent`.
 
 **What this actually says:** Mostly it is a statement about the join rather than
 about the documents. Matching a nested `idShort` against a prose attribute name

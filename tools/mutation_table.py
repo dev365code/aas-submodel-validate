@@ -212,7 +212,7 @@ TABLE = [
      "why it can be a row at all -- measured"),
 
     ("rules/vendored-bytes-are-the-bytes-we-recorded",
-     "src/aas_submodel_validate/data/smt/02004/2.0.1/template.json",
+     "src/aas_submodel_validate/data/smt/02004/2.0.2/template.json",
      "Name der spezifischen digitalen Datei@de",
      "Name der spezifischen digitalen Datei@dx",
      ["tools/vendor_template.py --check"],

@@ -4,7 +4,7 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02035-4_DBP-Part-4_TechnicalData.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
-TEMPLATE_CITATION = 'IDTA 02035-4 1.0.1 template'
+TEMPLATE_CITATION = 'IDTA 02035-4 1.0.2 template'
 TEMPLATE_SEMANTIC_ID = 'https://admin-shell.io/idta/digitalbatterypassport/TechnicalData/1/0'
 TEMPLATE_SUBMODEL_SID_TYPE = 'ExternalReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('0173-1#01-AHX837#002', 'urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#TechnicalData')
@@ -574,7 +574,7 @@ TREE = (
                     },
                     {
                         'id': 'DBP4-E34',
-                        'label': 'RatioNorminalBatteryPowerAndBatteryEnergy',
+                        'label': 'RatioNominalBatteryPowerAndBatteryEnergy',
                         'parent': 'DBP4-E31',
                         'kind': 'Property',
                         'match': ('urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#powerCapabilityRatio',),
@@ -585,7 +585,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'RatioNorminalBatteryPowerAndBatteryEnergy' element(s) under PowerCapability with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#powerCapabilityRatio.",
+                        'fix': "Provide at most one 'RatioNominalBatteryPowerAndBatteryEnergy' element(s) under PowerCapability with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#powerCapabilityRatio.",
                         'children': (),
                         'card_qualifier': 'Cardinality',
                     },

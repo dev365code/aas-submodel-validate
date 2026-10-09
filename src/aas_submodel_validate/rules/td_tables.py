@@ -4,7 +4,7 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02003_2-0-1 template.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
-TEMPLATE_CITATION = 'IDTA 02003-2-0-1 template'
+TEMPLATE_CITATION = 'IDTA 02003-2-0-2 template'
 TEMPLATE_SEMANTIC_ID = '0173-1#01-AHX837#002'
 TEMPLATE_SUBMODEL_SID_TYPE = 'ModelReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('0173-1#01-AHX837#002',)
@@ -15,7 +15,7 @@ TREE = (
         'label': 'GeneralInformation',
         'parent': None,
         'kind': 'SubmodelElementCollection',
-        'match': ('0173-1#02-ABK161#002/0173-1#01-AHX838#002', 'https://api.eclass-cdp.com/ 0173-1-02-ABK161-002/0173-1-01-AHX838-002'),
+        'match': ('0173-1#02-ABK161#002/0173-1#01-AHX838#002', 'https://api.eclass-cdp.com/0173-1-02-ABK161-002/0173-1-01-AHX838-002'),
         'sid': '0173-1#02-ABK161#002/0173-1#01-AHX838#002',
         'sid_type': 'ExternalReference',
         'card': (1, 1),
@@ -326,7 +326,7 @@ TREE = (
         'label': 'TechnicalPropertyAreas',
         'parent': None,
         'kind': 'SubmodelElementList',
-        'match': ('0173-1#02-ABK163#002', 'https://api.eclass-cdp.com/ 0173-1-02-ABK163-002'),
+        'match': ('0173-1#02-ABK163#002',),
         'sid': '0173-1#02-ABK163#002',
         'sid_type': 'ExternalReference',
         'card': (0, 1),

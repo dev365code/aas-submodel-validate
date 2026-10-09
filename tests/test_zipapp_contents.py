@@ -52,7 +52,7 @@ def test_a_dependencys_own_build_scripts_do_not_travel(path):
 
 @pytest.mark.parametrize("path", [
     "aas_submodel_validate/cli.py",
-    "aas_submodel_validate/data/smt/02004/2.0.1/template.json",
+    "aas_submodel_validate/data/smt/02004/2.0.2/template.json",
     "aas_submodel_validate/data/example/idta-02004-2.0.aasx",
     "aas_core3/verification.py",
     "aas_core3-1.1.4.dist-info/RECORD",

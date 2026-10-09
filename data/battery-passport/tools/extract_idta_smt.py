@@ -46,13 +46,13 @@ CONTAINERS = ("SubmodelElementCollection", "SubmodelElementList", "Entity")
 # Which template each directory holds, and how it was pinned. Directory names
 # carry the version because the files themselves do not always: see the notes.
 TEMPLATES = {
-    "02035-1_v1.0": ("IDTA 02035-1", "V1.0", True),
-    "02035-2_v1.0": ("IDTA 02035-2", "V1.0", True),
+    "02035-1_v1.1": ("IDTA 02035-1", "V1.1", True),
+    "02035-2_v1.1": ("IDTA 02035-2", "V1.1", True),
     "02035-3_v1.0": ("IDTA 02035-3", "V1.0", True),
-    "02035-4_v1.0.1": ("IDTA 02035-4", "V1.0.1", True),
+    "02035-4_v1.0.2": ("IDTA 02035-4", "V1.0.2", True),
     "02035-5_v1.0.2": ("IDTA 02035-5", "V1.0.2", True),
     "02035-6_v1.0.1": ("IDTA 02035-6", "V1.0.1", True),
-    "02035-7_v1.0.1": ("IDTA 02035-7", "V1.0.1", True),
+    "02035-7_v1.0.2": ("IDTA 02035-7", "V1.0.2", True),
     "02099-1_v1.0.1": ("IDTA 02099-1", "V1.0.1", True),
     # Read for comparison only -- these are the base templates the battery
     # passport parts were derived from, not part of the battery passport index.

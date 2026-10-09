@@ -614,7 +614,8 @@ def bat_r8_template_optional_but_law_requires(ctx):
                 # which category. "for every battery category the source
                 # names" stood here, over a row whose sources name three
                 # categories and mark it required in one of them.
-                detail="%s %s makes it %s. Read as expected%s by: %s.%s Asked "
+                detail="%s %s makes it %s. Read as expected%s by: %s.%s "
+                       "Template element path: %s. Asked "
                        "anywhere under the submodel: this rule is about "
                        "the data being present, not about where the "
                        "template puts it"
@@ -622,7 +623,7 @@ def bat_r8_template_optional_but_law_requires(ctx):
                           row["cardinality"],
                           " for %s" % column if column else "",
                           _sources(row["says_mandatory"]),
-                          _qualified(row)))
+                          _qualified(row), row["element"].split(":", 2)[-1]))
 
 
 def _known_to_the_walk() -> frozenset:

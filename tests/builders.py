@@ -345,7 +345,7 @@ def _smc(sid, children, id_short=None):
 
 def hd_env() -> dict:
     """The golden fixture: one Handover Documentation submodel satisfying
-    every required row of the 02004 2.0.1 template, written by hand so it
+    every required row of the 02004 2.0.2 template, written by hand so it
     is evidence about the template rather than an echo of it. Composite
     identifiers use the template's slash spelling; OrganizationShortName
     deliberately uses the IRDI spelling where the template writes the
@@ -780,7 +780,7 @@ def pcf_env() -> dict:
 
 
 def contact_env() -> dict:
-    """The golden fixture for IDTA 02002 Contact Information 1.0.1, written
+    """The golden fixture for IDTA 02002 Contact Information 1.0.2, written
     by hand like the others. One `ContactInformation` carries every row the
     template declares -- required and optional -- so each generated row has
     a scope to strip from, a bound to exceed, or an identifier to put the
@@ -829,11 +829,11 @@ def contact_env() -> dict:
             _prop("TypeOfEmailAddress", "0173-1#02-AAO199#003", "office"),
             _mlp("TypeOfPublicKey", "0173-1#02-AAO201#002", "PGP"),
         ], id_short="Email"),
-        _smc(N + "IPCommunication/", [
+        _smc(N + "ContactInformation/IPCommunication", [
             _prop("AddressOfAdditionalLink", "0173-1#02-AAQ326#002",
                   "https://example.com/chat"),
             _prop("TypeOfCommunication",
-                  "https://admin-shell.io/zvei/nameplate/1/0/ ContactInformations"
+                  "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
                   "/ContactInformation/IPCommunication/TypeOfCommunication", "chat"),
             _mlp("AvailableTime", available, "09:00-17:00"),
         ], id_short="IPCommunication01"),
@@ -932,24 +932,19 @@ SN_CONTACT = "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
 
 
 def sn_env() -> dict:
-    """The golden fixture for IDTA 02007 Software Nameplate 1.0.1, written by
+    """The golden fixture for IDTA 02007 Software Nameplate 1.0.2, written by
     hand like the others and carrying every row the template declares, so
     each generated row has a scope to strip from, a bound to exceed, or an
     identifier to put the wrong kind under. Values follow the
     specification's examples where it gives one.
 
     Identifiers are reproduced exactly as the **template** writes them, and
-    in four places that is not what the specification writes
-    (docs/divergences.md #57): the two top-level collections carry the
-    `SoftwareNameplate/` segment the specification's Table 1 leaves out,
-    `ConfigurationURI` carries the identifier of the `ConfigurationPath` it
-    sits in, and inside `Contact`, 02002's collection copied in,
-    `IPCommunication` carries 02002 1.0's identifier -- the Contact
-    Information submodel's own -- and `TypeOfCommunication` a space
-    (#51). `ConfigurationType` is an integer, as the template and the
-    specification's diagram have it and its table does not. So this
-    fixture proves the table against the template, not against the
-    specification.
+    two top-level collections keep the `SoftwareNameplate/` segment the
+    specification's Table 1 leaves out (docs/divergences.md #57). Inside
+    `Contact`, `IPCommunication` still carries the old Contact Information
+    submodel identifier (#51). The 1.0.2 template repairs ConfigurationURI,
+    makes ConfigurationType a string, and removes TypeOfCommunication's
+    internal space. This fixture follows that published edition.
     """
     B, N = SN, SN_CONTACT
     available = N + "ContactInformation/AvailableTime/"
@@ -1012,7 +1007,7 @@ def sn_env() -> dict:
             _prop("AddressOfAdditionalLink", "0173-1#02-AAQ326#002",
                   "https://example.com/chat"),
             _prop("TypeOfCommunication",
-                  "https://admin-shell.io/zvei/nameplate/1/0/ ContactInformations"
+                  "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
                   "/ContactInformation/IPCommunication/TypeOfCommunication", "chat"),
             _mlp("AvailableTime", available, "09:00-17:00"),
         ], id_short="IPCommunication01"),
@@ -1058,11 +1053,11 @@ def sn_env() -> dict:
         _smc(B + "SoftwareNameplateInstance/ConfigurationPaths", [
             _smc(B + "SoftwareNameplateInstance/ConfigurationPath", [
                 _prop("ConfigurationURI",
-                      B + "SoftwareNameplateInstance/ConfigurationPath",
+                      B + "SoftwareNameplateInstance/ConfigurationURI",
                       "file:///opt/demo/config/initial.cfg", "xs:anyURI"),
                 _prop("ConfigurationType",
-                      B + "SoftwareNameplateInstance/ConfigurationType", "1",
-                      "xs:integer"),
+                      B + "SoftwareNameplateInstance/ConfigurationType", "initial configuration",
+                      "xs:string"),
             ], id_short="ConfigurationPath"),
         ], id_short="ConfigurationPaths"),
         _prop("SLAInformation", B + "SoftwareNameplateInstance/SLAInformation",
@@ -1161,7 +1156,7 @@ DBP4_1 = "urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.1#"
 
 
 def dbp4_env() -> dict:
-    """The golden fixture for IDTA 02035-4 Technical Data 1.0.1, the battery
+    """The golden fixture for IDTA 02035-4 Technical Data 1.0.2, the battery
     passport's part 4, written by hand like the others and carrying every
     row the template declares. Values are the template's own where it gives
     one, and a plausible value of the declared type where it gives none
@@ -1267,7 +1262,7 @@ DBP7_DOCUMENT = "urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#Docum
 
 
 def dbp7_env() -> dict:
-    """The golden fixture for IDTA 02035-7 Circularity 1.0.1, the battery
+    """The golden fixture for IDTA 02035-7 Circularity 1.0.2, the battery
     passport's part 7, written by hand like the others and carrying every
     row the template declares. The template gives no example values, so
     each is a plausible value of the declared type -- the recycled material
@@ -1336,7 +1331,7 @@ def dbp7_env() -> dict:
     }]}
 
 def dbp1_env() -> dict:
-    """The golden fixture for IDTA 02035-1 Digital Nameplate 1.0, the
+    """The golden fixture for IDTA 02035-1 Digital Nameplate 1.1, the
     battery passport's part 1, written by hand like the others and
     carrying every row the template declares. Values are the template's
     own where it gives one.
