@@ -279,22 +279,35 @@ def test_the_corpus_is_not_left_on_the_disk():
     assert set(glob.glob(pattern)) - before == set()
 
 
-def test_the_command_reports_what_it_found(capsys):
+def _measured_at(recorded, factor):
+    key = time_budget.platform_key()
+    about = recorded["recorded_on"][key]
+    return {
+        "inputs": about["inputs"],
+        "ratios": {layer: budget * factor
+                   for layer, budget in recorded["budgets"][key].items()},
+        "layers": dict(about["absolute_seconds"]),
+        "units": dict(about["yardstick_seconds"]),
+    }
+
+
+def test_the_command_reports_what_it_found(monkeypatch, capsys):
     """The sibling coverage gate once had a tested judgement and a `main`
     that threw it away. The command is what `make check` runs, so the
     command is what has to carry the verdict."""
+    recorded = _recorded_here()
+    monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    monkeypatch.setattr(time_budget, "measure", lambda: _measured_at(recorded, 1.0))
     assert time_budget.main(["--check"]) == 0
     printed = capsys.readouterr().out
     assert "x of" in printed or "no budget" in printed, printed
 
 
 def test_the_check_fails_when_a_layer_is_over_its_budget(monkeypatch, capsys):
-    """The judgement has to reach the exit code. Measured against a budget
-    small enough that any real run exceeds it."""
+    """A measured ratio over the unchanged threshold reaches the exit code."""
     recorded = _recorded_here()
-    key = time_budget.platform_key()
-    recorded["budgets"][key] = dict.fromkeys(time_budget.LAYERS, 1e-09)
     monkeypatch.setattr(time_budget, "load", lambda: recorded)
+    monkeypatch.setattr(time_budget, "measure", lambda: _measured_at(recorded, 2.01))
     assert time_budget.main(["--check"]) == 1
     assert "over budget" in capsys.readouterr().out
 

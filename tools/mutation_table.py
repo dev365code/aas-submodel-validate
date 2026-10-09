@@ -64,7 +64,8 @@ TABLE = [
      "tools/time_budget.py",
      "        self.ok = factor is None or factor < FAIL_AT",
      "        self.ok = True",
-     ["tests/test_the_run_stays_inside_its_time_budget.py"],
+     ["tests/test_the_run_stays_inside_its_time_budget.py::"
+      "test_the_judgement_has_three_answers_and_they_are_the_thresholds"],
      "a budget that passes whatever it measures is a clock nobody is "
      "watching, which is the state every other gate here was already in: "
      "they all ask whether the verdict is right and none asked whether it "
@@ -74,7 +75,8 @@ TABLE = [
      "tools/time_budget.py",
      "    return 1 if bad else 0",
      "    return 0",
-     ["tests/test_the_run_stays_inside_its_time_budget.py"],
+     ["tests/test_the_run_stays_inside_its_time_budget.py::"
+      "test_the_check_fails_when_a_layer_is_over_its_budget"],
      "a judgement that the command throws away is a judgement `make check` "
      "cannot act on; the function being tested is not the thing that runs"),
 
@@ -223,13 +225,12 @@ TABLE = [
      "docs/rule-coverage.json",
      '"HD-D9",',
      "",
-     ["tests/", "tools/rule_coverage.py --check"],
+     ["tests/test_coverage_record.py::test_every_published_id_is_accounted_for"],
      "the committed baseline is what says which rule ids this project "
      "expects to fire; the suite writes what actually fired and the tool "
-     "compares the two against the registry. **This row states a "
-     "dependency**: the tool reads a file the suite leaves behind, and "
-     "run on its own it says so rather than answering, so the suite is "
-     "listed first"),
+     "compares the two against the registry. The targeted test runs the real gate "
+     "with a complete observation, isolating this comparison from the "
+     "full suite's independent timing checks"),
 
     ("rules/ascii-case-is-not-unicode-case",
      "src/aas_submodel_validate/container.py",
@@ -1188,10 +1189,9 @@ TABLE = [
      "tests/conftest.py",
      "                     and not finding.id.startswith(RUN_TIME_PREFIX))",
      "                     )",
-     # The suite first: `--check` reads an observation the suite writes,
-     # and the harness cleans the tree before each row, so naming the
-     # tool alone gives a baseline that fails before any mutation.
-     ["tests/", "tools/rule_coverage.py --check"],
+     # An actual supplied-table finding passes through the suite observer;
+     # the resulting coverage record must exclude its run-time id.
+     ["tests/test_coverage_record.py::test_a_run_time_id_stays_out_of_the_coverage_record"],
      "`make exercised` asks whether every rule this project publishes "
      "fired, against a baseline listing exactly those. An id that exists "
      "because somebody passed a file is in neither list, so recording it "
@@ -2990,10 +2990,12 @@ def main() -> int:
             if rel.endswith(".py"):
                 import py_compile
                 try:
-                    py_compile.compile(str(tree / rel), doraise=True)
+                    py_compile.compile(str(tree / rel),
+                                       cfile=str(tree / ".harness-compiled.pyc"),
+                                       doraise=True)
                 except py_compile.PyCompileError as exc:
                     uncompilable = str(exc).splitlines()[0]
-            code, _ = (5, None) if uncompilable else run(tree, checks)
+            code, said = (5, None) if uncompilable else run(tree, checks)
             (tree / rel).write_text(pristine, encoding="utf-8")
             (tree / rel).touch()
             clear(tree)
@@ -3003,8 +3005,11 @@ def main() -> int:
                               "anchor omits the line that governs it, so a kill "
                               "would be a syntax error and not the behaviour"
                               % (row_id, uncompilable))
-            elif code == 5:
+            elif code in (4, 5):
                 broken.append("%s: the selection collects nothing" % row_id)
+            elif code == 0 and said is not None and not _ran(said):
+                broken.append("%s: the mutant asserted nothing here -- it "
+                              "skipped, so the row cannot kill anything" % row_id)
             elif code == 0:
                 survivors.append(row_id)
                 print("  survived  %s" % row_id)

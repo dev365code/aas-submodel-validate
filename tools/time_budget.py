@@ -409,6 +409,14 @@ def measure() -> dict:
     template_path.write_bytes(json.dumps(template_document).encode("utf-8"))
     judged_path = wide / "declares-it.json"
     judged_path.write_bytes(json.dumps(judged_document).encode("utf-8"))
+    # Each invocation is a fresh interpreter, with import/registry work
+    # still timed. Preparing bytecode is an installation condition,
+    # however: the yardstick has already been imported and compiled.
+    # Give both that condition even when a harness forbids source-side
+    # cache writes or Apple's default cache is outside the writable tree.
+    cold_env = dict(os.environ, PYTHONPATH=str(ROOT / "src"),
+                    PYTHONPYCACHEPREFIX=str(wide / "bytecode"),
+                    PYTHONDONTWRITEBYTECODE="")
 
     def cold_start():
         # A whole invocation in a fresh interpreter, which is the only
@@ -418,7 +426,7 @@ def measure() -> dict:
                         str(verdict_diff.EXAMPLE)],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                        cwd=str(ROOT),
-                       env=dict(os.environ, PYTHONPATH=str(ROOT / "src")))
+                       env=cold_env)
 
     def scale():
         runner.run(wide_path)

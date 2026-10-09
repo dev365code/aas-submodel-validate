@@ -264,6 +264,36 @@ def test_the_comparison_says_what_it_does_not_cover(corpus):
                        "does" if warns else "does not"))
 
 
+@pytest.fixture(params=[False, True], ids=["before-template-option", "with-template-option"])
+def option_reader(request, tmp_path):
+    """Exercise both option contracts locally, even in an unpacked sdist.
+
+    The local reader is only an option/JSON protocol witness: the real
+    working reader supplies the template verdict in the test below.
+    Depending on the newest tag stopped exercising the absent-option
+    branch as soon as every recent release supported it.
+    """
+    if request.param:
+        return "with-template", ROOT / "src"
+    src = tmp_path / "before-template" / "src"
+    package = src / "aas_submodel_validate"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "cli.py").write_text("", encoding="utf-8")
+    (package / "__main__.py").write_text(
+        "import argparse, json\n"
+        "class Parser(argparse.ArgumentParser):\n"
+        "    def error(self, message):\n"
+        "        self.exit(64, message)\n"
+        "parser = Parser()\n"
+        "parser.add_argument('path')\n"
+        "parser.add_argument('-f')\n"
+        "parser.parse_args()\n"
+        "print(json.dumps({'findings': [], 'summary': {}}))\n",
+        encoding="utf-8")
+    return "before-template", src
+
+
 @pytest.fixture(scope="module")
 def released_tree(tmp_path_factory):
     """The tree of the tag this comparison runs against by default, or a
@@ -403,7 +433,7 @@ def _a_template_case(tmp_path):
 
 
 def test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved(
-        released_tree, tmp_path):
+        option_reader, tmp_path):
     """`--template` is new, and new is not moved.
 
     The released reader answers a case carrying it with `unrecognized
@@ -414,7 +444,7 @@ def test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved(
     mistake this file made over `rulesNotAsked`, which is why that one
     is counted apart too.
     """
-    tag, old_src = released_tree
+    tag, old_src = option_reader
     case = _a_template_case(tmp_path)
 
     # Asked of that reader rather than assumed from its number. Which
@@ -427,6 +457,8 @@ def test_a_case_the_old_version_cannot_be_asked_is_not_a_verdict_that_moved(
     assert verdict_diff._comparable(old_src, case) is knows_it, tag
 
     before = verdict_diff._judge(old_src, case)
+    current = verdict_diff._judge(ROOT / "src", case)
+    assert any(finding[0] == "TPL-E01" for finding in current[0]), current
     if not knows_it:
         # What the comparison would have had to work with, stated rather
         # than assumed: not a verdict, and not one that could be compared.
@@ -483,7 +515,7 @@ def test_a_tree_with_no_reader_in_it_does_not_get_answered_by_the_machine(tmp_pa
 
 
 def test_the_count_leaves_out_what_the_old_version_was_never_asked(
-        released_tree, tmp_path, capsys):
+        option_reader, tmp_path, capsys):
     """The denominator is a claim, and it is the one that gets quoted.
 
     "0 of 65 inputs are judged differently" over a corpus where four of
@@ -495,7 +527,7 @@ def test_the_count_leaves_out_what_the_old_version_was_never_asked(
     why it is a parameter: a test that had to build all sixty-one inputs
     and run two readers over each would be a test nobody runs.
     """
-    tag, old_src = released_tree
+    tag, old_src = option_reader
     corpus = [verdict_diff.Case("the official example, untouched",
                                 verdict_diff.EXAMPLE),
               _a_template_case(tmp_path)]

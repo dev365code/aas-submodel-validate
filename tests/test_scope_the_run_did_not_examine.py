@@ -418,6 +418,22 @@ def test_a_near_miss_elsewhere_does_not_hide_the_place(tmp_path):
     assert ("1 section not examined (AssetSpecificProperties), beside an "
             "element no row describes (Nameplate/Extras)") in line, line
 
+    # A drifted container in the same report really does leave rows
+    # unasked. Its clause must not hide the independent omitted section.
+    document = dn_env()["submodels"][0]
+    document["id"] = "urn:test:second-nameplate"
+    document["idShort"] = "SecondNameplate"
+    marking = next(e for e in document["submodelElements"]
+                   if e.get("idShort") == "Markings")
+    marking["semanticId"]["keys"][0]["value"] = "0112/2///61360_7#AAS006#002"
+    environment["submodels"].append(document)
+    path.write_text(json.dumps(environment), encoding="utf-8")
+    report = runner.run(path)
+    assert report.not_asked, report.as_dict()
+    line = render(report)
+    assert ("1 section not examined (AssetSpecificProperties), beside an "
+            "element no row describes (Nameplate/Extras)") in line, line
+
 
 def test_a_near_miss_claims_only_the_rows_it_resembles(tmp_path):
     """A list one version suffix off keeps its own rows from being asked,

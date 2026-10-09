@@ -38,5 +38,6 @@
   "warn_at": 1.5,
   "fail_at": 2.0,
   "collapsed_below": 0.2
- }
+ },
+ "_measurement_conditions": "Cold invocations use fresh interpreters and a private writable bytecode cache prepared before timing. Import and registry work remain measured; first-time compilation does not, matching the already-compiled yardstick. The cache is removed with the measurement directory. Thresholds and recorded budgets are unchanged."
 }
