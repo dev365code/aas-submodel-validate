@@ -1213,3 +1213,29 @@ def test_the_elision_counts_the_info_the_quoted_summary_prints():
     [info] = re.findall(r"^ok -- \d+ error\(s\), \d+ warning\(s\), (\d+) info -- ",
                         block, re.M)
     assert "accounts for the `%s info`" % info in FLOWED
+
+
+def test_earlier_identifier_compatibility_is_limited_to_the_listed_spellings():
+    """The pin update preserves selected spellings, not every earlier alias or type."""
+    labels = {row["label"].removesuffix("__00__")
+              for tables in (contact_tables, sn_tables)
+              for row in tables.ROWS if row.get("legacy_identifiers")}
+    assert labels == {"IPCommunication", "TypeOfCommunication", "ConfigurationURI"}
+    assert ("Compatibility for earlier identifiers is limited to the listed "
+            "IPCommunication, TypeOfCommunication and ConfigurationURI spellings") in FLOWED
+    assert ("it does not preserve earlier value types or every removed supplemental alias") in FLOWED
+    assert "Previous identifier spellings remain recognized." not in FLOWED
+    assert "Handover joined aliases" in FLOWED
+    assert "Technical Data CDP spellings" in FLOWED
+    assert "may no longer reach their row" in FLOWED
+
+
+def test_the_pin_move_gate_advice_names_the_old_cdp_and_missing_ip_child():
+    """Two ways an old file can turn red must be visible where a build is gated."""
+    current = CHANGELOG.split("\n## ", 2)[1]
+    paragraph = next(line for line in current.splitlines()
+                     if line.startswith("**Who gates a build"))
+    assert "GeneralInformation" in paragraph and "old CDP URL containing a space" in paragraph
+    assert "TD-E01" in paragraph
+    assert "IPCommunication" in paragraph and "AddressOfAdditionalLink" in paragraph
+    assert "CI-E22" in paragraph

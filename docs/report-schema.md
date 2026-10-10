@@ -159,7 +159,7 @@ not be.
 
 | key | type | |
 |---|---|---|
-| `errors` | integer | Findings at `error` severity. One defect can produce several findings (for example a missing Documents list draws HD-E08 and HD-D2); this counts findings, without deduplicating defects. |
+| `errors` | integer | Findings at `error` severity. One defect can produce several findings (for example a missing DocumentClassifications list draws HD-E08 and HD-D2); this counts findings, without deduplicating defects. |
 | `warnings` | integer | Findings at `warning` severity. |
 | `info` | integer | Findings at `info` severity. |
 | `rulesChecked` | integer | Every rule registered in this build. Not how many applied to your file — a Technical Data file is not judged by 02004's rules, and the number does not move when a different template answers — and not the number of findings. The relayed `meta` channel is not registered and is not counted. |

@@ -178,7 +178,7 @@ def test_document_identifiers_spelled_as_the_handover_part_spells_them_are_missi
     assert set(_ids(tmp_path, env)) == set()
 
 
-def test_another_element_wearing_the_drop_in_marker_is_a_second_address(tmp_path):
+def test_another_element_wearing_the_drop_in_marker_does_not_supply_or_duplicate_an_address(tmp_path):
     """The marker is not an identity and cannot supply a required address."""
     env = copy.deepcopy(dbp1_env())
     other = copy.deepcopy(_element(env, "SerialNumber"))

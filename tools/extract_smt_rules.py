@@ -48,12 +48,12 @@ What is deliberately interpreted rather than copied:
   four, so they are joined in template order.
 - **A list child that carries an idShort.** AASd-120 forbids one on a
   direct child of a SubmodelElementList, which is the whole reason
-  `item_names` exists. 02035-2 breaks it on four of its six list
-  children, so those four rows are labelled with the name the artefact
-  itself carries. Each pack names all of its list items anyway, using
-  02004's word where the element is 02004's, so an upstream repair of
-  that defect would rename nothing -- a row suddenly called
-  "DocumentsItem" would announce a divergence where none had appeared.
+  `item_names` exists. 02035-2 1.0 gave four of its six list children
+  an idShort; upstream repaired those four in 1.1. Each pack still names
+  all of its list items, using 02004's word where the element is 02004's.
+  The repair keeps these generated labels and their obligations stable;
+  a row suddenly called "DocumentsItem" would announce a divergence
+  where none had appeared.
 """
 from __future__ import annotations
 

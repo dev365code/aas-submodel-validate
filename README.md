@@ -475,8 +475,12 @@ Eleven replace the previous pin's editions. Repairs in three packs change
 required bounds, primary identifiers or value types:
 02023 1.0.2 permits several LifeCyclePhases/PcfCalculationMethods lists;
 02002 1.0.2 repairs IPCommunication; 02007 1.0.2 repairs ConfigurationURI
-and expects ConfigurationType as text. Previous identifier spellings
-remain recognized. Other repaired supplemental identifiers and removed
+and expects ConfigurationType as text. Compatibility for earlier identifiers
+is limited to the listed IPCommunication, TypeOfCommunication and
+ConfigurationURI spellings; it does not preserve earlier value types or
+every removed supplemental alias. Elements known only by removed Handover
+joined aliases or Technical Data CDP spellings containing spaces may no
+longer reach their row. Other repaired supplemental identifiers and removed
 inclusion markers also change which rows are reached. Pin moves ship in a
 minor release, and the CHANGELOG names every verdict that moves.
 
