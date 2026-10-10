@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+from builders import tracked_files
+
 ROOT = Path(__file__).resolve().parents[1]
 GENERATORS = (
     ("extract_smt_rules.py", ()),
@@ -36,6 +38,7 @@ GENERATORS = (
 
 @pytest.fixture(scope="module")
 def archived_tree(tmp_path_factory):
+    tracked_files(ROOT)
     tree = tmp_path_factory.mktemp("generator-bytes")
     try:
         archive = subprocess.run(["git", "archive", "HEAD"], cwd=ROOT,
