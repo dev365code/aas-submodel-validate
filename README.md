@@ -110,7 +110,7 @@ key     at=where saw=what is there now per=the clause fix=what to change
 |---|---|
 | `at` | where in the submodel — the path of idShorts down to the element |
 | `saw` | what was actually there, so you can tell this finding from a similar one |
-| `per` | the clause this reading comes from, for when you have to cite it The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
+| `per` | the clause this reading comes from, for when you have to cite it. The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
 | `fix` | what to change. Every finding has one; a finding without a remedy is a complaint |
 | `note` | something this run did, not a defect in the file. Nothing to change — which is why a note has no `fix` |
 
@@ -471,12 +471,14 @@ submodel identifier and something had to choose.
 
 The editions below are the latest published at upstream commit
 `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (5 October 2026).
-Eleven replace the previous pin's editions. Three change what conforms:
+Eleven replace the previous pin's editions. Repairs in three packs change
+required bounds, primary identifiers or value types:
 02023 1.0.2 permits several LifeCyclePhases/PcfCalculationMethods lists;
 02002 1.0.2 repairs IPCommunication; 02007 1.0.2 repairs ConfigurationURI
 and expects ConfigurationType as text. Previous identifier spellings
-remain recognized. Pin moves ship in a minor release, and the CHANGELOG
-names every verdict that moves.
+remain recognized. Other repaired supplemental identifiers and removed
+inclusion markers also change which rows are reached. Pin moves ship in a
+minor release, and the CHANGELOG names every verdict that moves.
 
 
 | template | generated | hand-written |

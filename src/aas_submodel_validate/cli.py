@@ -226,7 +226,7 @@ def main(argv: Optional[list] = None) -> int:
                "     before 0.4.0, which is why 2 above no longer covers it.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("path", nargs="?",
-                        help=".aasx, AAS environment .json/.xml, or a bare Submodel .json")
+                        help=".aasx, AAS environment .json/.xml, or a bare Submodel .json/.xml")
     parser.add_argument("-f", "--format", choices=("text", "json"),
                         default="text",
                         help="text for a person, json for a pipeline; the "

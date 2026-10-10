@@ -237,7 +237,7 @@ PACKS = (
         "template": ROOT / "src/aas_submodel_validate/data/smt/02003/2.0.2/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/td_tables.py",
         "prefix": "TD-E",
-        "source": "IDTA 02003_2-0-1 template.json",
+        "source": "IDTA 02003_2-0-2 template.json",
         "citation": "IDTA 02003-2-0-2 template",
         "item_names": TD_ITEM_NAMES,
         "example_types": ("SMT/ExampleValue/ECLASS", "SMT/ExampleValue/CDD",

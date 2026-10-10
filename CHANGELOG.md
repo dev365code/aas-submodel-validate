@@ -1,5 +1,139 @@
 # Changelog
 
+## 0.12.0 — unreleased
+
+The template pin moves to upstream main commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (2026-10-05), and each pack reads the newest published edition at that pin. This is a minor release under the template-pin policy.
+
+| Pack | Previous edition | Edition read now |
+|---|---|---|
+| 02004 | 2.0.1 | 2.0.2 |
+| 02003 | 2.0.1 | 2.0.2 |
+| 02006 | 3.0 | 3.0.2 |
+| 02023 | 1.0 | 1.0.2 |
+| 02002 | 1.0.1 | 1.0.2 |
+| 02011 | 1.1.1 | 1.1.2 |
+| 02007 | 1.0.1 | 1.0.2 |
+| 02035-1 | 1.0 | 1.1 |
+| 02035-2 | 1.0 | 1.1 |
+| 02035-4 | 1.0.1 | 1.0.2 |
+| 02035-7 | 1.0.1 | 1.0.2 |
+| 02035-5 | 1.0.2 | 1.0.2 |
+
+The structural changes are the three Carbon Footprint list rows (`PCF-E03`, `PCF-E08`, `PCF-E16`: One to OneToMany), Contact Information’s repaired IPCommunication and TypeOfCommunication identifiers, and Software Nameplate’s repaired ConfigurationURI identifier and ConfigurationType string type. The tables also follow upstream’s removed Handover multi-key joined aliases (`HD-E02`, `HD-E04`, `HD-E09`, `HD-E14`), Technical Data’s repaired CDP URL spacing (`TD-E01`, `TD-E20`), Digital Nameplate’s firmware supplemental identifier (`DN-E14`), and battery parts 1 and 4’s corrected element names. A `smt-dropin-use` marker no longer supplies an element identity (`DN-E04`, `PCF-E11`, `DBP1-E03`; divergence #59).
+
+Files written to the previous editions keep being judged; identifiers of 1.0/1.0.1 are still recognized for IPCommunication, TypeOfCommunication and ConfigurationURI. Findings beneath an IP or configuration alias name the spelling matched in `saw`. An old integer ConfigurationType is judged against the current string requirement and draws `SN-E36`.
+
+**Every verdict movement measured against 0.11.0 follows.** Of 189 inputs, 52 change a finding, its subject, the relayed metamodel count or the exit code: 2 of the 88 corpus inputs, 1 of 15 previous-edition fixtures, 1 of 15 current fixtures, 0 of 8 official samples, 46 of 59 distinguishing inputs and 2 of 4 mixed or repeated inputs. `rulesNotAsked` changes on 15 inputs and `scopeNotExamined` on 40, counted separately because they move no exit code. All 189 inputs are comparable. Each row below lists every removed or added finding (rule and subject); other findings stay. A subject changing is written as a removal and an addition. The identifying suffixes `removed0/1` distinguish the old joined spellings with and without `~0`; `added0/1/2` distinguish repaired or retained aliases.
+
+| Input | Exit before → after | Removed findings | Added findings | Reason |
+|---|---|---|---|---|
+| `corpus/a valid Software Nameplate submodel` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType |
+| `corpus/a Software Nameplate whose ConfigurationURI carries the identifier its specification prints` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType |
+| `previous-fixture/sn_env` | 0 → 1 | none | `SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType` | 02007 1.0.2 ConfigurationType is xs:string |
+| `current-fixture/sn_env` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType |
+| `probe/HD-E02-removed0` | 0 → 1 | none | `HD-E02` at `HandoverDocumentation/Documents` | 02004 HD-E02 (match) |
+| `probe/HD-E02-removed0-wrong-kind` | 1 → 1 | `HD-E02` at `HandoverDocumentation/Documents/[0]` | `HD-E02` at `HandoverDocumentation/Documents` | 02004 HD-E02 (match) |
+| `probe/HD-E02-removed1` | 0 → 1 | none | `HD-E02` at `HandoverDocumentation/Documents` | 02004 HD-E02 (match) |
+| `probe/HD-E02-removed1-wrong-kind` | 1 → 1 | `HD-E02` at `HandoverDocumentation/Documents/[0]` | `HD-E02` at `HandoverDocumentation/Documents` | 02004 HD-E02 (match) |
+| `probe/HD-E04-removed0` | 0 → 1 | none | `HD-E04` at `HandoverDocumentation/Documents/[0]/DocumentIds` | 02004 HD-E04 (match) |
+| `probe/HD-E04-removed0-wrong-kind` | 1 → 1 | `HD-E04` at `HandoverDocumentation/Documents/[0]/DocumentIds/[0]` | `HD-E04` at `HandoverDocumentation/Documents/[0]/DocumentIds` | 02004 HD-E04 (match) |
+| `probe/HD-E04-removed1` | 0 → 1 | none | `HD-E04` at `HandoverDocumentation/Documents/[0]/DocumentIds` | 02004 HD-E04 (match) |
+| `probe/HD-E04-removed1-wrong-kind` | 1 → 1 | `HD-E04` at `HandoverDocumentation/Documents/[0]/DocumentIds/[0]` | `HD-E04` at `HandoverDocumentation/Documents/[0]/DocumentIds` | 02004 HD-E04 (match) |
+| `probe/HD-E09-removed0` | 0 → 1 | none | `HD-D2` at `HandoverDocumentation/Documents/[0]`<br>`HD-E09` at `HandoverDocumentation/Documents/[0]/DocumentClassifications` | 02004 HD-E09 (match) |
+| `probe/HD-E09-removed0-wrong-kind` | 1 → 1 | `HD-E09` at `HandoverDocumentation/Documents/[0]/DocumentClassifications/[0]` | `HD-E09` at `HandoverDocumentation/Documents/[0]/DocumentClassifications` | 02004 HD-E09 (match) |
+| `probe/HD-E09-removed1` | 0 → 1 | none | `HD-D2` at `HandoverDocumentation/Documents/[0]`<br>`HD-E09` at `HandoverDocumentation/Documents/[0]/DocumentClassifications` | 02004 HD-E09 (match) |
+| `probe/HD-E09-removed1-wrong-kind` | 1 → 1 | `HD-E09` at `HandoverDocumentation/Documents/[0]/DocumentClassifications/[0]` | `HD-E09` at `HandoverDocumentation/Documents/[0]/DocumentClassifications` | 02004 HD-E09 (match) |
+| `probe/HD-E14-removed0` | 0 → 1 | none | `HD-E14` at `HandoverDocumentation/Documents/[0]/DocumentVersions` | 02004 HD-E14 (match) |
+| `probe/HD-E14-removed0-wrong-kind` | 1 → 1 | `HD-E14` at `HandoverDocumentation/Documents/[0]/DocumentVersions/[0]` | `HD-E14` at `HandoverDocumentation/Documents/[0]/DocumentVersions` | 02004 HD-E14 (match) |
+| `probe/HD-E14-removed1` | 0 → 1 | none | `HD-E14` at `HandoverDocumentation/Documents/[0]/DocumentVersions` | 02004 HD-E14 (match) |
+| `probe/HD-E14-removed1-wrong-kind` | 1 → 1 | `HD-E14` at `HandoverDocumentation/Documents/[0]/DocumentVersions/[0]` | `HD-E14` at `HandoverDocumentation/Documents/[0]/DocumentVersions` | 02004 HD-E14 (match) |
+| `probe/TD-E01-removed0` | 0 → 1 | none | `TD-E01` at `TechnicalData` | 02003 TD-E01 (match) |
+| `probe/TD-E01-removed0-wrong-kind` | 1 → 1 | `TD-E01` at `TechnicalData/GeneralInformation` | `TD-E01` at `TechnicalData` | 02003 TD-E01 (match) |
+| `probe/TD-E01-added0` | 1 → 0 | `TD-E01` at `TechnicalData` | none | 02003 TD-E01 (match) |
+| `probe/TD-E01-added0-wrong-kind` | 1 → 1 | `TD-E01` at `TechnicalData` | `TD-E01` at `TechnicalData/GeneralInformation` | 02003 TD-E01 (match) |
+| `probe/DN-E04-removed0` | 0 → 1 | none | `DN-E04` at `Nameplate` | smt-dropin marker is not an element identity (#59) |
+| `probe/DN-E04-removed0-wrong-kind` | 1 → 1 | `DN-E04` at `Nameplate/AddressInformation` | `DN-E04` at `Nameplate` | smt-dropin marker is not an element identity (#59) |
+| `probe/DN-E14-added0-wrong-kind` | 0 → 1 | none | `DN-E14` at `Nameplate/FirmwareVersion` | 02006 DN-E14 (match) |
+| `probe/PCF-E03-count2` | 1 → 0 | `PCF-E03` at `CarbonFootprint/ProductCarbonFootprints/[0]` | none | 02023 PCF-E03 (card,fix) |
+| `probe/PCF-E03-count3` | 1 → 0 | `PCF-E03` at `CarbonFootprint/ProductCarbonFootprints/[0]` | none | 02023 PCF-E03 (card,fix) |
+| `probe/PCF-E08-count2` | 1 → 0 | `PCF-E08` at `CarbonFootprint/ProductCarbonFootprints/[0]` | none | 02023 PCF-E08 (card,fix) |
+| `probe/PCF-E08-count3` | 1 → 0 | `PCF-E08` at `CarbonFootprint/ProductCarbonFootprints/[0]` | none | 02023 PCF-E08 (card,fix) |
+| `probe/PCF-E11-removed0-wrong-kind` | 1 → 0 | `PCF-E11` at `CarbonFootprint/ProductCarbonFootprints/[0]/GoodsHandoverAddress` | none | smt-dropin marker is not an element identity (#59) |
+| `probe/PCF-E16-count2` | 1 → 0 | `PCF-E16` at `CarbonFootprint/ProductOrSectorSpecificCarbonFootprints/[0]` | none | 02023 PCF-E16 (card,fix) |
+| `probe/PCF-E16-count3` | 1 → 0 | `PCF-E16` at `CarbonFootprint/ProductOrSectorSpecificCarbonFootprints/[0]` | none | 02023 PCF-E16 (card,fix) |
+| `probe/CI-E21-added0-wrong-kind` | 0 → 1 | none | `CI-E21` at `ContactInformations/ContactInformation/IPCommunication01` | 02002 CI-E21 (match,sid,fix,legacy_identifiers) |
+| `probe/CI-E21-added1-wrong-kind` | 0 → 1 | none | `CI-E21` at `ContactInformations/ContactInformation/IPCommunication01` | 02002 CI-E21 (match,sid,fix,legacy_identifiers) |
+| `probe/CI-E21-added2-wrong-kind` | 0 → 1 | none | `CI-E21` at `ContactInformations/ContactInformation/IPCommunication01` | 02002 CI-E21 (match,sid,fix,legacy_identifiers) |
+| `probe/CI-E23-added0-wrong-kind` | 0 → 1 | none | `CI-E23` at `ContactInformations/ContactInformation/IPCommunication01/TypeOfCommunication` | 02002 CI-E23 (match,sid,fix,legacy_identifiers) |
+| `probe/SN-E35-added0` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E35 |
+| `probe/SN-E35-added0-wrong-kind` | 1 → 1 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E35 |
+| `probe/SN-E36-integer` | 1 → 1 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | `SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType` | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E36 |
+| `probe/SN-E36-string` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E36 |
+| `probe/SN-E58-added0` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E58 |
+| `probe/SN-E58-added0-wrong-kind` | 1 → 1 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | `SN-E58` at `SoftwareNameplate/SoftwareNameplateInstance/Contact/IPCommunication01` | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E58 |
+| `probe/SN-E58-added1` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E58 |
+| `probe/SN-E58-added1-wrong-kind` | 1 → 1 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | `SN-E58` at `SoftwareNameplate/SoftwareNameplateInstance/Contact/IPCommunication01` | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E58 |
+| `probe/SN-E60-added0` | 1 → 0 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | none | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E60 |
+| `probe/SN-E60-added0-wrong-kind` | 1 → 1 | `SN-E35` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath`<br>`SN-E36` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationType`<br>`SNL1` at `SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPaths/ConfigurationPath/ConfigurationURI` | `SN-E60` at `SoftwareNameplate/SoftwareNameplateInstance/Contact/IPCommunication01/TypeOfCommunication` | 02007 1.0.2 ConfigurationURI / ConfigurationType; SN-E60 |
+| `probe/DBP1-E03-removed0` | 0 → 1 | none | `DBP1-E03` at `BatteryNameplate` | smt-dropin marker is not an element identity (#59) |
+| `probe/DBP1-E03-removed0-wrong-kind` | 1 → 1 | `DBP1-E03` at `BatteryNameplate/AddressInformation` | `DBP1-E03` at `BatteryNameplate` | smt-dropin marker is not an element identity (#59) |
+| `mixed-ip-base` | 0 → 1 | none | `CI-E22` at `ContactInformations/ContactInformation/IPCommunication02` | CI-E21/E22; current and historic IP spellings coexist |
+| `three-pcf-all-required-lists` | 1 → 0 | `PCF-E03` at `CarbonFootprint/ProductCarbonFootprints/[0]`<br>`PCF-E08` at `CarbonFootprint/ProductCarbonFootprints/[0]`<br>`PCF-E16` at `CarbonFootprint/ProductOrSectorSpecificCarbonFootprints/[0]` | none | PCF-E03/E08/E16 One to OneToMany; list values also obey their metamodel |
+
+
+The reach records also move on these inputs:
+
+- `corpus/a valid Contact Information submodel`: scopeNotExamined.
+- `corpus/a Contact Information e-mail address known by its identifier under SAMM's urn:irdi: prefix`: scopeNotExamined.
+- `corpus/an optional Contact Information element of the wrong valueType, known under SAMM's urn:irdi: prefix`: scopeNotExamined.
+- `corpus/a Contact Information submodel with two elements of one name`: scopeNotExamined.
+- `current-fixture/contact_env`: scopeNotExamined.
+- `current-fixture/contact_prefixed_env`: scopeNotExamined.
+- `probe/HD-E02-removed0`: scopeNotExamined.
+- `probe/HD-E02-removed0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/HD-E02-removed1`: scopeNotExamined.
+- `probe/HD-E02-removed1-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/HD-E04-removed0`: scopeNotExamined.
+- `probe/HD-E04-removed0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/HD-E04-removed1`: scopeNotExamined.
+- `probe/HD-E04-removed1-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/HD-E09-removed0`: scopeNotExamined.
+- `probe/HD-E09-removed0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/HD-E09-removed1`: scopeNotExamined.
+- `probe/HD-E09-removed1-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/HD-E14-removed0`: scopeNotExamined.
+- `probe/HD-E14-removed0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/HD-E14-removed1`: scopeNotExamined.
+- `probe/HD-E14-removed1-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/TD-E01-removed0`: scopeNotExamined.
+- `probe/TD-E01-removed0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/TD-E01-added0`: scopeNotExamined.
+- `probe/TD-E01-added0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/TD-E20-removed0`: scopeNotExamined.
+- `probe/CI-E21-added0`: scopeNotExamined.
+- `probe/CI-E21-added0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/CI-E21-added1`: scopeNotExamined.
+- `probe/CI-E21-added1-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/CI-E21-added2`: scopeNotExamined.
+- `probe/CI-E21-added2-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/CI-E23-added0`: scopeNotExamined.
+- `probe/CI-E23-added0-wrong-kind`: scopeNotExamined.
+- `probe/SN-E58-added0`: scopeNotExamined.
+- `probe/SN-E58-added0-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `probe/SN-E58-added1`: scopeNotExamined.
+- `probe/SN-E58-added1-wrong-kind`: rulesNotAsked, scopeNotExamined.
+- `mixed-ip-base`: scopeNotExamined.
+
+**Who gates a build should rerun its own inputs before upgrading.** Repeated Carbon Footprint lists and repaired ConfigurationURI/string files can go from exit 1 to 0; a pipeline red on them today goes quiet. An integer ConfigurationType, a wrong-kind element reached through a newly recognized identifier, or a required address previously supplied only by an inclusion marker can go from exit 0 to 1. Old combined Handover identifiers no longer open their child scope, so the report names the required parent row instead. Inspect `rulesNotAsked` and `scopeNotExamined` as well as findings: a row that stops being reached can leave the exit code unchanged. This measured set is the regression corpus and distinguishing shapes, not every supplier’s file.
+
+It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB. No released rule id is removed.
+
+- `make check PYTHON="/a path with spaces/bin/python"` now quotes the selected interpreter in every recipe. Extractor syntax checks use a temporary bytecode destination, so an unwritable default cache cannot stop them.
+- An unpacked source distribution runs `make check` without the unshipped battery requirements indexes; the join check says it is skipped, while the shipped battery rules are still checked.
+- Release installation instructions describe the two carried wheels without a fixed combined byte count.
+- Cold-start timings prepare bytecode in a private writable cache before measuring fresh interpreters, matching the yardstick’s compiled condition; the failure threshold remains 2.0 times the budget.
+- Missing-value MUST findings cite divergence #40; idShort remedies include the template’s literal pattern; battery mandatory-row findings include the element path. The report schema explains that two findings on one defect both count as errors.
+
 ## 0.11.0 — 2026-10-09
 
 **An IRDI written under SAMM's `urn:irdi:` prefix is read as that IRDI.**

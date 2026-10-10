@@ -159,7 +159,7 @@ not be.
 
 | key | type | |
 |---|---|---|
-| `errors` | integer | Findings at `error` severity. |
+| `errors` | integer | Findings at `error` severity. One defect can produce several findings (for example a missing Documents list draws HD-E08 and HD-D2); this counts findings, without deduplicating defects. |
 | `warnings` | integer | Findings at `warning` severity. |
 | `info` | integer | Findings at `info` severity. |
 | `rulesChecked` | integer | Every rule registered in this build. Not how many applied to your file — a Technical Data file is not judged by 02004's rules, and the number does not move when a different template answers — and not the number of findings. The relayed `meta` channel is not registered and is not counted. |
@@ -193,7 +193,7 @@ differ.
 | key | type | |
 |---|---|---|
 | `rule` | string | The rule id — the thing to filter on, and stable for the rules this build registers. A `--template` run is the exception: its table is built from the caller's file and mints `TPL-E…` ids for that run, so `TPL-E22` means whatever row 22 of *that* file is and means something else for the next file. Those ids are not registered and are not published. |
-| `kind` | string | `container`, `template`, `lint` or `meta`. The prose above calls these *channels*; this field is spelled kind, and a reader who filters on `.channel` gets null for every finding with nothing to say why. |
+| `kind` | string | `container`, `template`, `lint` or `meta`. The prose above calls these *channels*; this field is spelled kind, and a reader who filters on `.channel` gets null for every finding with nothing to say why. X5 and X6 report a limit of this reader or of the path, not a defect in the document; filter on those ids. |
 | `severity` | string | `error`, `warning` or `info` — this project's reading of the priority. |
 | `priority` | string | The rule's own priority word, one of `MUST`, `MUST NOT`, `REQUIRED`, `SHALL`, `RECOMMENDED`, `SHOULD`, `MAY` or `OPTIONAL` — the RFC 2119 keywords this project maps to a severity. The set is closed and wider than what today's rules use, so accept all eight. Both fields are published so a consumer that wants to re-derive the severity can. |
 | `message` | string | What is wrong. |

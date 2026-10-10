@@ -39,6 +39,7 @@ import py_compile
 import re
 import sys
 import sys as _sys
+import tempfile
 from pathlib import Path
 
 # The package, from wherever this script is. `make` exports
@@ -334,7 +335,11 @@ def main() -> int:
     sys.path.insert(0, str(DATA / "tools"))
     for script in sorted((DATA / "tools").glob("*.py")):
         try:
-            py_compile.compile(str(script), doraise=True)
+            # Parsing must not need the interpreter's default cache to be
+            # writable, nor leave bytecode beside these source files.
+            with tempfile.TemporaryDirectory() as cache:
+                py_compile.compile(str(script), cfile=str(Path(cache) / "extractor.pyc"),
+                                   doraise=True)
         except py_compile.PyCompileError as error:
             problems.append("%s does not parse: %s" % (script.name, error.msg))
             continue
