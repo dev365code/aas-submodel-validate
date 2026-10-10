@@ -103,7 +103,8 @@ def test_an_inherited_rule_says_whose_requirement_it_is_carrying():
     """
     inherited = registry._registry["DBP2-D7"].spec
     assert inherited.endswith(
-        "; IDTA 02035-2 1.0 inherits it (docs/divergences.md #26)"), inherited
+        "; %s inherits it (docs/divergences.md #26)"
+        % dbp_tables.TEMPLATE_CITATION.removesuffix(" template")), inherited
     assert inherited.startswith(registry._registry["HD-D7"].spec), (
         "the inherited spec should be 02004's own, with the citation added")
     assert "inherits" not in (registry._registry["HD-D7"].spec or ""), (

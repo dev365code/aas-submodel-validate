@@ -205,7 +205,7 @@ def _marks_of(submodel) -> frozenset:
      # consumer the file held a repair.
      path=("document", "submodel"),
       title="the report names which of two templates sharing one identifier answered",
-      spec="IDTA 02035-2 1.0 template, submodel supplementalSemanticIds; "
+      spec=dbp_tables.TEMPLATE_CITATION + ", submodel supplementalSemanticIds; "
            "docs/divergences.md #26, #28",
       # Unreachable: the rule sets `_remedy(...)` on its one violation.
       # Kept and pinned, and worth reading beside what does ship -- this

@@ -2810,6 +2810,18 @@ TABLE.extend([('engine/a-match-note-names-the-intersecting-identifier',
   'reverses the old-then-repaired example.')])
 
 
+TABLE.extend([('engine/the-repaired-ip-identifier-opens-its-child-scope',
+  'src/aas_submodel_validate/rules/engine.py',
+  '    if candidates & set(row["match"]):',
+  '    if candidates & (set(row["match"]) - '
+  '{"https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication"}):',
+  ['tests/test_unmatched_coverage.py::test_the_repaired_ip_communication_identifier_enters_its_row_and_asks_for_its_child'],
+  'The unknown-path test kept asserting silence after its input became the repaired '
+  'identifier and matched its row. It also passed with AddressOfAdditionalLink missing. '
+  'The repaired identifier must enter the row and report CI-E22 for that missing child; an '
+  'unrelated optional collection remains unjudged.')])
+
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",

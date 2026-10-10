@@ -56,4 +56,4 @@ for _row in dbp_tables.ROWS:
 #: the table turns out to answer for any of them, so it cannot quietly
 #: become a way to check less.
 handover.install("DBP2", dbp_tables, omit=("-D6", "-D8", "-D9"),
-                 inherits="IDTA 02035-2 1.0")
+                 inherits=dbp_tables.TEMPLATE_CITATION.removesuffix(" template"))

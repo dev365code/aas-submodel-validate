@@ -120,6 +120,7 @@ def test_a_marked_submodel_is_told_which_template_answered(tmp_path):
     (finding,) = [f for f in report.findings if f.id == "SMT-D2"]
     assert finding.severity is Severity.INFO
     assert finding.violation.subject == "HandoverDocumentation"
+    assert finding.rule.spec.startswith(dbp_tables.TEMPLATE_CITATION + ", ")
     assert "IDTA 02035-2" in finding.violation.detail
     assert "--profile 02035-2" in finding.fix, "the remedy names the flag first"
 

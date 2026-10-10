@@ -155,35 +155,57 @@ def test_a_middle_segment_typo_is_still_unclaimed_and_that_is_measured(tmp_path)
     assert _near_miss(frozenset({PHONE_MIDDLE}), row["match"]) is None
 
 
-def test_the_specification_path_case_is_unclaimed_too(tmp_path):
-    """docs/divergences.md #51, as a fixture, and honest about the outcome.
+def test_the_repaired_ip_communication_identifier_enters_its_row_and_asks_for_its_child(
+        tmp_path):
+    """02002 1.0.2 repaired #51: the specification path now opens CI-E21.
 
-    A file built to 02002's published specification carries an
-    `IPCommunication` identifier the vendored template does not, so it
-    matches no row -- and because that collection is `0..*`, nothing is
-    violated and the mandatory `AddressOfAdditionalLink` beneath it simply
-    leaves the run. The identifier differs from the row's by a whole
-    segment, which draws no near-miss, so this run says nothing about it.
+    Entering its optional collection asks the required AddressOfAdditionalLink
+    child. Silence on this subtree would no longer be a compatible reading.
+    """
+    from aas_submodel_validate.model import Severity
 
-    That is the cost of the reading recorded in #51, measured here rather
-    than asserted in prose: the template file is the authority, the
-    specification is evidence, and a file following the specification is
-    not judged on that subtree."""
-    live = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL))
-    assert live.unmatched, "the mechanism is off; the silence below proves nothing"
+    environment = _drift(contact_env(), "IPCommunication01", SPEC_IPCOMMUNICATION)
+    collection = next(child for child in
+                      environment["submodels"][0]["submodelElements"][0]["value"]
+                      if child.get("idShort") == "IPCommunication01")
+    intact = _run(tmp_path, environment, "intact.json")
+    assert not [finding for finding in intact.findings if finding.id == "CI-E22"]
+    assert not intact.unmatched
+    assert "CI-E22" not in intact.not_asked
+    collection["value"] = [child for child in collection["value"]
+                           if child.get("idShort") != "AddressOfAdditionalLink"]
+    missing = _run(tmp_path, environment, "missing.json")
+    [finding] = [finding for finding in missing.findings if finding.id == "CI-E22"]
+    assert finding.severity is Severity.ERROR
+    assert finding.violation.subject.endswith("/IPCommunication01")
 
-    report = _run(tmp_path, _drift(contact_env(), "IPCommunication01",
-                                   SPEC_IPCOMMUNICATION), "s.json")
-    assert not report.unmatched
-    assert "CI-E22" not in report.not_asked
-    # The measured reason: the two identifiers differ by one whole segment
-    # of nineteen characters, so no bound in the range #23 measured can see
-    # it -- this is not a case a wider bound would reach.
+
+def test_an_unknown_optional_collection_still_leaves_its_subtree_unjudged(tmp_path):
+    """#51's upstream spelling defect is repaired in 1.0.2; this limit remains.
+
+    A supplier's optional collection outside every row and the near-miss
+    range is not entered. Its missing child produces neither a verdict nor
+    a claimed loss: the template states a minimum, not a whitelist (#19).
+    """
     from aas_submodel_validate.rules import contact_tables
     from aas_submodel_validate.rules.engine import _near_miss
-    row = contact_tables.BY_LABEL["IPCommunication__00__"]
-    assert _near_miss(frozenset({SPEC_IPCOMMUNICATION}), row["match"]) is None
-    assert len("ContactInformation/") == 19
+
+    live = _run(tmp_path, _drift(contact_env(), "Phone", PHONE_TAIL))
+    assert live.unmatched, "the mechanism is off; the silence below proves nothing"
+    unknown = "https://supplier.example/network/interfaces/optionalEndpoint"
+    candidates = frozenset({unknown})
+    assert all(not candidates.intersection(row["match"]) for row in contact_tables.ROWS)
+    assert all(_near_miss(candidates, row["match"]) is None for row in contact_tables.ROWS)
+    environment = _drift(contact_env(), "IPCommunication01", unknown)
+    collection = next(child for child in
+                      environment["submodels"][0]["submodelElements"][0]["value"]
+                      if child.get("idShort") == "IPCommunication01")
+    collection["value"] = [child for child in collection["value"]
+                           if child.get("idShort") != "AddressOfAdditionalLink"]
+    report = _run(tmp_path, environment, "unknown.json")
+    assert not report.unmatched
+    assert "CI-E22" not in report.not_asked
+    assert not report.findings
 
 
 def test_a_raw_eclass_url_is_normalised_before_any_comparison():
