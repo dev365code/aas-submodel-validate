@@ -68,6 +68,22 @@ def _identifier(element):
     return None
 
 
+def _matching_spellings(element, row):
+    """Actual row intersections, with primary priority and supplemental file order."""
+    def crossed(reference):
+        values = key_values(reference)
+        ordered = values + (["/".join(values)] if len(values) > 1 else [])
+        matches = candidate_values(reference).intersection(row["match"])
+        return [value for value in dict.fromkeys(ordered) if value in matches]
+
+    primary = crossed(element.semantic_id)
+    if primary:
+        return [("semanticId", value) for value in primary]
+    return [("supplementalSemanticId", value)
+            for reference in getattr(element, "supplemental_semantic_ids", None) or []
+            for value in crossed(reference)]
+
+
 def _sitting_order(pair):
     """Path order for (subject, identifier), total: these are sorted out of
     sets, and a key under which two pairs tie leaves their order to the
@@ -431,6 +447,7 @@ def _analyze(ctx, tables) -> Dict:
         #: this walk enters -- built once and read per submodel (`_scope`).
         "owners": {},
         "instances": {},       # row id -> [(subject path, element)]
+        "matched_spellings": [],  # (subject, attribute, intersecting value)
         "near_misses": [],     # (subject path, seen value, expected value)
         "idshort_drift": [],   # (subject, id_short, pattern, is a list child)
         #: (subject, seen type, template type, route) -- the route
@@ -491,6 +508,7 @@ def _analyze(ctx, tables) -> Dict:
         # walks the same rows once per item, and a row missed in the
         # second item was entered in the first.
         per = {"violations": {}, "instances": {}, "near_misses": [],
+               "matched_spellings": [],
                "idshort_drift": [], "reftype_drift": [], "lost_candidates": [],
                "unmatched": [], "not_entered": [], "not_examined": [],
                "reached": set(),
@@ -554,18 +572,16 @@ def _analyze(ctx, tables) -> Dict:
                 result[key].setdefault(row_id, []).extend(entries)
         for key in ("near_misses", "idshort_drift", "reftype_drift",
                     "lost_candidates", "unmatched", "not_entered",
-                    "not_examined"):
+                    "not_examined", "matched_spellings"):
             result[key].extend(per[key])
     # The repaired official editions retain earlier identifier spellings.
     # Name the spelling that opened this row (or its parent) on each
     # finding, so the compatibility match is visible in `saw`.
-    spellings = [(where, _identifier(element))
-                 for row in tables.ROWS if row.get("legacy_identifiers")
-                 for where, element in result["instances"].get(row["id"], ())]
+    spellings = result["matched_spellings"]
     for violations in result["violations"].values():
         for index, violation in enumerate(violations):
-            matched = ["matched semanticId %s at %s" % (identifier, where)
-                       for where, identifier in spellings
+            matched = ["matched %s %s at %s" % (attribute, identifier, where)
+                       for where, attribute, identifier in spellings
                        if violation.subject == where
                        or (violation.subject or "").startswith(where + "/")]
             if matched:
@@ -1105,6 +1121,13 @@ def _scope(rows, elements, path: str, result, in_list: bool,
         if matched:
             claimed_by[row["id"]] = True
             result["reached"].update(id(element) for _, element in matched)
+        # Capture at matching, before filtering instances by kind: the
+        # identifier opened this row even when its modelType is wrong.
+        if row.get("legacy_identifiers"):
+            result["matched_spellings"].extend(
+                (_subject(path, element, index, shared), attribute, value)
+                for index, element in matched
+                for attribute, value in _matching_spellings(element, row))
 
         # Only kind-matching elements go into `instances`: a Property
         # wearing a File's id is a kind violation (reported below), not a

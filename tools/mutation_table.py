@@ -2792,6 +2792,24 @@ TABLE = [
 #: The row that must live. A comment nobody reads, in a file whose prose
 #: no test asserts. Measured before it was written down: with this line
 #: added the suite reads exactly what it reads without it.
+TABLE.extend([('engine/a-match-note-names-the-intersecting-identifier',
+  'src/aas_submodel_validate/rules/engine.py',
+  '                for attribute, value in _matching_spellings(element, row))',
+  '                for attribute, value in [("semanticId", _identifier(element))])',
+  ['tests/test_matched_identifier_evidence.py::test_only_the_supplemental_identifier_that_opened_the_row_is_named'],
+  'A collection opened by its supplemental old IPCommunication identifier reported an '
+  'unrelated supplier primary identifier as the spelling matched. The match note has to '
+  'intersect the row, as matching itself does.'),
+ ('engine/matched-supplementals-keep-the-file-order',
+  'src/aas_submodel_validate/rules/engine.py',
+  '                for attribute, value in _matching_spellings(element, row))',
+  '                for attribute, value in sorted(_matching_spellings(element, row)))',
+  ['tests/test_matched_identifier_evidence.py::test_matching_supplementals_are_all_named_in_file_order'],
+  'A collection carrying both old and repaired IPCommunication identifiers named neither '
+  'supplemental in its finding. Both are evidence, in the order the file supplies; sorting '
+  'reverses the old-then-repaired example.')])
+
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",
