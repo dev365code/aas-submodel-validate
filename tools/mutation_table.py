@@ -2822,6 +2822,28 @@ TABLE.extend([('engine/the-repaired-ip-identifier-opens-its-child-scope',
   'unrelated optional collection remains unjudged.')])
 
 
+TABLE.extend([
+    ("battery/the-index-keeps-lf-under-platform-defaults",
+     "data/battery-passport/tools/_common.py",
+     '    with open(out_path, "w", encoding="utf-8", newline="\\n") as fh:\n',
+     '    with open(out_path, "w", encoding="utf-8") as fh:\n',
+     ["tests/test_generators_write_the_same_bytes.py::"
+      "test_windows_text_defaults_do_not_change_committed_bytes"
+      "[data/battery-passport/tools/extract_idta_smt.py]"],
+     "the IDTA index acquired CRLF under Windows text defaults while "
+     "UTF-8 was explicit and its LF-normalized content stayed identical"),
+
+    ("battery/the-join-check-sees-byte-drift",
+     "data/battery-passport/tools/join_requirements.py",
+     '            if not os.path.exists(path) or Path(path).read_bytes() != text.encode("utf-8"):\n',
+     '            if not os.path.exists(path) or open(path, encoding="utf-8").read() != text:\n',
+     ["tests/test_generators_write_the_same_bytes.py::"
+      "test_check_refuses_crlf_even_when_the_text_is_the_same"
+      "[data/battery-passport/tools/join_requirements.py]"],
+     "a CRLF join and its markdown passed --check although their "
+     "committed bytes were LF"),
+])
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",

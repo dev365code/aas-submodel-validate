@@ -37,6 +37,7 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _common  # noqa: E402
@@ -524,7 +525,7 @@ def main(argv=None):
         # has this flag; this one was the reader-facing one without it.
         stale = []
         for path, text in rendered.items():
-            if not os.path.exists(path) or open(path, encoding="utf-8").read() != text:
+            if not os.path.exists(path) or Path(path).read_bytes() != text.encode("utf-8"):
                 stale.append(path)
         if stale:
             print("stale, run tools/join_requirements.py: %s" % ", ".join(sorted(stale)),
@@ -535,7 +536,7 @@ def main(argv=None):
         return 0
 
     for path, text in rendered.items():
-        with open(path, "w", encoding="utf-8") as fh:
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
         print("wrote %s" % path)
     for k, v in doc["counts"].items():

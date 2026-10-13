@@ -3,7 +3,8 @@
 # The files themselves sit under sources/. This is the pin, not a copy of them.
 # Every one was fetched by a free route that needs no account. Nothing was uploaded,
 # no form was submitted, and the public repository was read, never written to.
-# Submodel templates are pinned at commit a9664731a903b29ac5f45e23ab3a25c581f3d92f.
+# Submodel template pin f3790038b6c9c2d7e5ebbb4609997468fadf3e85: 02035-1, 02035-2, 02035-4, 02035-7.
+# Submodel template pin a9664731a903b29ac5f45e23ab3a25c581f3d92f: 02004, 02023, 02035-3, 02035-5, 02035-6, 02099-1.
 # Check: cd sources && grep -v '^#' ../sources.sha256 | shasum -a 256 -c
 #
 # Fetch the EUR-Lex line with a fixed User-Agent or the digest will not

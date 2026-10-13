@@ -963,7 +963,7 @@ OURS_TO_IMPORT = {"aas_submodel_validate", "builders", "conftest"}
 #: scripts are small, and a name arriving here that is not in the standard
 #: library has to be written into a set that says it is.
 STANDARD_LIBRARY = {
-    "argparse", "hashlib", "html", "importlib", "json", "os", "re", "sys",
+    "argparse", "hashlib", "html", "importlib", "json", "os", "pathlib", "re", "sys",
     "warnings",
 }
 

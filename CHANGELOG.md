@@ -4,6 +4,8 @@
 
 The template pin moves to upstream main commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (2026-10-05), and each pack reads the newest published edition at that pin. This is a minor release under the template-pin policy.
 
+Battery index and join regeneration writes UTF-8 with LF on every platform, and the join check rejects byte differences such as CRLF. Verdict comparisons inherit the caller’s bytecode cache settings; these tool changes move no validation verdict.
+
 | Pack | Previous edition | Edition read now |
 |---|---|---|
 | 02004 | 2.0.1 | 2.0.2 |

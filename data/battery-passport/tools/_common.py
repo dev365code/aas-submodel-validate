@@ -126,7 +126,7 @@ def write_index(out_path, source, records, provenance, counts=None, notes=None):
     directory = os.path.dirname(os.path.abspath(out_path))
     if directory and not os.path.isdir(directory):
         os.makedirs(directory)
-    with open(out_path, "w", encoding="utf-8") as fh:
+    with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(doc, fh, ensure_ascii=False, indent=1, sort_keys=False)
         fh.write("\n")
     return doc

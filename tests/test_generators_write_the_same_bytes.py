@@ -33,6 +33,12 @@ GENERATORS = (
     ("capabilities_svg.py", ("docs/capabilities.json",)),
     ("gen_official_samples.py", ()),
     ("rule_coverage.py", ("--write",)),
+    ("data/battery-passport/tools/extract_idta_smt.py",
+     ("--sources-dir", ".generator-idta", "--out", ".generator-idta/index.json")),
+    ("data/battery-passport/tools/join_requirements.py",
+     ("--dir", "data/battery-passport",
+      "--out", "data/battery-passport/requirements-join.json",
+      "--md", "data/battery-passport/requirements-join.md")),
 )
 
 
@@ -66,6 +72,16 @@ def archived_tree(tmp_path_factory):
         replay = tree / ".vendor-replay" / (rel + ".bin")
         replay.parent.mkdir(parents=True, exist_ok=True)
         replay.write_bytes((tree / rel).read_bytes())
+    # Exercise the index writer with a pinned input, without fetching
+    # the ledger's originals. The real extractor establishes its LF
+    # reference before the same input is read under Windows defaults.
+    source = tree / ".generator-idta" / "02035-1_v1.1" / "template.json"
+    source.parent.mkdir(parents=True)
+    source.write_bytes((tree / "src/aas_submodel_validate/data/smt/02035-1/1.1/template.json")
+                       .read_bytes())
+    tool, flags = next(g for g in GENERATORS if g[0].endswith("extract_idta_smt.py"))
+    reference = _run(tree, tool, flags, windows=False)
+    assert reference.returncode == 0, reference.stdout + reference.stderr
     return tree
 
 
@@ -124,7 +140,8 @@ def _run_generator(tree, tool, flags, windows):
                     (tree / ".vendor-replay" / (rel + ".bin")).read_bytes()
                     for rel, source in vendor_template.FILES.items()}
         urllib.request.urlopen = lambda url: io.BytesIO(payloads[url])
-    sys.argv = [str(tree / "tools" / tool), *flags]
+    script = tree / tool if "/" in tool else tree / "tools" / tool
+    sys.argv = [str(script), *flags]
     try:
         runpy.run_path(sys.argv[0], run_name="__main__")
     finally:
@@ -134,6 +151,7 @@ def _run_generator(tree, tool, flags, windows):
 
 def _run(tree, tool, flags, windows=True):
     code = ("import pathlib, runpy, sys; "
+            "sys.path.insert(0, str(pathlib.Path(sys.argv[1]).parent)); "
             "runpy.run_path(sys.argv[1])['_run_generator']("
             "pathlib.Path(sys.argv[2]), sys.argv[3], sys.argv[5:], sys.argv[4] == '1')")
     return subprocess.run([sys.executable, "-c", code, __file__, str(tree), tool,
@@ -158,7 +176,8 @@ def test_windows_text_defaults_do_not_change_committed_bytes(archived_tree, tool
     assert changed == [], changed
 
 
-@pytest.mark.parametrize("tool,flags", GENERATORS, ids=[g[0] for g in GENERATORS])
+@pytest.mark.parametrize("tool,flags", [g for g in GENERATORS if "extract_idta_smt" not in g[0]],
+                         ids=[g[0] for g in GENERATORS if "extract_idta_smt" not in g[0]])
 def test_check_refuses_crlf_even_when_the_text_is_the_same(archived_tree, tool, flags):
     tree = archived_tree
     # Observe the actual writer to find its outputs, rather than maintain
@@ -170,7 +189,10 @@ def test_check_refuses_crlf_even_when_the_text_is_the_same(archived_tree, tool, 
     if tool == "capabilities_svg.py" and tree / "README.md" not in outputs:
         outputs.append(tree / "README.md")
     assert outputs, "the generator wrote no text output"
-    check_flags = ("docs/capabilities.json", "--check") if tool == "capabilities_svg.py" else ("--check",)
+    if tool.endswith("join_requirements.py"):
+        check_flags = (*flags, "--check")
+    else:
+        check_flags = ("docs/capabilities.json", "--check") if tool == "capabilities_svg.py" else ("--check",)
     clean = _run(tree, tool, check_flags)
     assert clean.returncode == 0, clean.stdout + clean.stderr
     # Each output has its own negative control: a gate must see drift in

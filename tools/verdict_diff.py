@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -791,7 +792,7 @@ def _judge(src: Path, case: Case):
         run = subprocess.run(
             argv,
             capture_output=True, text=True, timeout=_PATIENCE,
-            env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
+            env={**os.environ, "PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
                  "PYTHONIOENCODING": "utf-8"})
     except subprocess.TimeoutExpired:
         # A deadline, because without one this tool stops when the reader
