@@ -2844,6 +2844,25 @@ TABLE.extend([
      "committed bytes were LF"),
 ])
 
+TABLE.extend([
+    ("comparison/the-option-probe-keeps-the-bytecode-environment",
+     "tools/verdict_diff.py",
+     '        asked = subprocess.run(\n'
+     '            [sys.executable, "-m", "aas_submodel_validate", "--help"],\n'
+     '            capture_output=True, text=True, timeout=_PATIENCE,\n'
+     '            env=_reader_environment(src))',
+     '        asked = subprocess.run(\n'
+     '            [sys.executable, "-m", "aas_submodel_validate", "--help"],\n'
+     '            capture_output=True, text=True, timeout=_PATIENCE,\n'
+     '            env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",\n'
+     '                 "PYTHONIOENCODING": "utf-8"})',
+     ["tests/test_regeneration_contracts.py::"
+      "test_the_option_probe_keeps_the_parent_bytecode_environment"],
+     "the option probe discarded the bytecode environment while the "
+     "judgement kept it; checking a supplied-template case for "
+     "comparability wrote bytecode in the reader's source tree"),
+])
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",

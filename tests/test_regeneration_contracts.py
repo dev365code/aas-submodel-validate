@@ -42,6 +42,30 @@ def test_verdict_comparison_keeps_the_parent_bytecode_policy(tmp_path, monkeypat
     assert not list(source.rglob("__pycache__"))
 
 
+def test_the_option_probe_keeps_the_parent_bytecode_environment(tmp_path, monkeypatch):
+    """The help probe must carry the same environment as a judgement."""
+    source = tmp_path / "src"
+    shutil.copytree(ROOT / "src", source,
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    seen = tmp_path / "policy.json"
+    main = source / "aas_submodel_validate/__main__.py"
+    main.write_text(
+        "import json, os, sys\nfrom pathlib import Path\n"
+        "assert '--help' in sys.argv\n"
+        "Path(%r).write_text(json.dumps({'dont': "
+        "os.environ.get('PYTHONDONTWRITEBYTECODE'), 'prefix': "
+        "os.environ.get('PYTHONPYCACHEPREFIX')}), encoding='utf-8')\n"
+        "print('usage: reader --template')\n" % str(seen), encoding="utf-8")
+    prefix = str(tmp_path / "external-cache")
+    monkeypatch.setenv("PYTHONDONTWRITEBYTECODE", "1")
+    monkeypatch.setenv("PYTHONPYCACHEPREFIX", prefix)
+
+    assert verdict_diff._has_the_option(source, "--template")
+    assert json.loads(seen.read_text("utf-8")) == {"dont": "1", "prefix": prefix}
+    assert not list(source.rglob("*.pyc"))
+    assert not list(source.rglob("__pycache__"))
+
+
 @pytest.mark.skipif(not DATA.is_dir(), reason="no data/battery-passport in this tree (sdist)")
 def test_ledger_header_names_each_template_pin_and_only_its_templates():
     """The ledger is static; its summary must follow every source URL."""

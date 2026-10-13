@@ -766,6 +766,12 @@ def build_corpus(into: Path):
 _PATIENCE = 120
 
 
+def _reader_environment(src: Path) -> dict:
+    """Select one reader without discarding the caller's environment."""
+    return {**os.environ, "PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
+            "PYTHONIOENCODING": "utf-8"}
+
+
 def _judge(src: Path, case: Case):
     """One version's verdict on one input: ids, severities, exit code --
     and what it did not ask.
@@ -792,8 +798,7 @@ def _judge(src: Path, case: Case):
         run = subprocess.run(
             argv,
             capture_output=True, text=True, timeout=_PATIENCE,
-            env={**os.environ, "PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
-                 "PYTHONIOENCODING": "utf-8"})
+            env=_reader_environment(src))
     except subprocess.TimeoutExpired:
         # A deadline, because without one this tool stops when the reader
         # does. One input that never answers takes the whole comparison
@@ -894,8 +899,7 @@ def _has_the_option(src: Path, option: str) -> bool:
         asked = subprocess.run(
             [sys.executable, "-m", "aas_submodel_validate", "--help"],
             capture_output=True, text=True, timeout=_PATIENCE,
-            env={"PYTHONPATH": str(src), "PATH": "/usr/bin:/bin",
-                 "PYTHONIOENCODING": "utf-8"})
+            env=_reader_environment(src))
         if asked.returncode != 0 or "usage:" not in asked.stdout:
             raise RuntimeError(
                 "could not ask the version in %s which options it has "
