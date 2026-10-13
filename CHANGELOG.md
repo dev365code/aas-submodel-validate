@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.12.0 — unreleased
+## 0.12.0 — 2026-10-13
+
+**The template pin moves to IDTA's current editions, and every verdict that moves with it is named below.**
+
+This release reads the newest published editions at the recorded template pin, including the repaired Contact Information, Software Nameplate and Carbon Footprint templates. Repeated Carbon Footprint lists and Software Nameplate files using the repaired ConfigurationURI identifier and a string ConfigurationType can now pass checks that failed before. Contact Information now examines the repaired IPCommunication identifier and can report a missing required child that previously went unasked. The specific earlier spellings of IPCommunication, TypeOfCommunication and ConfigurationURI remain recognized, while an earlier integer declaration of ConfigurationType now fails SN-E36 and some removed Handover or malformed Technical Data identifiers no longer reach their old rows. Rerun the files that gate your build and inspect rulesNotAsked and scopeNotExamined alongside the exit code before upgrading.
+
+**Who gates a build should rerun its own inputs before upgrading.** Repeated Carbon Footprint lists and repaired ConfigurationURI/string files can go from exit 1 to 0; a pipeline red on them today goes quiet. An integer ConfigurationType, a wrong-kind element reached through a newly recognized identifier, or a required address previously supplied only by an inclusion marker can go from exit 0 to 1. Old combined Handover identifiers no longer open their child scope, so the report names the required parent row instead. A Technical Data GeneralInformation identified only by the old CDP URL containing a space can now fail TD-E01. A repaired Contact Information IPCommunication missing AddressOfAdditionalLink can now fail CI-E22. Inspect `rulesNotAsked` and `scopeNotExamined` as well as findings: a row that stops being reached can leave the exit code unchanged. This measured set is the regression corpus and distinguishing shapes, not every supplier’s file.
 
 The template pin moves to upstream main commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (2026-10-05), and each pack reads the newest published edition at that pin. This is a minor release under the template-pin policy.
 
@@ -125,8 +131,6 @@ The reach records also move on these inputs:
 - `probe/SN-E58-added1`: scopeNotExamined.
 - `probe/SN-E58-added1-wrong-kind`: rulesNotAsked, scopeNotExamined.
 - `mixed-ip-base`: scopeNotExamined.
-
-**Who gates a build should rerun its own inputs before upgrading.** Repeated Carbon Footprint lists and repaired ConfigurationURI/string files can go from exit 1 to 0; a pipeline red on them today goes quiet. An integer ConfigurationType, a wrong-kind element reached through a newly recognized identifier, or a required address previously supplied only by an inclusion marker can go from exit 0 to 1. Old combined Handover identifiers no longer open their child scope, so the report names the required parent row instead. A Technical Data GeneralInformation identified only by the old CDP URL containing a space can now fail TD-E01. A repaired Contact Information IPCommunication missing AddressOfAdditionalLink can now fail CI-E22. Inspect `rulesNotAsked` and `scopeNotExamined` as well as findings: a row that stops being reached can leave the exit code unchanged. This measured set is the regression corpus and distinguishing shapes, not every supplier’s file.
 
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB. No released rule id is removed.
 
