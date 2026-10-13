@@ -20,6 +20,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / "data/battery-passport"
 sys.path.insert(0, str(ROOT / "tools"))
 import mutation_table as m  # noqa: E402
 
@@ -27,6 +28,8 @@ import mutation_table as m  # noqa: E402
 @pytest.mark.parametrize("row", m.TABLE, ids=[row[0] for row in m.TABLE])
 def test_every_anchor_matches_its_target_file_exactly_once(row):
     identifier, relative_path, anchor = row[0], row[1], row[2]
+    if relative_path.startswith("data/battery-passport/") and not DATA.is_dir():
+        pytest.skip("no data/battery-passport in this tree (sdist)")
     text = (ROOT / relative_path).read_text(encoding="utf-8")
     count = text.count(anchor)
     assert count == 1, (
