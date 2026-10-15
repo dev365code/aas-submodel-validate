@@ -2,6 +2,24 @@
 
 ## 0.13.0 — unreleased
 
+**What the pages, the help and the remedies say is brought to what this build does, the editions and counts they state are now read from the tree by tests, and one compatibility alias no edition published is gone.**
+
+Pages that named the editions read before the 0.12.0 pin move now name the vendored ones, `smtv --help` no longer denies the Carbon Footprint table that judges a 02035-3 submodel, the README's integration example reads the report an exit of 2 writes, and the counts behind two documented readings are taken from this tree. Every generated rule's remedy now says what kind of element to provide. One reading changes: Contact Information no longer treats an element carrying the submodel's own identifier as IPCommunication.
+
+**Who gates a build:** an IPCommunication written with the submodel's own identifier, `https://admin-shell.io/zvei/nameplate/1/0/ContactInformations`, is no longer judged as one. A file that was red only because a required child beneath it was missing goes from exit 1 to 0, and every such file now draws a `CIL1` warning naming the 1.0 spelling it resembles -- so under `-W` it goes from 0 to 1. The `fix` text of every generated rule changes wording; no rule id, severity or exit code moves with it.
+
+**Every verdict movement measured against 0.12.0 follows.** Of 90 inputs, 2 change a finding or the exit code. Both were added for this change; the other 88 are judged as before.
+
+| Input | Exit before → after | Removed findings | Added findings | Reason |
+|---|---|---|---|---|
+| `corpus/a Contact Information IPCommunication known by the submodel's own identifier` | 0 → 0 | none | `CIL1` at `ContactInformations/ContactInformation/IPCommunication01` | the submodel's identifier is not an IPCommunication spelling |
+| `corpus/a Contact Information IPCommunication known by the submodel's own identifier, without its required AddressOfAdditionalLink` | 1 → 0 | `CI-E22` at `ContactInformations/ContactInformation/IPCommunication01` | `CIL1` at `ContactInformations/ContactInformation/IPCommunication01` | the same; its children are no longer asked |
+
+The reach records also move on these inputs:
+
+- `corpus/a Contact Information IPCommunication known by the submodel's own identifier`: rulesNotAsked, scopeNotExamined.
+- `corpus/a Contact Information IPCommunication known by the submodel's own identifier, without its required AddressOfAdditionalLink`: rulesNotAsked, scopeNotExamined.
+
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB. No released rule id is removed.
 
 - Pages that still named the editions read before the 0.12.0 pin move now name the vendored ones: Hierarchical Structures 1.1.2 and Digital Battery Passport part 1 at 1.1 in `docs/scope.md`, Handover Documentation 2.0.2 in `docs/what-it-catches.md` and `THIRD_PARTY.md`, and Circularity 1.0.2 in `docs/divergences.md`, whose opening sentence now lists all twelve templates. A test holds every sentence that names a pack with an edition to the directory it is vendored in.
