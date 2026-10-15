@@ -11,6 +11,7 @@ It is 470 rules, 416 generated from the vendored official template files, across
 - `docs/scope.md` said three of its runs come back `ok: true` over a table where four do, and named rows by positions they no longer hold. The paragraph now says which rows `summary.submodelsJudged` tells apart and which it does not, and a test counts the table's rows for it.
 - The front-page picture and `docs/what-it-catches.md` still listed "one pin move shipped" among the conditions for 1.0 that are not met. 0.12.0 was that release: it moved the template pin for the first time since 0.1.0 and its entry names every verdict the move changed. The item is marked done, with that entry as its evidence.
 - Divergence #16 said no conformant element claims a sibling row's identity and that the walk takes the first matching row; 02035-4's template does the first on purpose, and since #60 an element's own identifier names its row. The row now says both, and that no hand rule navigates 02035-4. Divergence #60 said 02006's `HardwareVersion` and `FirmwareVersion` share an identifier; they did in 3.0, and 3.0.1 repaired it.
+- The README explains why one report cites `IDTA 02004-2-0-2 template` beside `IDTA 02004-2-0 §2.3`: a generated rule names the template file's edition, a hand-written one a section of the specification, which a bug-fix edition carries over unchanged. It also says where to find the bundled example to try a repair on, and that exit 1 under `-W` means an error or a warning rather than any finding.
 
 ## 0.12.0 — 2026-10-13
 

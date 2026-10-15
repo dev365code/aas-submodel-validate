@@ -29,7 +29,7 @@ warning HD-D10   no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition
 ok -- 0 error(s), 87 warning(s), 0 info -- idta-02004-2.0.aasx; judged 1 of 1 submodel; 1 rule not asked (HD-E38): HandoverDocumentation/Entites is not one the template describes, so this run did not look inside it
 ```
 
-The first finding and final summary above come from `--example`; the intervening findings are omitted. To try a repair, copy `site-packages/aas_submodel_validate/data/example/idta-02004-2.0.aasx` to a writable directory and run `smtv` on the copy.
+The first finding and final summary above come from `--example`; the intervening findings are omitted. To try a repair, copy `site-packages/aas_submodel_validate/data/example/idta-02004-2.0.aasx` to a writable directory and run `smtv` on the copy; `pip3 show aas-submodel-validate` prints that `site-packages` directory on its `Location:` line.
 
 **Every finding says what is wrong, where, and how to fix it — and shows the evidence where there is evidence to show.** A rule without a remedy sentence does not ship. On the bundled official example all 87 findings carry a place and a remedy, and 10 carry a `saw` line; the other 77 are relayed metamodel findings, which name a path and no value. Here is the one this project exists for — a battery passport whose template permits an element to be absent while a published reading of the regulation expects it. Those are two different questions and they get two different answers:
 
@@ -110,7 +110,7 @@ key     at=where saw=what is there now per=the clause fix=what to change
 |---|---|
 | `at` | where in the submodel — the path of idShorts down to the element |
 | `saw` | what was actually there, so you can tell this finding from a similar one |
-| `per` | the clause this reading comes from, for when you have to cite it. The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
+| `per` | the clause this reading comes from, for when you have to cite it. A generated rule names the template file it comes from and that file's edition (`IDTA 02004-2-0-2 template`); a hand-written rule names a section of the specification (`IDTA 02004-2-0 §2.3`), which can carry an older number, because a bug-fix edition corrects a template's files and carries its specification over unchanged. The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
 | `fix` | what to change. Every finding has one; a finding without a remedy is a complaint |
 | `note` | something this run did, not a defect in the file. Nothing to change — which is why a note has no `fix` |
 
@@ -179,7 +179,7 @@ A file can be perfectly valid against the AAS metamodel and still not be the sub
 |---|---|---|
 | **Terminal** | a machine with pip | `pip3 install aas-submodel-validate` then `smtv file.aasx` |
 | **Single file** | a machine with no package manager | carry `smtv.pyz`, run `python3 smtv.pyz file.aasx` (`py smtv.pyz file.aasx` on Windows) |
-| **A build** | a pipeline that reads exit codes | `smtv -q -W file.aasx` — 0 pass, 1 findings, 2 could not run, 64 called incorrectly |
+| **A build** | a pipeline that reads exit codes | `smtv -q -W file.aasx` — 0 pass, 1 an error or a warning, 2 could not run, 64 called incorrectly |
 
 The same rules and the same verdict behind all three. There is no browser door and no hosted service; nothing here uploads a file anywhere, because nothing here opens a socket.
 
@@ -381,7 +381,7 @@ What it refuses to do is written down in [docs/scope.md](https://github.com/dev3
 
 ## Putting it in a build
 
-    smtv -q -W your-submodel.aasx    # 0 pass, 1 findings, 2 could not run, 64 called incorrectly
+    smtv -q -W your-submodel.aasx    # 0 pass, 1 an error or a warning, 2 could not run, 64 called incorrectly
 
 `-W` fails on every warning, including the ones relayed from
 aas-core3.0 about the metamodel. Those are not always somebody else's
