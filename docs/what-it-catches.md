@@ -184,7 +184,11 @@ on every change.
 
 - upstream templates pinned by commit — done
 - checked for upstream change — not yet
-- one pin move shipped — not yet
+- one pin move shipped — done
+
+The pin has moved once: 0.12.0 moved it from `11ef3353`, where it had
+stood since 0.1.0, to `f3790038`, and its CHANGELOG entry names every
+verdict the move changed.
 
 Before 1.0: a scheduled check that notices when the upstream templates move,
 and one release that moved the pin and said what the move changed.

@@ -273,11 +273,15 @@
         },
         {
           "text": "one pin move shipped",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": "CHANGELOG.md",
+            "says": "The template pin moves to upstream main commit"
+          }
         }
       ],
-      "now_text": "pinned by commit",
-      "target_text": "+ checked for upstream change, one pin move shipped"
+      "now_text": "pinned by commit, one pin move shipped",
+      "target_text": "+ checked for upstream change"
     }
   ]
 }
