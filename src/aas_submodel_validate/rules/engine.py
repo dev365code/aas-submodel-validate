@@ -1309,10 +1309,10 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             # deliberately; `docs/divergences.md` #40.
             #
             # MUST, and measured against what the standards body
-            # publishes before raising it there: across IDTA's own 02004
-            # example and the three 02003 samples, all 102 properties
-            # carry a value and none is absent, so this costs nothing on
-            # published material.
+            # publishes before raising it there: every property in IDTA's
+            # own 02004 example and 02003 samples carries a value, so this
+            # costs nothing on published material. The count is #40's,
+            # and a test holds it to those files.
             if (low >= 1 and row["kind"] == "Property"
                     and getattr(element, "value", None) is None):
                 result["violations"].setdefault(row["id"], []).append(Violation(
