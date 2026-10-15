@@ -253,16 +253,27 @@ def main(argv: Optional[list] = None) -> int:
                         help="exit 1 unless every submodel in the input was "
                              "judged, not only the ones this tool has a "
                              "table for -- and unless there was one to judge")
-    from .rules.battery import settles_only
+    from .rules.battery import judged_instead, settles_only
     from .rules.profiles import KEYS as _PROFILE_KEYS
+
+    def _settles(key):
+        # Which table judges is read from the tables: a settle-only key
+        # can sit beside a claimant this tool does judge by.
+        others = judged_instead(key)
+        if others:
+            return ("%s only settle which template the file claims to be -- "
+                    "the submodel is judged against the %s table either way, "
+                    "and this tool has none for %s"
+                    % (key, " and ".join(others), key))
+        return ("%s only settle which template the file claims to be, because "
+                "this tool has a table for neither side of that collision" % key)
     parser.add_argument("--profile", choices=_PROFILE_KEYS + settles_only(),
                         metavar="IDTA",
                         help="which template answers where two publish one "
                              "submodel identifier: %s choose the table that "
-                             "judges; %s only settle which template the file "
-                             "claims to be, because this tool has a table for "
-                             "neither side of that collision"
-                             % (", ".join(_PROFILE_KEYS), ", ".join(settles_only())))
+                             "judges; %s"
+                             % (", ".join(_PROFILE_KEYS),
+                                "; ".join(_settles(key) for key in settles_only())))
     parser.add_argument("--template", metavar="FILE",
                         help="judge against an IDTA-shaped template file of "
                              "your own. Only what a template states is "

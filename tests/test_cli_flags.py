@@ -125,6 +125,32 @@ def test_the_profiles_on_offer_say_which_kind_each_one_is(capsys):
         assert key not in chooses.rsplit(":", 1)[-1], key
 
 
+
+def test_the_help_names_the_table_that_judges_where_a_profile_only_settles(capsys):
+    """A settle-only key can sit in a collision whose other side this tool
+    has a table for, and then the submodel is judged against that table
+    whichever template the author declares. The help said "a table for
+    neither side of that collision" about 02035-3 while 02023's table
+    judged the very submodel -- the opposite of what `BAT-R2` reports.
+    Read from the tables here, not from the help's own helper."""
+    from aas_submodel_validate.rules import battery, battery_tables
+    with pytest.raises(SystemExit):
+        main(["--help"])
+    helped = " ".join(capsys.readouterr().out.split())
+    settles = helped.partition("choose the table that judges")[2]
+    tabled = battery._known_to_the_walk()
+    for key in battery.settles_only():
+        (claimants,) = [names for names in battery_tables.SHARED_SUBMODEL_IDS.values()
+                        if "IDTA " + key in names]
+        others = [name.replace("IDTA ", "") for name in claimants
+                  if name != "IDTA " + key and name in tabled]
+        if others:
+            assert "neither side" not in settles, settles
+            for other in others:
+                assert "against the %s table" % other in settles, settles
+        else:
+            assert "a table for neither side of that collision" in settles, settles
+
 def test_a_profile_that_only_settles_a_collision_is_not_reported_as_idle(tmp_path,
                                                                         capsys):
     """The runner tells a caller when `--profile` named a template no

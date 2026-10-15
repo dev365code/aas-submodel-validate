@@ -652,8 +652,9 @@ _KEYS_OF = {
     for identifier, claimants in battery_tables.SHARED_SUBMODEL_IDS.items()
 }
 
-#: The document numbers that settle a collision this tool has no table
-#: for. `profiles.KEYS` is deliberately the other thing -- the numbers
+#: The document numbers of claimants this tool has no table for, which
+#: settle a collision rather than choose a table in it. `profiles.KEYS`
+#: is deliberately the other thing -- the numbers
 #: that choose a table, derived so `--help` cannot name a template this
 #: tool cannot judge by. These are named separately for the same reason:
 #: they choose nothing, they only say which template the file claims to
@@ -670,13 +671,33 @@ def settles_only() -> tuple:
     it. A leading underscore said the opposite and had said it since the
     flag existed.
 
-    A key is in here when every template claiming its submodel
-    identifier is one this project has no table for. `--profile` then
-    records which template the author meant and silences `BAT-R2`; it
-    cannot select a rule set, because there is none to select.
+    A key is in here when the template it names is one this project has
+    no table for. `--profile` then records which template the author
+    meant; it cannot select a rule set, because there is none to select.
+    Where neither claimant has a table that silences `BAT-R2`; where the
+    other claimant has one, the submodel is judged against it whatever
+    the author declares (`judged_instead`), and `BAT-R2` stays to say so.
     """
     return tuple(sorted(
         key
         for identifier, keys in _KEYS_OF.items()
         for key, claimant in zip(keys, battery_tables.SHARED_SUBMODEL_IDS[identifier])
         if claimant not in _known_to_the_walk()))
+
+
+def judged_instead(key: str) -> tuple:
+    """The document numbers whose table judges a submodel declared `key`.
+
+    Empty when no claimant of `key`'s identifier has a table here. Not
+    empty in a partial collision, where the declaration settles the claim
+    and the other claimant's table still judges. `cli.py` builds the
+    help for `--profile` out of it, which once said "a table for neither
+    side" about a collision whose other side this tool judges.
+    """
+    for identifier, keys in _KEYS_OF.items():
+        if key in keys:
+            return tuple(
+                other
+                for other, claimant in zip(keys, battery_tables.SHARED_SUBMODEL_IDS[identifier])
+                if other != key and claimant in _known_to_the_walk())
+    return ()

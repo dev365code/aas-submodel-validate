@@ -5,6 +5,7 @@
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB. No released rule id is removed.
 
 - Pages that still named the editions read before the 0.12.0 pin move now name the vendored ones: Hierarchical Structures 1.1.2 and Digital Battery Passport part 1 at 1.1 in `docs/scope.md`, Handover Documentation 2.0.2 in `docs/what-it-catches.md` and `THIRD_PARTY.md`, and Circularity 1.0.2 in `docs/divergences.md`, whose opening sentence now lists all twelve templates. A test holds every sentence that names a pack with an edition to the directory it is vendored in.
+- `smtv --help` said `--profile 02035-3` settles a collision for which this tool has a table for neither side. The other side is 02023 Carbon Footprint, whose table judges the submodel whichever template the author declares, as `BAT-R2` reports; the help now reads which table judges from the tables themselves.
 
 ## 0.12.0 — 2026-10-13
 
