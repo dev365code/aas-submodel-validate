@@ -1232,7 +1232,10 @@ def test_earlier_identifier_compatibility_is_limited_to_the_listed_spellings():
 
 def test_the_pin_move_gate_advice_names_the_old_cdp_and_missing_ip_child():
     """Two ways an old file can turn red must be visible where a build is gated."""
-    current = CHANGELOG.split("\n## ", 2)[1]
+    # The entry is 0.12.0's, found by name: the pin moved in that release,
+    # and the newest entry stops being it as soon as a draft goes in above.
+    current = next(entry for entry in CHANGELOG.split("\n## ")[1:]
+                   if entry.startswith("0.12.0 — "))
     paragraph = next(line for line in current.splitlines()
                      if line.startswith("**Who gates a build"))
     assert "GeneralInformation" in paragraph and "old CDP URL containing a space" in paragraph

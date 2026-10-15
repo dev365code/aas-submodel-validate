@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.0 — unreleased
+
+It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB. No released rule id is removed.
+
 ## 0.12.0 — 2026-10-13
 
 **The template pin moves to IDTA's current editions, and every verdict that moves with it is named below.**
