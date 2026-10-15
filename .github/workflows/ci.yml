@@ -428,3 +428,28 @@ jobs:
           fi
           shasum -a 256 -c SHA256SUMS
           echo "the checksums written before the upload verify after the download"
+
+  # The mutation table makes the mistake each gate says it stops and
+  # checks a test fails. It ran when somebody ran it -- by hand, before a
+  # release, on one machine -- and the condition this project set itself
+  # for 1.0 is every row killed on the tree it ships. The release workflow
+  # ships only a commit this workflow concluded success on, so the table
+  # runs here, on every commit: a row that survives, cannot be applied or
+  # names a check that asserts nothing fails the job, and the canary must
+  # survive or every kill above it is void.
+  mutations:
+    name: every mutation in the table dies
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # The harness copies the checkout with its `.git`: the tests
+          # that read tags and history skip without them, and a row aimed
+          # at one would be scored as surviving.
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev,battery]"
+      - run: python tools/mutation_table.py --run
