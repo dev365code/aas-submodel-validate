@@ -54,7 +54,7 @@ def test_carbon_footprints_can_carry_several_of_each_required_list(tmp_path):
                 and f.severity == Severity.ERROR], report.as_dict()
 
 
-@pytest.mark.parametrize("identifier", [IP, CONTACT + "/IPCommunication/", CONTACT, CONTACT + "/"])
+@pytest.mark.parametrize("identifier", [IP, CONTACT + "/IPCommunication/", CONTACT + "/"])
 def test_both_current_and_previous_ip_spellings_open_the_required_children(
         tmp_path, identifier):
     environment = contact_env()
@@ -66,6 +66,29 @@ def test_both_current_and_previous_ip_spellings_open_the_required_children(
     [finding] = [f for f in report.findings if f.id == "CI-E22"]
     assert identifier in finding.violation.detail, finding.violation
 
+
+
+def test_the_submodel_s_own_identifier_does_not_open_ip_communication(tmp_path):
+    """No published 02002 edition gives IPCommunication the submodel's own
+    identifier, `.../ContactInformations` without a trailing slash: 1.0
+    wrote `.../ContactInformations/`, 1.0.1 `.../IPCommunication/`, and
+    the slashless value is only ever the submodel's. It was an alias all
+    the same, so an element inside a contact carrying the submodel's
+    identifier was judged as IPCommunication. The earlier spellings kept
+    are the published ones, and this is not one of them."""
+    environment = contact_env()
+    link = _named(environment, "IPCommunication01")
+    _set_sid(link, CONTACT)
+    link["value"] = [e for e in link["value"]
+                     if e.get("idShort") != "AddressOfAdditionalLink"]
+    report = _run(tmp_path, environment).as_dict()
+    assert not [f for f in report["findings"] if f["rule"] == "CI-E22"], report["findings"]
+    # Named instead as what it is: an element no row claims, near the 1.0
+    # spelling, with the rules beneath it not asked.
+    [unmatched] = report["summary"]["unmatchedElements"]
+    assert unmatched["seen"] == CONTACT and unmatched["resembles"] == CONTACT + "/", unmatched
+    assert "CI-E22" in unmatched["rulesNotAskedHere"], unmatched
+    assert "CIL1" in [f["rule"] for f in report["findings"]], report["findings"]
 
 def test_software_configuration_uses_its_own_identifier_and_string_type(tmp_path):
     environment = sn_env()

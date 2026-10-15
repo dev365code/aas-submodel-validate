@@ -12,10 +12,12 @@ asked once for every template in `rules/detect.py`.
 
 The edition is 1.0.2. Upstream repaired IPCommunication and the space in
 TypeOfCommunication in that edition. In 1.0 the collection carried the
-submodel's own identifier; 1.0.1 used `.../ContactInformations/IPCommunication/`;
-1.0.2 uses `.../ContactInformations/ContactInformation/IPCommunication`.
-All three spellings still open the collection's required children, and a
-finding's `saw` names the spelling that matched (docs/divergences.md #51).
+submodel's identifier with a trailing slash, `.../ContactInformations/`;
+1.0.1 used `.../ContactInformations/IPCommunication/`; 1.0.2 uses
+`.../ContactInformations/ContactInformation/IPCommunication`. All three
+spellings still open the collection's required children, and a finding's
+`saw` names the spelling that matched. The submodel's own identifier,
+without the slash, is none of them (docs/divergences.md #51).
 
 This pack is generated rows only. What that covers is real -- cardinality,
 element kind, `valueType`, and the semanticId at every level, though a

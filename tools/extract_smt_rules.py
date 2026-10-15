@@ -292,9 +292,11 @@ PACKS = (
         "template": ROOT / "src/aas_submodel_validate/data/smt/02002/1.0.2/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/contact_tables.py",
         "prefix": "CI-E",
-        # Identifiers published before the upstream repair (#51, #57).
-        "aliases": {'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations',
-                                                                                                              'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/',
+        # Identifiers published before the upstream repair (#51, #57):
+        # IPCommunication as 1.0 and 1.0.1 wrote it -- with the trailing
+        # slash, and under its own name -- and not the submodel's own
+        # identifier, which no edition gave it.
+        "aliases": {'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/',
                                                                                                               'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/IPCommunication/'),
          'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication': ('https://admin-shell.io/zvei/nameplate/1/0/ '
                                                                                                                                   'ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication',)},
@@ -331,7 +333,9 @@ PACKS = (
         "template": ROOT / "src/aas_submodel_validate/data/smt/02007/1.0.2/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/sn_tables.py",
         "prefix": "SN-E",
-        # Identifiers published before the upstream repair (#51, #57).
+        # IPCommunication as 02002 1.0.1 and 1.0.2 spell it, beside the 1.0
+        # spelling this template keeps (#51), and the identifiers 02007
+        # published before its own repair (#57).
         "aliases": {'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/IPCommunication/',
                                                                             'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication'),
          'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication': ('https://admin-shell.io/zvei/nameplate/1/0/ '

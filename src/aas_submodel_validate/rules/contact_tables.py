@@ -356,7 +356,7 @@ TREE = (
                 'label': 'IPCommunication__00__',
                 'parent': 'CI-E01',
                 'kind': 'SubmodelElementCollection',
-                'match': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/IPCommunication/'),
+                'match': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/IPCommunication/'),
                 'sid': 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication',
                 'sid_type': 'ExternalReference',
                 'card': (0, None),
@@ -420,7 +420,7 @@ TREE = (
                     },
                 ),
                 'card_qualifier': 'Multiplicity',
-                'legacy_identifiers': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/IPCommunication/'),
+                'legacy_identifiers': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/', 'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/IPCommunication/'),
             },
             {
                 'id': 'CI-E25',

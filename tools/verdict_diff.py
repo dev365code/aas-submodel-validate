@@ -458,6 +458,33 @@ def build_corpus(into: Path):
     wrong_type.write_text(json.dumps(optional), encoding="utf-8")
     cases.append(Case("an optional Contact Information element of the wrong valueType, "
                       "known under SAMM's urn:irdi: prefix", wrong_type))
+    # An IPCommunication known by the submodel's own identifier, which no
+    # 02002 edition gave it (1.0's has a trailing slash) and which was read
+    # as one until 0.13.0 -- complete, and without its required child.
+    for name, label, drop in (
+            ("contact-ip-under-the-submodel-identifier.json",
+             "a Contact Information IPCommunication known by the submodel's own identifier", False),
+            ("contact-ip-under-the-submodel-identifier-missing-child.json",
+             "a Contact Information IPCommunication known by the submodel's own identifier, "
+             "without its required AddressOfAdditionalLink", True)):
+        contact = contact_env()
+        pending = list(contact["submodels"][0]["submodelElements"])
+        while pending:
+            element = pending.pop(0)
+            if element.get("idShort") == "IPCommunication01":
+                element["semanticId"]["keys"][0]["value"] = \
+                    "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
+                if drop:
+                    element["value"] = [c for c in element["value"]
+                                        if c.get("idShort") != "AddressOfAdditionalLink"]
+                break
+            if isinstance(element.get("value"), list):
+                pending.extend(c for c in element["value"] if isinstance(c, dict) and "modelType" in c)
+        else:
+            raise SystemExit("the Contact Information fixture no longer holds IPCommunication01")
+        ip = into / name
+        ip.write_text(json.dumps(contact), encoding="utf-8")
+        cases.append(Case(label, ip))
     handover = hd_env()
     handover["submodels"][0]["semanticId"]["keys"][0]["value"] = "urn:irdi:0173-1#01-AHF578#003"
     submodel = into / "handover-submodel-under-irdi-urn.json"
