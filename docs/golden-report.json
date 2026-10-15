@@ -40,7 +40,7 @@
   },
   {
    "detail": null,
-   "fix": "Provide exactly one 'DocumentClassifications' element(s) under Document with semanticId 0173-1#02-ABI502#003.",
+   "fix": "Provide exactly one 'DocumentClassifications' element(s) under Document with semanticId 0173-1#02-ABI502#003. The template declares it a SubmodelElementList.",
    "fixability": 2,
    "fixabilityWhy": "one element here that no row claimed carries this row's idShort or an identifier close to its own; the correction is determined once it is confirmed to be the one meant",
    "kind": "template",
@@ -59,7 +59,7 @@
   },
   {
    "detail": null,
-   "fix": "Provide exactly one 'Version' element(s) under DocumentVersion with semanticId 0173-1#02-AAP003#005; example value: 'V1.2'.",
+   "fix": "Provide exactly one 'Version' element(s) under DocumentVersion with semanticId 0173-1#02-AAP003#005; example value: 'V1.2'. The template declares it a Property of valueType xs:string.",
    "fixability": 5,
    "fixabilityWhy": "nothing else here resembles the missing element, and what it holds is content the template does not give",
    "kind": "template",

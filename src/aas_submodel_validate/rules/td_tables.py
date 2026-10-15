@@ -23,7 +23,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'GeneralInformation' element(s) with semanticId 0173-1#02-ABK161#002/0173-1#01-AHX838#002.",
+        'fix': "Provide exactly one 'GeneralInformation' element(s) with semanticId 0173-1#02-ABK161#002/0173-1#01-AHX838#002. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'TD-E02',
@@ -38,7 +38,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'ManufacturerName' element(s) under GeneralInformation with semanticId 0173-1#02-AAO677#004.",
+                'fix': "Provide exactly one 'ManufacturerName' element(s) under GeneralInformation with semanticId 0173-1#02-AAO677#004. The template declares it a Property of valueType xs:string.",
                 'children': (),
             },
             {
@@ -54,7 +54,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide at most one 'CompanyLogo' element(s) under GeneralInformation with semanticId 0173-1#02-ABI776#002.",
+                'fix': "Provide at most one 'CompanyLogo' element(s) under GeneralInformation with semanticId 0173-1#02-ABI776#002. The template declares it a File.",
                 'children': (),
             },
             {
@@ -70,7 +70,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'ManufacturerProductDesignation' element(s) under GeneralInformation with semanticId 0173-1#02-AAW338#003.",
+                'fix': "Provide exactly one 'ManufacturerProductDesignation' element(s) under GeneralInformation with semanticId 0173-1#02-AAW338#003. The template declares it a MultiLanguageProperty.",
                 'children': (),
             },
             {
@@ -86,7 +86,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'ManufacturerArticleNumber' element(s) under GeneralInformation with semanticId 0173-1#02-AAO676#005.",
+                'fix': "Provide exactly one 'ManufacturerArticleNumber' element(s) under GeneralInformation with semanticId 0173-1#02-AAO676#005. The template declares it a Property of valueType xs:string.",
                 'children': (),
             },
             {
@@ -102,7 +102,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'ManufacturerOrderCode' element(s) under GeneralInformation with semanticId 0173-1#02-AAO227#004.",
+                'fix': "Provide exactly one 'ManufacturerOrderCode' element(s) under GeneralInformation with semanticId 0173-1#02-AAO227#004. The template declares it a Property of valueType xs:string.",
                 'children': (),
             },
             {
@@ -118,7 +118,7 @@ TREE = (
                 'list_type': 'SubmodelElementCollection',
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide at most one 'ProductImages' element(s) under GeneralInformation with semanticId 0173-1#02-ABM220#001.",
+                'fix': "Provide at most one 'ProductImages' element(s) under GeneralInformation with semanticId 0173-1#02-ABM220#001. The template declares it a SubmodelElementList.",
                 'children': (
                     {
                         'id': 'TD-E08',
@@ -133,7 +133,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number of 'ProductImage' element(s) under ProductImages with semanticId 0173-1#02-ABM220#001/0173-1#01-AHY911#001.",
+                        'fix': "Provide any number of 'ProductImage' element(s) under ProductImages with semanticId 0173-1#02-ABM220#001/0173-1#01-AHY911#001. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'ProductImage' being this tool's name for it.",
                         'children': (
                             {
                                 'id': 'TD-E09',
@@ -148,7 +148,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'ImageFile' element(s) under ProductImage with semanticId 0173-1#02-ABK291#002.",
+                                'fix': "Provide exactly one 'ImageFile' element(s) under ProductImage with semanticId 0173-1#02-ABK291#002. The template declares it a File.",
                                 'children': (),
                             },
                             {
@@ -164,7 +164,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide at most one 'ImageNote' element(s) under ProductImage with semanticId 0173-1#02-ABL423#001.",
+                                'fix': "Provide at most one 'ImageNote' element(s) under ProductImage with semanticId 0173-1#02-ABL423#001. The template declares it a MultiLanguageProperty.",
                                 'children': (),
                             },
                         ),
@@ -187,7 +187,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'ProductClassifications' element(s) with semanticId 0173-1#02-ABK162#002.",
+        'fix': "Provide at most one 'ProductClassifications' element(s) with semanticId 0173-1#02-ABK162#002. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'TD-E12',
@@ -202,7 +202,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'ProductClassification' element(s) under ProductClassifications with semanticId 0173-1#02-ABK162#002/0173-1#01-AHX839#002.",
+                'fix': "Provide any number of 'ProductClassification' element(s) under ProductClassifications with semanticId 0173-1#02-ABK162#002/0173-1#01-AHX839#002. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'ProductClassification' being this tool's name for it.",
                 'children': (
                     {
                         'id': 'TD-E13',
@@ -217,7 +217,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': 'ECLASS | IEC CDD | UNSPSC | customer specific',
-                        'fix': "Provide exactly one 'ClassificationSystem' element(s) under ProductClassification with semanticId 0173-1#02-ABL424#001; example value: 'ECLASS | IEC CDD | UNSPSC | customer specific'.",
+                        'fix': "Provide exactly one 'ClassificationSystem' element(s) under ProductClassification with semanticId 0173-1#02-ABL424#001; example value: 'ECLASS | IEC CDD | UNSPSC | customer specific'. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -233,7 +233,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ClassificationSystemVersion' element(s) under ProductClassification with semanticId 0173-1#02-AAR710#003.",
+                        'fix': "Provide at most one 'ClassificationSystemVersion' element(s) under ProductClassification with semanticId 0173-1#02-AAR710#003. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -249,7 +249,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ClassificationSystemUrl' element(s) under ProductClassification with semanticId https://admin-shell.io/IDTA/TechnicalData/ProductClassifications/ProduktClassification/ClassificationSystemUrl/2/0.",
+                        'fix': "Provide at most one 'ClassificationSystemUrl' element(s) under ProductClassification with semanticId https://admin-shell.io/IDTA/TechnicalData/ProductClassifications/ProduktClassification/ClassificationSystemUrl/2/0. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -265,7 +265,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'ProductClassId' element(s) under ProductClassification with semanticId 0173-1#02-ABG776#003.",
+                        'fix': "Provide exactly one 'ProductClassId' element(s) under ProductClassification with semanticId 0173-1#02-ABG776#003. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -281,7 +281,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'ProductClassCodedName' element(s) under ProductClassification with semanticId 0173-1#02-ABK128#002.",
+                        'fix': "Provide exactly one 'ProductClassCodedName' element(s) under ProductClassification with semanticId 0173-1#02-ABK128#002. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -297,7 +297,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ProductClassName' element(s) under ProductClassification with semanticId 0173-1#02-ABK273#002.",
+                        'fix': "Provide at most one 'ProductClassName' element(s) under ProductClassification with semanticId 0173-1#02-ABK273#002. The template declares it a MultiLanguageProperty.",
                         'children': (),
                     },
                     {
@@ -313,7 +313,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ReferenceToTechnicalPropertyArea' element(s) under ProductClassification with semanticId 0173-1#02-ABL358#002.",
+                        'fix': "Provide at most one 'ReferenceToTechnicalPropertyArea' element(s) under ProductClassification with semanticId 0173-1#02-ABL358#002. The template declares it a ReferenceElement.",
                         'children': (),
                     },
                 ),
@@ -334,7 +334,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'TechnicalPropertyAreas' element(s) with semanticId 0173-1#02-ABK163#002.",
+        'fix': "Provide at most one 'TechnicalPropertyAreas' element(s) with semanticId 0173-1#02-ABK163#002. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'TD-E21',
@@ -349,7 +349,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'TechnicalPropertyArea' element(s) under TechnicalPropertyAreas with semanticId 0173-1#02-ABL358#002/0173-1#01-AHX773#002.",
+                'fix': "Provide any number of 'TechnicalPropertyArea' element(s) under TechnicalPropertyAreas with semanticId 0173-1#02-ABL358#002/0173-1#01-AHX773#002. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'TechnicalPropertyArea' being this tool's name for it.",
                 'children': (),
                 'card_qualifier': None,
             },
@@ -368,7 +368,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'FurtherInformation' element(s) with semanticId 0173-1#02-ABK164#002.",
+        'fix': "Provide at most one 'FurtherInformation' element(s) with semanticId 0173-1#02-ABK164#002. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'TD-E23',
@@ -383,7 +383,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'TextStatement' element(s) under FurtherInformation with semanticId 0173-1#02-ABK134#002.",
+                'fix': "Provide any number of 'TextStatement' element(s) under FurtherInformation with semanticId 0173-1#02-ABK134#002. The template declares it a MultiLanguageProperty.",
                 'children': (),
             },
             {
@@ -399,7 +399,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'ValidDate' element(s) under FurtherInformation with semanticId 0173-1#02-ABL775#001.",
+                'fix': "Provide exactly one 'ValidDate' element(s) under FurtherInformation with semanticId 0173-1#02-ABL775#001. The template declares it a Property of valueType xs:date.",
                 'children': (),
             },
         ),
@@ -417,7 +417,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'SpecificDescriptions' element(s) with semanticId 0173-1#02-ABM221#001.",
+        'fix': "Provide at most one 'SpecificDescriptions' element(s) with semanticId 0173-1#02-ABM221#001. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'TD-E26',
@@ -432,7 +432,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'SpecificDescription' element(s) under SpecificDescriptions with semanticId 0173-1#02-ABM221#001/0173-1#01-AHY912#001.",
+                'fix': "Provide any number of 'SpecificDescription' element(s) under SpecificDescriptions with semanticId 0173-1#02-ABM221#001/0173-1#01-AHY912#001. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'SpecificDescription' being this tool's name for it.",
                 'children': (),
                 'card_qualifier': None,
             },

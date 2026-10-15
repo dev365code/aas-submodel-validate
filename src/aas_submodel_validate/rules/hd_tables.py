@@ -23,7 +23,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'Documents' element(s) with semanticId 0173-1#02-ABI500#003.",
+        'fix': "Provide exactly one 'Documents' element(s) with semanticId 0173-1#02-ABI500#003. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'HD-E02',
@@ -38,7 +38,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'Document' element(s) under Documents with semanticId 0173-1#02-ABI500#003/0173-1#01-AHF579#003.",
+                'fix': "Provide one or more 'Document' element(s) under Documents with semanticId 0173-1#02-ABI500#003/0173-1#01-AHF579#003. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'Document' being this tool's name for it.",
                 'children': (
                     {
                         'id': 'HD-E03',
@@ -53,7 +53,7 @@ TREE = (
                         'list_type': 'SubmodelElementCollection',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'DocumentIds' element(s) under Document with semanticId 0173-1#02-ABI501#003.",
+                        'fix': "Provide exactly one 'DocumentIds' element(s) under Document with semanticId 0173-1#02-ABI501#003. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'HD-E04',
@@ -68,7 +68,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide one or more 'DocumentId' element(s) under DocumentIds with semanticId 0173-1#02-ABI501#003/0173-1#01-AHF580#003.",
+                                'fix': "Provide one or more 'DocumentId' element(s) under DocumentIds with semanticId 0173-1#02-ABI501#003/0173-1#01-AHF580#003. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'DocumentId' being this tool's name for it.",
                                 'children': (
                                     {
                                         'id': 'HD-E05',
@@ -83,7 +83,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'https://domain.com/...',
-                                        'fix': "Provide exactly one 'DocumentDomainId' element(s) under DocumentId with semanticId 0173-1#02-ABH994#003; example value: 'https://domain.com/...'.",
+                                        'fix': "Provide exactly one 'DocumentDomainId' element(s) under DocumentId with semanticId 0173-1#02-ABH994#003; example value: 'https://domain.com/...'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -99,7 +99,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'XF90-884',
-                                        'fix': "Provide exactly one 'DocumentIdentifier' element(s) under DocumentId with semanticId 0173-1#02-AAO099#004; example value: 'XF90-884'.",
+                                        'fix': "Provide exactly one 'DocumentIdentifier' element(s) under DocumentId with semanticId 0173-1#02-AAO099#004; example value: 'XF90-884'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -115,7 +115,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'true',
-                                        'fix': "Provide at most one 'DocumentIsPrimary' element(s) under DocumentId with semanticId 0173-1#02-ABH995#003; example value: 'true'.",
+                                        'fix': "Provide at most one 'DocumentIsPrimary' element(s) under DocumentId with semanticId 0173-1#02-ABH995#003; example value: 'true'. The template declares it a Property of valueType xs:boolean.",
                                         'children': (),
                                     },
                                 ),
@@ -135,7 +135,7 @@ TREE = (
                         'list_type': 'SubmodelElementCollection',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'DocumentClassifications' element(s) under Document with semanticId 0173-1#02-ABI502#003.",
+                        'fix': "Provide exactly one 'DocumentClassifications' element(s) under Document with semanticId 0173-1#02-ABI502#003. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'HD-E09',
@@ -150,7 +150,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide one or more 'DocumentClassification' element(s) under DocumentClassifications with semanticId 0173-1#02-ABI502#003/0173-1#01-AHF581#003.",
+                                'fix': "Provide one or more 'DocumentClassification' element(s) under DocumentClassifications with semanticId 0173-1#02-ABI502#003/0173-1#01-AHF581#003. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'DocumentClassification' being this tool's name for it.",
                                 'children': (
                                     {
                                         'id': 'HD-E10',
@@ -165,7 +165,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': '03-02',
-                                        'fix': "Provide exactly one 'ClassId' element(s) under DocumentClassification with semanticId 0173-1#02-ABH996#003; example value: '03-02'.",
+                                        'fix': "Provide exactly one 'ClassId' element(s) under DocumentClassification with semanticId 0173-1#02-ABH996#003; example value: '03-02'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -181,7 +181,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Operation@en',
-                                        'fix': "Provide exactly one 'ClassName' element(s) under DocumentClassification with semanticId 0173-1#02-ABJ219#002; example value: 'Operation@en'.",
+                                        'fix': "Provide exactly one 'ClassName' element(s) under DocumentClassification with semanticId 0173-1#02-ABJ219#002; example value: 'Operation@en'. The template declares it a MultiLanguageProperty.",
                                         'children': (),
                                     },
                                     {
@@ -197,7 +197,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'VDI 2770 Blatt 1:2020',
-                                        'fix': "Provide exactly one 'ClassificationSystem' element(s) under DocumentClassification with semanticId 0173-1#02-ABH997#003; example value: 'VDI 2770 Blatt 1:2020'.",
+                                        'fix': "Provide exactly one 'ClassificationSystem' element(s) under DocumentClassification with semanticId 0173-1#02-ABH997#003; example value: 'VDI 2770 Blatt 1:2020'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                 ),
@@ -217,7 +217,7 @@ TREE = (
                         'list_type': 'SubmodelElementCollection',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'DocumentVersions' element(s) under Document with semanticId 0173-1#02-ABI503#003.",
+                        'fix': "Provide exactly one 'DocumentVersions' element(s) under Document with semanticId 0173-1#02-ABI503#003. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'HD-E14',
@@ -232,7 +232,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide one or more 'DocumentVersion' element(s) under DocumentVersions with semanticId 0173-1#02-ABI503#003/0173-1#01-AHF582#003.",
+                                'fix': "Provide one or more 'DocumentVersion' element(s) under DocumentVersions with semanticId 0173-1#02-ABI503#003/0173-1#01-AHF582#003. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'DocumentVersion' being this tool's name for it.",
                                 'children': (
                                     {
                                         'id': 'HD-E15',
@@ -247,7 +247,7 @@ TREE = (
                                         'list_type': 'Property',
                                         'allowed_idshort': None,
                                         'example': None,
-                                        'fix': "Provide exactly one 'Language' element(s) under DocumentVersion with semanticId 0173-1#02-AAN468#008.",
+                                        'fix': "Provide exactly one 'Language' element(s) under DocumentVersion with semanticId 0173-1#02-AAN468#008. The template declares it a SubmodelElementList.",
                                         'children': (
                                             {
                                                 'id': 'HD-E16',
@@ -262,7 +262,7 @@ TREE = (
                                                 'list_type': None,
                                                 'allowed_idshort': None,
                                                 'example': 'en',
-                                                'fix': "Provide one or more 'LanguageCode' element(s) under Language with semanticId 0173-1#02-AAN468#008; example value: 'en'.",
+                                                'fix': "Provide one or more 'LanguageCode' element(s) under Language with semanticId 0173-1#02-AAN468#008; example value: 'en'. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'LanguageCode' being this tool's name for it.",
                                                 'children': (),
                                             },
                                         ),
@@ -280,7 +280,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'V1.2',
-                                        'fix': "Provide exactly one 'Version' element(s) under DocumentVersion with semanticId 0173-1#02-AAP003#005; example value: 'V1.2'.",
+                                        'fix': "Provide exactly one 'Version' element(s) under DocumentVersion with semanticId 0173-1#02-AAP003#005; example value: 'V1.2'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -296,7 +296,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Examplary title@en',
-                                        'fix': "Provide exactly one 'Title' element(s) under DocumentVersion with semanticId 0173-1#02-ABG940#003; example value: 'Examplary title@en'.",
+                                        'fix': "Provide exactly one 'Title' element(s) under DocumentVersion with semanticId 0173-1#02-ABG940#003; example value: 'Examplary title@en'. The template declares it a MultiLanguageProperty.",
                                         'children': (),
                                     },
                                     {
@@ -312,7 +312,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Examplary subtitle@en',
-                                        'fix': "Provide at most one 'Subtitle' element(s) under DocumentVersion with semanticId 0173-1#02-ABH998#003; example value: 'Examplary subtitle@en'.",
+                                        'fix': "Provide at most one 'Subtitle' element(s) under DocumentVersion with semanticId 0173-1#02-ABH998#003; example value: 'Examplary subtitle@en'. The template declares it a MultiLanguageProperty.",
                                         'children': (),
                                     },
                                     {
@@ -328,7 +328,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Abstract@en',
-                                        'fix': "Provide exactly one 'Description' element(s) under DocumentVersion with semanticId 0173-1#02-AAN466#004; example value: 'Abstract@en'.",
+                                        'fix': "Provide exactly one 'Description' element(s) under DocumentVersion with semanticId 0173-1#02-AAN466#004; example value: 'Abstract@en'. The template declares it a MultiLanguageProperty.",
                                         'children': (),
                                     },
                                     {
@@ -344,7 +344,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Examplary keywords@en',
-                                        'fix': "Provide at most one 'KeyWords' element(s) under DocumentVersion with semanticId 0173-1#02-ABH999#003; example value: 'Examplary keywords@en'.",
+                                        'fix': "Provide at most one 'KeyWords' element(s) under DocumentVersion with semanticId 0173-1#02-ABH999#003; example value: 'Examplary keywords@en'. The template declares it a MultiLanguageProperty.",
                                         'children': (),
                                     },
                                     {
@@ -360,7 +360,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': '2020-02-06',
-                                        'fix': "Provide exactly one 'StatusSetDate' element(s) under DocumentVersion with semanticId 0173-1#02-ABI000#003; example value: '2020-02-06'.",
+                                        'fix': "Provide exactly one 'StatusSetDate' element(s) under DocumentVersion with semanticId 0173-1#02-ABI000#003; example value: '2020-02-06'. The template declares it a Property of valueType xs:date.",
                                         'children': (),
                                     },
                                     {
@@ -376,7 +376,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Released',
-                                        'fix': "Provide exactly one 'StatusValue' element(s) under DocumentVersion with semanticId 0173-1#02-ABI001#003; example value: 'Released'.",
+                                        'fix': "Provide exactly one 'StatusValue' element(s) under DocumentVersion with semanticId 0173-1#02-ABI001#003; example value: 'Released'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -392,7 +392,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Example company',
-                                        'fix': "Provide exactly one 'OrganizationShortName' element(s) under DocumentVersion with semanticId https://api.eclass-cdp.com/0173-1-02-ABI002-003; example value: 'Example company'.",
+                                        'fix': "Provide exactly one 'OrganizationShortName' element(s) under DocumentVersion with semanticId https://api.eclass-cdp.com/0173-1-02-ABI002-003; example value: 'Example company'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -408,7 +408,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': 'Example company Ltd.',
-                                        'fix': "Provide exactly one 'OrganizationOfficialName' element(s) under DocumentVersion with semanticId 0173-1#02-ABI004#003; example value: 'Example company Ltd.'.",
+                                        'fix': "Provide exactly one 'OrganizationOfficialName' element(s) under DocumentVersion with semanticId 0173-1#02-ABI004#003; example value: 'Example company Ltd.'. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -424,7 +424,7 @@ TREE = (
                                         'list_type': 'ReferenceElement',
                                         'allowed_idshort': None,
                                         'example': None,
-                                        'fix': "Provide at most one 'RefersToEntities' element(s) under DocumentVersion with semanticId 0173-1#02-ABK288#002.",
+                                        'fix': "Provide at most one 'RefersToEntities' element(s) under DocumentVersion with semanticId 0173-1#02-ABK288#002. The template declares it a SubmodelElementList.",
                                         'children': (
                                             {
                                                 'id': 'HD-E27',
@@ -439,7 +439,7 @@ TREE = (
                                                 'list_type': None,
                                                 'allowed_idshort': '^RefersTo(?:\\d{2,3})?$',
                                                 'example': None,
-                                                'fix': "Provide one or more 'RefersTo' element(s) under RefersToEntities with semanticId 0173-1#02-ABK288#002.",
+                                                'fix': "Provide one or more 'RefersTo' element(s) under RefersToEntities with semanticId 0173-1#02-ABK288#002. The template declares it a ReferenceElement, as an item of that list: give it no idShort, 'RefersTo' being this tool's name for it.",
                                                 'children': (),
                                                 'allowed_idshort_raw': 'RefersTo[\\d{2,3}]',
                                             },
@@ -458,7 +458,7 @@ TREE = (
                                         'list_type': 'ReferenceElement',
                                         'allowed_idshort': None,
                                         'example': None,
-                                        'fix': "Provide at most one 'BasedOnReferences' element(s) under DocumentVersion with semanticId 0173-1#02-ABK289#002.",
+                                        'fix': "Provide at most one 'BasedOnReferences' element(s) under DocumentVersion with semanticId 0173-1#02-ABK289#002. The template declares it a SubmodelElementList.",
                                         'children': (
                                             {
                                                 'id': 'HD-E29',
@@ -473,7 +473,7 @@ TREE = (
                                                 'list_type': None,
                                                 'allowed_idshort': '^BasedOn(?:\\d{2,3})?$',
                                                 'example': None,
-                                                'fix': "Provide one or more 'BasedOn' element(s) under BasedOnReferences with semanticId 0173-1#02-ABK289#002.",
+                                                'fix': "Provide one or more 'BasedOn' element(s) under BasedOnReferences with semanticId 0173-1#02-ABK289#002. The template declares it a ReferenceElement, as an item of that list: give it no idShort, 'BasedOn' being this tool's name for it.",
                                                 'children': (),
                                                 'allowed_idshort_raw': 'BasedOn[\\d{2,3}]',
                                             },
@@ -492,7 +492,7 @@ TREE = (
                                         'list_type': 'ReferenceElement',
                                         'allowed_idshort': None,
                                         'example': None,
-                                        'fix': "Provide at most one 'TranslationOfEntities' element(s) under DocumentVersion with semanticId 0173-1#02-ABK290#002.",
+                                        'fix': "Provide at most one 'TranslationOfEntities' element(s) under DocumentVersion with semanticId 0173-1#02-ABK290#002. The template declares it a SubmodelElementList.",
                                         'children': (
                                             {
                                                 'id': 'HD-E31',
@@ -507,7 +507,7 @@ TREE = (
                                                 'list_type': None,
                                                 'allowed_idshort': '^TranslationOf(?:\\d{2,3})?$',
                                                 'example': None,
-                                                'fix': "Provide one or more 'TranslationOf' element(s) under TranslationOfEntities with semanticId 0173-1#02-ABK290#002.",
+                                                'fix': "Provide one or more 'TranslationOf' element(s) under TranslationOfEntities with semanticId 0173-1#02-ABK290#002. The template declares it a ReferenceElement, as an item of that list: give it no idShort, 'TranslationOf' being this tool's name for it.",
                                                 'children': (),
                                                 'allowed_idshort_raw': 'TranslationOf[\\d{2,3}]',
                                             },
@@ -526,7 +526,7 @@ TREE = (
                                         'list_type': 'File',
                                         'allowed_idshort': None,
                                         'example': None,
-                                        'fix': "Provide exactly one 'DigitalFiles' element(s) under DocumentVersion with semanticId 0173-1#02-ABK126#002.",
+                                        'fix': "Provide exactly one 'DigitalFiles' element(s) under DocumentVersion with semanticId 0173-1#02-ABK126#002. The template declares it a SubmodelElementList.",
                                         'children': (
                                             {
                                                 'id': 'HD-E33',
@@ -541,7 +541,7 @@ TREE = (
                                                 'list_type': None,
                                                 'allowed_idshort': '^DigitalFile(?:\\d{2,3})?$',
                                                 'example': 'docu_cecc_fullmanual_DE.PDF',
-                                                'fix': "Provide one or more 'DigitalFile' element(s) under DigitalFiles with semanticId 0173-1#02-ABK126#002; example value: 'docu_cecc_fullmanual_DE.PDF'.",
+                                                'fix': "Provide one or more 'DigitalFile' element(s) under DigitalFiles with semanticId 0173-1#02-ABK126#002; example value: 'docu_cecc_fullmanual_DE.PDF'. The template declares it a File, as an item of that list: give it no idShort, 'DigitalFile' being this tool's name for it.",
                                                 'children': (),
                                                 'allowed_idshort_raw': 'DigitalFile[\\d{2,3}]',
                                             },
@@ -560,7 +560,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': '^PreviewFile(?:\\d{2,3})?$',
                                         'example': 'docu_cecc_fullmanual_DE.jpg',
-                                        'fix': "Provide at most one 'PreviewFile' element(s) under DocumentVersion with semanticId 0173-1#02-ABK127#002; example value: 'docu_cecc_fullmanual_DE.jpg'.",
+                                        'fix': "Provide at most one 'PreviewFile' element(s) under DocumentVersion with semanticId 0173-1#02-ABK127#002; example value: 'docu_cecc_fullmanual_DE.jpg'. The template declares it a File.",
                                         'children': (),
                                         'allowed_idshort_raw': 'PreviewFile[\\d{2,3}]',
                                     },
@@ -581,7 +581,7 @@ TREE = (
                         'list_type': 'ReferenceElement',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'DocumentedEntities' element(s) under Document with semanticId https://admin-shell.io/vdi/2770/1/0/Document/DocumentedEntities.",
+                        'fix': "Provide at most one 'DocumentedEntities' element(s) under Document with semanticId https://admin-shell.io/vdi/2770/1/0/Document/DocumentedEntities. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'HD-E36',
@@ -596,7 +596,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide one or more 'DocumentedEntity' element(s) under DocumentedEntities with semanticId https://admin-shell.io/vdi/2770/1/0/Document/DocumentedEntity.",
+                                'fix': "Provide one or more 'DocumentedEntity' element(s) under DocumentedEntities with semanticId https://admin-shell.io/vdi/2770/1/0/Document/DocumentedEntity. The template declares it a ReferenceElement, as an item of that list: give it no idShort, 'DocumentedEntity' being this tool's name for it.",
                                 'children': (),
                             },
                         ),
@@ -618,7 +618,7 @@ TREE = (
         'list_type': 'Entity',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'Entities' element(s) with semanticId https://admin-shell.io/vdi/2770/1/0/EntitiesForDocumentation.",
+        'fix': "Provide at most one 'Entities' element(s) with semanticId https://admin-shell.io/vdi/2770/1/0/EntitiesForDocumentation. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'HD-E38',
@@ -633,7 +633,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'EntityForDocumentation' element(s) under Entities with semanticId https://admin-shell.io/vdi/2770/1/0/EntityForDocumentation.",
+                'fix': "Provide one or more 'EntityForDocumentation' element(s) under Entities with semanticId https://admin-shell.io/vdi/2770/1/0/EntityForDocumentation. The template declares it an Entity, as an item of that list: give it no idShort, 'EntityForDocumentation' being this tool's name for it.",
                 'children': (),
             },
         ),

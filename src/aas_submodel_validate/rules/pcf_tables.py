@@ -23,7 +23,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'ProductCarbonFootprints' element(s) with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductCarbonFootprints/1/0.",
+        'fix': "Provide exactly one 'ProductCarbonFootprints' element(s) with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductCarbonFootprints/1/0. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'PCF-E02',
@@ -38,7 +38,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'ProductCarbonFootprint' element(s) under ProductCarbonFootprints with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductCarbonFootprint/1/0.",
+                'fix': "Provide any number of 'ProductCarbonFootprint' element(s) under ProductCarbonFootprints with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductCarbonFootprint/1/0. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'ProductCarbonFootprint' being this tool's name for it.",
                 'children': (
                     {
                         'id': 'PCF-E03',
@@ -53,7 +53,7 @@ TREE = (
                         'list_type': 'Property',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'PcfCalculationMethods' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0.",
+                        'fix': "Provide one or more 'PcfCalculationMethods' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'PCF-E04',
@@ -68,7 +68,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'PcfCalculationMethod' element(s) under PcfCalculationMethods with semanticId 0173-1#02-ABG854#003.",
+                                'fix': "Provide exactly one 'PcfCalculationMethod' element(s) under PcfCalculationMethods with semanticId 0173-1#02-ABG854#003. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'PcfCalculationMethod' being this tool's name for it.",
                                 'children': (),
                             },
                         ),
@@ -86,7 +86,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'PcfCO2eq' element(s) under ProductCarbonFootprint with semanticId 0173-1#02-ABG855#003.",
+                        'fix': "Provide exactly one 'PcfCO2eq' element(s) under ProductCarbonFootprint with semanticId 0173-1#02-ABG855#003. The template declares it a Property of valueType xs:decimal.",
                         'children': (),
                     },
                     {
@@ -102,7 +102,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'ReferenceImpactUnitForCalculation' element(s) under ProductCarbonFootprint with semanticId 0173-1#02-ABG856#003.",
+                        'fix': "Provide exactly one 'ReferenceImpactUnitForCalculation' element(s) under ProductCarbonFootprint with semanticId 0173-1#02-ABG856#003. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -118,7 +118,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'QuantityOfMeasureForCalculation' element(s) under ProductCarbonFootprint with semanticId 0173-1#02-ABG857#003.",
+                        'fix': "Provide exactly one 'QuantityOfMeasureForCalculation' element(s) under ProductCarbonFootprint with semanticId 0173-1#02-ABG857#003. The template declares it a Property of valueType xs:double.",
                         'children': (),
                     },
                     {
@@ -134,7 +134,7 @@ TREE = (
                         'list_type': 'Property',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'LifeCyclePhases' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/LifeCyclePhases/1/0.",
+                        'fix': "Provide one or more 'LifeCyclePhases' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/LifeCyclePhases/1/0. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'PCF-E09',
@@ -149,7 +149,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'LifeCyclePhase' element(s) under LifeCyclePhases with semanticId 0173-1#02-ABG858#003.",
+                                'fix': "Provide exactly one 'LifeCyclePhase' element(s) under LifeCyclePhases with semanticId 0173-1#02-ABG858#003. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'LifeCyclePhase' being this tool's name for it.",
                                 'children': (),
                             },
                         ),
@@ -167,7 +167,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ExplanatoryStatement' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ExplanatoryStatement/1/0.",
+                        'fix': "Provide at most one 'ExplanatoryStatement' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ExplanatoryStatement/1/0. The template declares it a File.",
                         'children': (),
                     },
                     {
@@ -183,7 +183,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'GoodsHandoverAddress' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation.",
+                        'fix': "Provide at most one 'GoodsHandoverAddress' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation. The template declares it a SubmodelElementCollection.",
                         'children': (),
                     },
                     {
@@ -199,7 +199,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'PublicationDate' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PublicationDate/1/0.",
+                        'fix': "Provide exactly one 'PublicationDate' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PublicationDate/1/0. The template declares it a Property of valueType xs:dateTime.",
                         'children': (),
                     },
                     {
@@ -215,7 +215,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ExpirationDate' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ExpirationDate/1/0.",
+                        'fix': "Provide at most one 'ExpirationDate' element(s) under ProductCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ExpirationDate/1/0. The template declares it a Property of valueType xs:dateTime.",
                         'children': (),
                     },
                 ),
@@ -236,7 +236,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'ProductOrSectorSpecificCarbonFootprints' element(s) with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificCarbonFootprints/1/0.",
+        'fix': "Provide at most one 'ProductOrSectorSpecificCarbonFootprints' element(s) with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificCarbonFootprints/1/0. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'PCF-E15',
@@ -251,7 +251,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'ProductOrSectorSpecificCarbonFootprint' element(s) under ProductOrSectorSpecificCarbonFootprints with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificCarbonFootprint/1/0.",
+                'fix': "Provide any number of 'ProductOrSectorSpecificCarbonFootprint' element(s) under ProductOrSectorSpecificCarbonFootprints with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificCarbonFootprint/1/0. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'ProductOrSectorSpecificCarbonFootprint' being this tool's name for it.",
                 'children': (
                     {
                         'id': 'PCF-E16',
@@ -266,7 +266,7 @@ TREE = (
                         'list_type': 'Property',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'PcfCalculationMethods' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0.",
+                        'fix': "Provide one or more 'PcfCalculationMethods' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'PCF-E17',
@@ -281,7 +281,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'PcfCalculationMethod' element(s) under PcfCalculationMethods with semanticId 0173-1#02-ABG854#003.",
+                                'fix': "Provide exactly one 'PcfCalculationMethod' element(s) under PcfCalculationMethods with semanticId 0173-1#02-ABG854#003. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'PcfCalculationMethod' being this tool's name for it.",
                                 'children': (),
                             },
                         ),
@@ -299,7 +299,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'ProductOrSectorSpecificRule' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/1/0.",
+                        'fix': "Provide exactly one 'ProductOrSectorSpecificRule' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/1/0. The template declares it a SubmodelElementCollection.",
                         'children': (
                             {
                                 'id': 'PCF-E19',
@@ -314,7 +314,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'PcfRuleOperator' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/Operator/1/0.",
+                                'fix': "Provide exactly one 'PcfRuleOperator' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/Operator/1/0. The template declares it a Property of valueType xs:string.",
                                 'children': (),
                             },
                             {
@@ -330,7 +330,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'PcfRuleName' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/Name/1/0.",
+                                'fix': "Provide exactly one 'PcfRuleName' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/Name/1/0. The template declares it a Property of valueType xs:string.",
                                 'children': (),
                             },
                             {
@@ -346,7 +346,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide at most one 'PcfRuleVersion' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/Version/1/0.",
+                                'fix': "Provide at most one 'PcfRuleVersion' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/Version/1/0. The template declares it a Property of valueType xs:string.",
                                 'children': (),
                             },
                             {
@@ -362,7 +362,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide at most one 'PcfRuleOnlineReference' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/OnlineReference/1/0.",
+                                'fix': "Provide at most one 'PcfRuleOnlineReference' element(s) under ProductOrSectorSpecificRule with semanticId https://admin-shell.io/idta/CarbonFootprint/ProductOrSectorSpecificRule/OnlineReference/1/0. The template declares it a File.",
                                 'children': (),
                             },
                         ),
@@ -380,7 +380,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ExternalPcfApi' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ExternalPcfApi/1/0.",
+                        'fix': "Provide at most one 'ExternalPcfApi' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/ExternalPcfApi/1/0. The template declares it a SubmodelElementCollection.",
                         'children': (
                             {
                                 'id': 'PCF-E24',
@@ -395,7 +395,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'PcfApiEndpoint' element(s) under ExternalPcfApi with semanticId https://admin-shell.io/idta/CarbonFootprint/ExternalPcfApi/Endpoint/1/0.",
+                                'fix': "Provide exactly one 'PcfApiEndpoint' element(s) under ExternalPcfApi with semanticId https://admin-shell.io/idta/CarbonFootprint/ExternalPcfApi/Endpoint/1/0. The template declares it a Property of valueType xs:anyURI.",
                                 'children': (),
                             },
                             {
@@ -411,7 +411,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'PcfApiQuery' element(s) under ExternalPcfApi with semanticId https://admin-shell.io/idta/CarbonFootprint/ExternalPcfApi/Query/1/0.",
+                                'fix': "Provide exactly one 'PcfApiQuery' element(s) under ExternalPcfApi with semanticId https://admin-shell.io/idta/CarbonFootprint/ExternalPcfApi/Query/1/0. The template declares it a Property of valueType xs:string.",
                                 'children': (),
                             },
                         ),
@@ -429,7 +429,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'PcfInformation' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PcfInformation/1/0.",
+                        'fix': "Provide exactly one 'PcfInformation' element(s) under ProductOrSectorSpecificCarbonFootprint with semanticId https://admin-shell.io/idta/CarbonFootprint/PcfInformation/1/0. The template declares it a SubmodelElementCollection.",
                         'children': (),
                     },
                 ),

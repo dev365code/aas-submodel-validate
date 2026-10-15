@@ -289,3 +289,40 @@ def test_an_empty_string_is_a_value_and_this_rule_does_not_judge_it(tmp_path):
     gone.write_text(json.dumps(_without_value(hd_env(), "DocumentDomainId")), "utf-8")
     assert [f for f in runner.run(gone).findings
             if "carries no value" in (f.violation.message or "")]
+
+
+def _every_table():
+    import importlib
+    from pathlib import Path
+    rules = Path(__file__).resolve().parents[1] / "src" / "aas_submodel_validate" / "rules"
+    return [importlib.import_module("aas_submodel_validate.rules." + path.stem)
+            for path in sorted(rules.glob("*_tables.py")) if path.stem != "battery_tables"]
+
+
+def _flatten(rows):
+    for row in rows:
+        yield row
+        yield from _flatten(row["children"])
+
+
+def test_a_count_remedy_says_what_kind_of_element_to_provide():
+    """The remedy for a missing element named it and its identifier and
+    not what it is -- the row knows its kind and value type, the reader
+    had to open the template to learn them. And a list item's label is a
+    name this tool gives it, quoted the way an idShort is: followed to the
+    letter, the remedy put an idShort on a list item, which the metamodel
+    forbids (AASd-120) and which drew a warning of its own."""
+    checked = 0
+    for table in _every_table():
+        kinds = {row["id"]: row["kind"] for row in _flatten(table.ROWS)}
+        for row in _flatten(table.ROWS):
+            article = "an" if row["kind"][0] in "AEIOU" else "a"
+            assert "The template declares it %s %s" % (article, row["kind"]) in row["fix"], row["fix"]
+            if row["value_type"]:
+                assert "of valueType %s" % row["value_type"] in row["fix"], row["fix"]
+            if row["parent"] and kinds[row["parent"]] == "SubmodelElementList":
+                assert "give it no idShort" in row["fix"], row["fix"]
+            else:
+                assert "idShort" not in row["fix"], row["fix"]
+            checked += 1
+    assert checked > 400, checked

@@ -23,7 +23,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'EnergyThroughput' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#energyThroughput.",
+        'fix': "Provide at most one 'EnergyThroughput' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#energyThroughput. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E02',
@@ -38,7 +38,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'EnergyThroughputValue' element(s) under EnergyThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#energyThroughputValue.",
+                'fix': "Provide exactly one 'EnergyThroughputValue' element(s) under EnergyThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#energyThroughputValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -54,7 +54,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under EnergyThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under EnergyThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -72,7 +72,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'StateOfCharge' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfCharge.",
+        'fix': "Provide exactly one 'StateOfCharge' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfCharge. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E05',
@@ -87,7 +87,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'StateOfChargeValue' element(s) under StateOfCharge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfChargeValue.",
+                'fix': "Provide exactly one 'StateOfChargeValue' element(s) under StateOfCharge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfChargeValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -103,7 +103,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under StateOfCharge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under StateOfCharge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -121,7 +121,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'CapacityThroughput' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#capacityThroughput.",
+        'fix': "Provide at most one 'CapacityThroughput' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#capacityThroughput. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E08',
@@ -136,7 +136,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'CapacityThroughputValue' element(s) under CapacityThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#capacityThroughputValue.",
+                'fix': "Provide exactly one 'CapacityThroughputValue' element(s) under CapacityThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#capacityThroughputValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -152,7 +152,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under CapacityThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under CapacityThroughput with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -170,7 +170,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'NumberOfFullCycles' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#numberOfFullCycles.",
+        'fix': "Provide exactly one 'NumberOfFullCycles' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#numberOfFullCycles. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E11',
@@ -185,7 +185,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'NumberOfFullCyclesValue' element(s) under NumberOfFullCycles with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#numberOfFullCyclesValue.",
+                'fix': "Provide exactly one 'NumberOfFullCyclesValue' element(s) under NumberOfFullCycles with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#numberOfFullCyclesValue. The template declares it a Property of valueType xs:unsignedInt.",
                 'children': (),
             },
             {
@@ -201,7 +201,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under NumberOfFullCycles with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under NumberOfFullCycles with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -219,7 +219,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'StateOfCertifiedEnergy' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfCertifiedEnergy.",
+        'fix': "Provide at most one 'StateOfCertifiedEnergy' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfCertifiedEnergy. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E14',
@@ -234,7 +234,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'StateOfCertifiedEnergyValue' element(s) under StateOfCertifiedEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfCertifiedEnergyValue.",
+                'fix': "Provide exactly one 'StateOfCertifiedEnergyValue' element(s) under StateOfCertifiedEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#stateOfCertifiedEnergyValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -250,7 +250,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under StateOfCertifiedEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under StateOfCertifiedEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -268,7 +268,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'RemainingEnergy' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingEnergy.",
+        'fix': "Provide at most one 'RemainingEnergy' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingEnergy. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E17',
@@ -283,7 +283,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'RemainingEnergyValue' element(s) under RemainingEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingEnergyValue.",
+                'fix': "Provide exactly one 'RemainingEnergyValue' element(s) under RemainingEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingEnergyValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -299,7 +299,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingEnergy with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -317,7 +317,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'RemainingCapacity' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingCapacity.",
+        'fix': "Provide at most one 'RemainingCapacity' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingCapacity. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E20',
@@ -332,7 +332,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'RemainingCapacityValue' element(s) under RemainingCapacity with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingCapacityValue.",
+                'fix': "Provide exactly one 'RemainingCapacityValue' element(s) under RemainingCapacity with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingCapacityValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -348,7 +348,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingCapacity with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingCapacity with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -366,7 +366,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'NegativeEvents' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#negativeEvents.",
+        'fix': "Provide at most one 'NegativeEvents' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#negativeEvents. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP5-E23',
@@ -381,7 +381,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'NegativeEvent' element(s) under NegativeEvents with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#NegativeEvent.",
+                'fix': "Provide any number of 'NegativeEvent' element(s) under NegativeEvents with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#NegativeEvent. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort.",
                 'children': (
                     {
                         'id': 'DBP5-E24',
@@ -396,7 +396,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'NegativeEventValue' element(s) under NegativeEvent with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#negativeEventValue.",
+                        'fix': "Provide exactly one 'NegativeEventValue' element(s) under NegativeEvent with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#negativeEventValue. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -412,7 +412,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'LastUpdate' element(s) under NegativeEvent with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                        'fix': "Provide exactly one 'LastUpdate' element(s) under NegativeEvent with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                         'children': (),
                     },
                 ),
@@ -432,7 +432,7 @@ TREE = (
         'list_type': 'Property',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'InformationOnAccidents' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#informationOnAccidents.",
+        'fix': "Provide exactly one 'InformationOnAccidents' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#informationOnAccidents. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP5-E27',
@@ -447,7 +447,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'DocumentIdentifier' element(s) under InformationOnAccidents with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                'fix': "Provide any number of 'DocumentIdentifier' element(s) under InformationOnAccidents with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort.",
                 'children': (),
             },
         ),
@@ -465,7 +465,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'TemperatureInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#temperatureInformation.",
+        'fix': "Provide exactly one 'TemperatureInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#temperatureInformation. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E29',
@@ -480,7 +480,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide at most one 'MeasuredTemp' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#measuredTemp.",
+                'fix': "Provide at most one 'MeasuredTemp' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#measuredTemp. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -496,7 +496,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide at most one 'TimeExtremeHighTemp' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeHighTemp.",
+                'fix': "Provide at most one 'TimeExtremeHighTemp' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeHighTemp. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -512,7 +512,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide at most one 'TimeExtremeLowTemp' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeLowTemp.",
+                'fix': "Provide at most one 'TimeExtremeLowTemp' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeLowTemp. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -528,7 +528,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide at most one 'TimeExtremeHighTempCharging' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeHighTempCharging.",
+                'fix': "Provide at most one 'TimeExtremeHighTempCharging' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeHighTempCharging. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -544,7 +544,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide at most one 'TimeExtremeLowTempCharging' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeLowTempCharging.",
+                'fix': "Provide at most one 'TimeExtremeLowTempCharging' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#timeExtremeLowTempCharging. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -560,7 +560,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under TemperatureInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -578,7 +578,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'RemainingPowerCapability' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingPowerCapability.",
+        'fix': "Provide at most one 'RemainingPowerCapability' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingPowerCapability. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E36',
@@ -593,7 +593,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'RemainingPowerCapabilityDynamicAt' element(s) under RemainingPowerCapability with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingPowerCapabilityDynamicAt.",
+                'fix': "Provide exactly one 'RemainingPowerCapabilityDynamicAt' element(s) under RemainingPowerCapability with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingPowerCapabilityDynamicAt. The template declares it a SubmodelElementCollection.",
                 'children': (
                     {
                         'id': 'DBP5-E37',
@@ -608,7 +608,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'RPCLastUpdated' element(s) under RemainingPowerCapabilityDynamicAt with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#rPCLastUpdated.",
+                        'fix': "Provide exactly one 'RPCLastUpdated' element(s) under RemainingPowerCapabilityDynamicAt with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#rPCLastUpdated. The template declares it a Property of valueType xs:dateTime.",
                         'children': (),
                     },
                     {
@@ -624,7 +624,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'AtSoC' element(s) under RemainingPowerCapabilityDynamicAt with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#atSoC.",
+                        'fix': "Provide exactly one 'AtSoC' element(s) under RemainingPowerCapabilityDynamicAt with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#atSoC. The template declares it a Property of valueType xs:float.",
                         'children': (),
                     },
                     {
@@ -640,7 +640,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'PowerCapabilityAt' element(s) under RemainingPowerCapabilityDynamicAt with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#powerCapabilityAt.",
+                        'fix': "Provide exactly one 'PowerCapabilityAt' element(s) under RemainingPowerCapabilityDynamicAt with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#powerCapabilityAt. The template declares it a Property of valueType xs:float.",
                         'children': (),
                     },
                 ),
@@ -658,7 +658,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingPowerCapability with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingPowerCapability with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -676,7 +676,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'EvolutionOfSelfDischarge' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#evolutionOfSelfDischarge.",
+        'fix': "Provide at most one 'EvolutionOfSelfDischarge' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#evolutionOfSelfDischarge. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E42',
@@ -691,7 +691,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'EvolutionOfSelfDischargeValue' element(s) under EvolutionOfSelfDischarge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#evolutionOfSelfDischargeValue.",
+                'fix': "Provide exactly one 'EvolutionOfSelfDischargeValue' element(s) under EvolutionOfSelfDischarge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#evolutionOfSelfDischargeValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -707,7 +707,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under EvolutionOfSelfDischarge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under EvolutionOfSelfDischarge with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -725,7 +725,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'CurrentSelfDischargingRate' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#currentSelfDischargingRate.",
+        'fix': "Provide at most one 'CurrentSelfDischargingRate' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#currentSelfDischargingRate. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E45',
@@ -740,7 +740,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'CurrentSelfDischargingRateValue' element(s) under CurrentSelfDischargingRate with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#currentSelfDischargingRateValue.",
+                'fix': "Provide exactly one 'CurrentSelfDischargingRateValue' element(s) under CurrentSelfDischargingRate with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#currentSelfDischargingRateValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -756,7 +756,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under CurrentSelfDischargingRate with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under CurrentSelfDischargingRate with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),
@@ -774,7 +774,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'RemainingRoundTripEnergyEfficiency' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingRoundTripEnergyEfficiency.",
+        'fix': "Provide at most one 'RemainingRoundTripEnergyEfficiency' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingRoundTripEnergyEfficiency. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP5-E48',
@@ -789,7 +789,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'RemainingRoundTripEnergyEfficiencyValue' element(s) under RemainingRoundTripEnergyEfficiency with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingRoundTripEnergyEfficiencyValue.",
+                'fix': "Provide exactly one 'RemainingRoundTripEnergyEfficiencyValue' element(s) under RemainingRoundTripEnergyEfficiency with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#remainingRoundTripEnergyEfficiencyValue. The template declares it a Property of valueType xs:float.",
                 'children': (),
             },
             {
@@ -805,7 +805,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingRoundTripEnergyEfficiency with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate.",
+                'fix': "Provide exactly one 'LastUpdate' element(s) under RemainingRoundTripEnergyEfficiency with semanticId urn:samm:io.admin-shell.idta.batterypass.product_condition:1.0.2#lastUpdate. The template declares it a Property of valueType xs:dateTime.",
                 'children': (),
             },
         ),

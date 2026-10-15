@@ -366,6 +366,20 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
               " under %s" % parent_label if parent_label else "",
               _primary_sid(element) or "(as the template declares)",
               "; example value: %r" % example if example else ""))
+    # What the element is: the row knows its kind and value type, and a
+    # reader adding the element had the template to open to learn them.
+    # A list item is said to be one, because its label is this tool's name
+    # for it and quoted like an idShort; followed to the letter, the remedy
+    # put an idShort on a list item, which the metamodel forbids (AASd-120).
+    kind = element["modelType"]
+    fix += " The template declares it %s %s%s" % (
+        "an" if kind[0] in "AEIOU" else "a", kind,
+        " of valueType %s" % element["valueType"] if element.get("valueType") else "")
+    if in_list:
+        fix += (", as an item of that list: give it no idShort%s"
+                % ("" if element.get("idShort")
+                   else ", '%s' being this tool's name for it" % label))
+    fix += "."
     # A SubmodelElementCollection or List holds its children in `value`;
     # an Entity holds them in `statements` (aas-core3). Descend whichever
     # the element carries -- a kind populates only one -- so an Entity's

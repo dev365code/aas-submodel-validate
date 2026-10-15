@@ -847,17 +847,25 @@ SHIPPED_REMEDIES = {
     "generated/0..1":
         "Provide at most one 'DocumentIsPrimary' element(s) under "
         "DocumentId with semanticId 0173-1#02-ABH995#003; example "
-        "value: 'true'.",
+        "value: 'true'. The template declares it a Property of "
+        "valueType xs:boolean.",
     "generated/0..n":
         "Provide any number of 'ProductImage' element(s) under "
         "ProductImages with semanticId "
-        "0173-1#02-ABM220#001/0173-1#01-AHY911#001.",
+        "0173-1#02-ABM220#001/0173-1#01-AHY911#001. The template "
+        "declares it a SubmodelElementCollection, as an item of that "
+        "list: give it no "
+        "idShort, 'ProductImage' being this tool's name for it.",
     "generated/1..1":
         "Provide exactly one 'Documents' element(s) with semanticId "
-        "0173-1#02-ABI500#003.",
+        "0173-1#02-ABI500#003. The template declares it a "
+        "SubmodelElementList.",
     "generated/1..n":
         "Provide one or more 'Document' element(s) under Documents "
-        "with semanticId 0173-1#02-ABI500#003/0173-1#01-AHF579#003.",
+        "with semanticId 0173-1#02-ABI500#003/0173-1#01-AHF579#003. "
+        "The template declares it a SubmodelElementCollection, as an "
+        "item of that list: give it no idShort, 'Document' being this "
+        "tool's name for it.",
 }
 
 

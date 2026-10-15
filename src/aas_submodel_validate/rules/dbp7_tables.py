@@ -23,7 +23,7 @@ TREE = (
         'list_type': 'Property',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'DismantlingAndRemovalInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#dismantlingAndRemovalInformation.",
+        'fix': "Provide exactly one 'DismantlingAndRemovalInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#dismantlingAndRemovalInformation. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP7-E02',
@@ -38,7 +38,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'DocumentIdentifier' element(s) under DismantlingAndRemovalInformation with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                'fix': "Provide one or more 'DocumentIdentifier' element(s) under DismantlingAndRemovalInformation with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'DocumentIdentifier' being this tool's name for it.",
                 'children': (),
             },
         ),
@@ -56,7 +56,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'SparePartSources' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#sparePartSources.",
+        'fix': "Provide exactly one 'SparePartSources' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#sparePartSources. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP7-E04',
@@ -71,7 +71,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'SparePartSupplier' element(s) under SparePartSources with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#SparePartSupplier.",
+                'fix': "Provide any number of 'SparePartSupplier' element(s) under SparePartSources with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#SparePartSupplier. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'SparePartSupplier' being this tool's name for it.",
                 'children': (
                     {
                         'id': 'DBP7-E05',
@@ -86,7 +86,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'NameOfSupplier' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#company.",
+                        'fix': "Provide exactly one 'NameOfSupplier' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#company. The template declares it a MultiLanguageProperty.",
                         'children': (),
                     },
                     {
@@ -102,7 +102,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'AddressOfSupplier' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#addressOfSupplier.",
+                        'fix': "Provide exactly one 'AddressOfSupplier' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#addressOfSupplier. The template declares it a SubmodelElementCollection.",
                         'children': (
                             {
                                 'id': 'DBP7-E07',
@@ -117,7 +117,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'NationalCode' element(s) under AddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#nationalCode.",
+                                'fix': "Provide exactly one 'NationalCode' element(s) under AddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#nationalCode. The template declares it a MultiLanguageProperty.",
                                 'children': (),
                             },
                             {
@@ -133,7 +133,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'PostalCode' element(s) under AddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#postalCode.",
+                                'fix': "Provide exactly one 'PostalCode' element(s) under AddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#postalCode. The template declares it a MultiLanguageProperty.",
                                 'children': (),
                             },
                             {
@@ -149,7 +149,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'Street' element(s) under AddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#street.",
+                                'fix': "Provide exactly one 'Street' element(s) under AddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#street. The template declares it a MultiLanguageProperty.",
                                 'children': (),
                             },
                         ),
@@ -167,7 +167,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'EmailAddressOfSupplier' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#email.",
+                        'fix': "Provide exactly one 'EmailAddressOfSupplier' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#email. The template declares it a SubmodelElementCollection.",
                         'children': (
                             {
                                 'id': 'DBP7-E11',
@@ -182,7 +182,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide exactly one 'EmailAddress' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#emailAddress.",
+                                'fix': "Provide exactly one 'EmailAddress' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#emailAddress. The template declares it a Property of valueType xs:string.",
                                 'children': (),
                             },
                             {
@@ -198,7 +198,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide at most one 'PublicKey' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#publicKey.",
+                                'fix': "Provide at most one 'PublicKey' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#publicKey. The template declares it a MultiLanguageProperty.",
                                 'children': (),
                             },
                             {
@@ -214,7 +214,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide at most one 'TypeOfEmailAddress' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#typeOfEmailAddress.",
+                                'fix': "Provide at most one 'TypeOfEmailAddress' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#typeOfEmailAddress. The template declares it a Property of valueType xs:string.",
                                 'children': (),
                             },
                             {
@@ -230,7 +230,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide at most one 'TypeOfPublicKey' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#typeOfPublicKey.",
+                                'fix': "Provide at most one 'TypeOfPublicKey' element(s) under EmailAddressOfSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#typeOfPublicKey. The template declares it a MultiLanguageProperty.",
                                 'children': (),
                             },
                         ),
@@ -248,7 +248,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'SupplierWebAddress' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#addressOfAdditionalLink.",
+                        'fix': "Provide exactly one 'SupplierWebAddress' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.contact_information:1.0.0#addressOfAdditionalLink. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -264,7 +264,7 @@ TREE = (
                         'list_type': 'SubmodelElementCollection',
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'Components' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#components.",
+                        'fix': "Provide exactly one 'Components' element(s) under SparePartSupplier with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#components. The template declares it a SubmodelElementList.",
                         'children': (
                             {
                                 'id': 'DBP7-E17',
@@ -279,7 +279,7 @@ TREE = (
                                 'list_type': None,
                                 'allowed_idshort': None,
                                 'example': None,
-                                'fix': "Provide one or more 'Component' element(s) under Components with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#Component.",
+                                'fix': "Provide one or more 'Component' element(s) under Components with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#Component. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'Component' being this tool's name for it.",
                                 'children': (
                                     {
                                         'id': 'DBP7-E18',
@@ -294,7 +294,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': None,
-                                        'fix': "Provide exactly one 'PartName' element(s) under Component with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#partName.",
+                                        'fix': "Provide exactly one 'PartName' element(s) under Component with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#partName. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                     {
@@ -310,7 +310,7 @@ TREE = (
                                         'list_type': None,
                                         'allowed_idshort': None,
                                         'example': None,
-                                        'fix': "Provide exactly one 'PartNumber' element(s) under Component with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#partNumber.",
+                                        'fix': "Provide exactly one 'PartNumber' element(s) under Component with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#partNumber. The template declares it a Property of valueType xs:string.",
                                         'children': (),
                                     },
                                 ),
@@ -334,7 +334,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'RecycledContentInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#recycledContent.",
+        'fix': "Provide exactly one 'RecycledContentInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#recycledContent. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP7-E21',
@@ -349,7 +349,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'RecycledContent' element(s) under RecycledContentInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#RecycledContent.",
+                'fix': "Provide one or more 'RecycledContent' element(s) under RecycledContentInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#RecycledContent. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'RecycledContent' being this tool's name for it.",
                 'children': (
                     {
                         'id': 'DBP7-E22',
@@ -364,7 +364,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'PreConsumerShare' element(s) under RecycledContent with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#preConsumerShare.",
+                        'fix': "Provide at most one 'PreConsumerShare' element(s) under RecycledContent with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#preConsumerShare. The template declares it a Property of valueType xs:float.",
                         'children': (),
                     },
                     {
@@ -380,7 +380,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'RecycledMaterial' element(s) under RecycledContent with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#recycledMaterial.",
+                        'fix': "Provide exactly one 'RecycledMaterial' element(s) under RecycledContent with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#recycledMaterial. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -396,7 +396,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'PostConsumerShare' element(s) under RecycledContent with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#postConsumerShare.",
+                        'fix': "Provide at most one 'PostConsumerShare' element(s) under RecycledContent with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#postConsumerShare. The template declares it a Property of valueType xs:float.",
                         'children': (),
                     },
                 ),
@@ -416,7 +416,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'SafetyMeasures' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#safetyMeasures.",
+        'fix': "Provide exactly one 'SafetyMeasures' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#safetyMeasures. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP7-E26',
@@ -431,7 +431,7 @@ TREE = (
                 'list_type': 'Property',
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'SafetyInstructions' element(s) under SafetyMeasures with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#safetyInstructions.",
+                'fix': "Provide exactly one 'SafetyInstructions' element(s) under SafetyMeasures with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#safetyInstructions. The template declares it a SubmodelElementList.",
                 'children': (
                     {
                         'id': 'DBP7-E27',
@@ -446,7 +446,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under SafetyInstructions with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under SafetyInstructions with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'DocumentIdentifier' being this tool's name for it.",
                         'children': (),
                     },
                 ),
@@ -464,7 +464,7 @@ TREE = (
                 'list_type': 'Property',
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'ExtinguishingAgents' element(s) under SafetyMeasures with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#extinguishingAgents.",
+                'fix': "Provide exactly one 'ExtinguishingAgents' element(s) under SafetyMeasures with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#extinguishingAgents. The template declares it a SubmodelElementList.",
                 'children': (
                     {
                         'id': 'DBP7-E29',
@@ -479,7 +479,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'ExtinguishingAgent' element(s) under ExtinguishingAgents with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#ExtinguishingAgent.",
+                        'fix': "Provide one or more 'ExtinguishingAgent' element(s) under ExtinguishingAgents with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#ExtinguishingAgent. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'ExtinguishingAgent' being this tool's name for it.",
                         'children': (),
                     },
                 ),
@@ -499,7 +499,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'EndOfLifeInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#endOfLifeInformation.",
+        'fix': "Provide exactly one 'EndOfLifeInformation' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#endOfLifeInformation. The template declares it a SubmodelElementCollection.",
         'children': (
             {
                 'id': 'DBP7-E31',
@@ -514,7 +514,7 @@ TREE = (
                 'list_type': 'Property',
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'WastePrevention' element(s) under EndOfLifeInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#wastePrevention.",
+                'fix': "Provide exactly one 'WastePrevention' element(s) under EndOfLifeInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#wastePrevention. The template declares it a SubmodelElementList.",
                 'children': (
                     {
                         'id': 'DBP7-E32',
@@ -529,7 +529,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under WastePrevention with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under WastePrevention with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'DocumentIdentifier' being this tool's name for it.",
                         'children': (),
                     },
                 ),
@@ -547,7 +547,7 @@ TREE = (
                 'list_type': 'Property',
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'SeparateCollection' element(s) under EndOfLifeInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#separateCollection.",
+                'fix': "Provide exactly one 'SeparateCollection' element(s) under EndOfLifeInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#separateCollection. The template declares it a SubmodelElementList.",
                 'children': (
                     {
                         'id': 'DBP7-E34',
@@ -562,7 +562,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under SeparateCollection with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under SeparateCollection with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'DocumentIdentifier' being this tool's name for it.",
                         'children': (),
                     },
                 ),
@@ -580,7 +580,7 @@ TREE = (
                 'list_type': 'Property',
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide exactly one 'InformationOnCollection' element(s) under EndOfLifeInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#informationOnCollection.",
+                'fix': "Provide exactly one 'InformationOnCollection' element(s) under EndOfLifeInformation with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#informationOnCollection. The template declares it a SubmodelElementList.",
                 'children': (
                     {
                         'id': 'DBP7-E36',
@@ -595,7 +595,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under InformationOnCollection with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                        'fix': "Provide one or more 'DocumentIdentifier' element(s) under InformationOnCollection with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'DocumentIdentifier' being this tool's name for it.",
                         'children': (),
                     },
                 ),
@@ -615,7 +615,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'RenewableContent' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#renewableContent.",
+        'fix': "Provide exactly one 'RenewableContent' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.circularity:1.0.0#renewableContent. The template declares it a Property of valueType xs:float.",
         'children': (),
     },
 )

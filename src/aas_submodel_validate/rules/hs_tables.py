@@ -23,7 +23,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'EntryNode' element(s) with semanticId https://admin-shell.io/idta/HierarchicalStructures/EntryNode/1/0.",
+        'fix': "Provide exactly one 'EntryNode' element(s) with semanticId https://admin-shell.io/idta/HierarchicalStructures/EntryNode/1/0. The template declares it an Entity.",
         'children': (
             {
                 'id': 'HS-E02',
@@ -38,7 +38,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'Node' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/Node/1/0.",
+                'fix': "Provide one or more 'Node' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/Node/1/0. The template declares it an Entity.",
                 'children': (
                     {
                         'id': 'HS-E03',
@@ -53,7 +53,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number of 'Node' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/Node/1/0.",
+                        'fix': "Provide any number of 'Node' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/Node/1/0. The template declares it an Entity.",
                         'children': (),
                         'recurses': 'https://admin-shell.io/idta/HierarchicalStructures/Node/1/0',
                     },
@@ -70,7 +70,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number of 'SameAs' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0.",
+                        'fix': "Provide any number of 'SameAs' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0. The template declares it a RelationshipElement.",
                         'children': (),
                     },
                     {
@@ -86,7 +86,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number of 'IsPartOf' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/IsPartOf/1/0.",
+                        'fix': "Provide any number of 'IsPartOf' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/IsPartOf/1/0. The template declares it a RelationshipElement.",
                         'children': (),
                     },
                     {
@@ -102,7 +102,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number of 'HasPart' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/HasPart/1/0.",
+                        'fix': "Provide any number of 'HasPart' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/HasPart/1/0. The template declares it a RelationshipElement.",
                         'children': (),
                     },
                     {
@@ -118,7 +118,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'BulkCount' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0.",
+                        'fix': "Provide at most one 'BulkCount' element(s) under Node with semanticId https://admin-shell.io/idta/HierarchicalStructures/BulkCount/1/0. The template declares it a Property of valueType xs:unsignedLong.",
                         'children': (),
                     },
                 ),
@@ -136,7 +136,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'SameAs' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0.",
+                'fix': "Provide any number of 'SameAs' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/SameAs/1/0. The template declares it a RelationshipElement.",
                 'children': (),
             },
             {
@@ -152,7 +152,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'IsPartOf' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/IsPartOf/1/0.",
+                'fix': "Provide any number of 'IsPartOf' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/IsPartOf/1/0. The template declares it a RelationshipElement.",
                 'children': (),
             },
             {
@@ -168,7 +168,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide any number of 'HasPart' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/HasPart/1/0.",
+                'fix': "Provide any number of 'HasPart' element(s) under EntryNode with semanticId https://admin-shell.io/idta/HierarchicalStructures/HasPart/1/0. The template declares it a RelationshipElement.",
                 'children': (),
             },
         ),
@@ -186,7 +186,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'ArcheType' element(s) with semanticId https://admin-shell.io/idta/HierarchicalStructures/ArcheType/1/0.",
+        'fix': "Provide exactly one 'ArcheType' element(s) with semanticId https://admin-shell.io/idta/HierarchicalStructures/ArcheType/1/0. The template declares it a Property of valueType xs:string.",
         'children': (),
     },
 )

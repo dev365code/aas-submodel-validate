@@ -23,7 +23,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'URIOfTheProduct' element(s) with semanticId 0112/2///61987#ABN590#002.",
+        'fix': "Provide exactly one 'URIOfTheProduct' element(s) with semanticId 0112/2///61987#ABN590#002. The template declares it a Property of valueType xs:anyURI.",
         'children': (),
     },
     {
@@ -39,7 +39,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'ManufacturerName' element(s) with semanticId 0112/2///61987#ABA565#009.",
+        'fix': "Provide exactly one 'ManufacturerName' element(s) with semanticId 0112/2///61987#ABA565#009. The template declares it a MultiLanguageProperty.",
         'children': (),
     },
     {
@@ -55,7 +55,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'AddressInformation' element(s) with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation.",
+        'fix': "Provide exactly one 'AddressInformation' element(s) with semanticId https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation. The template declares it a SubmodelElementCollection.",
         'children': (),
     },
     {
@@ -71,7 +71,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'SerialNumber' element(s) with semanticId 0112/2///61987#ABA951#009.",
+        'fix': "Provide exactly one 'SerialNumber' element(s) with semanticId 0112/2///61987#ABA951#009. The template declares it a Property of valueType xs:string.",
         'children': (),
     },
     {
@@ -87,7 +87,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'DateOfManufacture' element(s) with semanticId 0112/2///61987#ABB757#007.",
+        'fix': "Provide exactly one 'DateOfManufacture' element(s) with semanticId 0112/2///61987#ABB757#007. The template declares it a Property of valueType xs:date.",
         'children': (),
     },
     {
@@ -103,7 +103,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'DateOfPuttingIntoService' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#dateOfPuttingIntoService.",
+        'fix': "Provide at most one 'DateOfPuttingIntoService' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#dateOfPuttingIntoService. The template declares it a Property of valueType xs:date.",
         'children': (),
     },
     {
@@ -119,7 +119,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'UniqueFacilityIdentifier' element(s) with semanticId https://admin-shell.io/idta/nameplate/3/0/UniqueFacilityIdentifier.",
+        'fix': "Provide exactly one 'UniqueFacilityIdentifier' element(s) with semanticId https://admin-shell.io/idta/nameplate/3/0/UniqueFacilityIdentifier. The template declares it a Property of valueType xs:string.",
         'children': (),
     },
     {
@@ -135,7 +135,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'LifeCycleStage' element(s) with semanticId 0173-1#02-ABL841#001.",
+        'fix': "Provide exactly one 'LifeCycleStage' element(s) with semanticId 0173-1#02-ABL841#001. The template declares it a Property of valueType xs:string.",
         'children': (),
     },
     {
@@ -151,7 +151,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide at most one 'OperatorIdentifier' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#operatorIdentifier.",
+        'fix': "Provide at most one 'OperatorIdentifier' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#operatorIdentifier. The template declares it a Property of valueType xs:string.",
         'children': (),
     },
     {
@@ -167,7 +167,7 @@ TREE = (
         'list_type': None,
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'ManufacturerIdentifier' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#manufacturerIdentifier.",
+        'fix': "Provide exactly one 'ManufacturerIdentifier' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.technical_data:1.0.0#manufacturerIdentifier. The template declares it a Property of valueType xs:string.",
         'children': (),
         'card_qualifier': 'Cardinality',
     },
@@ -184,7 +184,7 @@ TREE = (
         'list_type': 'SubmodelElementCollection',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'Markings' element(s) with semanticId 0112/2///61360_7#AAS006.",
+        'fix': "Provide exactly one 'Markings' element(s) with semanticId 0112/2///61360_7#AAS006. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP1-E12',
@@ -199,7 +199,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'Marking' element(s) under Markings with semanticId 0112/2///61360_7#AAS009#001.",
+                'fix': "Provide one or more 'Marking' element(s) under Markings with semanticId 0112/2///61360_7#AAS009#001. The template declares it a SubmodelElementCollection, as an item of that list: give it no idShort, 'Marking' being this tool's name for it.",
                 'children': (
                     {
                         'id': 'DBP1-E13',
@@ -214,7 +214,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide exactly one 'MarkingName' element(s) under Marking with semanticId 0112/2///61987#ABA231#009.",
+                        'fix': "Provide exactly one 'MarkingName' element(s) under Marking with semanticId 0112/2///61987#ABA231#009. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -230,7 +230,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'DesignationOfCertificateOrApproval' element(s) under Marking with semanticId 0112/2///61987#ABH783#003.",
+                        'fix': "Provide at most one 'DesignationOfCertificateOrApproval' element(s) under Marking with semanticId 0112/2///61987#ABH783#003. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                     {
@@ -246,7 +246,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'IssueDate' element(s) under Marking with semanticId 0112/2///61987#ABO097#001.",
+                        'fix': "Provide at most one 'IssueDate' element(s) under Marking with semanticId 0112/2///61987#ABO097#001. The template declares it a Property of valueType xs:date.",
                         'children': (),
                     },
                     {
@@ -262,7 +262,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'ExpiryDate' element(s) under Marking with semanticId 0112/2///61987#ABH830#002.",
+                        'fix': "Provide at most one 'ExpiryDate' element(s) under Marking with semanticId 0112/2///61987#ABH830#002. The template declares it a Property of valueType xs:date.",
                         'children': (),
                     },
                     {
@@ -278,7 +278,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide at most one 'MarkingFile' element(s) under Marking with semanticId 0112/2///61987#ABO100#002.",
+                        'fix': "Provide at most one 'MarkingFile' element(s) under Marking with semanticId 0112/2///61987#ABO100#002. The template declares it a File.",
                         'children': (),
                     },
                     {
@@ -294,7 +294,7 @@ TREE = (
                         'list_type': None,
                         'allowed_idshort': None,
                         'example': None,
-                        'fix': "Provide any number of 'MarkingAdditionalText' element(s) under Marking with semanticId 0112/2///61987#ABB146#007.",
+                        'fix': "Provide any number of 'MarkingAdditionalText' element(s) under Marking with semanticId 0112/2///61987#ABB146#007. The template declares it a Property of valueType xs:string.",
                         'children': (),
                     },
                 ),
@@ -314,7 +314,7 @@ TREE = (
         'list_type': 'Property',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'EUDeclarationOfConformity' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#euDeclarationOfConformity.",
+        'fix': "Provide exactly one 'EUDeclarationOfConformity' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#euDeclarationOfConformity. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP1-E20',
@@ -329,7 +329,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'DocumentIdentifier' element(s) under EUDeclarationOfConformity with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                'fix': "Provide one or more 'DocumentIdentifier' element(s) under EUDeclarationOfConformity with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'DocumentIdentifier' being this tool's name for it.",
                 'children': (),
             },
         ),
@@ -347,7 +347,7 @@ TREE = (
         'list_type': 'Property',
         'allowed_idshort': None,
         'example': None,
-        'fix': "Provide exactly one 'ResultsOfTestReportsProvingCompliance' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#resultsOfTestReportsProvingCompliance.",
+        'fix': "Provide exactly one 'ResultsOfTestReportsProvingCompliance' element(s) with semanticId urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0#resultsOfTestReportsProvingCompliance. The template declares it a SubmodelElementList.",
         'children': (
             {
                 'id': 'DBP1-E22',
@@ -362,7 +362,7 @@ TREE = (
                 'list_type': None,
                 'allowed_idshort': None,
                 'example': None,
-                'fix': "Provide one or more 'DocumentIdentifier' element(s) under ResultsOfTestReportsProvingCompliance with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier.",
+                'fix': "Provide one or more 'DocumentIdentifier' element(s) under ResultsOfTestReportsProvingCompliance with semanticId urn:samm:io.admin-shell.idta.handover_documentation:2.0.0#DocumentIdentifier. The template declares it a Property of valueType xs:string, as an item of that list: give it no idShort, 'DocumentIdentifier' being this tool's name for it.",
                 'children': (),
             },
         ),
