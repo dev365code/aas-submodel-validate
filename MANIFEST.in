@@ -10,6 +10,7 @@ include docs/golden-report.json
 include docs/rule-coverage.json
 include docs/scope.md
 include docs/time-budget.json
+include docs/mutation-record.json
 include docs/assets/door.svg
 include docs/assets/verdict.svg
 include docs/capabilities.json

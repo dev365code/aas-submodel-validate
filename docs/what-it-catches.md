@@ -157,13 +157,16 @@ runs the test that holds the summary line.
 
 - read budgets, per file and per run — done
 - a security fix ships with an advisory — done
-- tests verified against their own mutations — not yet
+- tests verified against their own mutations — done
 - declared encodings read without loss — not yet
 
 From 0.3.0 on, a security fix that ships has an advisory; `SECURITY.md`
 names the two earlier repairs that have a changelog entry only. Each gate
 names the mistake it stops, and `make mutants` makes each mistake and checks
-a test fails (`tools/mutation_table.py` lists them) -- availability of `--template` is exercised with local readers with and
+a test fails (`tools/mutation_table.py` lists them). CI runs the whole table
+on every commit, and a release is cut only from a commit CI passed, so
+every row has died on the tree that ships; `docs/mutation-record.json`
+keeps the last full run, with the commit it measured. Availability of `--template` is exercised with local readers with and
 without the option, so the comparison tests require no older installation. XML in UTF-8, UTF-16
 and the single-byte encodings it declares is read and judged, but UTF-32 is
 refused, and a JSON document -- which declares no encoding -- is read as

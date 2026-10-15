@@ -4,7 +4,7 @@
 | Explanation | what is wrong, remedy, requirement | + evidence, the line in the file |
 | Report contract | schemaVersion, golden report, exit codes, schema page | met |
 | Entrances | command line, single file | + Python library, GitHub Action, browser |
-| Input safety | read budgets, advisory | + own mutations, encodings |
+| Input safety | read budgets, advisory, own mutations | + encodings |
 | Upstream | pinned by commit, one pin move shipped | + checked for upstream change |
 
 **Coverage** — 12 of 12:
@@ -41,10 +41,10 @@
 - GitHub Action — not yet
 - browser, nothing installed — not yet
 
-**Input safety** — 2 of 4:
+**Input safety** — 3 of 4:
 - read budgets, per file and per run — done (`SECURITY.md`: "one document at 64 MiB, and a container's parts at 64 MiB each and 256 MiB together")
 - a security fix ships with an advisory — done (`SECURITY.md`: "From 0.3.0 on, a security fix that ships in a release has a GitHub security advisory")
-- tests verified against their own mutations — not yet
+- tests verified against their own mutations — done (`.github/workflows/ci.yml`: "every mutation in the table dies")
 - declared encodings read without loss — not yet
 
 **Upstream** — 2 of 3:

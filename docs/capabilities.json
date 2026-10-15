@@ -245,15 +245,19 @@
         },
         {
           "text": "tests verified against their own mutations",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": ".github/workflows/ci.yml",
+            "says": "every mutation in the table dies"
+          }
         },
         {
           "text": "declared encodings read without loss",
           "done": false
         }
       ],
-      "now_text": "read budgets, advisory",
-      "target_text": "+ own mutations, encodings"
+      "now_text": "read budgets, advisory, own mutations",
+      "target_text": "+ encodings"
     },
     {
       "key": "upstream",
