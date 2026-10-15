@@ -305,7 +305,8 @@ _REMEDY = ("If the submodel means one of the templates this tool has a table "
      # it is describing.
      path=("document",),
       title="the input must contain a submodel this tool knows",
-      spec="IDTA 02004-2-0 §2.4, Table 2; IDTA 02003-2-0-1 §2",
+      spec="the submodel semanticId of each template docs/scope.md lists "
+           "(IDTA 02004-2-0 §2.4, Table 2, for Handover Documentation)",
       fix=_REMEDY)
 def smt_d1_a_known_submodel_is_present(ctx):
     """No findings is also what a perfect package looks like, so a run

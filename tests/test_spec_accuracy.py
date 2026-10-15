@@ -119,6 +119,28 @@ def test_the_presence_fix_does_not_claim_an_externalreference():
     assert "ExternalReference" not in d1.fix
 
 
+
+def test_the_presence_rule_cites_the_page_that_lists_every_template_it_asks_about():
+    """SMT-D1 asks whether a submodel of any template this tool has a table
+    for is here, and its `per` cited two templates' clauses: a Nameplate or
+    a battery file with no known submodel was sent to Handover
+    Documentation and Technical Data for the requirement. It cites the
+    page that lists every template now, and that page lists every one
+    vendored."""
+    import pathlib
+
+    from aas_submodel_validate.registry import all_rules
+    from aas_submodel_validate.rules import detect  # noqa: F401 - registers the rules
+    root = pathlib.Path(__file__).resolve().parents[1]
+    d1 = next(r for r in all_rules() if r.id == "SMT-D1")
+    assert "docs/scope.md" in d1.spec, d1.spec
+    section = (root / "docs" / "scope.md").read_text(encoding="utf-8").split(
+        "## Which templates it covers", 1)[1].split("\n## ", 1)[0]
+    flowed = " ".join(section.split())
+    vendored = sorted(path.name for path in (root / "src/aas_submodel_validate/data/smt").iterdir()
+                      if path.is_dir())
+    assert [number for number in vendored if number not in flowed] == [], flowed[:200]
+
 # -- X2: an OPC relationship target relative to the source part resolves ------
 
 def test_a_relative_spec_target_resolves(tmp_path):
