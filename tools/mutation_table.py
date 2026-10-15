@@ -3106,22 +3106,32 @@ def apply(tree: Path, row) -> None:
     clear(tree)
 
 
-def _record(path: Path, repo: Path, killed: list, survivors: list) -> None:
-    """What a run found, kept in the repository rather than in a terminal.
+def _measured_commit(repo: Path) -> str:
+    """The commit a run is about to copy, or an exit if no commit is it.
 
-    Written only by a run in which every row died, and only from a clean
-    checkout: the commit is how a reader finds the tree that was measured,
-    and a tree with uncommitted changes is not the commit it would name.
-    `tests/test_mutation_record.py` holds it to the table, so a row added
-    or dropped without a run makes the two disagree.
+    Asked before the copy rather than after the run: the copy is what is
+    measured, and a commit made while the table runs is not that tree. A
+    checkout with uncommitted changes is not any commit's tree either, so
+    a run that is to be recorded refuses before it starts, not ten minutes
+    later.
     """
     dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
                            cwd=repo, capture_output=True, text=True).stdout.strip()
     if dirty:
         raise SystemExit("not recorded: the checkout has uncommitted changes, so "
-                         "no commit names the tree that was measured")
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo,
-                            capture_output=True, text=True, check=True).stdout.strip()
+                         "no commit names the tree that would be measured")
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo,
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+
+def _record(path: Path, commit: str, killed: list, survivors: list) -> None:
+    """What a run found, kept in the repository rather than in a terminal.
+
+    Written only by a run in which every row died, naming the commit it
+    copied (`_measured_commit`). `tests/test_mutation_record.py` holds it
+    to the table, so a row added or dropped without a run makes the two
+    disagree.
+    """
     path.write_text(json.dumps({
         "_about": "The last full run of tools/mutation_table.py --run kept by "
                   "the run itself: every row it applied, which died and which "
@@ -3155,6 +3165,7 @@ def main() -> int:
         print("\n%d rows, one of them the canary." % len(TABLE))
         return 0
 
+    measured = _measured_commit(repo) if args.record else None
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp) / "tree"
         # `.git` is carried on purpose: two tests read it, and a tree
@@ -3251,7 +3262,7 @@ def main() -> int:
         print("\n%d mutations, all caught; the canary survived."
               % (len(TABLE) - 1))
         if args.record:
-            _record(Path(args.record), repo, killed, survivors)
+            _record(Path(args.record), measured, killed, survivors)
         return 0
 
 
