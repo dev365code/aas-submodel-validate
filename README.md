@@ -490,7 +490,7 @@ minor release, and the CHANGELOG names every verdict that moves.
 | IDTA 02004 Handover Documentation 2.0.2 | 38 | the mandatory VDI 2770 classification and its twelve classes, English class names, the status vocabulary, dates that are dates, files that exist in the container, references that resolve |
 | IDTA 02003 Technical Data 2.0.2 | 26 | dates that are dates, files that exist in the container, references that resolve |
 | IDTA 02035-2 Digital Battery Passport part 2 1.1 | 22 | 02004's, minus the three whose elements this template drops |
-| IDTA 02006-3-0 Digital Nameplate 3.0.2 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value; files that exist in the container; the near-miss lint |
+| IDTA 02006 Digital Nameplate 3.0.2 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value; files that exist in the container; the near-miss lint |
 | IDTA 02023 Carbon Footprint 1.0.2 | 26 | files that exist in the container; the near-miss lint (the open-content ArbitraryContent placeholder is left unjudged) |
 | IDTA 02002 Contact Information 1.0.2 | 36 | the near-miss lint only (no email, telephone, URL, time-zone or language-code shape is checked) |
 | IDTA 02011 Hierarchical Structures 1.1.2 | 11 | the near-miss lint only (a nested node is judged at any depth, and a relationship's two ends are not read) |
@@ -498,7 +498,7 @@ minor release, and the CHANGELOG names every verdict that moves.
 | IDTA 02035-5 Digital Battery Passport part 5 1.0.2 | 49 | the near-miss lint only (its identifiers are SAMM ones whose version moved with each release; a submodel of an earlier release, alone in its file, is told so: `docs/divergences.md` #58) |
 | IDTA 02035-1 Digital Battery Passport part 1 1.1 | 22 | files that exist in the container; the near-miss lint (identifiers mix IEC CDD, ECLASS, IRI and SAMM; `AddressInformation` is dropped in empty and not looked inside, though its specification requires four address fields in it: `docs/divergences.md` #59) |
 | IDTA 02035-4 Digital Battery Passport part 4 1.0.2 | 46 | files that exist in the container; the near-miss lint (`WarrantyInformation` states no cardinality and reads optional; three identifiers belong to more than one sibling, and an element's own identifier settles which it is: `docs/divergences.md` #60) |
-| IDTA 02035-7 Digital Battery Passport part 7 1.0.2 | 37 | the near-miss lint only (its identifiers are SAMM ones; a supplier's contact elements carry their ECLASS identifiers under SAMM's `urn:irdi:` prefix, which is read as the IRDI, so a supplier identified as 02002 identifies one answers the rows: `docs/divergences.md` #61, #62) |
+| IDTA 02035-7 Digital Battery Passport part 7 1.0.2 | 37 | the near-miss lint only (its identifiers are SAMM ones; a supplier's contact elements carry their ECLASS identifiers under SAMM's `urn:irdi:` prefix, which is read as the IRDI, so a supplier identified the way 02002 identifies one answers the rows: `docs/divergences.md` #61, #62) |
 
 02003 declares open content: §3.5 says the set of suitable semanticIds
 is not restricted, so its 36 placeholder elements generate no rules and

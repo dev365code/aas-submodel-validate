@@ -232,7 +232,7 @@ unasked mandatory row to a finding. That is not specific to one edition of
 the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
 #23 record it.
 
-IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.1 is a
+IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.2 is a
 tree: a `Node` holds `Node`s of its own identifier, to any depth, and the
 pack judges every level of it -- the entry node and its nodes by count
 and kind, the three relationships by kind, `BulkCount` and `ArcheType`
@@ -299,7 +299,7 @@ beside their own matches it first. `docs/divergences.md` #58 records
 that, a misspelt supplemental identifier the rows match as written, and
 the template's other disagreements with its specification.
 
-IDTA 02035-1 Digital Nameplate 1.0, the Digital Battery Passport's part
+IDTA 02035-1 Digital Nameplate 1.1, the Digital Battery Passport's part
 1, names the battery: its product URI, manufacturer, address, serial
 number, dates of manufacture and of putting into service, facility,
 life-cycle stage, operator and manufacturer identifiers, markings, and
@@ -358,7 +358,7 @@ Every element's own identifier is a SAMM URN, and a supplier's name,
 address fields, e-mail and web address are borrowed from a contact
 information namespace, with ECLASS identifiers beside them written
 `urn:irdi:...`.
-A supplier identified as 02002 Contact Information identifies one, by
+A supplier identified the way 02002 Contact Information identifies one, by
 the same ECLASS identifiers without the prefix, answers those rows: an
 IRDI under the prefix is read as the IRDI (`docs/divergences.md` #62).
 Document list items spelt as 02035-2 spells a document identifier match

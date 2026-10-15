@@ -24,7 +24,7 @@ ok -- 0 error(s), 87 warning(s), 0 info -- idta-02004-2.0.aasx; judged 1 of 1 su
 ```
 
 The rules come from the IDTA 02004 Handover Documentation template,
-version 2.0.1, vendored from the commit `THIRD_PARTY.md` names. Reproduce:
+version 2.0.2, vendored from the commit `THIRD_PARTY.md` names. Reproduce:
 `smtv --example` (exit 0).
 
 **The official IDTA 02003 sample.** Committed at

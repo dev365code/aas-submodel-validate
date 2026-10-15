@@ -82,7 +82,7 @@ that is not there is worse than one that says nothing.
 
 Two pins of IDTA 02004 live in this repository and they are different
 files on purpose: this tool vendors and validates against **02004
-version 2.0.1** (the table above), while the battery bundle indexes
+version 2.0.2** (the table above), while the battery bundle indexes
 **02004 V2.0** -- the edition the battery-passport template series
 references. Same document family, different editions, legitimately
 different hashes.
