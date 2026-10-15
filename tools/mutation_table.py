@@ -3,6 +3,8 @@
 
     python3 tools/mutation_table.py            # list the table
     python3 tools/mutation_table.py --run      # apply each row and check it dies
+    python3 tools/mutation_table.py --run --record docs/mutation-record.json
+                                               # and keep what the run found
 
 Each row is one gate: *this* gate says it stops *that* mistake -- does it? A
 gate is only worth what it catches, and the ones here that caught nothing
@@ -45,7 +47,9 @@ The harness checks itself as hard as it checks the code:
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -2863,6 +2867,112 @@ TABLE.extend([
      "comparability wrote bytecode in the reader's source tree"),
 ])
 
+TABLE.extend([
+    ("pages/an-edition-a-page-names-is-the-one-vendored",
+     "docs/scope.md",
+     "IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.2 is a\n",
+     "IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.1 is a\n",
+     ["tests/test_pages_name_the_editions_read.py::"
+      "test_a_page_naming_a_pack_with_an_edition_names_the_one_vendored"],
+     "the scope page went on calling 02011 1.1.1 after 0.12.0 vendored "
+     "1.1.2, and three more pages named an edition the pin had moved past; "
+     "each was a number nothing read"),
+
+    ("pages/the-divergences-page-names-every-template",
+     "docs/divergences.md",
+     "02007, IDTA 02035-5, IDTA 02035-1, IDTA 02035-4, IDTA 02035-7, or of the\n",
+     "02007, or of the\n",
+     ["tests/test_pages_name_the_editions_read.py::"
+      "test_the_divergences_page_names_every_template_it_records_readings_of"],
+     "the page's first sentence stopped at the eight templates it had "
+     "before the battery parts, while rows 58 to 62 recorded readings of "
+     "four more"),
+
+    ("divergences/row-38-counts-references-in-this-tree",
+     "docs/divergences.md",
+     "**44 of the 2,074 references stack more than one key**",
+     "**48 of the 935 references stack more than one key**",
+     ["tests/test_divergence_counts_are_this_trees.py::"
+      "test_row_38_counts_the_references_of_the_files_it_names"],
+     "row 38 kept the reference counts of the editions vendored before the "
+     "0.12.0 pin move, counted over three templates where twelve are now "
+     "vendored"),
+
+    ("divergences/row-38-measures-the-collector",
+     "docs/divergences.md",
+     "calls the collector 1,793 times and 56 of those are multi-key",
+     "calls the collector 1,200 times and 23 of those are multi-key",
+     ["tests/test_divergence_counts_are_this_trees.py::"
+      "test_row_38_measures_the_collector_on_the_official_example"],
+     "the collector count row 38 printed was measured before the pin moved "
+     "and nine packs arrived, and went on being printed"),
+
+    ("divergences/row-40-counts-the-official-properties",
+     "docs/divergences.md",
+     "all 132 properties carry a value",
+     "all 102 properties carry a value",
+     ["tests/test_divergence_counts_are_this_trees.py::"
+      "test_row_40_counts_the_official_properties_and_the_rows_it_reaches"],
+     "row 40 said 102 official properties where the files it names hold "
+     "132, and had said so since the day it was written"),
+
+    ("scope/the-ok-true-runs-are-counted",
+     "docs/scope.md",
+     "Four of these come back `ok: true`, and only one of them judged\n",
+     "Three of these come back `ok: true`, and only one of them judged\n",
+     ["tests/test_what_a_pass_means.py::"
+      "test_the_paragraph_under_the_table_counts_its_rows"],
+     "the paragraph under the table said three of its runs come back "
+     "ok: true over a table where four do"),
+
+    ("help/a-settle-only-profile-names-the-table-that-judges",
+     "src/aas_submodel_validate/cli.py",
+     "        others = judged_instead(key)\n",
+     "        others = ()\n",
+     ["tests/test_cli_flags.py::"
+      "test_the_help_names_the_table_that_judges_where_a_profile_only_settles"],
+     "--help said 02035-3 settles a collision with a table for neither "
+     "side, while 02023's table judged the very submodel and BAT-R2 said so"),
+
+    ("readme/the-integration-example-reads-the-refusal-report",
+     "README.md",
+     "if not done.stdout:                 # 64 called wrong, or a --template refused:\n",
+     "if done.returncode >= 2:            # 64 called wrong, or a --template refused:\n",
+     ["tests/test_the_readme_integration_example_runs.py::"
+      "test_a_document_this_reader_refuses_is_read_from_its_report"],
+     "the front page's integration example left on exit 2 and discarded "
+     "the report a refused document comes back with"),
+
+    ("detect/the-presence-rule-cites-every-template",
+     "src/aas_submodel_validate/rules/detect.py",
+     '      spec="the submodel semanticId of each template docs/scope.md lists "\n',
+     '      spec="the submodel semanticId of each template "\n',
+     ["tests/test_spec_accuracy.py::"
+      "test_the_presence_rule_cites_the_page_that_lists_every_template_it_asks_about"],
+     "SMT-D1 asks about twelve templates and cited two of their clauses, "
+     "so a Nameplate or battery file was sent elsewhere for its requirement"),
+
+    ("contact/the-submodel-identifier-is-not-an-ip-spelling",
+     "src/aas_submodel_validate/rules/contact_tables.py",
+     "                'match': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/', ",
+     "                'match': ('https://admin-shell.io/zvei/nameplate/1/0/ContactInformations', "
+     "'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/', ",
+     ["tests/test_editions_published_since_the_pin.py::"
+      "test_the_submodel_s_own_identifier_does_not_open_ip_communication"],
+     "the submodel's own identifier was an IPCommunication alias although "
+     "no 02002 edition gave IPCommunication that identifier"),
+
+    ("tablegen/a-list-item-remedy-says-to-give-no-idshort",
+     "src/aas_submodel_validate/tablegen.py",
+     "    if in_list:\n        fix += (\", as an item of that list: give it no idShort%s\"\n",
+     "    if False:\n        fix += (\", as an item of that list: give it no idShort%s\"\n",
+     ["tools/extract_smt_rules.py --check"],
+     "a list item's remedy quoted a label this tool invented, the way an "
+     "idShort is quoted, and followed to the letter it put an idShort on a "
+     "list item, which the metamodel forbids"),
+])
+
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",
@@ -2996,10 +3106,46 @@ def apply(tree: Path, row) -> None:
     clear(tree)
 
 
+def _record(path: Path, repo: Path, killed: list, survivors: list) -> None:
+    """What a run found, kept in the repository rather than in a terminal.
+
+    Written only by a run in which every row died, and only from a clean
+    checkout: the commit is how a reader finds the tree that was measured,
+    and a tree with uncommitted changes is not the commit it would name.
+    `tests/test_mutation_record.py` holds it to the table, so a row added
+    or dropped without a run makes the two disagree.
+    """
+    dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
+                           cwd=repo, capture_output=True, text=True).stdout.strip()
+    if dirty:
+        raise SystemExit("not recorded: the checkout has uncommitted changes, so "
+                         "no commit names the tree that was measured")
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo,
+                            capture_output=True, text=True, check=True).stdout.strip()
+    path.write_text(json.dumps({
+        "_about": "The last full run of tools/mutation_table.py --run kept by "
+                  "the run itself: every row it applied, which died and which "
+                  "survived, the commit it measured and the Python it ran "
+                  "under. CI runs the table on every commit; this is the run "
+                  "a reader can see without CI.",
+        "commit": commit,
+        "python": platform.python_version(),
+        "rows": [row[0] for row in TABLE],
+        "killed": killed,
+        "survived": survivors,
+    }, indent=1) + "\n", encoding="utf-8")
+    print("recorded in %s" % path)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", action="store_true")
+    ap.add_argument("--record", metavar="FILE",
+                    help="with --run, and only when every row died: write "
+                         "what the run found, with the commit it measured")
     args = ap.parse_args()
+    if args.record and not args.run:
+        ap.error("--record keeps what a run found, so it needs --run")
     repo = ROOT
 
     if not args.run:
@@ -3032,7 +3178,7 @@ def main() -> int:
         subprocess.run(["git", "clean", "-Xdfq"], cwd=tree,
                        capture_output=True)
 
-        survivors, broken = [], []
+        survivors, broken, killed = [], [], []
         for row in TABLE:
             row_id, rel, _old, _new, checks, _why = row
             pristine = (tree / rel).read_text(encoding="utf-8")
@@ -3085,6 +3231,7 @@ def main() -> int:
                 survivors.append(row_id)
                 print("  survived  %s" % row_id)
             else:
+                killed.append(row_id)
                 print("  killed    %s" % row_id)
 
         problems = list(broken)
@@ -3103,6 +3250,8 @@ def main() -> int:
             return 1
         print("\n%d mutations, all caught; the canary survived."
               % (len(TABLE) - 1))
+        if args.record:
+            _record(Path(args.record), repo, killed, survivors)
         return 0
 
 
