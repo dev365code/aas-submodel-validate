@@ -69,12 +69,12 @@ def test_every_generated_rule_fires(tmp_path, row):
 
 
 def test_hardware_and_firmware_versions_each_keep_their_own_row(tmp_path):
-    """The template gives `HardwareVersion` and `FirmwareVersion` the same
-    ECLASS identifier beside their own, `0173-1#02-AAN270#004`. A file
-    carrying it on both, as the template writes them, was told it had two
-    hardware versions: the first row holding a shared identifier claimed
-    every element carrying it. Each element's own identifier names its
-    row."""
+    """02006 3.0 gave `HardwareVersion` and `FirmwareVersion` the same
+    ECLASS identifier beside their own, `0173-1#02-AAN270#004`, until
+    3.0.1 gave `FirmwareVersion` one of its own. A file carrying it on
+    both, as 3.0 writes them, was told it had two hardware versions: the
+    first row holding a shared identifier claimed every element carrying
+    it. Each element's own identifier names its row."""
     env = copy.deepcopy(dn_env())
     pending = list(env["submodels"][0]["submodelElements"])
     carried = 0
