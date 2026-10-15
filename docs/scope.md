@@ -94,13 +94,13 @@ A usage error -- an unknown option, a missing argument, flags that
 contradict -- exits **64** and writes no report, because no input was
 read.
 
-Three of these come back `ok: true` and only one of them judged
-anything against a rule. `summary.submodelsJudged` separates the first
-four; it does **not** separate the fifth, where a table with no rows
-judged a submodel against nothing. For that route the number is
-`provenance.template.rows`. A build that gates on the exit code alone
-cannot tell any of them apart, and one that gates on `.ok` alone misses
-the row where the exit code is 1.
+Four of these come back `ok: true`, and only one of them judged
+anything against a rule. `summary.submodelsJudged` tells that one from
+the two that judged nothing; it does **not** tell it from the supplied
+table with no rows, which judged a submodel against nothing. For that
+route the number is `provenance.template.rows`. A build that gates on
+the exit code alone cannot tell the three that exit 0 apart, and one
+that gates on `.ok` alone misses the row where the exit code is 1.
 
 ## Which templates it covers, and which it does not
 

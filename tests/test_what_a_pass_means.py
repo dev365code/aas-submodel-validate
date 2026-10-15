@@ -127,6 +127,20 @@ def _rows_of_the_page():
     return rows
 
 
+
+def test_the_paragraph_under_the_table_counts_its_rows():
+    """The paragraph under the table counts the rows that say `ok: true`,
+    and said "Three" over a table holding four, with "the first four" and
+    "the fifth" pointing at rows that had since moved. Counted from the
+    table now, the way the README's sentence over its own table is."""
+    rows = _rows_of_the_page()
+    passing = [row for row in rows if row[2] == "true"]
+    leaving_by_0 = [row for row in passing if row[1] == "0"]
+    words = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
+    page = " ".join(PAGE.read_text("utf-8").split())
+    assert "%s of these come back `ok: true`" % words[len(passing)].capitalize() in page
+    assert "cannot tell the %s that exit 0 apart" % words[len(leaving_by_0)] in page
+
 def _all_open_template(tmp_path):
     """A template whose only element is open content, so it states no
     rule this reader can check and its table comes out with no rows."""
