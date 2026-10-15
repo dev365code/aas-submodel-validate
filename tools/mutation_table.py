@@ -47,6 +47,7 @@ The harness checks itself as hard as it checks the code:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import platform
@@ -3044,6 +3045,31 @@ def _declared_version(tree: Path) -> str:
     return found.group(1) if found else "0.0.0"
 
 
+@contextlib.contextmanager
+def _released_heading(tree: Path):
+    """The CHANGELOG as the release commit would carry it, while a step runs.
+
+    The tag-and-version step refuses a heading still marked `unreleased`,
+    by design: a release is cut from the commit that dates it. Between
+    releases the version is opened ahead of that date, so on every such
+    commit that step was red before any mutation, and the row lifting it
+    could be measured on the release commit alone -- CI's run of the table
+    failed on it. The heading for the declared version is dated here, in
+    the copy, and put back: for the same reason the tag is supplied, so
+    the baseline is green by construction and what turns it red is the row.
+    """
+    changelog = tree / "CHANGELOG.md"
+    text = changelog.read_text(encoding="utf-8")
+    draft = "## %s \u2014 unreleased" % _declared_version(tree)
+    if draft in text:
+        changelog.write_text(text.replace(draft, draft.replace("unreleased", "2000-01-01"), 1),
+                             encoding="utf-8")
+    try:
+        yield
+    finally:
+        changelog.write_text(text, encoding="utf-8")
+
+
 def run(tree: Path, checks: list) -> tuple:
     """Whatever the row names. Returns (worst exit code, what pytest said).
 
@@ -3069,10 +3095,11 @@ def run(tree: Path, checks: list) -> tuple:
             # The tag the workflow would see, taken from the tree being
             # measured, so the baseline is green by construction and a
             # row that breaks the agreement is what makes it red.
-            code = subprocess.run(
-                ["sh", str(script)], cwd=tree, capture_output=True, text=True,
-                env=dict(env, GITHUB_REF_NAME="v" + _declared_version(tree))
-            ).returncode
+            with _released_heading(tree):
+                code = subprocess.run(
+                    ["sh", str(script)], cwd=tree, capture_output=True, text=True,
+                    env=dict(env, GITHUB_REF_NAME="v" + _declared_version(tree))
+                ).returncode
         elif spec.startswith("tools/"):
             code = subprocess.run([sys.executable, *spec.split()], cwd=tree,
                                   capture_output=True, text=True,

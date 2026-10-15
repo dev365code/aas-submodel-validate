@@ -13,6 +13,7 @@ ambiguous (2+ matches, where the mutation would strike the wrong line).
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -78,3 +79,20 @@ def test_every_check_a_row_names_still_collects_something(row):
     assert done.returncode == 0, (
         "%s names %s, which collects nothing:\n%s"
         % (identifier, selections, (done.stdout + done.stderr)[-800:]))
+
+
+def test_a_release_step_is_measured_on_the_heading_a_release_carries(tmp_path):
+    """The tag-and-version step refuses a heading still marked unreleased,
+    by design, and between releases the version is opened ahead of that
+    heading's date -- so on every such commit the one row lifting that step
+    was red before its mutation, and CI's run of the table failed on it.
+    The harness dates the heading in its copy while a step runs, as it
+    supplies the tag, and puts it back."""
+    (tmp_path / "pyproject.toml").write_text('[project]\nversion = "1.2.3"\n', encoding="utf-8")
+    original = "# Changelog\n\n## 1.2.3 — unreleased\n\nWhat moves.\n\n## 1.2.2 — 2026-01-01\n"
+    (tmp_path / "CHANGELOG.md").write_text(original, encoding="utf-8")
+    with m._released_heading(tmp_path):
+        during = (tmp_path / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## 1.2.3 — unreleased" not in during and \
+        re.search(r"(?m)^## 1\.2\.3 — \d{4}-\d\d-\d\d$", during), during
+    assert (tmp_path / "CHANGELOG.md").read_text(encoding="utf-8") == original
