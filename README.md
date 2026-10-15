@@ -571,9 +571,9 @@ import json, subprocess
 
 done = subprocess.run(["smtv", "-f", "json", "submodel.aasx"],
                       capture_output=True, text=True)
-if done.returncode >= 2:            # 2 could not run, 64 called wrong;
-    raise SystemExit(done.stderr)   # neither writes a report to parse
-report = json.loads(done.stdout)
+if not done.stdout:                 # 64 called wrong, or a --template refused:
+    raise SystemExit(done.stderr)   # no report, and the reason is on stderr
+report = json.loads(done.stdout)    # 2 still reports what it could not read
 for finding in report["findings"]:
     print(finding["rule"], finding["severity"], finding["message"], finding["fix"])
 ```

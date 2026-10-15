@@ -6,6 +6,7 @@ It is 470 rules, 416 generated from the vendored official template files, across
 
 - Pages that still named the editions read before the 0.12.0 pin move now name the vendored ones: Hierarchical Structures 1.1.2 and Digital Battery Passport part 1 at 1.1 in `docs/scope.md`, Handover Documentation 2.0.2 in `docs/what-it-catches.md` and `THIRD_PARTY.md`, and Circularity 1.0.2 in `docs/divergences.md`, whose opening sentence now lists all twelve templates. A test holds every sentence that names a pack with an edition to the directory it is vendored in.
 - `smtv --help` said `--profile 02035-3` settles a collision for which this tool has a table for neither side. The other side is 02023 Carbon Footprint, whose table judges the submodel whichever template the author declares, as `BAT-R2` reports; the help now reads which table judges from the tables themselves.
+- The README's integration example left on every exit of 2 or more and said neither 2 nor 64 writes a report. A refused document and a path that could not be read both exit 2 with a report saying what was refused, as `docs/report-schema.md` states; the example now reads the report whenever stdout is not empty and leaves on stderr only for a usage error or a refused `--template`. A test runs the example as written against those cases.
 
 ## 0.12.0 — 2026-10-13
 
