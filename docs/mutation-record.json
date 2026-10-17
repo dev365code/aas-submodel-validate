@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "46794ff6d533ccf7ebdc91cc25c15f1c8994a9c6",
+ "commit": "072456714b3d7b239bb461e1ebff155102aaedff",
  "python": "3.9.6",
  "rows": [
   "gates/the-time-budget-actually-compares",
@@ -299,6 +299,7 @@
   "api/what-was-not-judged-leaves-by-2",
   "api/a-keyword-keeps-its-released-name",
   "api/a-profile-there-is-none-of-is-refused",
+  "api/the-package-imports-without-the-engine",
   "api/bytes-are-bounded-as-a-path-is",
   "action/a-file-name-is-not-a-command",
   "action/the-code-is-published",
@@ -608,6 +609,7 @@
   "api/what-was-not-judged-leaves-by-2",
   "api/a-keyword-keeps-its-released-name",
   "api/a-profile-there-is-none-of-is-refused",
+  "api/the-package-imports-without-the-engine",
   "api/bytes-are-bounded-as-a-path-is",
   "action/a-file-name-is-not-a-command",
   "action/the-code-is-published",
