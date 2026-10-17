@@ -453,9 +453,11 @@ file, each byte for byte what `smtv` prints for that file: read the
 output as a sequence of documents, not as one. The step leaves by the
 code that says the most of theirs: 64, then
 2, then 1, then 0, published as the output `exit-code` as well; with
-`fail-on-finding: false` it passes and leaves the code to be read. Given
-`pyz:`, a single file you carried in, it installs nothing and fetches
-nothing, and `sha256:` checks that file before it runs. It needs a Python
+`fail-on-finding: false` it passes and leaves the code to be read. The
+install is the one thing the step does that reaches a network; judging
+opens no socket, here as anywhere. Given `pyz:`, a single file you
+carried in, it installs nothing and fetches nothing, and `sha256:` checks
+that file before it runs. It needs a Python
 on the runner, which `actions/setup-python` puts there.
 
 ## What it checks
