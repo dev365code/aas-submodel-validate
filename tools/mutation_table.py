@@ -3097,6 +3097,34 @@ TABLE.extend([
       "test_the_release_it_installs_is_the_one_it_was_pinned_at[the-ref-pinned]"],
      "a step pinned at one release that installs another runs a validator "
      "nobody asked for, and its verdict is cited against the wrong version"),
+
+    ("action/a-pinned-digest-is-read-from-the-bytes",
+     "action.yml",
+     '              got=$(sha256sum < "$PYZ" | cut -d" " -f1)\n',
+     '              got=$(sha256sum "$PYZ" | cut -d" " -f1)\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_a_carried_file_with_the_right_hash_is_run_whatever_it_is_called[lower]"],
+     "read off the line sha256sum writes for a name, the digest came back "
+     "with a backslash in front wherever the name had one -- as a path "
+     "written the Windows way does -- and a pinned file named so never ran"),
+
+    ("action/a-validator-that-does-not-start-is-told-apart",
+     "action.yml",
+     '        if [ "$started" -ne 0 ]; then\n',
+     '        if false; then\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_a_validator_that_does_not_start_is_not_a_finding"],
+     "a validator that cannot start leaves by 1, the code for a finding, and "
+     "read as one the step reports a file judged that nothing looked at"),
+
+    ("action/the-step-writes-what-smtv-writes",
+     "action.yml",
+     '        said=$("$@" --version 2>&1) || started=$?\n',
+     '        "$@" --version >&2 || started=$?\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_the_step_says_what_smtv_says_about_one_file[judged]"],
+     "a line of the step's own on either stream makes the log of a step a "
+     "different document from the log of the command it runs"),
 ])
 
 
