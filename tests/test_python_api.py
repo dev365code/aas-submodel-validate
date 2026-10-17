@@ -556,6 +556,27 @@ def test_no_root_name_is_also_the_name_of_a_module_beneath_it():
     assert not beneath & set(api.__all__), sorted(beneath & set(api.__all__))
 
 
+def test_importing_the_package_does_not_import_the_engine():
+    """Python runs the root's `__init__` before any module beneath it, and
+    the single-file builder imports one of those in an environment that
+    holds only this source tree -- it is the tool that fetches the one
+    dependency. With the library's names imported in `__init__`, that took
+    aas-core3.0 with it, and the builder died in CI before it could fetch
+    anything. The names are imported when they are first asked for, and
+    the version is readable with nothing installed."""
+    script = "\n".join([
+        "import sys",
+        "import aas_submodel_validate, aas_submodel_validate._terminal",
+        "print(aas_submodel_validate.__version__)",
+        "print(sorted(name for name in sys.modules if name.split('.')[0] == 'aas_core3'"
+        " or name in ('aas_submodel_validate.api', 'aas_submodel_validate.runner')))",
+    ])
+    run = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True,
+                         env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+    assert run.returncode == 0, run.stderr
+    assert run.stdout.split("\n")[:2] == [__version__, "[]"], run.stdout
+
+
 @pytest.mark.parametrize("first", ["import aas_submodel_validate.rules.profiles",
                                    "from aas_submodel_validate import list_rules"])
 def test_each_root_name_is_one_object_whatever_was_imported_first(first):
