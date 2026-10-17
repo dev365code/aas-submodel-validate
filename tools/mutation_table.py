@@ -3033,6 +3033,16 @@ TABLE.extend([
      "the engine reads a key no pair publishes as no key at all, and only "
      "the parser's choices stood in front of it; a library has no parser"),
 
+    ("api/the-package-imports-without-the-engine",
+     "src/aas_submodel_validate/__init__.py",
+     "def __getattr__(name):\n",
+     "from . import api  # noqa: E402,F401\n\n\ndef __getattr__(name):\n",
+     ["tests/test_python_api.py::"
+      "test_importing_the_package_does_not_import_the_engine"],
+     "the tools import a module beneath the root from a bare source tree, "
+     "and with the engine imported by the root the single-file builder died "
+     "for want of the one dependency it exists to fetch"),
+
     ("api/bytes-are-bounded-as-a-path-is",
      "src/aas_submodel_validate/container.py",
      "        return len(path.data)\n",
