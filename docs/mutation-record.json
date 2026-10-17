@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "74dacca91980dcbcb8259ee27b299a98081aeed3",
+ "commit": "7eaa15f29390b8384a69caa837adb572c9759f58",
  "python": "3.9.6",
  "rows": [
   "gates/the-time-budget-actually-compares",
@@ -293,6 +293,13 @@
   "detect/the-presence-rule-cites-every-template",
   "contact/the-submodel-identifier-is-not-an-ip-spelling",
   "tablegen/a-list-item-remedy-says-to-give-no-idshort",
+  "api/a-keyword-reaches-the-engine",
+  "api/require-all-judged-is-read",
+  "api/bytes-are-read-as-the-format-named",
+  "api/what-was-not-judged-leaves-by-2",
+  "api/a-keyword-keeps-its-released-name",
+  "api/a-profile-there-is-none-of-is-refused",
+  "api/bytes-are-bounded-as-a-path-is",
   "canary/a-comment-nobody-reads"
  ],
  "killed": [
@@ -585,7 +592,14 @@
   "readme/the-integration-example-reads-the-refusal-report",
   "detect/the-presence-rule-cites-every-template",
   "contact/the-submodel-identifier-is-not-an-ip-spelling",
-  "tablegen/a-list-item-remedy-says-to-give-no-idshort"
+  "tablegen/a-list-item-remedy-says-to-give-no-idshort",
+  "api/a-keyword-reaches-the-engine",
+  "api/require-all-judged-is-read",
+  "api/bytes-are-read-as-the-format-named",
+  "api/what-was-not-judged-leaves-by-2",
+  "api/a-keyword-keeps-its-released-name",
+  "api/a-profile-there-is-none-of-is-refused",
+  "api/bytes-are-bounded-as-a-path-is"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
