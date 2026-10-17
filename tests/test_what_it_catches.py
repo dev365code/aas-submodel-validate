@@ -82,3 +82,17 @@ def test_the_outputs_the_page_quotes_are_what_the_tool_prints(capsys, monkeypatc
     checked = subprocess.run([sys.executable, str(ROOT / "tools" / "vendor_template.py"), "--check"],
                              capture_output=True, text=True, cwd=str(ROOT))
     assert upstream == checked.stdout.strip().splitlines()[-1], (upstream, checked.stdout)
+
+
+#: The words a heading on this page counts in.
+_COUNTED = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+
+
+def test_the_entrances_heading_counts_the_ways_in_that_are_done():
+    """The section opens by saying how many ways in there are today, and
+    that is a number the checklist under it already holds. Written by hand
+    it stays put while an item flips."""
+    heading = re.search(r"\*\*One judgement, (\w+) ways? in today\.\*\*", _section("Entrances"))
+    assert heading, "the Entrances section no longer opens with its count"
+    done = sum(1 for item in _axis("entrances")["items"] if item["done"])
+    assert _COUNTED.get(heading.group(1)) == done, (heading.group(0), done)

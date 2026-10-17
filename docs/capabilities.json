@@ -201,7 +201,11 @@
         },
         {
           "text": "Python library",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": "README.md",
+            "says": "from aas_submodel_validate import exit_code, validate"
+          }
         },
         {
           "text": "single file, nothing to install",
@@ -220,8 +224,8 @@
           "done": false
         }
       ],
-      "now_text": "command line, single file",
-      "target_text": "+ Python library, GitHub Action, browser"
+      "now_text": "command line, Python library, single file",
+      "target_text": "+ GitHub Action, browser"
     },
     {
       "key": "input",

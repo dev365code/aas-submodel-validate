@@ -119,21 +119,25 @@ Reproduce: `python3 tools/golden_report.py --check` in a clone.
 
 ## Entrances
 
-**One judgement, two ways in today.** The command line (`smtv FILE`, or
-`aas-submodel-validate FILE`) and a single file that needs nothing but a
-Python: `python3 tools/build_zipapp.py` in a clone, then
+**One judgement, three ways in today.** The command line (`smtv FILE`, or
+`aas-submodel-validate FILE`), a single file that needs nothing but a
+Python -- `python3 tools/build_zipapp.py` in a clone, then
 `python3 dist/smtv.pyz --example` prints the same verdict line as
-`smtv --example`. The README's three doors -- a terminal, a single file, a
-build -- are two of the five here: a build runs the command line.
+`smtv --example` -- and the library: `validate` returns the report
+`-f json` prints, and `exit_code` the code `smtv` leaves by. The README's
+three doors -- a terminal, a single file, a build -- are two of the five
+here: a build runs the command line.
 
 - command line — done
-- Python library — not yet
+- Python library — done
 - single file, nothing to install — done
 - GitHub Action — not yet
 - browser, nothing installed — not yet
 
-There is no importable Python API yet; the supported way to call this from
-another program is the command and its JSON (see the README).
+The command line judges through the library, so the two cannot disagree:
+every input in the corpus the release notes measure, under every flag that
+moves a verdict, is held by a test to one byte and one exit code between
+them. Bytes and an open file are judged as the file they were read from.
 
 Before 1.0: all five ways in, each reaching the same verdict on the same
 input — the library, a GitHub Action, and a browser page that checks a file

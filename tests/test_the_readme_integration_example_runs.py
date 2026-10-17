@@ -24,7 +24,7 @@ EXAMPLE = ROOT / "src" / "aas_submodel_validate" / "data" / "example" / "idta-02
 
 
 def _example():
-    after = README.split("There is no importable Python API yet", 1)[1]
+    after = README.split("the supported way to call this", 1)[1]
     code = re.search(r"(?s)```python\n(.*?)```", after)
     assert code, "the README no longer shows the integration example"
     return code.group(1)

@@ -152,7 +152,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=19a9c6fe" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, single file; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=6143b47c" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, Python library, single file; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
@@ -563,8 +563,37 @@ says. 64 (`EX_USAGE`) is a mistake in how the tool was called -- an
 unknown option, a missing argument, two requests at once. It was 2 until
 0.4.0, announced a release ahead in 0.3.0, so 2 now says only that the
 run could not judge the input.
-There is no importable Python API yet — the supported way to call this
-from another program is the command and the JSON:
+
+From Python the same judgement is a call. `validate` takes a path, the
+bytes of a file with `format=` naming the kind (`"aasx"`, `"json"` or
+`"xml"`), or a file opened in binary mode, and returns the report `-f json`
+prints; `exit_code` is the number `smtv` would leave by:
+
+```python
+from aas_submodel_validate import exit_code, validate
+
+judged = validate("submodel.aasx")   # an input it cannot read is a report too
+report = judged.as_dict()            # the document -f json prints
+for finding in report["findings"]:
+    print(finding["rule"], finding["severity"], finding["message"], finding["fix"])
+raise SystemExit(exit_code(judged))  # 0, 1, or 2 when nothing was judged
+```
+
+Its other keywords are the flags that move the report -- `meta=`,
+`allow_unmatched=`, `profile=` and `template=` -- and `exit_code` takes the
+two that move only the code, `warnings_as_errors=` and
+`require_all_judged=`. A call made wrong raises `TypeError` or `ValueError`
+where the command line leaves by 64, and a template of yours this reader
+will not read raises `TemplateRefused` where it leaves by 2 with no report.
+What the package root exports is the whole library: `validate`,
+`exit_code`, `TemplateRefused`, `Report` with `as_dict()`, `ok` and
+`judged`, `list_rules()` for what `--rules` lists and `example_path()` for
+the file `--example` judges. The names and their keywords are written down
+in the test suite and checked against every build; a keyword may be added,
+with a default, and none is renamed or removed.
+
+From a program that does not import Python, the supported way to call this
+is the command and the JSON:
 
 ```python
 import json, subprocess
@@ -607,8 +636,8 @@ template renumbers them, and nothing here promises otherwise. Vendored IDTA temp
 are pinned by commit and verified by hash on every run of the suite, so
 an upstream change cannot arrive silently.
 
-Packaging and internals are not a contract: there is no importable
-Python API, and the module layout and what the wheel carries beyond the
+Packaging and internals are not a contract: below the names the package
+root exports, the module layout and what the wheel carries beyond the
 paths named above may change in any release.
 
 **Support.** Open an issue; where to send it and what makes a report

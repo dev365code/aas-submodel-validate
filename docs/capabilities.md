@@ -3,7 +3,7 @@
 | Coverage | 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7 | met |
 | Explanation | what is wrong, remedy, requirement | + evidence, the line in the file |
 | Report contract | schemaVersion, golden report, exit codes, schema page | met |
-| Entrances | command line, single file | + Python library, GitHub Action, browser |
+| Entrances | command line, Python library, single file | + GitHub Action, browser |
 | Input safety | read budgets, advisory, own mutations | + encodings |
 | Upstream | pinned by commit, one pin move shipped | + checked for upstream change |
 
@@ -34,9 +34,9 @@
 - exit codes 0, 1, 2 and 64 under test — done (`tests/test_what_a_pass_means.py`: "Each row there names an exit code and an `ok`")
 - a field-by-field schema page — done (`README.md`: "described field by field in")
 
-**Entrances** — 2 of 5:
+**Entrances** — 3 of 5:
 - command line — done (`pyproject.toml`: "smtv = "aas_submodel_validate.cli:main"")
-- Python library — not yet
+- Python library — done (`README.md`: "from aas_submodel_validate import exit_code, validate")
 - single file, nothing to install — done (`README.md`: "carry `smtv.pyz`, run `python3 smtv.pyz file.aasx`")
 - GitHub Action — not yet
 - browser, nothing installed — not yet

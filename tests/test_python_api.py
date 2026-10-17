@@ -45,6 +45,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import verdict_diff  # noqa: E402
 
 RELEASED = ROOT / "tests" / "released_api.txt"
+README = (ROOT / "README.md").read_text(encoding="utf-8")
 EXAMPLE = ROOT / "src" / "aas_submodel_validate" / "data" / "example" / "idta-02004-2.0.aasx"
 
 #: What the command line is asked, and what asks the same of the library:
@@ -577,3 +578,47 @@ def test_each_root_name_is_one_object_whatever_was_imported_first(first):
     assert seen == {name: "%s.%s" % (getattr(api, name).__module__, getattr(api, name).__qualname__)
                     for name in api.__all__}
 
+
+# -- the front page ---------------------------------------------------------
+
+
+def _front_page_library_example() -> str:
+    after = README.split("From Python the same judgement is a call.", 1)[1]
+    code = re.search(r"(?s)```python\n(.*?)```", after)
+    assert code, "the README no longer shows the library example"
+    return code.group(1)
+
+
+def _run_the_front_page_example(path, capsys):
+    """The example, as written, on `path`: what it prints and what it
+    leaves by."""
+    code = _front_page_library_example()
+    assert code.count('"submodel.aasx"') == 1, code
+    code = code.replace('"submodel.aasx"', repr(str(path)))
+    with pytest.raises(SystemExit) as left:
+        exec(compile(code, "README.md", "exec"), {"__name__": "readme"})
+    return capsys.readouterr().out, left.value.code
+
+
+def test_the_front_page_library_example_runs_as_written(tmp_path, capsys):
+    """The code a Python integrator copies whole, on a file it judges, a
+    document it refuses and a path with nothing behind it -- leaving by the
+    code `smtv` leaves by on each."""
+    broken = tmp_path / "broken.json"
+    broken.write_bytes(b"not json at all")
+    absent = tmp_path / "nothing-here.aasx"
+    for path, first in ((EXAMPLE, None), (broken, "X3 error"), (absent, "X6 error")):
+        printed, left = _run_the_front_page_example(path, capsys)
+        assert left == _smtv(str(path), "-q")[1], path.name
+        if first is None:
+            assert "HD-D10 warning" in printed, printed
+        else:
+            assert printed.startswith(first), printed
+            assert left == 2
+
+
+def test_the_front_page_names_everything_the_root_exports():
+    _, _, stable = README.partition("What is stable, what is not")
+    section = stable.split("</details>", 1)[0]
+    missing = [name for name in api.__all__ if "`%s" % name not in section]
+    assert not missing, missing
