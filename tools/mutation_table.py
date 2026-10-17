@@ -2974,6 +2974,74 @@ TABLE.extend([
 ])
 
 
+TABLE.extend([
+    ("api/a-keyword-reaches-the-engine",
+     "src/aas_submodel_validate/api.py",
+     "    return runner.run(held, strict_meta=meta, allow_unmatched=allow_unmatched,\n",
+     "    return runner.run(held, strict_meta=meta, allow_unmatched=False,\n",
+     ["tests/test_python_api.py::"
+      "test_each_keyword_reaches_the_engine_and_is_recorded_as_asked"],
+     "a keyword the library drops on its way to the engine is dropped by "
+     "the command line too, which calls the library: the two stay one byte "
+     "in step and the flag does nothing at either"),
+
+    ("api/require-all-judged-is-read",
+     "src/aas_submodel_validate/api.py",
+     "              or (require_all_judged and short_of_all_judged(report))\n",
+     "              or (False and short_of_all_judged(report))\n",
+     ["tests/test_python_api.py::"
+      "test_require_all_judged_fails_an_input_with_nothing_to_judge"],
+     "exit_code is where the command line's code is computed, so a flag it "
+     "stops reading passes every file under it at both entrances at once"),
+
+    ("api/bytes-are-read-as-the-format-named",
+     "src/aas_submodel_validate/api.py",
+     "        return container.InMemory(source, _named(name), _suffix(form))\n",
+     "        return container.InMemory(source, _named(name), _suffix(\"json\"))\n",
+     ["tests/test_python_api.py::"
+      "test_bytes_and_an_open_file_are_judged_as_the_file_they_were_read_from"],
+     "bytes carry no extension, and the format they were handed over as is "
+     "the one thing that chooses their reader"),
+
+    ("api/what-was-not-judged-leaves-by-2",
+     "src/aas_submodel_validate/api.py",
+     "    if not report.judged:\n        return EXIT_ERROR\n",
+     "    if not report.judged:\n        return EXIT_FINDINGS\n",
+     ["tests/test_python_api.py::"
+      "test_what_cannot_be_judged_comes_back_as_a_report_that_leaves_by_2"],
+     "1 is the code for a verdict and a file nothing was judged in has none; "
+     "a pipeline reading 1 goes looking for findings that are not there"),
+
+    ("api/a-keyword-keeps-its-released-name",
+     "src/aas_submodel_validate/api.py",
+     "             allow_unmatched=False, profile=None, template=None) -> Report:\n",
+     "             allow_unmatch=False, profile=None, template=None) -> Report:\n"
+     "    allow_unmatched = allow_unmatch\n",
+     ["tests/test_python_api.py::"
+      "test_the_root_exports_what_released_api_txt_lists_and_nothing_else"],
+     "a renamed keyword is a call somebody wrote that stops working, and the "
+     "library's names and keywords are a promise the front page makes"),
+
+    ("api/a-profile-there-is-none-of-is-refused",
+     "src/aas_submodel_validate/api.py",
+     "    if profile is not None and profile not in choices:\n",
+     "    if False:\n",
+     ["tests/test_python_api.py::"
+      "test_a_profile_there_is_none_of_is_refused_where_the_engine_would_ignore_it"],
+     "the engine reads a key no pair publishes as no key at all, and only "
+     "the parser's choices stood in front of it; a library has no parser"),
+
+    ("api/bytes-are-bounded-as-a-path-is",
+     "src/aas_submodel_validate/container.py",
+     "        return len(path.data)\n",
+     "        return 0\n",
+     ["tests/test_python_api.py::"
+      "test_bytes_over_the_bound_are_refused_as_the_same_file_on_disk_is"],
+     "a document over the bound was refused before it was read when it "
+     "came from disk, and read to the bound first when it came as bytes"),
+])
+
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",
