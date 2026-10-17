@@ -190,12 +190,24 @@ def _verdicts_through_every_entrance(tmp_path):
     cannot drift: the list used to name the console script while the
     comparison ran the package, the library and the single file, and the
     gate that reads it passed.
+
+    The template is a copy beside the instance, handed to every entrance
+    by the same path: the action passes its `args:` on split at spaces,
+    as it documents, and this checkout's own folder has one in its name.
     """
     import os
+    import shutil
     import subprocess
     import sys
 
+    from test_the_action_is_a_way_in import BASH, _posix, _shim, _step
+
+    if BASH is None:
+        pytest.skip("the action's step is bash, and this machine has no bash a "
+                    "runner would use")
     instance = _instance(tmp_path)
+    template = tmp_path / "template.json"
+    shutil.copyfile(VENDORED, template)
 
     def through(argv):
         done = subprocess.run(argv, capture_output=True, text=True,
@@ -211,23 +223,41 @@ def _verdicts_through_every_entrance(tmp_path):
                            cwd=str(ROOT))
     assert built.returncode == 0, built.stdout + built.stderr
 
-    tail = [str(instance), "--template", str(VENDORED), "-f", "json"]
+    tail = [str(instance), "--template", str(template), "-f", "json"]
+
+    # The action's own step, run the way a runner runs it, on the single file
+    # built above: the path a runner with no route to an index takes.
+    script = tmp_path / "check.sh"
+    script.write_text(_step("check")[0], encoding="utf-8")
+    outputs = tmp_path / "outputs"
+    outputs.write_text("", encoding="utf-8")
+    stepped = subprocess.run(
+        [BASH, "--noprofile", "--norc", "-e", "-o", "pipefail", _posix(script)],
+        capture_output=True, text=True, cwd=str(ROOT),
+        env=dict(os.environ,
+                 PATH=os.pathsep.join([str(_shim(tmp_path)), os.environ.get("PATH", "")]),
+                 PATHS="%s\n" % instance, EXTRA="--template %s -f json" % template,
+                 PYZ=str(single), WANT_SHA="", TARGET="", FAIL_ON_FINDING="true",
+                 GITHUB_OUTPUT=str(outputs)))
+    assert stepped.returncode in (0, 1), stepped.stdout + stepped.stderr
+
     return {
         "library": json.dumps(
-            runner.run(instance, template=VENDORED).as_dict(), indent=2),
+            runner.run(instance, template=template).as_dict(), indent=2),
         "python -m": through([sys.executable, "-m", "aas_submodel_validate"]
                              + tail),
         "console script": through([sys.executable,
                                    str(_console_script_shim(tmp_path))] + tail),
         "single file": through([sys.executable, str(single)] + tail),
+        "github action": stepped.stdout.rstrip("\n"),
     }
 
 
 def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
     """The same verdict from every entrance, asked as bytes.
 
-    The command line, the console script, the library and the single
-    file are the same engine or they are not one engine. Compared as the
+    The command line, the console script, the library, the single file
+    and the action's step are the same engine or they are not one engine. Compared as the
     JSON document, because that is the contract, and a difference
     anywhere in it is a difference a consumer sees.
 
@@ -631,15 +661,23 @@ def test_the_help_page_says_a_supplied_verdict_is_not_a_conformance_claim(capsys
 def _entrances_the_tree_declares():
     import re
 
+    import aas_submodel_validate
+
     found = {"python -m": True}     # always, it is the package
     pyproject = (ROOT / "pyproject.toml").read_text("utf-8")
     scripts = re.search(r"(?ms)^\[project\.scripts\]\n(.*?)(?=^\[|\Z)", pyproject)
     if scripts and scripts.group(1).strip():
         found["console script"] = True
+    if "validate" in getattr(aas_submodel_validate, "__all__", ()):
+        found["library"] = True
     if (ROOT / "tools" / "build_zipapp.py").is_file():
         found["single file"] = True
     if (ROOT / "action.yml").is_file() or (ROOT / "action.yaml").is_file():
         found["github action"] = True
+    # How a page that judges in a browser would arrive: built by a tool of
+    # its own, the way the single file is.
+    if (ROOT / "tools" / "build_browser.py").is_file():
+        found["browser"] = True
     return found
 
 
@@ -656,20 +694,21 @@ def test_the_parity_test_covers_every_entrance_this_tree_has(tmp_path):
     """"The same verdict from every entrance" is only worth what the
     comparison covers.
 
-    Three entrances exist here and the comparison runs all three. A
-    GitHub Action is named as a fourth and **does not exist** -- there is
-    no `action.yml` in this tree -- so a promise about it is a promise
-    about something unbuilt. When one arrives, this goes red until the
-    comparison takes it, which is the only way that promise stays true
-    without somebody remembering.
+    Four entrances exist here -- the command line, as the package and as
+    the console script, the library, the single file and the GitHub
+    Action -- and the comparison runs every one of them. The action
+    arrived the way this said it would: this went red until the
+    comparison took it. A page that judges in a browser is named as the
+    fifth and **does not exist**, so a promise about it is a promise about
+    something unbuilt; when one arrives, this goes red the same way.
     """
     declared = set(_entrances_the_tree_declares())
     compared = _compared_entrances(tmp_path)
     assert declared <= compared, (
         "this tree declares %s and the comparison covers %s"
         % (sorted(declared), sorted(compared)))
-    assert "github action" not in declared, (
-        "an action exists now; add it to the comparison and to this list")
+    assert "browser" not in declared, (
+        "a browser page exists now; add it to the comparison and to this list")
 
 
 def test_the_security_page_names_the_second_file_and_its_bound():
