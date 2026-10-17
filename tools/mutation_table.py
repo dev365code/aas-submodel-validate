@@ -1022,7 +1022,9 @@ TABLE = [
 
     ("ci/every-job-has-a-time-limit",
      ".github/workflows/ci.yml",
+     "    name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}\n"
      "    runs-on: ${{ matrix.os }}\n    timeout-minutes: 15\n",
+     "    name: py${{ matrix.python }} ${{ matrix.label }} on ${{ matrix.os }}\n"
      "    runs-on: ${{ matrix.os }}\n",
      ["tests/test_ci_parity.py::test_every_job_has_a_time_limit"],
      "a job with no limit runs to GitHub's six-hour ceiling, so a test "
