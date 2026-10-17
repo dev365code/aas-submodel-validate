@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "7eaa15f29390b8384a69caa837adb572c9759f58",
+ "commit": "46794ff6d533ccf7ebdc91cc25c15f1c8994a9c6",
  "python": "3.9.6",
  "rows": [
   "gates/the-time-budget-actually-compares",
@@ -300,6 +300,15 @@
   "api/a-keyword-keeps-its-released-name",
   "api/a-profile-there-is-none-of-is-refused",
   "api/bytes-are-bounded-as-a-path-is",
+  "action/a-file-name-is-not-a-command",
+  "action/the-code-is-published",
+  "action/several-files-leave-by-the-heaviest-code",
+  "action/a-code-smtv-does-not-give-is-not-a-verdict",
+  "action/a-carried-file-is-checked-against-its-hash",
+  "action/the-release-is-the-one-the-tag-names",
+  "action/a-pinned-digest-is-read-from-the-bytes",
+  "action/a-validator-that-does-not-start-is-told-apart",
+  "action/the-step-writes-what-smtv-writes",
   "canary/a-comment-nobody-reads"
  ],
  "killed": [
@@ -599,7 +608,16 @@
   "api/what-was-not-judged-leaves-by-2",
   "api/a-keyword-keeps-its-released-name",
   "api/a-profile-there-is-none-of-is-refused",
-  "api/bytes-are-bounded-as-a-path-is"
+  "api/bytes-are-bounded-as-a-path-is",
+  "action/a-file-name-is-not-a-command",
+  "action/the-code-is-published",
+  "action/several-files-leave-by-the-heaviest-code",
+  "action/a-code-smtv-does-not-give-is-not-a-verdict",
+  "action/a-carried-file-is-checked-against-its-hash",
+  "action/the-release-is-the-one-the-tag-names",
+  "action/a-pinned-digest-is-read-from-the-bytes",
+  "action/a-validator-that-does-not-start-is-told-apart",
+  "action/the-step-writes-what-smtv-writes"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
