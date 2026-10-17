@@ -3140,6 +3140,144 @@ TABLE.extend([
 ])
 
 
+TABLE.extend([
+    ("browser/a-request-after-load-is-a-problem",
+     "tools/browser_gates.py",
+     '        if urls:\n            problems.append("%s: %d request(s) after load, seen by the %s counter: %s"\n',
+     '        if False:\n            problems.append("%s: %d request(s) after load, seen by the %s counter: %s"\n',
+     ["tests/test_the_page_says_what_the_command_says.py::test_a_request_after_load_is_a_problem_named_by_the_counter_that_saw_it"],
+     "the page's whole promise is the zero this counts; a gate that counts "
+     "and does not object is a gate that passes a page that phones home"),
+
+    ("browser/two-different-commands-are-not-compared",
+     "tools/browser_gates.py",
+     "    if list(page.argv) != list(cli.argv):\n",
+     "    if False:\n",
+     ["tests/test_the_page_says_what_the_command_says.py::test_two_runs_of_different_commands_are_not_compared"],
+     "outputs of two different commands agree or disagree for reasons that "
+     "say nothing about the page"),
+
+    ("browser/every-door-has-to-be-among-the-files",
+     "tools/browser_gates.py",
+     "    if opened != sorted(DOORS):\n",
+     "    if False:\n",
+     ["tests/test_the_page_says_what_the_command_says.py::test_the_doors_have_to_be_among_the_files_checked"],
+     "a zero counted over files that never asked the reader to reach out "
+     "says nothing about a reader that was asked to"),
+
+    ("browser/the-deep-documents-have-to-be-among-the-files",
+     "tools/browser_gates.py",
+     "    if sorted(path.name for path in todo if path.name in DEEP) != sorted(DEEP):\n",
+     "    if False:\n",
+     ["tests/test_the_page_says_what_the_command_says.py::"
+      "test_the_documents_past_the_bound_have_to_be_among_the_files_checked"],
+     "the page crashed on documents nested past its stack; a run without "
+     "them says nothing about whether it now refuses them as the command does"),
+
+    ("browser/the-entity-door-uses-its-entity",
+     "tools/browser_gates.py",
+     '              + xml[:first] + "&pull;" + xml[xml.index("</value>", first):])\n',
+     '              + xml[:first] + "pull" + xml[xml.index("</value>", first):])\n',
+     ["tests/test_the_page_says_what_the_command_says.py::test_the_doors_are_shut_to_the_command_and_it_is_asked_through_each"],
+     "an entity declared and never used is a door painted on a wall: a "
+     "reader that resolves entities as it meets them is never asked"),
+
+    ("browser/every-counter-is-shown-the-controls",
+     "tools/browser_gates.py",
+     'CONTROLS = {"browser": 2, "server": 2, "page timing": 1, "worker timing": 1}\n',
+     'CONTROLS = {"browser": 2, "server": 2, "page timing": 1}\n',
+     ["tests/test_the_page_says_what_the_command_says.py::test_a_counter_that_missed_the_control_is_blind_not_quiet"],
+     "a counter nobody shows a request to can be attached to nothing and "
+     "read zero forever"),
+
+    ("browser/a-blind-counter-fails-the-run",
+     "tools/browser_gates.py",
+     "    for name in blind(CONTROLS, counted):\n",
+     "    for name in blind(CONTROLS, CONTROLS):\n",
+     ["tests/test_the_page_says_what_the_command_says.py::test_a_blind_counter_fails_the_run_even_when_it_read_zero"],
+     "the zero from a counter that missed the control is the zero of a "
+     "counter that sees nothing"),
+
+    ("browser/the-python-is-compared-to-the-patch",
+     "tools/browser_gates.py",
+     '    return [name for name in ("python", "aas_submodel_validate", "aas_core3")\n',
+     '    return [name for name in ("aas_submodel_validate", "aas_core3")\n',
+     ["tests/test_the_page_says_what_the_command_says.py::test_the_gate_refuses_to_compare_across_interpreters"],
+     "two patch releases are two readers; a comparison across them cannot "
+     "tell the page's difference from the interpreter's"),
+
+    ("browser/the-page-asks-for-no-bundle",
+     "browser/aas_page.py",
+     '    return ["--no-bundle", *(["-f", "json"] if as_json else []), path]\n',
+     '    return [*(["-f", "json"] if as_json else []), path]\n',
+     ["tests/test_the_page_says_what_the_command_says.py::test_a_name_that_reads_as_an_option_is_passed_as_a_file"],
+     "a diagnostic bundle written into the tab's memory is a file nobody "
+     "could open, and asked for one the page runs another command"),
+
+    ("browser/a-download-is-held-to-its-digest",
+     "tools/build_browser.py",
+     "    if got != sha256:\n",
+     "    if False:\n",
+     ["tests/test_the_page_says_what_the_command_says.py::test_a_download_that_is_not_the_pinned_bytes_is_refused"],
+     "the page is the bytes it was built from; a download nothing compares "
+     "is whatever the network handed over that day"),
+
+    ("browser/the-runtime-package-is-the-one-its-lock-names",
+     "tools/build_browser.py",
+     '        if (locked.get("file_name"), locked.get("sha256")) != (entry["file"], entry["sha256"]):\n',
+     "        if False:\n",
+     ["tests/test_the_page_says_what_the_command_says.py::test_the_runtime_package_has_to_be_the_one_its_lock_file_names"],
+     "a package pinned here and not the one the runtime's lock names is one "
+     "its runtime would not have loaded"),
+
+    ("browser/what-is-compiled-in-has-its-notice",
+     "tools/build_browser.py",
+     '     "notice": "liblzma", "version": "5.2.2", "revision": "v5.2.2",\n',
+     '     "notice": "xz", "version": "5.2.2", "revision": "v5.2.2",\n',
+     ["tests/test_the_page_says_what_the_command_says.py::test_the_page_carries_the_notice_of_everything_compiled_into_its_runtime"],
+     "a binary built from code under a notice carries the notice, and the "
+     "lzma package the engine needs has liblzma built into it"),
+])
+
+
+TABLE.extend([
+    ('bound/json-is-asked-how-deep-before-it-is-parsed',
+     'src/aas_submodel_validate/loader.py',
+     '    if nesting(text, "json", stop=container.MAX_NESTING) > container.MAX_NESTING:\n        raise NestedTooDeep()\n',
+     '    if False:\n        raise NestedTooDeep()\n',
+     ['tests/test_a_document_nested_past_the_bound.py::test_the_scan_neither_recurses_nor_takes_long[json-_json-1000000]'],
+     "without the scan a deep document reaches the parser, and how deep it may nest is again the machine's stack: a report at one entrance and a crash at another"),
+
+    ('bound/xml-is-asked-how-deep-before-it-is-parsed',
+     'src/aas_submodel_validate/loader.py',
+     '    if nesting(raw, "xml", stop=container.MAX_NESTING) > container.MAX_NESTING:\n        loaded.errors.append(_too_deep(part or loaded.path))\n',
+     '    if False:\n        loaded.errors.append(_too_deep(part or loaded.path))\n',
+     ['tests/test_a_document_nested_past_the_bound.py::test_a_document_nested_to_the_bound_is_read_and_one_level_more_is_refused[xml-_xml]'],
+     "XML is the same class: the browser's runtime ran out of stack on it near 3,000 levels while the command read on"),
+
+    ('bound/the-bound-is-the-measured-one',
+     'src/aas_submodel_validate/container.py',
+     'MAX_NESTING = 200\n',
+     'MAX_NESTING = 201\n',
+     ['tests/test_a_document_nested_past_the_bound.py::test_the_bound_is_ten_times_the_deepest_file_judged_here'],
+     'the bound is a measurement -- ten times the deepest file judged here, rounded up to the hundred -- and a number nobody derived drifts'),
+
+    ('bound/an-escaped-quote-stays-inside-its-string',
+     'src/aas_submodel_validate/loader.py',
+     '            if mark in ("\\\\", b"\\\\"):\n                escaped = at + 1\n',
+     '            if False:\n                escaped = at + 1\n',
+     ['tests/test_a_document_nested_past_the_bound.py::test_brackets_inside_a_string_are_text_and_not_nesting'],
+     'an escaped quote read as the end of its string turns the text after it into nesting, and a document full of brackets in its notes is refused'),
+
+    ('bound/a-bracket-inside-a-string-is-text',
+     'src/aas_submodel_validate/loader.py',
+     '        elif mark in (\'"\', b\'"\'):\n            quoted = True\n',
+     '        elif False:\n            quoted = True\n',
+     ['tests/test_a_document_nested_past_the_bound.py::test_brackets_inside_a_string_are_text_and_not_nesting'],
+     'a bracket inside a string is text; counted as nesting it refuses a document for what its descriptions say'),
+])
+
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",
