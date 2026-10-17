@@ -217,15 +217,19 @@
         },
         {
           "text": "GitHub Action",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": "action.yml",
+            "says": "installs the released validator from PyPI"
+          }
         },
         {
           "text": "browser, nothing installed",
           "done": false
         }
       ],
-      "now_text": "command line, Python library, single file",
-      "target_text": "+ GitHub Action, browser"
+      "now_text": "command line, Python library, single file, GitHub Action",
+      "target_text": "+ browser"
     },
     {
       "key": "input",

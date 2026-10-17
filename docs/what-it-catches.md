@@ -119,25 +119,32 @@ Reproduce: `python3 tools/golden_report.py --check` in a clone.
 
 ## Entrances
 
-**One judgement, three ways in today.** The command line (`smtv FILE`, or
+**One judgement, four ways in today.** The command line (`smtv FILE`, or
 `aas-submodel-validate FILE`), a single file that needs nothing but a
 Python -- `python3 tools/build_zipapp.py` in a clone, then
 `python3 dist/smtv.pyz --example` prints the same verdict line as
-`smtv --example` -- and the library: `validate` returns the report
-`-f json` prints, and `exit_code` the code `smtv` leaves by. The README's
-three doors -- a terminal, a single file, a build -- are two of the five
-here: a build runs the command line.
+`smtv --example` -- the library, where `validate` returns the report
+`-f json` prints and `exit_code` the code `smtv` leaves by, and a step in
+a GitHub workflow: `uses: dev365code/aas-submodel-validate@` a release
+tag, which installs that release and runs the command line on each file
+it is given. The README's three doors -- a terminal, a single file, a
+build -- are three of the five here: a build runs the command line, or
+the action that runs it.
 
 - command line — done
 - Python library — done
 - single file, nothing to install — done
-- GitHub Action — not yet
+- GitHub Action — done
 - browser, nothing installed — not yet
 
 The command line judges through the library, so the two cannot disagree:
 every input in the corpus the release notes measure, under every flag that
 moves a verdict, is held by a test to one byte and one exit code between
 them. Bytes and an open file are judged as the file they were read from.
+The action's own script is run by the suite the way a runner runs it, and
+held to printing what `smtv` prints and leaving by the code `smtv` leaves
+by; CI runs the action itself, from a carried single file and from the
+index.
 
 Before 1.0: all five ways in, each reaching the same verdict on the same
 input — the library, a GitHub Action, and a browser page that checks a file

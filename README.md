@@ -152,7 +152,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=6143b47c" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, Python library, single file; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=1336544b" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, Python library, single file, GitHub Action; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
@@ -432,6 +432,28 @@ One dependency
 pure Python, no C extensions. Both wheels fit on a USB stick and
 install with `--no-index --find-links`; the single file above needs not
 even that.
+
+**In a GitHub workflow**, the action this repository publishes is that
+command as a step:
+
+```yaml
+- uses: dev365code/aas-submodel-validate@v0.13.0
+  with:
+    paths: |
+      submodels/nameplate.aasx
+      submodels/handover.aasx
+    args: -W
+```
+
+It installs the release its tag names from PyPI, into a directory of its
+own, and runs `smtv` once for each file -- one per line, which is how a
+name with a space in it is given -- printing what each run prints, in
+order. The step leaves by the code that says the most of theirs: 64, then
+2, then 1, then 0, published as the output `exit-code` as well; with
+`fail-on-finding: false` it passes and leaves the code to be read. Given
+`pyz:`, a single file you carried in, it installs nothing and fetches
+nothing, and `sha256:` checks that file before it runs. It needs a Python
+on the runner, which `actions/setup-python` puts there.
 
 ## What it checks
 

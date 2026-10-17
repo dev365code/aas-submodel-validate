@@ -302,3 +302,30 @@ def test_this_repository_runs_its_own_action():
     text = WORKFLOW.read_text(encoding="utf-8")
     assert len(re.findall(r"(?m)^\s+uses: \./$", text)) >= 3, "CI does not run this action"
 
+
+# -- the front page ---------------------------------------------------------
+
+
+def _front_page_step() -> str:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    found = re.search(r"(?s)```yaml\n(- uses: dev365code/aas-submodel-validate@.*?)```", readme)
+    assert found, "the README shows no workflow step using this action"
+    return found.group(1)
+
+
+def test_the_front_page_pins_the_release_this_tree_is():
+    """The line a reader copies names a release, and the page that ships
+    with a release hands out that release -- not the one before it."""
+    pins = re.findall(r"uses: dev365code/aas-submodel-validate@v([\d.]+)",
+                      (ROOT / "README.md").read_text(encoding="utf-8"))
+    declared = re.search(r'(?m)^version = "(.+)"$',
+                         (ROOT / "pyproject.toml").read_text("utf-8")).group(1)
+    assert pins and set(pins) == {declared}, (pins, declared)
+
+
+def test_the_front_page_step_asks_only_for_what_the_action_takes():
+    step = _front_page_step()
+    asked = set(re.findall(r"(?m)^    ([a-z][\w-]*):", step))
+    declared = set(re.findall(r"(?m)^  ([a-z][\w-]*):\n    description:",
+                              ACTION.read_text(encoding="utf-8")))
+    assert asked and asked <= declared, (sorted(asked - declared), sorted(declared))
