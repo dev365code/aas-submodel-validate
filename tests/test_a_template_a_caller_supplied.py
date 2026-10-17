@@ -690,25 +690,35 @@ def _compared_entrances(tmp_path):
     return set(_verdicts_through_every_entrance(tmp_path))
 
 
+#: The entrances that take no template of the caller's, and so cannot be
+#: asked this question: the browser page judges the file it is handed with
+#: the arguments its own Python builds, and those name no `--template`. Its
+#: verdict is held to the command's by `tools/browser_gates.py`, on every
+#: input the release notes measure and every official sample.
+TAKES_NO_TEMPLATE = {"browser"}
+
+
 def test_the_parity_test_covers_every_entrance_this_tree_has(tmp_path):
     """"The same verdict from every entrance" is only worth what the
     comparison covers.
 
-    Four entrances exist here -- the command line, as the package and as
-    the console script, the library, the single file and the GitHub
-    Action -- and the comparison runs every one of them. The action
-    arrived the way this said it would: this went red until the
-    comparison took it. A page that judges in a browser is named as the
-    fifth and **does not exist**, so a promise about it is a promise about
-    something unbuilt; when one arrives, this goes red the same way.
+    Five entrances exist here -- the command line, as the package and as
+    the console script, the library, the single file, the GitHub Action
+    and the browser page -- and the comparison runs every one that can be
+    handed a template. The action arrived the way this said it would: this
+    went red until the comparison took it. The page arrived the same way
+    and takes no template at all, which is asked of the page itself below,
+    so the exception cannot outlive the reason for it.
     """
     declared = set(_entrances_the_tree_declares())
     compared = _compared_entrances(tmp_path)
-    assert declared <= compared, (
+    assert declared - TAKES_NO_TEMPLATE <= compared, (
         "this tree declares %s and the comparison covers %s"
         % (sorted(declared), sorted(compared)))
-    assert "browser" not in declared, (
-        "a browser page exists now; add it to the comparison and to this list")
+    page = (ROOT / "browser" / "aas_page.py").read_text("utf-8")
+    assert "--template" not in page, (
+        "the page now passes a template; add it to the comparison and take "
+        "it off TAKES_NO_TEMPLATE")
 
 
 def test_the_security_page_names_the_second_file_and_its_bound():

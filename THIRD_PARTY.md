@@ -52,6 +52,31 @@ which answers and `SMT-D2` reports the choice.
 (MIT) — metamodel types, JSON/XML de/serialisation, and the verification
 this project reports in its `meta` channel.
 
+## In the browser page only
+
+`tools/build_browser.py` builds `aas-submodel-validate.html`, a page that runs
+this engine inside a browser tab. Besides this project's own files and the
+material above, the page carries a build of CPython for the browser and what
+that build has compiled into it. Each is taken at the revision named here, and
+every file is held to its SHA-256 by the build, which refuses one that differs.
+The page prints each notice in full, under *What is inside this page, and its
+licences*.
+
+| component | source @ revision | licence | modified? |
+|---|---|---|---|
+| Pyodide 0.29.5, five files of the release asset `pyodide-core-0.29.5.tar.bz2` (SHA-256 `ab08aafc11a3c9a0fe73825eb2cec78bda9464348dd17414e7ec0132ef3451e8`) | [pyodide/pyodide](https://github.com/pyodide/pyodide) @ `0.29.5` | **MPL-2.0** | **No -- byte for byte** |
+| hiwire, which Pyodide compiles into its runtime | [pyodide/hiwire](https://github.com/pyodide/hiwire) @ `6a1e67280a15d929ebeceee54a6358c9c8d5f697` | **MPL-2.0** | No |
+| CPython 3.13.2, with its standard library, as that runtime | [python/cpython](https://github.com/python/cpython) @ `v3.13.2` | **PSF-2.0** | No |
+| What CPython incorporates -- expat, libffi, zlib, libmpdec, mimalloc and the rest CPython's own licence page lists -- as built into that runtime | [python/cpython](https://github.com/python/cpython) `Doc/license.rst` @ `v3.13.2` | each one's own, as given there | No |
+| HACL*, as CPython carries it | [python/cpython](https://github.com/python/cpython) `Modules/_hacl` @ `v3.13.2` | **MIT** | No |
+| libffi, which Pyodide compiles into its runtime | [libffi/libffi](https://github.com/libffi/libffi) @ `f08493d249d2067c8b3207ba46693dd858f95db3` | **MIT** | No |
+| bzip2, as Emscripten's port builds it into that runtime | [emscripten-ports/bzip2](https://github.com/emscripten-ports/bzip2) @ `1.0.6` | bzip2's own, BSD-style | No |
+| Emscripten, the compiler and runtime that runtime was built with | [emscripten-core/emscripten](https://github.com/emscripten-core/emscripten) @ `4.0.9` | **MIT** or University of Illinois/NCSA | No |
+| musl, the C library Emscripten carries | [emscripten-core/emscripten](https://github.com/emscripten-core/emscripten) `system/lib/libc/musl` @ `4.0.9` | **MIT** | No |
+| The runtime's own `lzma` package, `lzma-1.0.0-cp313-cp313-pyemscripten_2025_0_wasm32.whl` (SHA-256 `94930c9fa700c8fe26eddb49ab1ed36d3b06d77fdfc4287a1ef4299692d3d1d1`, the digest the release's lock file gives it): CPython's module, which the runtime ships apart from its standard library | [pyodide/pyodide](https://github.com/pyodide/pyodide) @ `0.29.5` | as CPython, above | No |
+| liblzma, from XZ Utils, which that package is built with | [tukaani-project/xz](https://github.com/tukaani-project/xz) `COPYING` @ `v5.2.2` | public domain, as its notice says | No |
+| aas-core3.0 1.1.4, the one wheel `aas_core3_0-1.1.4-py3-none-any.whl` (SHA-256 `a6e9554f8e3ee129a8d238b817b6dbde8edc789720330bc4893c009511947de4`) | [aas-core-works/aas-core3.0-python](https://github.com/aas-core-works/aas-core3.0-python) | **MIT** | No -- the scripts its maintainers build with are left out, as the single file leaves them out |
+
 ## Battery-passport requirements indexes
 
 `data/battery-passport/` holds indexes derived from four canonical

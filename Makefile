@@ -6,7 +6,7 @@ RUFF_VERSION := 0.16.3
 PYTHON       ?= python3
 export PYTHONPATH := $(CURDIR)/src:$(CURDIR)/tests
 
-.PHONY: help check ci-axes test lint fix dev generated vendored exercised time-budget mutants
+.PHONY: help check ci-axes test lint fix dev generated vendored exercised time-budget mutants browser
 
 help:
 	@echo "make check   everything CI runs: lint, gates, the test suite"
@@ -34,6 +34,15 @@ ci-axes:
 # every edit. `tools/mutation_table.py` (no --run) lists what it checks.
 mutants:
 	"$(PYTHON)" tools/mutation_table.py --run
+
+# The browser page, built and then opened in a browser and counted. Not in
+# `check`: it needs the network once, for the runtime the page carries and the
+# wheel it bundles, and a browser (`pip install "playwright==1.63.0"`, then
+# `playwright install chromium`); and the comparison runs only on the Python
+# the page carries, 3.13.2, refusing any other. CI runs it as a job of its own.
+browser:
+	"$(PYTHON)" tools/build_browser.py
+	"$(PYTHON)" tools/browser_gates.py
 
 # The second line is the whole report for one package, as a file.
 # docs/report-schema.md and its test hold the shape; this holds the

@@ -4,6 +4,7 @@
 # would include on its own.
 graft tests
 graft tools
+graft browser
 include docs/divergences.md
 include docs/report-schema.md
 include docs/golden-report.json

@@ -510,3 +510,34 @@ jobs:
         env:
           CODE: ${{ steps.failing.outputs.exit-code }}
         run: test "$CODE" = "1"
+
+  # The page this repository offers, opened the way a person opens it: served,
+  # and from a disk. It runs the check on a Python built for a browser -- the
+  # one interpreter here nobody in this repository compiled -- so the command
+  # runs beside it on the same patch release, every file the release notes
+  # measure and every official sample is judged by both, and what each wrote
+  # is compared byte for byte. And the page is counted: what it asks for
+  # while it loads, and what it sends once it has.
+  the-page-this-repo-offers:
+    name: the page this repository offers
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13.2"
+      # Not editable, and not this project: the gate runs the command from the
+      # tree itself. What it needs installed is the one dependency, at the
+      # version the page carries, and the browser the page is opened in.
+      - name: Install
+        run: |
+          python -m pip install "aas-core3.0==1.1.4" "playwright==1.63.0"
+          python -m playwright install --with-deps chromium
+      - name: Build the page twice, and compare the two
+        run: |
+          python tools/build_browser.py -o dist/aas-submodel-validate.html
+          python tools/build_browser.py -o "$RUNNER_TEMP/again.html"
+          cmp dist/aas-submodel-validate.html "$RUNNER_TEMP/again.html"
+      - name: The page sends nothing once it has loaded, and says what the command says
+        run: python tools/browser_gates.py
