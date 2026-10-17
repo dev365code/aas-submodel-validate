@@ -18,7 +18,9 @@ here.
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
+import json
 import os
 import re
 import shutil
@@ -45,9 +47,32 @@ def _documented() -> set:
     return {int(code) for code in re.findall(r"(?m)^\s*(\d+)\s{2}", after)}
 
 
-bash = pytest.mark.skipif(shutil.which("bash") is None or os.name == "nt",
-                          reason="the action's steps are bash, and this runner "
-                                 "has none; CI's job for the action runs them")
+def _bash():
+    """The bash a runner runs `shell: bash` with. On Windows that is the one
+    Git for Windows carries -- found beside `git`, because another
+    `bash.exe` on PATH may be WSL's, which runs a different system and
+    cannot see this checkout's paths."""
+    if os.name != "nt":
+        return shutil.which("bash")
+    git = shutil.which("git")
+    for parent in (Path(git).resolve().parents if git else ()):
+        candidate = parent / "bin" / "bash.exe"
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+BASH = _bash()
+
+bash = pytest.mark.skipif(BASH is None,
+                          reason="the action's steps are bash, and this machine "
+                                 "has no bash a runner would use; CI's job for "
+                                 "the action runs them on Linux and Windows")
+
+
+def _posix(path) -> str:
+    """A path as a bash script may write it, on Windows too."""
+    return Path(path).as_posix()
 
 
 def _step(step_id):
@@ -72,37 +97,53 @@ def _shim(tmp_path):
     """`python3` on PATH meaning this interpreter, as setup-python supplies one."""
     shim = tmp_path / "bin"
     shim.mkdir(exist_ok=True)
-    (shim / "python3").write_text('#!/bin/sh\nexec "%s" "$@"\n' % sys.executable)
+    (shim / "python3").write_text('#!/bin/sh\nexec "%s" "$@"\n' % _posix(sys.executable))
     (shim / "python3").chmod(0o755)
     return shim
 
 
-def _check(tmp_path, paths, args="", *, fail_on_finding="true", pyz="", sha256=""):
-    """The check step, run as a runner runs it: what it printed, what it
-    left by, and what it wrote to GITHUB_OUTPUT."""
+def _check(tmp_path, paths, args="", *, fail_on_finding="true", pyz="", sha256="",
+           shims=()):
+    """The check step, run as a runner runs it: what it printed on stdout,
+    what it left by, and what it wrote to GITHUB_OUTPUT. `_check_bytes`
+    keeps both streams as bytes."""
+    out, err, left, written = _check_bytes(tmp_path, paths, args, fail_on_finding=fail_on_finding,
+                                           pyz=pyz, sha256=sha256, shims=shims)
+    return out.decode("utf-8").replace("\r\n", "\n"), left, written
+
+
+def _check_bytes(tmp_path, paths, args="", *, fail_on_finding="true", pyz="", sha256="",
+                 shims=()):
     body, _ = _step("check")
     script = tmp_path / "check.sh"
     script.write_text(body, encoding="utf-8")
     outputs = tmp_path / "outputs"
     outputs.write_text("", encoding="utf-8")
     env = {**os.environ,
-           "PATH": "%s%s%s" % (_shim(tmp_path), os.pathsep, os.environ.get("PATH", "")),
+           "PATH": os.pathsep.join([*map(str, shims), str(_shim(tmp_path)),
+                                    os.environ.get("PATH", "")]),
            "PATHS": paths, "EXTRA": args, "PYZ": pyz, "WANT_SHA": sha256,
            "TARGET": str(ROOT / "src"), "FAIL_ON_FINDING": fail_on_finding,
            "GITHUB_OUTPUT": str(outputs), "PYTHONIOENCODING": "utf-8"}
-    done = subprocess.run(["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
-                          capture_output=True, text=True, env=env, cwd=tmp_path, timeout=300)
+    done = subprocess.run([BASH, "--noprofile", "--norc", "-e", "-o", "pipefail", _posix(script)],
+                          capture_output=True, env=env, cwd=tmp_path, timeout=300)
     written = dict(line.split("=", 1) for line in outputs.read_text("utf-8").splitlines() if "=" in line)
-    return done.stdout, done.returncode, written
+    return done.stdout, done.stderr, done.returncode, written
+
+
+def _smtv_bytes(path, args=""):
+    """`smtv` itself on one file: both streams, as bytes, and its code."""
+    done = subprocess.run([sys.executable, "-m", "aas_submodel_validate", *args.split(), str(path)],
+                          capture_output=True, timeout=300,
+                          env={**os.environ, "PYTHONPATH": str(ROOT / "src"),
+                               "PYTHONIOENCODING": "utf-8"})
+    return done.stdout, done.stderr, done.returncode
 
 
 def _smtv(path, args=""):
-    """`smtv` itself on one file: what it printed and what it left by."""
-    done = subprocess.run([sys.executable, "-m", "aas_submodel_validate", *args.split(), str(path)],
-                          capture_output=True, text=True, timeout=300,
-                          env={**os.environ, "PYTHONPATH": str(ROOT / "src"),
-                               "PYTHONIOENCODING": "utf-8"})
-    return done.stdout, done.returncode
+    """What `smtv` printed on stdout and what it left by."""
+    out, _, code = _smtv_bytes(path, args)
+    return out.decode("utf-8").replace("\r\n", "\n"), code
 
 
 # -- what the step is -------------------------------------------------------
@@ -176,13 +217,17 @@ def test_the_step_says_what_smtv_says_about_one_file(tmp_path, make, args):
     # One line of a block, the way `paths: |` hands a file over -- this
     # checkout's own folder has a space in its name.
     block = "%s\n" % path
-    printed, left, written = _check(tmp_path, block, args, fail_on_finding="false")
-    said, code = _smtv(path, args)
-    assert printed == said
+    said, warned, code = _smtv_bytes(path, args)
+    # As bytes, both streams: what a log keeps is what was written.
+    printed, complained, left, written = _check_bytes(tmp_path, block, args)
+    assert (printed, complained, left) == (said, warned, code)
     assert written["exit-code"] == str(code)
-    assert left == 0          # fail-on-finding false: the code is in the output
-    printed, left, _ = _check(tmp_path, block, args)
-    assert (printed, left) == (said, code)
+    # Reading the code instead of failing on it: the same stdout, the code in
+    # the output, a pass, and one line more on stderr saying why it passed.
+    printed, complained, left, written = _check_bytes(tmp_path, block, args,
+                                                      fail_on_finding="false")
+    assert (printed, left, written["exit-code"]) == (said, 0, str(code))
+    assert complained.startswith(warned) and complained[len(warned):].count(b"\n") == 1
 
 
 @bash
@@ -204,6 +249,23 @@ def test_several_files_leave_by_the_heaviest_code_in_either_order(tmp_path):
     shutil.copy(EXAMPLE, copy)
     printed, left, _ = _check(tmp_path, "%s %s" % (copy, broken))
     assert printed == _smtv(copy)[0] + _smtv(broken)[0]
+    assert left == 2
+
+
+@bash
+def test_several_files_as_json_are_one_document_each(tmp_path):
+    """What the front page tells a machine reader: one JSON document per
+    file, each the bytes smtv prints for it -- a sequence, not a document."""
+    broken = tmp_path / "broken.json"
+    broken.write_bytes(b"not json at all")
+    out, _, left, _ = _check_bytes(tmp_path, "%s\n%s\n" % (EXAMPLE, broken), "-f json")
+    assert out == b"".join(_smtv_bytes(path, "-f json")[0] for path in (EXAMPLE, broken))
+    text, documents, at = out.decode("utf-8"), [], 0
+    decoder = json.JSONDecoder()
+    while text[at:].strip():
+        document, at = decoder.raw_decode(text, at + len(text[at:]) - len(text[at:].lstrip()))
+        documents.append(document)
+    assert [document["path"] for document in documents] == [str(EXAMPLE), str(broken)]
     assert left == 2
 
 
@@ -247,12 +309,69 @@ def test_a_code_smtv_does_not_give_is_not_a_verdict(tmp_path):
 
 
 @bash
+def test_a_validator_that_does_not_start_is_not_a_finding(tmp_path):
+    """A validator that cannot start -- an install that left no module, an
+    interpreter it does not run on -- leaves by 1, which is also the code
+    for a finding. Asked to start before it is asked about a file, it is
+    told apart: the step ends with what it said, and no code is published
+    as though a file had been judged."""
+    fake = tmp_path / "smtv.pyz"
+    fake.write_text("import sys\nsys.stderr.write('no module named it\\n')\nsys.exit(1)\n",
+                    "utf-8")
+    out, err, left, written = _check_bytes(tmp_path, "%s\n" % EXAMPLE, pyz=str(fake),
+                                           fail_on_finding="false")
+    assert left == 1 and "exit-code" not in written
+    assert b"no module named it" in err and b"did not start" in out
+
+
+@bash
 def test_a_carried_file_with_the_wrong_hash_is_not_run(tmp_path):
     fake = tmp_path / "smtv.pyz"
     marker = tmp_path / "ran"
     fake.write_text("import pathlib\npathlib.Path(%r).write_text('')\n" % str(marker), "utf-8")
     _, left, _ = _check(tmp_path, str(EXAMPLE), pyz=str(fake), sha256="0" * 64)
     assert left == 64 and not marker.exists()
+
+
+#: `sha256sum` as GNU coreutils writes it -- on Linux, and in the bash Git
+#: for Windows carries, where a path written the Windows way has backslashes
+#: in it: a name holding a backslash or a newline is escaped, and the line
+#: then starts with a backslash, before the digest.
+GNU_SHA256SUM = """#!/bin/sh
+exec "PYTHON" -c '
+import hashlib, sys
+for name in sys.argv[1:] or ["-"]:
+    data = sys.stdin.buffer.read() if name == "-" else open(name, "rb").read()
+    escaped = chr(92) in name or chr(10) in name
+    shown = name.replace(chr(92), chr(92) * 2).replace(chr(10), chr(92) + "n")
+    print((chr(92) if escaped else "") + hashlib.sha256(data).hexdigest() + "  " + shown)
+' "$@"
+"""
+
+
+@bash
+@pytest.mark.parametrize("given", ["lower", "upper"])
+def test_a_carried_file_with_the_right_hash_is_run_whatever_it_is_called(tmp_path, given):
+    """The digest a caller pins is compared with the file's bytes. Read off
+    the line `sha256sum` writes for a name, it came back with a backslash in
+    front wherever the name had one -- as a path written the Windows way
+    does -- and a pinned file named so never ran. So the name here has one,
+    and `sha256sum` behaves as GNU's does."""
+    shim = tmp_path / "gnu"
+    shim.mkdir()
+    (shim / "sha256sum").write_text(GNU_SHA256SUM.replace("PYTHON", _posix(sys.executable)),
+                                    "utf-8")
+    (shim / "sha256sum").chmod(0o755)
+    folder = tmp_path / ("carried\\in" if os.name != "nt" else "carried in")
+    folder.mkdir()
+    fake = folder / "smtv.pyz"
+    fake.write_text("import sys\nsys.exit(0)\n", "utf-8")
+    digest = hashlib.sha256(fake.read_bytes()).hexdigest()
+    digest = digest.upper() if given == "upper" else digest
+    _, left, written = _check(tmp_path, "%s\n" % EXAMPLE, pyz=str(fake), sha256=digest,
+                              shims=(shim,))
+    assert left == 0 and written["exit-code"] == "0", (left, written)
+    assert written["pyz"] == str(fake)
 
 
 @bash

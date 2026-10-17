@@ -455,16 +455,24 @@ jobs:
       - run: python tools/mutation_table.py --run
 
   # The action this repository publishes, used the way somebody else would
-  # use it. A composite action can be wrong in ways no test in the suite
-  # sees -- an input that never reaches the command, a failure that does not
-  # fail the job -- and the way to find that out is to run it as a step.
-  # `uses: ./` carries no ref: it is the action in the tree being tested,
-  # and a digest here would test a past version of what this job exists to
-  # exercise.
+  # use it, on both kinds of runner it is used on. A composite action can
+  # be wrong in ways the suite does not see -- an input that never reaches
+  # the command, a failure that does not fail the job, a tool that prints
+  # its answer differently on Windows -- and the way to find that out is to
+  # run it as a step there. `uses: ./` carries no ref: it is the action in
+  # the tree being tested, and a digest here would test a past version of
+  # what this job exists to exercise.
   the-action-this-repo-offers:
-    name: the action this repository offers
-    runs-on: ubuntu-latest
+    name: the action this repository offers, on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
@@ -472,12 +480,17 @@ jobs:
           python-version: "3.12"
       - name: Build the single file this tree produces
         run: python tools/build_zipapp.py -o dist/smtv.pyz --check
-      # The offline path: a file you already have, and nothing fetched.
+      - name: The digest a caller would pin for it
+        id: digest
+        run: python -c "import hashlib; print('sha256=' + hashlib.sha256(open('dist/smtv.pyz', 'rb').read()).hexdigest())" >> "$GITHUB_OUTPUT"
+      # The offline path: a file you already have, checked against the
+      # digest you pinned, and nothing fetched.
       - name: A carried single file judges the bundled example
         uses: ./
         with:
           paths: src/aas_submodel_validate/data/example/idta-02004-2.0.aasx
           pyz: dist/smtv.pyz
+          sha256: ${{ steps.digest.outputs.sha256 }}
       # The default path, against a release that is on the index: the
       # version being developed here is not, until it is cut.
       - name: The released validator, installed from the index

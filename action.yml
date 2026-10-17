@@ -146,10 +146,15 @@ runs:
             exit 64
           fi
           if [ -n "$WANT_SHA" ]; then
+            # The bytes on stdin, not the file's name. Given a name holding a
+            # backslash -- as a path written the Windows way does -- GNU's
+            # sha256sum escapes it and starts its line with a backslash,
+            # before the digest, so the first field of that line is not the
+            # digest.
             if command -v sha256sum >/dev/null 2>&1; then
-              got=$(sha256sum "$PYZ" | cut -d" " -f1)
+              got=$(sha256sum < "$PYZ" | cut -d" " -f1)
             else
-              got=$(shasum -a 256 "$PYZ" | cut -d" " -f1)
+              got=$(shasum -a 256 < "$PYZ" | cut -d" " -f1)
             fi
             want=$(printf '%s' "$WANT_SHA" | tr 'A-Z' 'a-z' | tr -d '[:space:]')
             if [ "$got" != "$want" ]; then
@@ -167,12 +172,14 @@ runs:
           export PYTHONPATH="$TARGET"
           set -- "$PY" -m aas_submodel_validate
         fi
-        # Asked to start before it is asked anything else, on stderr: a
-        # validator that cannot start leaves by 1 like a finding does, and
-        # this is the run that tells the two apart.
+        # Asked to start before it is asked anything else: a validator that
+        # cannot start leaves by 1 like a finding does, and this is the run
+        # that tells the two apart. Quiet when it starts, so that what the
+        # step writes is what smtv writes; what it said is shown when not.
         started=0
-        "$@" --version >&2 || started=$?
+        said=$("$@" --version 2>&1) || started=$?
         if [ "$started" -ne 0 ]; then
+          printf '%s\n' "$said" >&2
           echo "::error::the validator did not start (exit $started); this is not a verdict on any file"
           exit "$started"
         fi
