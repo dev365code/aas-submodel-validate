@@ -14,6 +14,7 @@ where every wheel crosses an air gap by hand.
 from __future__ import annotations
 
 import errno
+import io
 import lzma
 import os
 import posixpath
@@ -685,6 +686,44 @@ def _rels_name(source: str) -> str:
 relationships_part_name = _rels_name
 
 
+class InMemory:
+    """An input handed over as bytes rather than named on disk: what a
+    browser page holds, or a caller with a download it never wrote out.
+
+    Read the way a path is read, through the same two questions every
+    reader here asks of an input -- how large it is, and give me a stream
+    over it -- so the bounds, the refusals and the remedies are the ones a
+    path gets, and a report on these bytes is the report on the file they
+    came from. `str()` is the name the report gives it, which is the place
+    a path's own spelling would stand. `suffix` is the format, in the shape
+    the loader reads a path's extension, because that is how the format is
+    chosen here.
+
+    Held as `bytes`, copied once if they arrived as something mutable: a
+    buffer a caller can change while the run reads it would be read as two
+    different files.
+    """
+
+    def __init__(self, data, name: str, suffix: str):
+        self.data = bytes(data)
+        self.name = name
+        self.suffix = suffix
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
+        return "InMemory(%r, %d bytes)" % (self.name, len(self.data))
+
+
+def size_of(path) -> int:
+    """How many bytes the input is, before any of it is read: what the
+    filesystem reports for a path, and the length of bytes held."""
+    if isinstance(path, InMemory):
+        return len(path.data)
+    return Path(path).stat().st_size
+
+
 def open_regular(path):
     """Open `path` for reading, refusing anything that is not a regular file.
 
@@ -707,7 +746,14 @@ def open_regular(path):
     here already handles: a pipe, a socket, a device or a directory is
     refused without being read, and "could not run" arrives instead of
     nothing arriving.
+
+    An `InMemory` input opens as a stream over its bytes, which is the one
+    place it differs from a path.
     """
+    if isinstance(path, InMemory):
+        # Nothing to resolve: there is no name for the bytes to change
+        # under, and no descriptor to ask what it is.
+        return io.BytesIO(path.data)
     handle = os.fdopen(os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0)),
                        "rb")
     try:
@@ -752,7 +798,7 @@ class AasxPackage:
     """An opened .aasx. Use as a context manager, like ZipFile."""
 
     def __init__(self, path):
-        self.path = Path(path)
+        self.path = path if isinstance(path, InMemory) else Path(path)
         declared = _directory_bytes(self.path)
         if declared is not None and declared > MAX_DIRECTORY_BYTES:
             raise DirectoryTooLarge(

@@ -398,7 +398,7 @@ def _read_bounded(loaded: Loaded, path: Path):
     """
     cap = container.MAX_PART_BYTES
     try:
-        size = path.stat().st_size
+        size = container.size_of(path)
         if size > cap:
             loaded.errors.append(LoadError(
                 "bounds", "%s: %d bytes, above the %d byte limit" % (path, size, cap),
@@ -575,6 +575,12 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
 
 
 def load(path) -> Loaded:
+    if isinstance(path, container.InMemory):
+        # Bytes already held. None of the questions below is about them:
+        # there is no name to look up, nothing on disk to be missing, a
+        # directory or a pipe, and no standard input to mistake them for.
+        # What they are is read the way a path's bytes are read, from here.
+        return _by_format(path)
     path = Path(path)
     if str(path) == "-":
         # Half the tools on a machine read standard input when given
@@ -649,7 +655,12 @@ def load(path) -> Loaded:
         # a finding rather than a crash, and this is the path a test
         # already held that promise on.
         raise _cannot_reach(path, exc) from exc
+    return _by_format(path)
 
+
+def _by_format(path) -> Loaded:
+    """The reader the format chooses: a path's extension, or the format
+    bytes were handed over as, which arrives in the same shape."""
     suffix = path.suffix.lower()
     if suffix == ".aasx":
         return _load_aasx(path)

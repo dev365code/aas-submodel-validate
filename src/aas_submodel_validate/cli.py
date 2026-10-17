@@ -19,7 +19,7 @@ import sys
 import time
 from typing import Optional
 
-from . import __version__, runner, tablegen
+from . import __version__, api, runner, tablegen
 from . import bundle as bundling
 from ._terminal import survive
 from .example import NotBundled, bundled_example, example_name
@@ -393,11 +393,9 @@ def main(argv: Optional[list] = None) -> int:
         parser.error("--example judges the bundled package and --rules lists "
                      "the rules; ask for one")
     if args.rules:
-        from . import rules  # noqa: F401 - importing registers
-        from .registry import all_rules
-        from .runner import _meta_rule
-        for rule in list(all_rules()) + [_meta_rule(args.meta or args.strict_meta)]:
-            print("%-8s %-9s %-10s %s" % (rule.id, rule.kind, rule.severity, rule.title))
+        for rule in api.list_rules(meta=_meta(args)):
+            print("%-8s %-9s %-10s %s" % (rule["id"], rule["kind"], rule["severity"],
+                                          rule["title"]))
         return EXIT_OK
     if args.example and args.path is not None:
         # Whichever one won, the other would be judged without being
@@ -446,6 +444,13 @@ def main(argv: Optional[list] = None) -> int:
     return _judged(args.path, args)
 
 
+def _meta(args) -> str:
+    """`--meta`'s level, from either spelling: `--strict-meta` is the older
+    one of `--meta error`, and the two were refused together above when
+    they disagree."""
+    return args.meta or ("error" if args.strict_meta else "warning")
+
+
 def _judged(path: str, args, shown_as: Optional[str] = None) -> int:
     """The run, and the one place a defect escaping it is met. The bundle is
     written and the exception raised again, so the process leaves as it did
@@ -468,9 +473,11 @@ def _judged(path: str, args, shown_as: Optional[str] = None) -> int:
 
 def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
     try:
-        report = runner.run(path, strict_meta=args.meta or args.strict_meta,
-                            allow_unmatched=args.allow_unmatched,
-                            profile=args.profile, template=args.template)
+        # Through the library, as every entrance goes: what this prints and
+        # the code it leaves by are what `validate` and `exit_code` give.
+        report = api.validate(path, meta=_meta(args),
+                              allow_unmatched=args.allow_unmatched,
+                              profile=args.profile, template=args.template)
     except tablegen.TemplateRefused as refused:
         # 2, not 64 and not 1. Naming a file is not a mistake in how the
         # tool was called -- the flag was spelled right and the path was
@@ -483,7 +490,6 @@ def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
     if shown_as:
         report.path = shown_as
 
-    from .model import Severity
     # Reached before anything is printed, because the summary line now
     # states it. While the screen said nothing about the verdict the two
     # could not disagree; the measurement that ended that was `--example`
@@ -495,33 +501,18 @@ def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
     # same lie one layer over. Which of the two it was stays legible: a
     # refused input still says `(not a full verdict: some of it was not
     # judged)`, which is how this report has always told them apart.
+    code = api.exit_code(report, warnings_as_errors=args.warnings_as_errors,
+                         require_all_judged=args.require_all_judged)
+    failed = code != EXIT_OK
     expected = report.submodels_seen - report.submodels_specified
-    # `judged < seen` alone read `0 < 0` as satisfied, so the flag failed
-    # a file with one unjudged submodel and passed one with none at all:
-    # the risk ordering backwards, on the input an exporter is most
-    # likely to produce by accident.
-    short = bool(args.require_all_judged
-                 and (report.submodels_judged < expected
-                      or not report.submodels_seen))
-    # Every warning, including the relayed ones. A version of this
-    # exempted that channel, on the reasoning that no edit to a submodel
-    # can clear a finding about the metamodel -- which is false, and the
-    # example this project ships disproves it: 45 of its 77 relayed
-    # findings are about `.submodels`, 33 of them an idShort that has
-    # only to be deleted. A submodel with an empty `id` raises one
-    # relayed finding and nothing else, and passed `-W` while the summary
-    # line above it counted the warning. `--meta info` is the way to say
-    # this channel should not decide a build, and it says so out loud.
-    failed = (not report.judged or not report.ok or short
-              or (args.warnings_as_errors
-                  and report.count(Severity.WARNING) > 0))
+    short = args.require_all_judged and api.short_of_all_judged(report)
 
     if not args.quiet:
         if args.format == "json":
             print(json.dumps(report.as_dict(), indent=2))
         else:
             print(render(report, show_meta=args.show_meta, failed=failed))
-    if not report.judged:
+    if code == EXIT_ERROR:
         # Nothing reached the rules, so there is no verdict to report --
         # and 1 is the code for a verdict. Said on stderr as well, since
         # -q suppressed the report that would otherwise explain it.
@@ -550,6 +541,5 @@ def _judge(path: str, args, shown_as: Optional[str], started: float) -> int:
         # told two were missing when one was.
         _say("smtv: judged %d of %d submodel%s; --require-all-judged was given"
              % (report.submodels_judged, expected, "" if expected == 1 else "s"))
-    code = EXIT_FINDINGS if failed else EXIT_OK
     _after(args, path, report, code, started)
     return code

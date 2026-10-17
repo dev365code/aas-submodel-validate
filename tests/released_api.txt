@@ -1,0 +1,23 @@
+# The Python API the package root promises, written for v0.13.0.
+#
+# `from aas_submodel_validate import ...` reaches these names and no
+# others: every module below the root is internal and may move in any
+# release. The front page says so in a sentence, and a promise in prose
+# goes quietly false -- which is why `released_rule_ids.txt` exists for
+# rule ids, and why this file exists for calls.
+#
+# `test_python_api.py` asserts that the root exports exactly these names,
+# each with exactly the signature written here. A keyword may be added, with
+# a default so that every call written against an earlier line still runs,
+# and the line changes in the commit that adds it. A line that loses or
+# renames something is a call somebody wrote that stops working: it changes
+# deliberately, under a CHANGELOG entry, and never to make a failing test
+# pass.
+validate(source, *, format=None, name=None, meta='warning', allow_unmatched=False, profile=None, template=None)
+exit_code(report, *, warnings_as_errors=False, require_all_judged=False)
+list_rules(*, meta='warning')
+example_path()
+Report.as_dict()
+Report.ok
+Report.judged
+TemplateRefused
