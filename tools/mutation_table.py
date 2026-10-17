@@ -3042,6 +3042,64 @@ TABLE.extend([
 ])
 
 
+TABLE.extend([
+    ("action/a-file-name-is-not-a-command",
+     "action.yml",
+     '          "$@" "$file" || rc=$?\n',
+     '          eval "\\"\\$@\\" $file" || rc=$?\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_a_file_name_is_a_name_and_not_a_command"],
+     "a name handed to the shell as text is a command: a supplier's file "
+     "called `x; touch y` would run touch on the runner"),
+
+    ("action/the-code-is-published",
+     "action.yml",
+     '        echo "exit-code=$worst" >> "$GITHUB_OUTPUT"\n',
+     '        true\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_the_step_says_what_smtv_says_about_one_file[judged]"],
+     "with fail-on-finding false the output is the only place the code "
+     "goes, and a job reading it would read nothing and carry on"),
+
+    ("action/several-files-leave-by-the-heaviest-code",
+     "action.yml",
+     '          if [ "$(weight "$rc")" -gt "$(weight "$worst")" ]; then\n',
+     '          if true; then\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_several_files_leave_by_the_heaviest_code_in_either_order"],
+     "the last file's code standing for all of them passes a step whose "
+     "first file could not be judged, so long as a clean one follows it"),
+
+    ("action/a-code-smtv-does-not-give-is-not-a-verdict",
+     "action.yml",
+     '            0|1|2|64) ;;\n',
+     '            0|1|2|3|64) ;;\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_a_code_smtv_does_not_give_is_not_a_verdict"],
+     "a validator that did not run is not a verdict, and read as one under "
+     "fail-on-finding false it passes a step nothing looked at"),
+
+    ("action/a-carried-file-is-checked-against-its-hash",
+     "action.yml",
+     '            if [ "$got" != "$want" ]; then\n',
+     '            if false; then\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_a_carried_file_with_the_wrong_hash_is_not_run"],
+     "the hash is asked for so that a file carried into a closed network "
+     "is checked rather than trusted, and an answer nobody compares checks "
+     "nothing"),
+
+    ("action/the-release-is-the-one-the-tag-names",
+     "action.yml",
+     '            v[0-9]*) version="${ACTION_REF#v}" ;;\n',
+     '            v[0-9]*) ;;\n',
+     ["tests/test_the_action_is_a_way_in.py::"
+      "test_the_release_it_installs_is_the_one_it_was_pinned_at[the-ref-pinned]"],
+     "a step pinned at one release that installs another runs a validator "
+     "nobody asked for, and its verdict is cited against the wrong version"),
+])
+
+
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
           "    # -- files ---",
