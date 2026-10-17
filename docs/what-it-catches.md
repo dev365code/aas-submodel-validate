@@ -143,8 +143,8 @@ moves a verdict, is held by a test to one byte and one exit code between
 them. Bytes and an open file are judged as the file they were read from.
 The action's own script is run by the suite the way a runner runs it, and
 held to printing what `smtv` prints and leaving by the code `smtv` leaves
-by; CI runs the action itself, from a carried single file and from the
-index.
+by; CI runs the action itself on Linux and on Windows, from a carried
+single file checked against its digest and from the index.
 
 Before 1.0: all five ways in, each reaching the same verdict on the same
 input — the library, a GitHub Action, and a browser page that checks a file
