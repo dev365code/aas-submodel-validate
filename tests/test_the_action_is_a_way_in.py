@@ -392,12 +392,15 @@ def test_the_release_it_installs_is_the_one_it_was_pinned_at(tmp_path, wanted, r
     shim = tmp_path / "bin"
     shim.mkdir()
     asked = tmp_path / "asked"
-    (shim / "python3").write_text('#!/bin/sh\nprintf "%%s\\n" "$@" > "%s"\n' % asked)
+    (shim / "python3").write_text('#!/bin/sh\nprintf "%%s\\n" "$@" > "%s"\n' % _posix(asked))
     (shim / "python3").chmod(0o755)
     outputs = tmp_path / "outputs"
     outputs.write_text("", encoding="utf-8")
+    # The bash a runner uses, as every other step here is run: on Windows
+    # the bare name found WSL's, which runs another system entirely and
+    # answered in UTF-16 that it had no distribution installed.
     done = subprocess.run(
-        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", str(script)],
+        [BASH, "--noprofile", "--norc", "-e", "-o", "pipefail", _posix(script)],
         capture_output=True, text=True, timeout=60,
         env={**os.environ, "PATH": "%s%s%s" % (shim, os.pathsep, os.environ.get("PATH", "")),
              "WANTED": wanted, "ACTION_REF": ref, "ACTION_PATH": str(ROOT),
