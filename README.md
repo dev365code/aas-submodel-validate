@@ -9,7 +9,7 @@
 
 &nbsp;**Apache-2.0**&nbsp;·&nbsp;**Python 3.9–3.13**&nbsp;·&nbsp;**Linux · macOS · Windows**&nbsp;·&nbsp;**zero network, by design**
 
-[Ten seconds](#ten-seconds) · [What it catches](#what-it-catches) · [Where it stands](#where-it-stands) · [Where it sits](#where-it-sits) · [Three doors](#three-doors-one-judgement) · [Honest coverage](#honest-coverage) · [Why trust the answer](#why-trust-the-answer) · [Roadmap](#roadmap) · [In your product](#using-this-validator-in-your-product)
+[Ten seconds](#ten-seconds) · [What it catches](#what-it-catches) · [Where it stands](#where-it-stands) · [Where it sits](#where-it-sits) · [Four doors](#four-doors-one-judgement) · [Honest coverage](#honest-coverage) · [Why trust the answer](#why-trust-the-answer) · [Roadmap](#roadmap) · [In your product](#using-this-validator-in-your-product)
 
 </div>
 
@@ -152,7 +152,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=1336544b" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, Python library, single file, GitHub Action; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=df0d3e2f" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, library, single file, Action, browser; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
@@ -173,15 +173,32 @@ flowchart LR
 
 A file can be perfectly valid against the AAS metamodel and still not be the submodel it claims to be: the wrong cardinalities, the wrong semantic identifiers, a mandatory VDI 2770 classification missing. **That difference -- a file valid against the metamodel and not conformant to the submodel template it claims to be -- is what this project judges.** Metamodel checking is delegated to [aas-core3.0](https://github.com/aas-core-works/aas-core3.0-python) and reported in a separate channel, never re-invented here.
 
-## Three doors, one judgement
+## Four doors, one judgement
 
 | Door | For | Command |
 |---|---|---|
 | **Terminal** | a machine with pip | `pip3 install aas-submodel-validate` then `smtv file.aasx` |
 | **Single file** | a machine with no package manager | carry `smtv.pyz`, run `python3 smtv.pyz file.aasx` (`py smtv.pyz file.aasx` on Windows) |
 | **A build** | a pipeline that reads exit codes | `smtv -q -W file.aasx` — 0 pass, 1 an error or a warning, 2 could not run, 64 called incorrectly |
+| **A browser** | a machine with no Python at all | open `aas-submodel-validate.html` and choose a file |
 
-The same rules and the same verdict behind all three. There is no browser door and no hosted service; nothing here uploads a file anywhere, because nothing here opens a socket.
+The same rules and the same verdict behind all four. There is no hosted service: the browser door is one file you open, and it judges the file you choose inside the tab. Nothing here uploads a file anywhere, because nothing that judges opens a socket.
+
+**For a machine with no Python at all**, build the page in a clone where
+there is a network, and carry it: `python3 tools/build_browser.py` writes
+`dist/aas-submodel-validate.html`. That one file carries a build of CPython
+for the browser, this engine, its rules and its one dependency, each taken
+at a pinned digest, with the licence of everything in it printed inside it;
+two builds of one tree are the same bytes. Opened -- from a disk is fine --
+it judges the file you choose and shows what `smtv --no-bundle FILE`
+prints at a UTF-8 console on the Python the page carries, byte for byte,
+with the JSON report that `-f json` gives to save. Once it has loaded it
+makes no request at all, and it stores nothing. Both of those are counted,
+not assumed: CI opens the page in a browser on every commit, served and
+from a disk, counts every request it makes after loading four different
+ways, hands it files built to make a reader reach for the network, and
+compares what it says with the command on every input the release notes
+measure.
 
 **For a machine with no package manager**, take `smtv.pyz` from the
 [releases page](https://github.com/dev365code/aas-submodel-validate/releases/latest)

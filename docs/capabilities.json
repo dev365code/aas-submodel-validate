@@ -225,11 +225,15 @@
         },
         {
           "text": "browser, nothing installed",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": "browser/page.html",
+            "says": "once this page has loaded it makes no network request"
+          }
         }
       ],
-      "now_text": "command line, Python library, single file, GitHub Action",
-      "target_text": "+ browser"
+      "now_text": "command line, library, single file, Action, browser",
+      "target_text": "met"
     },
     {
       "key": "input",

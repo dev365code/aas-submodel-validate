@@ -119,23 +119,25 @@ Reproduce: `python3 tools/golden_report.py --check` in a clone.
 
 ## Entrances
 
-**One judgement, four ways in today.** The command line (`smtv FILE`, or
+**One judgement, five ways in today.** The command line (`smtv FILE`, or
 `aas-submodel-validate FILE`), a single file that needs nothing but a
 Python -- `python3 tools/build_zipapp.py` in a clone, then
 `python3 dist/smtv.pyz --example` prints the same verdict line as
 `smtv --example` -- the library, where `validate` returns the report
-`-f json` prints and `exit_code` the code `smtv` leaves by, and a step in
-a GitHub workflow: `uses: dev365code/aas-submodel-validate@` a release
-tag, which installs that release and runs the command line on each file
-it is given. The README's three doors -- a terminal, a single file, a
-build -- are three of the five here: a build runs the command line, or
-the action that runs it.
+`-f json` prints and `exit_code` the code `smtv` leaves by, a step in a
+GitHub workflow: `uses: dev365code/aas-submodel-validate@` a release tag,
+which installs that release and runs the command line on each file it is
+given, and a page that needs nothing installed at all:
+`python3 tools/build_browser.py` writes `dist/aas-submodel-validate.html`,
+which judges the file you choose inside the browser tab. The README's four
+doors -- a terminal, a single file, a build, a browser -- are four of the
+five here: a build runs the command line, or the action that runs it.
 
 - command line — done
 - Python library — done
 - single file, nothing to install — done
 - GitHub Action — done
-- browser, nothing installed — not yet
+- browser, nothing installed — done
 
 The command line judges through the library, so the two cannot disagree:
 every input in the corpus the release notes measure, under every flag that
@@ -144,7 +146,12 @@ them. Bytes and an open file are judged as the file they were read from.
 The action's own script is run by the suite the way a runner runs it, and
 held to printing what `smtv` prints and leaving by the code `smtv` leaves
 by; CI runs the action itself on Linux and on Windows, from a carried
-single file checked against its digest and from the index.
+single file checked against its digest and from the index. The page runs the
+command's own entry point inside the tab, on the Python it carries, and CI
+opens it in a browser, served and from a disk: what it prints for every
+input the release notes measure is held to what the command prints on that
+same Python, at a UTF-8 console, byte for byte, and every request it makes
+after loading is counted four ways -- and has to be none.
 
 Before 1.0: all five ways in, each reaching the same verdict on the same
 input — the library, a GitHub Action, and a browser page that checks a file

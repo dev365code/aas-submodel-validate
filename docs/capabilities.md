@@ -3,7 +3,7 @@
 | Coverage | 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7 | met |
 | Explanation | what is wrong, remedy, requirement | + evidence, the line in the file |
 | Report contract | schemaVersion, golden report, exit codes, schema page | met |
-| Entrances | command line, Python library, single file, GitHub Action | + browser |
+| Entrances | command line, library, single file, Action, browser | met |
 | Input safety | read budgets, advisory, own mutations | + encodings |
 | Upstream | pinned by commit, one pin move shipped | + checked for upstream change |
 
@@ -34,12 +34,12 @@
 - exit codes 0, 1, 2 and 64 under test — done (`tests/test_what_a_pass_means.py`: "Each row there names an exit code and an `ok`")
 - a field-by-field schema page — done (`README.md`: "described field by field in")
 
-**Entrances** — 4 of 5:
+**Entrances** — 5 of 5:
 - command line — done (`pyproject.toml`: "smtv = "aas_submodel_validate.cli:main"")
 - Python library — done (`README.md`: "from aas_submodel_validate import exit_code, validate")
 - single file, nothing to install — done (`README.md`: "carry `smtv.pyz`, run `python3 smtv.pyz file.aasx`")
 - GitHub Action — done (`action.yml`: "installs the released validator from PyPI")
-- browser, nothing installed — not yet
+- browser, nothing installed — done (`browser/page.html`: "once this page has loaded it makes no network request")
 
 **Input safety** — 3 of 4:
 - read budgets, per file and per run — done (`SECURITY.md`: "one document at 64 MiB, and a container's parts at 64 MiB each and 256 MiB together")

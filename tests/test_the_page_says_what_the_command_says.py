@@ -533,3 +533,24 @@ def test_the_job_runs_the_page_on_the_python_it_carries():
     assert job.count("tools/build_browser.py") >= 2 and "cmp " in job
     assert "tools/browser_gates.py" in job
 
+
+# -- the front page ----------------------------------------------------------
+
+#: The words a heading on the front page counts in.
+_COUNTED = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
+
+
+def test_the_front_page_counts_the_doors_its_table_lists():
+    """The doors section opens with how many doors there are, and the table
+    under it holds that number; written by hand, it stayed put when a door
+    was added."""
+    readme = (ROOT / "README.md").read_text("utf-8")
+    heading = re.search(r"(?m)^## (\w+) doors, one judgement$", readme)
+    assert heading, "the README no longer opens its doors section with a count"
+    section = readme[heading.end():readme.index("\n## ", heading.end())]
+    rows = re.findall(r"(?m)^\| \*\*[^|]+\*\* \|", section)
+    assert _COUNTED.get(heading.group(1).lower()) == len(rows), (heading.group(0), rows)
+    anchor = "#%s-doors-one-judgement" % heading.group(1).lower()
+    assert "](%s)" % anchor in readme, "the front page's own index points elsewhere"
+    assert "| **A browser** |" in section
+    assert "no browser door" not in readme
