@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "072456714b3d7b239bb461e1ebff155102aaedff",
+ "commit": "6882b4ebe241ed0944f8b3b2cd31ee7490991f81",
  "python": "3.9.6",
  "rows": [
   "gates/the-time-budget-actually-compares",
@@ -310,6 +310,23 @@
   "action/a-pinned-digest-is-read-from-the-bytes",
   "action/a-validator-that-does-not-start-is-told-apart",
   "action/the-step-writes-what-smtv-writes",
+  "browser/a-request-after-load-is-a-problem",
+  "browser/two-different-commands-are-not-compared",
+  "browser/every-door-has-to-be-among-the-files",
+  "browser/the-deep-documents-have-to-be-among-the-files",
+  "browser/the-entity-door-uses-its-entity",
+  "browser/every-counter-is-shown-the-controls",
+  "browser/a-blind-counter-fails-the-run",
+  "browser/the-python-is-compared-to-the-patch",
+  "browser/the-page-asks-for-no-bundle",
+  "browser/a-download-is-held-to-its-digest",
+  "browser/the-runtime-package-is-the-one-its-lock-names",
+  "browser/what-is-compiled-in-has-its-notice",
+  "bound/json-is-asked-how-deep-before-it-is-parsed",
+  "bound/xml-is-asked-how-deep-before-it-is-parsed",
+  "bound/the-bound-is-the-measured-one",
+  "bound/an-escaped-quote-stays-inside-its-string",
+  "bound/a-bracket-inside-a-string-is-text",
   "canary/a-comment-nobody-reads"
  ],
  "killed": [
@@ -619,7 +636,24 @@
   "action/the-release-is-the-one-the-tag-names",
   "action/a-pinned-digest-is-read-from-the-bytes",
   "action/a-validator-that-does-not-start-is-told-apart",
-  "action/the-step-writes-what-smtv-writes"
+  "action/the-step-writes-what-smtv-writes",
+  "browser/a-request-after-load-is-a-problem",
+  "browser/two-different-commands-are-not-compared",
+  "browser/every-door-has-to-be-among-the-files",
+  "browser/the-deep-documents-have-to-be-among-the-files",
+  "browser/the-entity-door-uses-its-entity",
+  "browser/every-counter-is-shown-the-controls",
+  "browser/a-blind-counter-fails-the-run",
+  "browser/the-python-is-compared-to-the-patch",
+  "browser/the-page-asks-for-no-bundle",
+  "browser/a-download-is-held-to-its-digest",
+  "browser/the-runtime-package-is-the-one-its-lock-names",
+  "browser/what-is-compiled-in-has-its-notice",
+  "bound/json-is-asked-how-deep-before-it-is-parsed",
+  "bound/xml-is-asked-how-deep-before-it-is-parsed",
+  "bound/the-bound-is-the-measured-one",
+  "bound/an-escaped-quote-stays-inside-its-string",
+  "bound/a-bracket-inside-a-string-is-text"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
