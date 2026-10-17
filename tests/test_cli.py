@@ -42,12 +42,20 @@ def test_json_output_is_json(tmp_path, capsys):
     assert report["findings"][0]["fix"]
 
 
-def test_a_screen_does_not_say_what_its_own_remedy_contradicts(tmp_path, capsys):
+def test_a_screen_does_not_say_what_its_own_remedy_contradicts(tmp_path, capsys, monkeypatch):
     """A Submodel nested deeper than this interpreter builds is read to the
     end -- `json.loads` takes all of it -- and its remedy says so. The same
     screen said, on stderr, that nothing in the file could be read, and in
     its summary that some of it was not read. What is known is that nothing
-    was judged, and that is what both say now."""
+    was judged, and that is what both say now.
+
+    With the nesting bound lifted, as on an interpreter whose stack runs out
+    short of it: past the bound a document is refused before it is parsed
+    (`test_a_document_nested_past_the_bound.py`), and this is what the
+    screen says where the stack runs out first."""
+    from aas_submodel_validate import container
+
+    monkeypatch.setattr(container, "MAX_NESTING", 10 ** 9)
     element = {"idShort": "leaf", "modelType": "Property", "valueType": "xs:string",
                "value": "x"}
     for level in range(400):

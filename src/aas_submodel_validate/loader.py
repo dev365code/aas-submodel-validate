@@ -13,12 +13,14 @@ which is a wrong flag and not a path with nothing behind it.
 from __future__ import annotations
 
 import codecs
+import contextlib
 import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 from xml.etree import ElementTree
+from xml.parsers import expat
 
 from aas_core3 import jsonization, types, xmlization
 
@@ -481,6 +483,105 @@ def _payload_error(loaded: Loaded, part: Optional[str], exc, answered) -> None:
         detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
 
 
+#: The characters that decide how deep JSON nests, as text or as bytes.
+_JSON_MARKS = re.compile(r'[\[\]{}"\\]')
+_JSON_MARKS_IN_BYTES = re.compile(rb'[\[\]{}"\\]')
+
+
+class _Deeper(Exception):
+    """The XML scan's way out of expat once the bound is crossed."""
+
+
+def nesting(data, form: str, stop: Optional[int] = None) -> int:
+    """How deep a JSON or XML document nests: arrays and objects inside one
+    another, or elements inside one another. Stops at `stop + 1` once it
+    knows the document goes past `stop`.
+
+    One pass, and no recursion: it is asked of documents nested deeper
+    than any stack will follow, and that is the whole point of asking. For
+    JSON it reads only the characters that open and close an array, an
+    object or a string, and the escape that keeps a quote inside one -- a
+    bracket inside a string is text. For XML it counts what expat reports
+    opening and closing, so a comment, a CDATA section or an attribute
+    value holding an angle bracket opens nothing; expat keeps its own place
+    in memory rather than on the stack, and calls back once per element.
+    """
+    deepest = depth = 0
+    if form == "xml":
+        state = {"depth": 0, "deepest": 0}
+
+        def opened(_name, _attributes):
+            state["depth"] += 1
+            if state["depth"] > state["deepest"]:
+                state["deepest"] = state["depth"]
+                if stop is not None and state["deepest"] > stop:
+                    raise _Deeper
+
+        def closed(_name):
+            state["depth"] -= 1
+
+        # UTF-8, whatever the document declares: what reaches this is the
+        # document as the parser will read it, converted already where it
+        # could be. Left to the declaration, expat asks Python's codecs for
+        # an encoding nobody has, and the scan, not the document, raised.
+        parser = expat.ParserCreate(encoding="utf-8")
+        parser.StartElementHandler, parser.EndElementHandler = opened, closed
+        # Past the bound, or malformed: the second is the parser's to
+        # report, in its own words, when the document is built.
+        with contextlib.suppress(_Deeper, expat.ExpatError):
+            parser.Parse(data if isinstance(data, bytes) else data.encode("utf-8"), True)
+        return state["deepest"]
+    marks = _JSON_MARKS_IN_BYTES if isinstance(data, bytes) else _JSON_MARKS
+    quoted, escaped = False, -1
+    for match in marks.finditer(data):
+        at = match.start()
+        if at == escaped:
+            continue
+        mark = match.group()
+        if quoted:
+            if mark in ("\\", b"\\"):
+                escaped = at + 1
+            elif mark in ('"', b'"'):
+                quoted = False
+        elif mark in ('"', b'"'):
+            quoted = True
+        elif mark in ("[", "{", b"[", b"{"):
+            depth += 1
+            if depth > deepest:
+                deepest = depth
+                if stop is not None and deepest > stop:
+                    break
+        elif mark in ("]", "}", b"]", b"}"):
+            depth -= 1
+    return deepest
+
+
+def nesting_remedy() -> str:
+    """Built when the finding is, so the number is the bound the run applied."""
+    return ("This reader follows a document %d levels deep and no deeper, and asks "
+            "how deep before it parses anything, so the answer is the same wherever "
+            "it runs. %s" % (container.MAX_NESTING, REFUSED_NOT_JUDGED))
+
+
+def _too_deep(subject: str) -> LoadError:
+    return LoadError("bounds", "%s nests deeper than the %d levels this reader follows"
+                     % (subject, container.MAX_NESTING), subject=subject,
+                     fix=nesting_remedy())
+
+
+class NestedTooDeep(Exception):
+    """A JSON document past `container.MAX_NESTING`, refused before it is parsed."""
+
+
+def _json_document(raw: bytes):
+    """The JSON a document holds, asked how deep it nests before it is
+    parsed -- one function for a bare document and a part in a package."""
+    text = _decode(raw)
+    if nesting(text, "json", stop=container.MAX_NESTING) > container.MAX_NESTING:
+        raise NestedTooDeep()
+    return json.loads(text)
+
+
 def _xml_as_utf8_or_recorded(loaded: Loaded, raw: bytes, part: Optional[str]):
     """The XML in UTF-8, or None with the reason it cannot go on recorded.
 
@@ -512,6 +613,9 @@ def _xml_as_utf8_or_recorded(loaded: Loaded, raw: bytes, part: Optional[str]):
         loaded.errors.append(LoadError(
             "payload", "the XML declares a DOCTYPE, which is refused",
             subject=part or loaded.path, fix=PAYLOAD_DOCTYPE_REMEDY))
+        return None
+    if nesting(raw, "xml", stop=container.MAX_NESTING) > container.MAX_NESTING:
+        loaded.errors.append(_too_deep(part or loaded.path))
         return None
     return raw
 
@@ -561,9 +665,12 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
     decoding = True
     try:
         if document is None:
-            document = json.loads(_decode(raw))
+            document = _json_document(raw)
         decoding = False
         environment = jsonization.environment_from_jsonable(document)
+    except NestedTooDeep:
+        loaded.errors.append(_too_deep(part or loaded.path))
+        return
     except Exception as exc:
         # Asked the way `_load_json` asks it of a bare file (`_failure`), so
         # the same failure gets the same answer zipped or not.
@@ -686,7 +793,10 @@ def _load_json(path: Path) -> Loaded:
     if raw is None:
         return loaded
     try:
-        document = json.loads(_decode(raw))
+        document = _json_document(raw)
+    except NestedTooDeep:
+        loaded.errors.append(_too_deep(str(path)))
+        return loaded
     except Exception as exc:
         message, fix = _failure(exc, decoding=True) or ("the file is not JSON", None)
         loaded.errors.append(LoadError(

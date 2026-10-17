@@ -185,11 +185,21 @@ def test_a_bare_file_that_is_not_an_environment_is_named_by_its_path(tmp_path):
     assert error.subject == str(bare)
 
 
+def _lift_the_bound(monkeypatch):
+    """The nesting bound lifted, as on an interpreter whose stack runs out
+    short of it. Past the bound a document is refused before it is parsed
+    (`test_a_document_nested_past_the_bound.py`); what the reader says
+    where the stack runs out first is still its answer there, and still
+    asked here."""
+    monkeypatch.setattr(container, "MAX_NESTING", 10 ** 9)
+
+
 @pytest.mark.parametrize("raw, remedy", [
     (b"[" * 200000 + b"]" * 200000, "nesting"),
     (b'{"submodels": [], "note": "\xff"}', "NOT_UTF8"),
 ], ids=["this-interpreter's-limit", "not-utf-8"])
-def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path, raw, remedy):
+def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path, raw, remedy,
+                                                                      monkeypatch):
     """The same bytes, zipped or not. A bare `.json` that nests past this
     interpreter's stack is told it was refused rather than judged, and one
     that is not UTF-8 is told to save it as UTF-8 -- and the same bytes as
@@ -197,6 +207,7 @@ def test_a_packaged_json_part_is_answered_the_way_the_same_bare_file_is(tmp_path
     their parser rejects: the part had no classifier at all. There is no
     syntax to fix in either, and a reader who zipped their file should not
     get a different answer about it than one who did not."""
+    _lift_the_bound(monkeypatch)
     from aas_submodel_validate import loader
 
     bare = tmp_path / "bare.json"
@@ -237,13 +248,14 @@ def _stopped(error, reason, *, building):
 
 
 @pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
-def test_a_document_that_runs_out_of_stack_is_not_told_it_is_json(tmp_path, zipped):
+def test_a_document_that_runs_out_of_stack_is_not_told_it_is_json(tmp_path, zipped, monkeypatch):
     """Out of stack before its syntax error: a thousand brackets and then
     text that is not JSON at all. The reader stops at the brackets, and it
     used to say "This document is JSON ... Nothing is wrong with what you
     sent" -- neither of which anyone knows about a document nobody read to
     the end, and here both are false. It is told where the reader stopped
     and why, and nothing it does not know."""
+    _lift_the_bound(monkeypatch)
     raw = b"[" * 100000 + b" this is not json"
     path = tmp_path / ("p.aasx" if zipped else "bare.json")
     build_aasx(path, payload=raw) if zipped else path.write_bytes(raw)
@@ -252,12 +264,13 @@ def test_a_document_that_runs_out_of_stack_is_not_told_it_is_json(tmp_path, zipp
     assert "Nothing is wrong" not in error.fix and "is JSON" not in error.fix
 
 
-def test_what_the_reader_did_not_reach_is_not_declared_sound(tmp_path):
+def test_what_the_reader_did_not_reach_is_not_declared_sound(tmp_path, monkeypatch):
     """The same defect, an unknown key, on either side of a collection too
     deep to build. Before it, the defect is reported. After it, the reader
     never gets there -- and the answer used to be that nothing was wrong
     with the file. It is now that the reader stopped, which is true in
     both orders."""
+    _lift_the_bound(monkeypatch)
     deep = json.dumps(_collection_chain(350))
     after = '{"submodels": [%s], "bogus": true}' % deep
     before = '{"bogus": true, "submodels": [%s]}' % deep
@@ -274,10 +287,11 @@ def test_what_the_reader_did_not_reach_is_not_declared_sound(tmp_path):
     assert "bogus" in reported.detail and reported.fix is None
 
 
-def test_a_bare_submodel_too_deep_to_build_is_told_the_reader_stopped(tmp_path):
+def test_a_bare_submodel_too_deep_to_build_is_told_the_reader_stopped(tmp_path, monkeypatch):
     """The one form that still told a document this reader could not
     build to fix the syntax its parser rejects: a bare Submodel, which is
     read by its own branch and was never asked why building failed."""
+    _lift_the_bound(monkeypatch)
     path = tmp_path / "submodel.json"
     path.write_text(json.dumps(_collection_chain(350)), "utf-8")
     (error,) = load(path).errors
@@ -310,7 +324,7 @@ def _xml_at(tmp_path, name, text, zipped):
 
 
 @pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
-def test_xml_too_deep_to_follow_is_told_the_reader_stopped(tmp_path, zipped):
+def test_xml_too_deep_to_follow_is_told_the_reader_stopped(tmp_path, zipped, monkeypatch):
     """Three hundred and fifty collections, one inside the next, is AAS XML
     this interpreter runs out of stack on -- and the classifier was asked
     of JSON only, so it was told to open the document and fix the syntax
@@ -318,6 +332,7 @@ def test_xml_too_deep_to_follow_is_told_the_reader_stopped(tmp_path, zipped):
     syntax error, after the point the reader stopped: it is told that the
     reader stopped and why, and nothing about the rest. The same answer
     zipped or not."""
+    _lift_the_bound(monkeypatch)
     text = _collection_chain_xml(350, tail="<<< this is not XML")
     bare = [e for e in load(_xml_at(tmp_path, "bare", text, False)).errors
             if e.stage == "payload"]
@@ -329,13 +344,15 @@ def test_xml_too_deep_to_follow_is_told_the_reader_stopped(tmp_path, zipped):
     assert error.subject == ("aasx/env.xml" if zipped else str(tmp_path / "probe.xml"))
 
 
-def test_the_deepest_xml_this_reader_builds_is_read_and_one_more_level_is_not(tmp_path):
+def test_the_deepest_xml_this_reader_builds_is_read_and_one_more_level_is_not(tmp_path,
+                                                                               monkeypatch):
     """Near the edge, found rather than assumed: how deep a document may
     nest before the stack runs out depends on the interpreter and on how
     deep the caller already is, so the edge is searched for here by the
     call the reader makes. One level short of it the document is read
     whole and nothing is refused; at it the refusal is the stack's, and
     not a syntax error."""
+    _lift_the_bound(monkeypatch)
     def loaded_at(depth):
         return load(_xml_at(tmp_path, "d%d" % depth, _collection_chain_xml(depth), False))
 

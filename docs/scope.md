@@ -58,6 +58,14 @@ finding.
 - **Not an unpacked-AASX checker (yet).** OPC relationship semantics on
   a loose directory are ambiguous; refused until a real need defines
   them.
+- **Not a reader of documents nested without limit.** A JSON or XML
+  document, bare or a part in a package, that nests deeper than 200
+  levels is refused before it is parsed (`X5`), not judged. The bound is
+  ten times the deepest nesting in the corpus the release notes measure
+  and the vendored templates (20 levels), rounded up to the hundred. It
+  is this reader's, so the answer is the same wherever it runs; the
+  limit before it was the machine's -- 9,998 levels for CPython's JSON
+  parser, about 2,000 in the browser's build of the same Python.
 
 **Deferred, not rejected**: IIFU composition — detecting an iiRDS
 Information for Use submodel and handing its iiRDS payload to

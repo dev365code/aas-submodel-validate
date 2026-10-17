@@ -153,8 +153,8 @@ where it is, with nothing installed and nothing uploaded.
 ## Input safety
 
 **What it reads is bounded, and a refusal is not a verdict.** One document
-at 64 MiB, a container's parts at 64 MiB each and 256 MiB together; past a
-bound the input is refused, the report says so, and the run leaves by the
+at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and no
+document nested more than 200 levels deep; past a bound the input is refused, the report says so, and the run leaves by the
 could-not-run exit code (`SECURITY.md`). The tests that hold the bounds
 are in `tests/test_hostile_input.py`; `-k oversized` runs two of them, for a
 part past its bound.

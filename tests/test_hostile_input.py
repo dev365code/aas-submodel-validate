@@ -1590,6 +1590,9 @@ def test_the_security_note_names_the_caps_it_promises():
     assert ("directory of names is bounded too, at %d MiB"
             % (container.MAX_DIRECTORY_BYTES // 1024 ** 2)) in text
     assert "and a ZIP's own directory" not in text
+    # And the bound that is not about bytes: how deep a document nests.
+    assert ("a document that nests more than %d levels deep is refused before it is parsed"
+            % container.MAX_NESTING) in text
 
 
 @pytest.mark.parametrize("name,body", (
@@ -2327,7 +2330,7 @@ def _limit_finding(tmp_path, payload: str):
     return by_id(report), report
 
 
-def test_a_document_this_interpreter_cannot_build_is_not_bad_syntax(tmp_path):
+def test_a_document_this_interpreter_cannot_build_is_not_bad_syntax(tmp_path, monkeypatch):
     """Two hundred thousand open brackets is well-formed JSON.
 
     `json.loads` raises `RecursionError` on it -- the interpreter running
@@ -2343,6 +2346,11 @@ def test_a_document_this_interpreter_cannot_build_is_not_bad_syntax(tmp_path):
     and one this reader refused to read, and 'fix the syntax' is false of
     the second" -- and the JSON path never used it.
     """
+    # With the nesting bound lifted, as on an interpreter whose stack runs
+    # out short of it: past the bound a document is refused before it is
+    # parsed (`test_a_document_nested_past_the_bound.py`), and this is what
+    # the reader says where the stack runs out first.
+    monkeypatch.setattr(container, "MAX_NESTING", 10 ** 9)
     findings, report = _limit_finding(tmp_path, "[" * 200000 + "]" * 200000)
     assert "X3" in findings, sorted(findings)
     said = findings["X3"]

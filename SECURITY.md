@@ -31,7 +31,14 @@ of names is bounded too, at 16 MiB, and separately: a ZIP is indexed
 whole before any of it is read, so the cost falls on how many names the
 archive declares rather than on what its entries hold — an archive of
 800,000 empty entries weighed 69 MiB on disk and 523 MiB in memory, and
-was otherwise perfectly conformant. What the bound does not cover: the
+was otherwise perfectly conformant. One bound is not about bytes at all:
+a document that nests more than 200 levels deep is refused before it is
+parsed -- JSON or XML, bare or a part in a package -- by one scan that
+keeps its place in memory rather than on the stack. Before it, how deep a
+document could nest was the machine's limit, the interpreter's stack,
+which the browser's build of Python reaches far sooner than the command
+line's; the bound is this reader's, and the answer the same wherever it
+runs. What the bound does not cover: the
 memory a parse then costs, which is a multiple of the bytes read. What it
 refuses to read, it does not judge, and the report says so; where
 nothing could be judged, the run leaves by the could-not-run exit code

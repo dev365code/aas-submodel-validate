@@ -75,6 +75,18 @@ MAX_TOTAL_PART_BYTES = 4 * MAX_PART_BYTES
 #: and 16, for directories of 1,119 and 1,331 bytes.
 MAX_DIRECTORY_BYTES = MAX_PART_BYTES // 4
 
+#: How deep a JSON or XML document may nest: arrays and objects inside one
+#: another, or elements inside one another. Past it a document is refused
+#: before it is parsed, as one past the byte bound is. It was the machine's
+#: bound until this one: CPython's JSON parser follows 9,998 levels before
+#: its stack does not, and the browser's build of the same Python runs out
+#: near 2,000 -- so one file was a report at one entrance and a crash at
+#: another. Measured, not chosen: ten times the deepest nesting in the corpus
+#: the release notes measure and the vendored templates -- 20 levels -- rounded
+#: up to the hundred. The official samples this repository keeps nest 27 deep
+#: at the most, in XML.
+MAX_NESTING = 200
+
 #: What zipfile raises for an archive it cannot make sense of.
 #:
 #: Named once because it was written twice and the two disagreed. Opening

@@ -525,6 +525,9 @@ def test_the_newest_changelog_entry_is_a_draft_or_a_dated_release():
                container.MAX_PART_BYTES // 1024 ** 2,
                container.MAX_TOTAL_PART_BYTES // 1024 ** 2,
                container.MAX_DIRECTORY_BYTES // 1024 ** 2)) in " ".join(unreleased.split())
+    # And how deep a document may nest, the bound that is not a size.
+    assert ("a document nested %d levels deep" % container.MAX_NESTING
+            in " ".join(unreleased.split())), "the entry does not state the nesting bound"
 
 
 def test_every_file_the_readme_tells_a_stranger_to_run_exists():
