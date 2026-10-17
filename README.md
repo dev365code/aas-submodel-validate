@@ -448,7 +448,10 @@ command as a step:
 It installs the release its tag names from PyPI, into a directory of its
 own, and runs `smtv` once for each file -- one per line, which is how a
 name with a space in it is given -- printing what each run prints, in
-order. The step leaves by the code that says the most of theirs: 64, then
+order. With `-f json` among the `args:`, that is one JSON document per
+file, each byte for byte what `smtv` prints for that file: read the
+output as a sequence of documents, not as one. The step leaves by the
+code that says the most of theirs: 64, then
 2, then 1, then 0, published as the output `exit-code` as well; with
 `fail-on-finding: false` it passes and leaves the code to be read. Given
 `pyz:`, a single file you carried in, it installs nothing and fetches
