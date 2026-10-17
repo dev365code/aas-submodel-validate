@@ -902,6 +902,13 @@ def _action_uses():
     return found
 
 
+#: The action this repository publishes, run from the tree under test by the
+#: job that exercises it. A path carries no ref at all -- it is this commit,
+#: not a name somebody else can move -- and a digest there would test a past
+#: version of the action that job exists to exercise.
+THIS_ACTION = "./"
+
+
 def test_every_action_is_pinned_to_a_commit():
     """A tag and a branch are names somebody else can move.
 
@@ -918,7 +925,7 @@ def test_every_action_is_pinned_to_a_commit():
     person updating this needs and what a resolver must not read.
     """
     unpinned = ["%s:%d %s" % row for row in _action_uses()
-                if not re.search(r"@[0-9a-f]{40}$", row[2])]
+                if not re.search(r"@[0-9a-f]{40}$", row[2]) and row[2] != THIS_ACTION]
     assert not unpinned, (
         "these run by a name its owner can move:\n  " + "\n  ".join(unpinned))
 

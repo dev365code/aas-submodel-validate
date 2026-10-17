@@ -20,6 +20,7 @@ include docs/what-it-catches.md
 include docs/official-samples.md
 graft .github
 include Makefile MANIFEST.in
+include action.yml
 include CONTRIBUTING.md SECURITY.md SUPPORT.md NOTICE THIRD_PARTY.md CHANGELOG.md
 global-exclude __pycache__/* *.pyc
 

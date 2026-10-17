@@ -1,0 +1,241 @@
+name: "AAS submodel template check"
+description: >
+  Judge AAS submodels -- .aasx packages, AAS environments and bare Submodels
+  as .json or .xml -- against their IDTA submodel templates, in a workflow. It
+  installs the released validator from PyPI and runs it, or runs a single file
+  you already have, and the step leaves by the exit code the command line gives.
+author: "dev365code"
+branding:
+  icon: "check-square"
+  color: "blue"
+
+inputs:
+  paths:
+    description: >
+      The files to judge. One per line -- which is the way to name a file whose
+      folder has a space in it -- or several on one line, separated by spaces.
+      Each is judged by its own run of `smtv`, in the order given.
+    required: true
+  version:
+    description: >
+      Which release to install and run. Defaults to the version of the ref this
+      action is used at, so the tag you pin is the release that runs.
+    required: false
+    default: ""
+  pyz:
+    description: >
+      An `smtv.pyz` you already have. Given, this step installs nothing and
+      fetches nothing, which is what a runner with no route to an index needs.
+      (The job around it still reached GitHub to get here; that is the runner's
+      doing, not this step's.)
+    required: false
+    default: ""
+  sha256:
+    description: >
+      The SHA-256 that `pyz` must have, checked before it runs -- for a file
+      carried into a closed network that somebody wants checked rather than
+      trusted. The default path does not need it: pip checks what an index
+      serves against the hashes that index publishes.
+    required: false
+    default: ""
+  args:
+    description: >
+      Anything else to pass to `smtv` for every file, such as `-f json`, `-W` or
+      `--meta info`.
+    required: false
+    default: ""
+  fail-on-finding:
+    description: >
+      Fail the step when a file leaves by anything but 0. True by default,
+      because a gate that stops nothing is decoration. Set it false to carry on
+      and read `exit-code` instead -- to report rather than to stop.
+    required: false
+    default: "true"
+
+outputs:
+  exit-code:
+    description: >
+      The code that says the most of those the files left by: 64 a mistake in
+      how smtv was called, then 2 a file that could not be judged, then 1 at
+      least one error (or a warning, under -W), then 0. A failed step publishes
+      no outputs, so read this with fail-on-finding false; the code is printed
+      either way.
+    value: ${{ steps.check.outputs.exit-code }}
+  pyz:
+    description: >
+      The single file this step ran, when it ran one; empty on the default path,
+      which installs instead.
+    value: ${{ steps.check.outputs.pyz }}
+  version:
+    description: >
+      The release this step decided to install and run -- from `version`, from
+      the ref you pinned, or from the tree the action came from. Empty when
+      `pyz` is given: nothing was installed, and the file says its own version.
+    value: ${{ steps.obtain.outputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    # The only step that reaches an index, and only when no file was handed
+    # over. It installs the released validator rather than downloading a
+    # release asset: an asset is attached by a release run a person starts,
+    # and publishing to the index is what that run does last, on its own.
+    # Judging itself opens no socket for any input -- that is the tool's
+    # promise and its own test, not this action's.
+    - id: obtain
+      if: inputs.pyz == ''
+      shell: bash
+      env:
+        WANTED: ${{ inputs.version }}
+        ACTION_REF: ${{ github.action_ref }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        PY=$(command -v python3 || command -v python || true)
+        if [ -z "$PY" ]; then
+          echo "::error::no python on PATH. Add actions/setup-python before this step, or put one there."
+          exit 64
+        fi
+        version="$WANTED"
+        # The ref the caller wrote, when it names a release: this repository
+        # tags them `v*`.
+        if [ -z "$version" ]; then
+          case "$ACTION_REF" in
+            v[0-9]*) version="${ACTION_REF#v}" ;;
+          esac
+        fi
+        # A branch, a commit or `./`: the version the tree declares.
+        if [ -z "$version" ]; then
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' "$ACTION_PATH/pyproject.toml" | head -1)
+        fi
+        if [ -z "$version" ]; then
+          echo "::error::cannot tell which version to run, and guessing one would run a validator nobody asked for"
+          exit 64
+        fi
+        target="${RUNNER_TEMP:-/tmp}/aas-submodel-validate"
+        # `--target`, so the caller's environment is left as it was found, and
+        # `--only-binary :all:`, so nothing is built on a machine this action
+        # does not own.
+        "$PY" -m pip install --disable-pip-version-check --no-input \
+          --only-binary :all: --target "$target" "aas-submodel-validate==$version"
+        echo "target=$target" >> "$GITHUB_OUTPUT"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - id: check
+      shell: bash
+      env:
+        PYZ: ${{ inputs.pyz }}
+        WANT_SHA: ${{ inputs.sha256 }}
+        TARGET: ${{ steps.obtain.outputs.target }}
+        PATHS: ${{ inputs.paths }}
+        EXTRA: ${{ inputs.args }}
+        FAIL_ON_FINDING: ${{ inputs.fail-on-finding }}
+      run: |
+        set -uo pipefail
+        PY=$(command -v python3 || command -v python || true)
+        if [ -z "$PY" ]; then
+          echo "::error::no python on PATH. Add actions/setup-python before this step, or put one there."
+          exit 64
+        fi
+        # Two ways in, one invocation: the single file you carried -- checked
+        # against its hash first, if you gave one -- or the release installed
+        # above.
+        if [ -n "$PYZ" ]; then
+          if [ ! -f "$PYZ" ]; then
+            echo "::error::no smtv.pyz at [$PYZ]. Give pyz: a file that exists, or leave it empty to install one."
+            exit 64
+          fi
+          if [ -n "$WANT_SHA" ]; then
+            if command -v sha256sum >/dev/null 2>&1; then
+              got=$(sha256sum "$PYZ" | cut -d" " -f1)
+            else
+              got=$(shasum -a 256 "$PYZ" | cut -d" " -f1)
+            fi
+            want=$(printf '%s' "$WANT_SHA" | tr 'A-Z' 'a-z' | tr -d '[:space:]')
+            if [ "$got" != "$want" ]; then
+              echo "::error::[$PYZ] hashes to $got and you asked for $want"
+              exit 64
+            fi
+          fi
+          echo "pyz=$PYZ" >> "$GITHUB_OUTPUT"
+          set -- "$PY" "$PYZ"
+        else
+          if [ -z "${TARGET:-}" ] || [ ! -d "${TARGET:-}" ]; then
+            echo "::error::nothing was installed to run. The install step did not leave anything behind."
+            exit 64
+          fi
+          export PYTHONPATH="$TARGET"
+          set -- "$PY" -m aas_submodel_validate
+        fi
+        # Asked to start before it is asked anything else, on stderr: a
+        # validator that cannot start leaves by 1 like a finding does, and
+        # this is the run that tells the two apart.
+        started=0
+        "$@" --version >&2 || started=$?
+        if [ "$started" -ne 0 ]; then
+          echo "::error::the validator did not start (exit $started); this is not a verdict on any file"
+          exit "$started"
+        fi
+        # The arguments by hand. `paths` written as a block is one file per
+        # line; on one line it is space-separated. No globbing: a file called
+        # `a[1].aasx` is a file, and `*.aasx` is not this step's to expand.
+        newline=$(printf '\nx'); newline=${newline%x}
+        old_ifs=$IFS
+        set -f
+        IFS=' '
+        # shellcheck disable=SC2086
+        set -- "$@" $EXTRA
+        case $PATHS in
+          *"$newline"*) IFS=$newline ;;
+          *)            IFS=' ' ;;
+        esac
+        # A line with nothing on it is not a file: a block written with a
+        # blank line in it, or an expression that came back empty.
+        files=()
+        for entry in $PATHS; do
+          case "$entry" in
+            *[![:space:]]*) files+=("$entry") ;;
+          esac
+        done
+        IFS=$old_ifs
+        set +f
+        # Checked rather than looped over: bash 3.2, which macOS runners ship,
+        # calls an empty array unbound under `set -u`.
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "::error::paths names no file to judge"
+          exit 64
+        fi
+        # The code that says the most: a call made wrong, then a file that
+        # could not be judged, then a finding, then nothing.
+        weight() { case "$1" in 64) echo 3 ;; 2) echo 2 ;; 1) echo 1 ;; *) echo 0 ;; esac; }
+        worst=0
+        for file in "${files[@]}"; do
+          # `|| rc=$?`: GitHub runs this under `bash -e`, and a bare call that
+          # leaves by 1 would end the step on the spot, with nothing written.
+          rc=0
+          "$@" "$file" || rc=$?
+          # Only the codes smtv defines are verdicts. 126 is "not executable",
+          # 127 "no such command"; read as a verdict they would call a file
+          # judged that nothing looked at.
+          case "$rc" in
+            0|1|2|64) ;;
+            *)
+              echo "::error::the validator did not run on [$file] (exit $rc); this is not a verdict on any file"
+              exit "$rc"
+              ;;
+          esac
+          if [ "$(weight "$rc")" -gt "$(weight "$worst")" ]; then
+            worst=$rc
+          fi
+        done
+        # Before either branch: on the failing one GitHub discards this
+        # step's outputs, and this line is what the log then has.
+        echo "exit-code=$worst" >> "$GITHUB_OUTPUT"
+        # `tr`, not bash 4's `${x,,}`: macOS runners still ship bash 3.2.
+        if [ "$(printf '%s' "$FAIL_ON_FINDING" | tr '[:upper:]' '[:lower:]')" = "false" ]; then
+          echo "smtv left by $worst; the step is not failing because fail-on-finding is false" >&2
+          exit 0
+        fi
+        # The code, not a flattened failure: a job that cannot tell 64 from 1
+        # cannot tell its own typo from a supplier's file.
+        exit "$worst"
