@@ -101,6 +101,16 @@ by reading the code, and all four had been read.
 
 A gate that has never been red is a comment.
 
+A gate you add gets a row in `tools/mutation_table.py`: the mistake it
+stops, made, and the test that must fail on it. `docs/mutation-record.json`
+keeps the last full run of the table and names the commit that run
+measured, so it can only be taken on a commit that already holds the new
+rows: the commit that adds rows is red on one test,
+`tests/test_mutation_record.py`, until the commit right after it records
+the run (`python3 tools/mutation_table.py --run --record
+docs/mutation-record.json`, on that clean checkout), and the two are pushed
+together.
+
 ## The time budget
 
 `make check` times five layers and compares each against a ratio recorded

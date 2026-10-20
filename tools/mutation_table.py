@@ -3265,6 +3265,200 @@ TABLE.extend([
      'a bracket inside a string is text; counted as nesting it refuses a document for what its descriptions say'),
 ])
 
+TABLE.extend([
+    ('saw/a-relayed-finding-shows-what-its-check-read',
+     'src/aas_submodel_validate/runner.py',
+     '                                              detail=evidence.relayed(error, target),\n',
+     '                                              detail=None,\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_check_on_a_concept_description_shows_the_attribute_it_read'],
+     "a relayed finding without what its check read names a path and leaves the reader to open the file to see what was there"),
+
+    ('saw/the-attributes-shown-are-the-ones-the-check-names',
+     'src/aas_submodel_validate/evidence.py',
+     '    paths = relayed_reads.READS.get((type(value).__name__, error.cause))\n',
+     '    paths = None\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_check_on_a_concept_description_shows_the_attribute_it_read'],
+     "without the table a relayed finding names the object it is about, not what its check looked at"),
+
+    ('saw/every-item-of-a-list-is-read',
+     'src/aas_submodel_validate/evidence.py',
+     '            values = [item for value in values if isinstance(value, (list, tuple))\n                      for item in value]\n',
+     '            values = [value[0] for value in values if isinstance(value, (list, tuple)) and value]\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_long_list_is_shown_in_part_and_says_how_much_is_left'],
+     "a check that read every item of a list, shown as if it read the first, hides the items that broke it"),
+
+    ('saw/a-long-list-is-shown-in-part',
+     'src/aas_submodel_validate/evidence.py',
+     'SHOWN = 5\n',
+     'SHOWN = 50\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_long_list_is_shown_in_part_and_says_how_much_is_left',
+      'tests/test_every_finding_says_what_it_read.py::test_a_long_scope_is_shown_in_part'],
+     "a list shown whole makes one finding as long as the file it read"),
+
+    ('saw/the-table-reads-into-upstreams-helpers',
+     'tools/extract_meta_reads.py',
+     'HELPER_DEPTH = 3\n',
+     'HELPER_DEPTH = 0\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_the_table_is_what_the_installed_checks_read'],
+     "a condition that hands a list to one of aas-core3.0's helpers reads what the helper reads; stopped at the call, two strings in one language show as two strings, not as the language they share"),
+
+    ('saw/a-scope-that-found-nothing-shows-what-it-holds',
+     'src/aas_submodel_validate/rules/engine.py',
+     '                else _held(elements)))\n',
+     '                else None))\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_missing_element_shows_what_its_scope_holds'],
+     "a finding that found nothing and shows nothing leaves the reader to open the file to learn what is there instead"),
+])
+
+TABLE.extend([
+    ('saw/a-refusal-carries-what-the-container-read',
+     'src/aas_submodel_validate/container.py',
+     '        super().__init__(message)\n        self.detail = detail\n',
+     '        super().__init__(message)\n        self.detail = None\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_file_that_is_not_a_zip_shows_what_it_begins_with',
+      'tests/test_every_finding_says_what_it_read.py::test_a_package_with_no_origin_shows_what_its_relationships_declare'],
+     "a refusal that drops what the container read says a file is not a package without the bytes that say why"),
+
+    ('saw/a-path-refused-says-what-the-system-answered',
+     'src/aas_submodel_validate/runner.py',
+     '                                       detail=getattr(exc, "detail", None)))\n',
+     '                                       detail=None))\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_every_finding_in_the_corpus_says_what_it_read'],
+     "a path refused without what the operating system answered leaves nothing but the path to go on"),
+
+    ('saw/a-document-over-the-bound-shows-its-size',
+     'src/aas_submodel_validate/loader.py',
+     'subject=str(path), detail="%d bytes, as the file system reports it" % size))\n',
+     'subject=str(path), detail=None))\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_document_over_the_size_bound_shows_its_size'],
+     "a size refusal that does not say the size it read is a refusal nobody can check"),
+
+    ('saw/a-dtd-is-shown-as-written',
+     'src/aas_submodel_validate/loader.py',
+     '            detail=container.doctype_written(raw)))\n',
+     '            detail=None))\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_a_document_declaring_a_dtd_shows_the_declaration'],
+     "a document refused for a DTD shows the declaration, so its author can find the line that has to go"),
+
+    ('saw/the-depth-the-scan-read-is-shown',
+     'src/aas_submodel_validate/loader.py',
+     '                     fix=nesting_remedy(), detail="at least %d levels deep" % depth,\n',
+     '                     fix=nesting_remedy(), detail=None,\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_every_finding_in_the_corpus_says_what_it_read'],
+     "a depth refusal says how deep the scan had read when it stopped"),
+
+    ('saw/ids-none-of-which-is-primary-show-what-each-says',
+     'src/aas_submodel_validate/rules/handover.py',
+     '                                detail="DocumentIsPrimary: %s" % listed(\n',
+     '                                detail=None and listed(\n',
+     ['tests/test_every_finding_says_what_it_read.py::test_ids_none_of_which_is_primary_show_what_each_says'],
+     "a hand rule that read every flag and shows none of them leaves the reader to open the file to see which was meant"),
+])
+
+TABLE.extend([
+    ('action/a-file-not-judged-outweighs-a-finding',
+     'action.yml',
+     '        weight() { case "$1" in 64) echo 3 ;; 2) echo 2 ;; 1) echo 1 ;; *) echo 0 ;; esac; }\n',
+     '        weight() { case "$1" in 64) echo 3 ;; 2) echo 1 ;; 1) echo 2 ;; *) echo 0 ;; esac; }\n',
+     ['tests/test_the_action_is_a_way_in.py::test_several_files_leave_by_the_heaviest_code_in_either_order'],
+     "a file nobody could judge says more than a finding; swapped, a run holding both leaves by 1 and reads as judged"),
+])
+
+TABLE.extend([
+    ('line/a-finding-is-given-the-line-its-object-begins-on',
+     'src/aas_submodel_validate/runner.py',
+     '    report.findings = [_placed(finding, places) for finding in report.findings]\n',
+     '    report.findings = list(report.findings)\n',
+     ['tests/test_every_finding_names_its_line.py::test_every_finding_in_the_corpus_names_a_line_unless_no_line_holds_it'],
+     "a finding that knows the object it is about and is not given its line leaves the reader to search the file for a path of idShorts"),
+
+    ('line/a-brace-inside-a-string-opens-nothing',
+     'src/aas_submodel_validate/positions.py',
+     '    shape = text if text.count("{") == objects[0] else _STRING.sub("", text)\n',
+     '    shape = text\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_brace_inside_a_string_opens_nothing'],
+     "a `{` inside a string counted as an object moves every line after it onto the wrong object"),
+
+    ('line/a-wrapped-value-is-read-inside-its-wrapper',
+     'src/aas_submodel_validate/positions.py',
+     '                    held = held.children[0]\n',
+     '                    pass\n',
+     ['tests/test_every_finding_names_its_line.py::test_every_object_of_an_xml_document_is_placed_on_its_start_tag'],
+     "an abstract-typed value sits inside an element named for its class; read as its own wrapper, nothing beneath it has a line"),
+
+    ('line/the-screen-names-the-part-when-there-are-two',
+     'src/aas_submodel_validate/report.py',
+     '    parts = len({f.violation.part for f in visible if f.violation.part}) > 1\n',
+     '    parts = False\n',
+     ['tests/test_every_finding_names_its_line.py::test_the_screen_gives_the_line_and_names_the_part_only_when_there_are_two'],
+     "a line in a package of two documents, with no part named, is a line in one of two files"),
+
+    ('line/a-syntax-error-names-the-line-its-parser-stopped-on',
+     'src/aas_submodel_validate/loader.py',
+     '    if isinstance(exc, json.JSONDecodeError):\n        return exc.lineno\n',
+     '    if isinstance(exc, json.JSONDecodeError):\n        return None\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_syntax_error_names_the_line_the_parser_stopped_on'],
+     "a document that would not parse is fixed at the line its parser stopped on, and a finding that does not give it sends the reader to look"),
+
+    ('line/a-document-that-will-not-build-names-the-object-it-stopped-in',
+     'src/aas_submodel_validate/loader.py',
+     '            return positions.json_line_along(\n',
+     '            return None and positions.json_line_along(\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_document_that_will_not_build_names_the_object_it_stopped_in'],
+     "a document that parsed and would not build stopped in one object, and the library says which; without its line the finding names the whole file"),
+
+    ('line/the-bound-names-the-line-it-was-crossed-on',
+     'src/aas_submodel_validate/loader.py',
+     '            return shape.count("\\n", 0, match.start()) + 1\n',
+     '            return 1\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_document_nested_past_the_bound_names_the_line_it_crossed_on'],
+     "a document refused for its depth is repaired where it goes past the bound"),
+
+    ('line/a-relayed-finding-names-the-object-its-check-read',
+     'src/aas_submodel_validate/runner.py',
+     '                                              at=upstream.innermost(error, target)))\n',
+     '                                              at=target))\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_relayed_finding_names_the_line_of_the_object_its_check_read'],
+     "a relayed finding placed at the document it verified gives every one of them the document's first line"),
+
+    ('line/an-element-finding-names-its-element',
+     'src/aas_submodel_validate/rules/engine.py',
+     '                    subject=subject, at=element, detail="found a %s" % actual,\n',
+     '                    subject=subject, at=None, detail="found a %s" % actual,\n',
+     ['tests/test_every_finding_names_its_line.py::test_every_finding_in_the_corpus_names_a_line_unless_no_line_holds_it'],
+     "an element of the wrong kind is fixed where it stands; a finding that drops it has no line to give"),
+
+    ('line/a-count-finding-names-the-scope-it-counted',
+     'src/aas_submodel_validate/rules/engine.py',
+     '                subject=path, path=here, at=holder,\n',
+     '                subject=path, path=here, at=None,\n',
+     ['tests/test_every_finding_names_its_line.py::test_every_finding_in_the_corpus_names_a_line_unless_no_line_holds_it'],
+     "a missing element is added inside the scope that lacks it, and that scope's line is where to add it"),
+])
+
+TABLE.extend([
+    ('line/an-input-that-changed-under-the-run-gives-no-line',
+     'src/aas_submodel_validate/runner.py',
+     '        if _digest(path, container.MAX_TOTAL_PART_BYTES) != digest:\n            return []\n',
+     '        if False:\n            return []\n',
+     ['tests/test_every_finding_names_its_line.py::test_an_input_that_changed_under_the_run_gives_no_line'],
+     "a second reading of a file that changed under the run pairs this file's findings with another file's lines"),
+
+    ('line/a-package-past-its-total-is-not-read-again',
+     'src/aas_submodel_validate/runner.py',
+     '    if loaded.container is not None and loaded.container.went_past_its_total:\n        return []\n',
+     '    if False:\n        return []\n',
+     ['tests/test_hostile_input.py::test_a_container_over_the_total_stops_paying_for_the_rest'],
+     "a package read past what this reader takes in from one is read no further, and reading it again for lines is reading further"),
+
+    ('line/a-walk-that-goes-wrong-gives-no-line-not-a-failed-run',
+     'src/aas_submodel_validate/positions.py',
+     '                except Exception:  # noqa: BLE001 - a line not found is a line not given\n                    continue\n',
+     '                except ZeroDivisionError:\n                    continue\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_walk_that_goes_wrong_gives_no_line_and_the_run_goes_on'],
+     "a line is something a finding gains; a run that dies because a walk for lines went wrong has lost every finding it made"),
+])
+
 
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
