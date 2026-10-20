@@ -3459,6 +3459,15 @@ TABLE.extend([
      "a line is something a finding gains; a run that dies because a walk for lines went wrong has lost every finding it made"),
 ])
 
+TABLE.extend([
+    ('release/the-page-is-built-into-what-the-checksums-cover',
+     '.github/workflows/release.yml',
+     '          python tools/build_browser.py -o dist/aas-submodel-validate.html\n',
+     '          python tools/build_browser.py -o "$RUNNER_TEMP/aas-submodel-validate.html"\n',
+     ['tests/test_the_release_carries_the_page.py::test_the_release_builds_the_page_into_what_it_sums_and_compares_it_with_ci'],
+     "a page built anywhere but dist is one no checksum vouches for and no release attaches, and the front page points at an asset that is not there"),
+])
+
 
 CANARY = ("canary/a-comment-nobody-reads",
           "src/aas_submodel_validate/container.py",
