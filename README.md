@@ -20,8 +20,8 @@ $ pip3 install aas-submodel-validate
 $ smtv --example
 judging IDTA's published 02004 2.0 example, carried in this package -- unmodified, defects and all.
 warning HD-D10   no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition
-        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL
-        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file
+        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL, line 4293
+        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file, line 3522
         saw  content types present: application/step
         per  IDTA 02004-2-0 §2.1 ("PDF/A files are required")
         fix: Add a DigitalFile with contentType application/pdf (a PDF/A file, per VDI 2770) to this DocumentVersion. A content type cannot prove PDF/A conformance, so this is a warning, not an error.
@@ -31,14 +31,14 @@ ok -- 0 error(s), 87 warning(s), 0 info -- idta-02004-2.0.aasx; judged 1 of 1 su
 
 The first finding and final summary above come from `--example`; the intervening findings are omitted. To try a repair, copy `site-packages/aas_submodel_validate/data/example/idta-02004-2.0.aasx` to a writable directory and run `smtv` on the copy; `pip3 show aas-submodel-validate` prints that `site-packages` directory on its `Location:` line.
 
-**Every finding says what is wrong, where, and how to fix it — and shows what it read.** A rule without a remedy sentence does not ship. On the bundled official example all 87 findings carry a place, a remedy and a `saw` line; on the 77 relayed metamodel findings it is what aas-core3.0's check read, such as `isCaseOf: []` or `value[*].idShort: 'Datasheet', 'CADmodel'`. Here is the one this project exists for — a battery passport whose template permits an element to be absent while a published reading of the regulation expects it. Those are two different questions and they get two different answers:
+**Every finding says what is wrong, where, and how to fix it — and shows what it read.** A rule without a remedy sentence does not ship. On the bundled official example all 87 findings carry a place and the line it begins on, a remedy and a `saw` line; on the 77 relayed metamodel findings it is what aas-core3.0's check read, such as `isCaseOf: []` or `value[*].idShort: 'Datasheet', 'CADmodel'`. Here is the one this project exists for — a battery passport whose template permits an element to be absent while a published reading of the regulation expects it. Those are two different questions and they get two different answers:
 
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=60b06d54" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=93f71a70" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
 
 ```console
 $ smtv --meta info your-battery-passport.json
 warning BAT-R8   conformant to the template; a published reading of the regulation expects it for LMT batteries: 'RemainingCapacity' is absent
-        at   RemainingCapacity
+        at   RemainingCapacity, line 1
         saw  IDTA 02035-5 V1.0.2 makes it ZeroToOne. Read as expected for LMT by: European Commission guidance, Digital Batteries Passport -- data point by category v2.0, data point 62; BatteryPass-Ready Data Attribute Longlist v1.3 (draft) row 60. Template element path: ProductCondition/RemainingCapacity. Asked anywhere under the submodel: this rule is about the data being present, not about where the template puts it
         per  Regulation (EU) 2023/1542 Annex XIII 4 (b), Annex VII Part A (1); docs/divergences.md #37 for whose reading of it this answers
         fix: Provide the element, or record that this battery is outside the provision read as requiring it. The template will not ask for it -- that is the point of the finding.
@@ -152,7 +152,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=8a4e8b98" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, evidence, remedy, requirement; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, library, single file, Action, browser; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=2c3329fc" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, evidence, remedy, requirement, line; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, library, single file, Action, browser; Input safety: read budgets, advisory, own mutations; Upstream: pinned by commit, one pin move shipped" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions it has set for 1.0. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*

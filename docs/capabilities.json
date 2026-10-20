@@ -145,11 +145,15 @@
         },
         {
           "text": "the line in the file",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": "docs/report-schema.md",
+            "says": "The line in the file the subject begins on"
+          }
         }
       ],
-      "now_text": "what is wrong, evidence, remedy, requirement",
-      "target_text": "+ the line in the file"
+      "now_text": "what is wrong, evidence, remedy, requirement, line",
+      "target_text": "met"
     },
     {
       "key": "report",

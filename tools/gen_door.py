@@ -143,7 +143,7 @@ VERDICT_LINES = [
           (168, T, "conformant to the template; a published reading of the", 0)]),
     (19, [(168, T, "regulation expects it for LMT batteries:", 0)]),
     (19, [(168, T, "'RemainingCapacity' is absent", 0)]),
-    (17, [(140, N, "at", 1), (168, D, "RemainingCapacity", 0)]),
+    (17, [(140, N, "at", 1), (168, D, "RemainingCapacity, line 1", 0)]),
     (17, [(140, N, "saw", 1), (168, D, "IDTA 02035-5 V1.0.2 makes it ZeroToOne.", 0)]),
     (17, [(168, D, "Read as expected for LMT by: European Commission guidance," + ELISION, 0)]),
     (17, [(140, N, "per", 1),

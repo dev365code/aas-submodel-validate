@@ -125,6 +125,18 @@ def _named_at_most(names, total=None) -> str:
     return ", ".join(shown) + (", and %d more" % rest if rest > 0 else "")
 
 
+def _line_of(violation, parts: bool) -> str:
+    """The line a finding names -- and the part of a package it is in, where
+    the findings on this screen come from more than one. A package of one
+    document is one place to look, and its name on every line is noise; the
+    JSON report names the part on every finding either way."""
+    if violation.line is None:
+        return ""
+    if parts and violation.part:
+        return "line %d of %s" % (violation.line, _safe(violation.part))
+    return "line %d" % violation.line
+
+
 def render(report: Report, *, show_meta: bool = False,
            failed: Optional[bool] = None) -> str:
     """The report as a person reads it.
@@ -173,6 +185,7 @@ def render(report: Report, *, show_meta: bool = False,
                if not (finding.rule.kind == META_KIND and not show_meta
                        and finding.severity is not Severity.ERROR)]
     folded = len(report.findings) - len(visible)
+    parts = len({f.violation.part for f in visible if f.violation.part}) > 1
     at = 0
     while at < len(visible):
         finding = visible[at]
@@ -190,8 +203,13 @@ def render(report: Report, *, show_meta: bool = False,
         head = "%-7s %-8s %s" % (finding.severity, finding.id, _safe(finding.violation.message))
         lines.append(head)
         for member in same:
+            place = _line_of(member.violation, parts)
             if member.violation.subject:
-                lines.append("        at   %s" % _safe(member.violation.subject))
+                lines.append("        at   %s%s" % (_safe(member.violation.subject),
+                                                   ", " + place if place else ""))
+                shown.add("at")
+            elif place:
+                lines.append("        at   %s" % place)
                 shown.add("at")
         if finding.violation.detail:
             lines.append("        saw  %s" % _safe(finding.violation.detail))

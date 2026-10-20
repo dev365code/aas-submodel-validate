@@ -79,7 +79,7 @@ def td_d1_valid_date(ctx):
         value = property_value(further, "ValidDate", td_tables)
         if value is not None and not valid_xs_date(value):
             yield Violation("ValidDate is not a valid xs:date",
-                            subject=subject, detail="%r" % value)
+                            subject=subject, at=further, detail="%r" % value)
 
 
 @rule("TD-D2", kind="template", prio="MUST",
@@ -101,7 +101,7 @@ def td_d2_files_exist(ctx):
     for label in ("CompanyLogo", "ImageFile"):
         for subject, element in _instances(ctx, label):
             yield from file_part_violations(container, subject,
-                                            getattr(element, "value", None))
+                                            getattr(element, "value", None), at=element)
 
 
 @rule("TD-D3", kind="template", prio="SHOULD",
@@ -127,7 +127,7 @@ def td_d3_area_references_resolve(ctx):
                 continue
             if not resolve_in_submodel(submodel, keys):
                 yield dangling_violation(
-                    subject, keys, "ReferenceToTechnicalPropertyArea")
+                    subject, keys, "ReferenceToTechnicalPropertyArea", at=element)
 
 
 @rule("TDL1", kind="lint", prio="SHOULD",

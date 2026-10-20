@@ -725,10 +725,8 @@ TABLE = [
 
     ("loader/xml-is-asked-about-this-interpreters-limits",
      "src/aas_submodel_validate/loader.py",
-     "        _payload_error(loaded, part, exc,\n"
-     "                       _out_of_room(exc, building=False) or _other_edition(text))\n",
-     "        _payload_error(loaded, part, exc,\n"
-     "                       _other_edition(text))\n",
+     '        _payload_error(loaded, part, exc,\n                       _out_of_room(exc, building=False) or _other_edition(text),\n',
+     '        _payload_error(loaded, part, exc,\n                       _other_edition(text),\n',
      ["tests/test_loader.py::"
       "test_xml_too_deep_to_follow_is_told_the_reader_stopped",
       "tests/test_loader.py::"
@@ -2140,8 +2138,8 @@ TABLE = [
 
     ("edition/a-packaged-document-of-another-edition-is-told-which",
      "src/aas_submodel_validate/loader.py",
-     "                       _out_of_room(exc, building=False) or _other_edition(text))\n",
-     "                       _out_of_room(exc, building=False))\n",
+     '                       _out_of_room(exc, building=False) or _other_edition(text),\n',
+     '                       _out_of_room(exc, building=False),\n',
      ["tests/test_metamodel_edition.py::"
       "test_a_package_in_the_3_1_namespace_is_told_its_edition"],
      "an IDTA sample written for metamodel 3.1 was told to fix the syntax its "
@@ -3233,15 +3231,15 @@ TABLE.extend([
 TABLE.extend([
     ('bound/json-is-asked-how-deep-before-it-is-parsed',
      'src/aas_submodel_validate/loader.py',
-     '    if depth > container.MAX_NESTING:\n        raise NestedTooDeep(depth)\n',
-     '    if False:\n        raise NestedTooDeep(depth)\n',
+     '    if depth > container.MAX_NESTING:\n        raise NestedTooDeep(depth, crossing_line(text, "json", container.MAX_NESTING))\n',
+     '    if False:\n        raise NestedTooDeep(depth, crossing_line(text, "json", container.MAX_NESTING))\n',
      ['tests/test_a_document_nested_past_the_bound.py::test_the_scan_neither_recurses_nor_takes_long[json-_json-1000000]'],
      "without the scan a deep document reaches the parser, and how deep it may nest is again the machine's stack: a report at one entrance and a crash at another"),
 
     ('bound/xml-is-asked-how-deep-before-it-is-parsed',
      'src/aas_submodel_validate/loader.py',
-     '    if depth > container.MAX_NESTING:\n        loaded.errors.append(_too_deep(part or loaded.path, depth))\n',
-     '    if False:\n        loaded.errors.append(_too_deep(part or loaded.path, depth))\n',
+     '    if depth > container.MAX_NESTING:\n        loaded.errors.append(_too_deep(part or loaded.path, depth,\n',
+     '    if False:\n        loaded.errors.append(_too_deep(part or loaded.path, depth,\n',
      ['tests/test_a_document_nested_past_the_bound.py::test_a_document_nested_to_the_bound_is_read_and_one_level_more_is_refused[xml-_xml]'],
      "XML is the same class: the browser's runtime ran out of stack on it near 3,000 levels while the command read on"),
 

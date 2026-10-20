@@ -6,7 +6,9 @@
    "fixability": null,
    "fixabilityWhy": null,
    "kind": "template",
+   "line": 31,
    "message": "no DocumentClassification declares the mandatory VDI 2770 classification system",
+   "part": "aasx/env.json",
    "path": [
     "document",
     "submodel",
@@ -25,7 +27,9 @@
    "fixability": 2,
    "fixabilityWhy": "one part of this package carries the file name this value ends in; the corrected value is determined once that part is confirmed to be the file meant",
    "kind": "template",
+   "line": 366,
    "message": "the container holds no part at this File's value",
+   "part": "aasx/env.json",
    "path": [
     "document",
     "submodel",
@@ -44,7 +48,9 @@
    "fixability": 2,
    "fixabilityWhy": "one element here that no row claimed carries this row's idShort or an identifier close to its own; the correction is determined once it is confirmed to be the one meant",
    "kind": "template",
+   "line": 31,
    "message": "the template expects exactly one 'DocumentClassifications' here; found 0",
+   "part": "aasx/env.json",
    "path": [
     "document",
     "submodel",
@@ -63,7 +69,9 @@
    "fixability": 5,
    "fixabilityWhy": "nothing else here resembles the missing element, and what it holds is content the template does not give",
    "kind": "template",
+   "line": 211,
    "message": "the template expects exactly one 'Version' here; found 0",
+   "part": "aasx/env.json",
    "path": [
     "document",
     "submodel",
@@ -82,7 +90,9 @@
    "fixability": null,
    "fixabilityWhy": null,
    "kind": "lint",
+   "line": 118,
    "message": "semanticId almost matches the template",
+   "part": "aasx/env.json",
    "path": [
     "document",
     "submodel",

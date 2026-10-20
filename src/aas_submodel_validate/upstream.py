@@ -84,3 +84,18 @@ def pointed_at(error, target):
     before = segments[-2] if len(segments) > 1 else None
     holder = before.name if isinstance(before, _verification.PropertySegment) else None
     return last.sequence[last.index], holder, last.index
+
+
+def innermost(error, target):
+    """The deepest object of the model on an error's path -- the one the
+    line a relayed finding names is the line of."""
+    found = target
+    for segment in error.path.segments:
+        if isinstance(segment, _verification.PropertySegment):
+            value = getattr(segment.instance, segment.name, None)
+        else:
+            value = segment.sequence[segment.index]
+        if isinstance(value, _types.Class):
+            found = value
+    return found
+

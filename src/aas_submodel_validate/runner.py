@@ -7,7 +7,7 @@ validator that dies on rule 3 of 40 has silently skipped 37.
 from __future__ import annotations
 
 import pathlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import List
 
 from aas_core3 import verification
@@ -15,10 +15,12 @@ from aas_core3 import verification
 from . import (
     container,
     evidence,
+    positions,
     rules,  # noqa: F401  - importing registers every rule
     tablegen,
+    upstream,
 )
-from .loader import Loaded, LoadError, UnreadablePath, load
+from .loader import Loaded, LoadError, UnreadablePath, _decode, load
 from .model import KINDS, META_KIND, Finding, Report, Rule, Severity, Violation
 from .registry import all_rules
 from .rules import detect
@@ -188,6 +190,52 @@ def _meta_level(strict) -> str:
     return "error" if strict else "warning"
 
 
+def _read_again(path, loaded: Loaded, digest) -> List[positions.Source]:
+    """Each document a model was built from, read again for the lines the
+    findings name -- from the input as it was read the first time, or not
+    at all. An input whose digest is not the one the report carries changed
+    under the run, and no line is given rather than the lines of another
+    file; one that cannot be read again gives none either."""
+    if not loaded.sources or digest is None:
+        return []
+    # A package read past its total is not read again: that bound is what
+    # this reader takes in from one, for any reason.
+    if loaded.container is not None and loaded.container.went_past_its_total:
+        return []
+    package, documents = None, []
+    try:
+        if _digest(path, container.MAX_TOTAL_PART_BYTES) != digest:
+            return []
+        for root, form, part in loaded.sources:
+            if part is None:
+                with container.open_regular(path) as handle:
+                    raw = handle.read(container.MAX_PART_BYTES + 1)
+            else:
+                package = package or container.AasxPackage(path)
+                raw = package.read(part)
+            if form == "xml":
+                raw = container.xml_as_utf8(raw)
+            documents.append(positions.Source(root, form, _decode(raw), part))
+    except Exception:  # noqa: BLE001 - a line not found is a line not given
+        return []
+    finally:
+        if package is not None:
+            package.close()
+    return documents
+
+
+def _placed(finding: Finding, places) -> Finding:
+    """The finding with the line its subject begins on, where it names an
+    object of the model and the line was not known when it was made."""
+    violation = finding.violation
+    if violation.line is not None or violation.at is None:
+        return finding
+    line, part = places.of(violation.at)
+    if line is None:
+        return finding
+    return Finding(finding.rule, replace(violation, line=line, part=part))
+
+
 def _meta_findings(loaded: Loaded, strict):
     rule = _meta_rule(strict)
     # Every environment the input held, or the bare submodels when it
@@ -210,7 +258,8 @@ def _meta_findings(loaded: Loaded, strict):
             for error in verification.verify(target):
                 yield Finding(rule, Violation(error.cause,
                                               subject=str(error.path),
-                                              detail=evidence.relayed(error, target)))
+                                              detail=evidence.relayed(error, target),
+                                              at=upstream.innermost(error, target)))
         except Exception as exc:                     # noqa: BLE001
             # The remedy `execute()` gives a rule that dies, because
             # this is the same event: a defect in the validator, and
@@ -235,6 +284,7 @@ def _meta_findings(loaded: Loaded, strict):
                 # This reader's own words, not the upstream expression,
                 # so it can say what it named: the submodel, by its id.
                 path=("document", "submodel") if named is not None else None,
+                at=target,
                 detail="%s: %s" % (type(exc).__name__, exc),
                 fix=RELAY_STOPPED))
 
@@ -776,6 +826,11 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
                 "rules ran -- not its table and not its hand-written ones, "
                 "which are readings of a specification and are not "
                 "derivable from a template (docs/scope.md)." % answered)
+    # Each finding's line, once the walk is over: found from the object it
+    # names, in the document that object was built from -- and only when a
+    # finding asks, so a run with nothing to report reads nothing twice.
+    places = positions.Places(lambda: _read_again(path, loaded, report.input_sha256))
+    report.findings = [_placed(finding, places) for finding in report.findings]
     report.findings.sort(key=_reading_order)
     # The registered rules, not everything that ran. A table the caller
     # supplied contributes rules on purpose and registers none of them,

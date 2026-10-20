@@ -66,15 +66,15 @@ it does not read part 2.
 
 ```
 warning HD-D10   no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition
-        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL
-        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file
+        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL, line 4293
+        at   HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file, line 3522
         saw  content types present: application/step
         per  IDTA 02004-2-0 §2.1 ("PDF/A files are required")
         fix: Add a DigitalFile with contentType application/pdf (a PDF/A file, per VDI 2770) to this DocumentVersion. A content type cannot prove PDF/A conformance, so this is a warning, not an error.
 ```
 
-What is wrong, in one sentence; where, as a path of `idShort`s; what was
-read (`saw`); where the requirement lives (`per` -- a template's clause for
+What is wrong, in one sentence; where, as a path of `idShort`s and the
+line in the file that path begins on; what was read (`saw`); where the requirement lives (`per` -- a template's clause for
 most rules, this project's own documented bounds or matching policy for the
 few that are its own); and what to change (`fix`). Reproduce:
 `smtv --example`.
@@ -83,7 +83,7 @@ few that are its own); and what to change (`fix`). Reproduce:
 - the evidence as read from the file — done
 - a remedy, for every rule — done
 - where each rule's requirement lives — done
-- the line in the file — not yet
+- the line in the file — done
 
 The evidence is on every finding. On the bundled example all 87 carry a
 place, a remedy and a `saw` line -- on the 77 relayed metamodel findings it
@@ -91,9 +91,22 @@ is what aas-core3.0's check read, its attributes taken from the check's own
 source. A finding that an element is missing shows what the scope it
 looked in holds, and a refusal shows the fact it rests on: a size, the
 bytes a file begins with, how a part that would not come out is stored,
-what a relationships part declares, what the operating system answered. A
-finding names a path of `idShort`s, not a line of the file -- except a
-syntax error (`X3`), which carries the parser's line and column.
+what a relationships part declares, what the operating system answered.
+
+The line is on every finding a line holds: where the element, the concept
+description or the object a relayed check is about begins -- JSON's `{`,
+XML's start tag -- and, inside a package, in which part, which the screen
+names when the findings come from two parts or more. A document that would not
+parse or build names the line its parser stopped on or the object it
+stopped in, and one nested past the bound the line it crossed on. No line
+holds a finding about a whole file (no subject), about a package's
+structure (`X1`, `X2`, `X4`), about a path nothing was opened at (`X6`), or
+about a file refused for its size, and none is given in a package read past
+the total its parts may come to. The line is found once the run is over, by
+reading the document again -- the model keeps no positions, and holding
+every document through every rule is the memory this reader does not spend
+-- so an input that changed under the run gives no line rather than
+another file's.
 
 Before 1.0: every finding shows what it read, and where in the file it read
 it.

@@ -116,7 +116,7 @@ def _d2(tables):
                 systems = [property_value(c, "ClassificationSystem", tables)
                            for c in _classifications(document, tables)]
                 yield Violation("no DocumentClassification declares the mandatory "
-                                "VDI 2770 classification system", subject=subject,
+                                "VDI 2770 classification system", subject=subject, at=document,
                                 detail=("ClassificationSystem: %s" % listed(systems))
                                        if systems else "no DocumentClassification here")
     return check
@@ -135,7 +135,7 @@ def _d3(tables):
                 class_id = class_id.strip() if isinstance(class_id, str) else class_id
                 if class_id is not None and class_id not in VDI2770_CLASS_IDS:
                     yield Violation("ClassId is not a VDI 2770 Blatt 1:2020 class",
-                                    subject=subject, detail="%r" % class_id)
+                                    subject=subject, at=document, detail="%r" % class_id)
     return check
 
 
@@ -215,7 +215,7 @@ def _d4(tables):
                 english = any(_english(lang) for lang in languages)
                 if not english:
                     yield Violation("ClassName has no English entry",
-                                    subject=subject,
+                                    subject=subject, at=document,
                                     detail="languages present: %s"
                                            % (", ".join(sorted(languages)) or "none"))
     return check
@@ -238,7 +238,7 @@ def _d5(tables):
                          in ("true", "1")]
             if len(ids) >= 2 and not primaries:
                 yield Violation("%d DocumentIds and none is marked primary" % len(ids),
-                                subject=subject,
+                                subject=subject, at=document,
                                 detail="DocumentIsPrimary: %s" % listed(
                                     [property_value(d, "DocumentIsPrimary", tables)
                                      for d in ids]))
@@ -256,7 +256,7 @@ def _d6(tables):
             status = status.strip() if isinstance(status, str) else status
             if status is not None and status not in ("InReview", "Released"):
                 yield Violation("StatusValue is outside the vocabulary",
-                                subject=subject, detail="%r" % status)
+                                subject=subject, at=version, detail="%r" % status)
     return check
 
 
@@ -274,7 +274,7 @@ def _d7(tables):
         for label in labels:
             for subject, element in instances_of(ctx, label, tables):
                 yield from file_part_violations(container, subject,
-                                                getattr(element, "value", None))
+                                                getattr(element, "value", None), at=element)
     return check
 
 
@@ -287,7 +287,7 @@ def _d8(tables):
             value = property_value(version, "StatusSetDate", tables)
             if value is not None and not valid_xs_date(value):
                 yield Violation("StatusSetDate is not a valid xs:date",
-                                subject=subject, detail="%r" % value)
+                                subject=subject, at=version, detail="%r" % value)
     return check
 
 
@@ -327,7 +327,7 @@ def _d9(tables):
                     if keys[0].type.value != "Submodel" or keys[0].value != submodel.id:
                         continue
                     if not resolve_in_submodel(submodel, keys):
-                        yield dangling_violation(subject, keys, label)
+                        yield dangling_violation(subject, keys, label, at=element)
     return check
 
 
@@ -342,7 +342,7 @@ def _d10(tables):
             if not content_types & PDF_CONTENT_TYPES:
                 yield Violation(
                     "no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition",
-                    subject=subject,
+                    subject=subject, at=version,
                     detail="content types present: %s"
                            % (", ".join(sorted(content_types)) or "none"))
     return check
@@ -350,9 +350,9 @@ def _d10(tables):
 
 def _l1(tables):
     def check(ctx):
-        for subject, id_short, pattern, in_list, raw in analyze(ctx, tables)["idshort_drift"]:
+        for subject, id_short, pattern, in_list, raw, element in analyze(ctx, tables)["idshort_drift"]:
             yield Violation("idShort does not follow the template's suggestion",
-                            subject=subject,
+                            subject=subject, at=element,
                             detail="%r does not match %s" % (id_short, pattern),
                             fix=idshort_remedy(in_list, pattern, raw))
     return check
@@ -394,7 +394,7 @@ def _l4(tables):
                     continue
                 if pair in seen and seen[pair] != subject:
                     yield Violation("two documents share one (domain, identifier) pair",
-                                    subject=subject, detail="%s / %s" % pair)
+                                    subject=subject, at=document, detail="%s / %s" % pair)
                 seen.setdefault(pair, subject)
     return check
 
@@ -414,7 +414,7 @@ def _l5(tables):
                 if spelling != VDI2770_SYSTEM:
                     yield Violation("ClassificationSystem spells the VDI system "
                                     "non-canonically",
-                                    subject=subject, detail="%r" % spelling)
+                                    subject=subject, at=document, detail="%r" % spelling)
     return check
 
 

@@ -1143,6 +1143,12 @@ class AasxPackage:
         self._refuse_if_the_parts_come_to_too_much()
         return data
 
+    @property
+    def went_past_its_total(self) -> bool:
+        """Whether reading it went past what this reader takes in from one
+        package -- after which it reads nothing more, lines included."""
+        return self._read_total > MAX_TOTAL_PART_BYTES
+
     def _refuse_if_the_parts_come_to_too_much(self):
         """One refusal, asked at two moments.
 

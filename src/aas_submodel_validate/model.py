@@ -235,6 +235,17 @@ class Violation:
     #: What `subject` names, where the rule's route is the wrong answer
     #: for this instance -- one of `ROUTES`.
     path: Optional[tuple] = None
+    #: The object of the model `subject` names, which the line in the file
+    #: is found from once the walk is over. Not compared and not shown:
+    #: two findings about one place are one finding whichever object
+    #: stands for it.
+    at: object = field(default=None, compare=False, repr=False)
+    #: The line in the file `subject` begins on, and the part of a package
+    #: that line is in -- None for a bare document, and both None for a
+    #: finding about a whole file or a package's structure, which no line
+    #: holds.
+    line: Optional[int] = None
+    part: Optional[str] = None
 
     def __post_init__(self):
         # Every field, not only the two that were found carrying a
@@ -355,6 +366,8 @@ class Finding:
             "fixability": self.fixability,
             "fixabilityWhy": self.fixability_why,
             "path": list(self.path),
+            "line": self.violation.line,
+            "part": self.violation.part,
         }
 
 

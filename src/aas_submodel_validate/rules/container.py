@@ -75,7 +75,8 @@ def x1_is_a_zip(ctx):
     for error in ctx.loaded.errors:
         if error.stage == "zip":
             yield Violation(error.message, subject=error.subject, detail=error.detail,
-                            path=_where(ctx, error.subject))
+                            path=_where(ctx, error.subject),
+                            line=error.line, part=error.part)
 
 
 @rule("X2", kind="container", prio="MUST",
@@ -95,7 +96,8 @@ def x2_chain_resolves(ctx):
         if error.stage == "chain":
             yield Violation(error.message, subject=error.subject,
                             detail=error.detail, fix=error.fix,
-                            path=_where(ctx, error.subject))
+                            path=_where(ctx, error.subject),
+                            line=error.line, part=error.part)
 
 
 @rule("X3", kind="container", prio="MUST",
@@ -115,7 +117,8 @@ def x3_payload_parses(ctx):
         if error.stage == "payload":
             yield Violation(error.message, subject=error.subject,
                             detail=error.detail, fix=error.fix,
-                            path=_where(ctx, error.subject))
+                            path=_where(ctx, error.subject),
+                            line=error.line, part=error.part)
 
 
 @rule("X5", kind="container", prio="MUST",
@@ -157,7 +160,8 @@ def x5_within_the_readers_bounds(ctx):
         if error.stage == "bounds":
             yield Violation(error.message, subject=error.subject, detail=error.detail,
                             fix=error.fix or _bounds_remedy(ctx.loaded.form),
-                            path=_where(ctx, error.subject))
+                            path=_where(ctx, error.subject),
+                            line=error.line, part=error.part)
 
 
 @rule("X6", kind="container", prio="MUST",
@@ -195,7 +199,8 @@ def x6_the_path_can_be_opened(ctx):
         if error.stage == "access":
             yield Violation(error.message, subject=error.subject,
                             detail=error.detail, fix=error.fix,
-                            path=_where(ctx, error.subject))
+                            path=_where(ctx, error.subject),
+                            line=error.line, part=error.part)
 
 
 @rule("X4", kind="container", prio="SHOULD",

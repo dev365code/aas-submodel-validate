@@ -189,7 +189,7 @@ def _file_grade(container, value):
     return _FILE_GRADES["none" if not found else "one" if found == 1 else "several"]
 
 
-def file_part_violations(container, subject, value):
+def file_part_violations(container, subject, value, at=None):
     """The two findings a File value can draw, for whichever rule asks.
 
     `HD-D7` and `TD-D2` were verbatim twins -- same three branches, same
@@ -216,7 +216,7 @@ def file_part_violations(container, subject, value):
         grade, why = _file_grade(container, folded)
         yield Violation(
             "this File's value is not a part name",
-            subject=subject,
+            subject=subject, at=at,
             fixability=grade, fixability_why=why,
             # Which reason, not the stock one. Every value that failed
             # here was told it climbed out of the package -- including
@@ -242,7 +242,7 @@ def file_part_violations(container, subject, value):
     elif container.part(value) is None:
         grade, why = _file_grade(container, value)
         yield Violation("the container holds no part at this File's value",
-                        subject=subject, detail=value or shown_value(value),
+                        subject=subject, at=at, detail=value or shown_value(value),
                         fixability=grade, fixability_why=why)
 
 
@@ -316,7 +316,7 @@ def install_file_rule(rule_id: str, tables, citation: str, only=None):
         for label in labels:
             for subject, element in instances_of(ctx, label, tables):
                 yield from file_part_violations(container, subject,
-                                                getattr(element, "value", None))
+                                                getattr(element, "value", None), at=element)
 
     return check
 
@@ -329,9 +329,9 @@ def near_miss_violations(ctx, tables):
     watched one of these pairs diverge in the field.
     """
     from ..model import Violation
-    for subject, seen, expected in analyze(ctx, tables)["near_misses"]:
+    for subject, seen, expected, element in analyze(ctx, tables)["near_misses"]:
         yield Violation("semanticId almost matches the template",
-                        subject=subject,
+                        subject=subject, at=element,
                         detail="%s, where the template says %s" % (seen, expected))
 
 
@@ -367,15 +367,15 @@ def install_near_miss_lint(rule_id: str, tables):
 def reftype_violations(ctx, tables):
     """The reference-type lint, for whichever pack asks. Same pair."""
     from ..model import Violation
-    for subject, seen, expected, route in analyze(ctx, tables)["reftype_drift"]:
+    for subject, seen, expected, route, element in analyze(ctx, tables)["reftype_drift"]:
         yield Violation(
             "the reference type differs from the template's",
-            subject=subject, path=route,
+            subject=subject, path=route, at=element,
             detail="%s, where the template uses %s" % (seen, expected),
             fix=reftype_remedy(expected))
 
 
-def dangling_violation(subject, keys, label):
+def dangling_violation(subject, keys, label, at=None):
     """A reference that resolves to nothing, for whichever rule asks.
 
     This pair had already come apart: the handover rule carried
@@ -388,7 +388,7 @@ def dangling_violation(subject, keys, label):
     from .handover import dangling_remedy
     return Violation(
         "the reference walks to nothing in this submodel",
-        subject=subject,
+        subject=subject, at=at,
         detail="no element at key path %s"
                % " / ".join(key.value for key in keys[1:]),
         fix=dangling_remedy(label))
@@ -518,9 +518,10 @@ def _analyze(ctx, tables) -> Dict:
                "owners": result["owners"]}
         if reference is not None and expected and reference.type.value != expected:
             per["reftype_drift"].append((root, reference.type.value, expected,
-                                         ("document", "submodel")))
+                                         ("document", "submodel"), submodel))
         _scope(tables.TREE, submodel.submodel_elements or [], root, per,
-               in_list=False, citation=tables.TEMPLATE_CITATION, top=True)
+               in_list=False, citation=tables.TEMPLATE_CITATION, top=True,
+               holder=submodel)
         # Copies of a self-containing element the walk did not reach, inside
         # an element it judged. Where the template puts one -- a Node
         # directly inside a Node -- the walk gives it the copied element's
@@ -1070,7 +1071,7 @@ def _kind_grade(row, element, actual, item):
 
 
 def _scope(rows, elements, path: str, result, in_list: bool,
-           citation: str, top: bool = False, copied=None) -> None:
+           citation: str, top: bool = False, copied=None, holder=None) -> None:
     """Judge `elements` against `rows`, and recurse.
 
     `copied` maps an identifier to the rows of the element that carries
@@ -1168,7 +1169,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             found.append(Violation(
                 "the template expects %s '%s' here; found %d"
                 % (_KIND_WORDS.get((low, high), _UNCOUNTED), row["label"], count),
-                subject=path, path=here,
+                subject=path, path=here, at=holder,
                 # Two defects wear one message and they are not equally
                 # repairable. Too many: every copy is present and the
                 # repair is choosing which to keep. Too few is graded
@@ -1222,7 +1223,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                               % (actual, row["kind"]))
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must be a %s" % (row["label"], row["kind"]),
-                    subject=subject, detail="found a %s" % actual,
+                    subject=subject, at=element, detail="found a %s" % actual,
                     fixability=grade, fixability_why=why,
                     spec="%s, the element's declared modelType" % citation,
                     fix=remedy))
@@ -1277,7 +1278,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' is declared to hold %s; the template holds %s"
                     % (row["label"], listed.value, row["list_type"]),
-                    subject=subject, detail="typeValueListElement is %s" % listed.value,
+                    subject=subject, at=element,
+                    detail="typeValueListElement is %s" % listed.value,
                     # The declaration disagrees with the template and
                     # the template's answer is on the page. Confirm the
                     # items really are that kind and the declaration
@@ -1297,7 +1299,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
             if row["value_type"] and declared is not None and declared.value != row["value_type"]:
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' must carry valueType %s" % (row["label"], row["value_type"]),
-                    subject=subject, detail="found %s" % declared.value,
+                    subject=subject, at=element, detail="found %s" % declared.value,
                     # Same shape as the row above: the template states
                     # the type, and the premise to confirm is that the
                     # value as written is representable in it.
@@ -1340,7 +1342,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                     and getattr(element, "value", None) is None):
                 result["violations"].setdefault(row["id"], []).append(Violation(
                     "'%s' is required here and carries no value" % row["label"],
-                    subject=subject,
+                    subject=subject, at=element,
                     spec="%s; docs/divergences.md #40" % citation,
                     # The element is here and the value is not, and the
                     # template does not say what it is.
@@ -1358,12 +1360,12 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                     and not re.match(row["allowed_idshort"], element.id_short):
                 result["idshort_drift"].append(
                     (subject, element.id_short, row["allowed_idshort"], in_list,
-                     row.get("allowed_idshort_raw")))
+                     row.get("allowed_idshort_raw"), element))
             reference = element.semantic_id
             if row["sid_type"] and reference is not None \
                     and reference.type.value != row["sid_type"]:
                 result["reftype_drift"].append(
-                    (subject, reference.type.value, row["sid_type"], None))
+                    (subject, reference.type.value, row["sid_type"], None, element))
             # A nested copy takes the rows of the element it copies. They
             # were walked by nobody until 02011 was vendored and settled
             # how (#48): the run said it had not entered the copies, which
@@ -1377,7 +1379,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 _scope(below, _sub_elements(element),
                        subject, result,
                        in_list=(row["kind"] == "SubmodelElementList"),
-                       citation=citation, copied=inside)
+                       citation=citation, copied=inside, holder=element)
 
     # What this scope did not enter, and only where the reader has
     # already said something is wrong.
@@ -1460,7 +1462,7 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                     break  # nothing ranks above it
         if nearest:
             _rank, (_distance, seen, expected), row = nearest
-            result["near_misses"].append((subject, seen, expected))
+            result["near_misses"].append((subject, seen, expected, element))
             near_here.append((subject, seen, expected, row, element))
 
     # What each "too few" finding here would take to repair, now that the

@@ -26,7 +26,7 @@ from xml.parsers import expat
 
 from aas_core3 import jsonization, types, xmlization
 
-from . import container
+from . import container, positions
 from .container import (
     AasxPackage,
     ContainerError,
@@ -125,6 +125,10 @@ class LoadError:
     #: would not parse and one this reader refused to read, and "fix the
     #: syntax" is false of the second.
     fix: Optional[str] = None
+    #: The line of the document this went wrong on, where one did, and the
+    #: part of a package that document is.
+    line: Optional[int] = None
+    part: Optional[str] = None
 
 
 #: Refusals that belong to this interpreter rather than to the document.
@@ -346,6 +350,11 @@ class Loaded:
     environments: List[types.Environment] = field(default_factory=list)
     container: Optional[AasxPackage] = None
     errors: List[LoadError] = field(default_factory=list)
+    #: Where each model was built from -- (root, "json" or "xml", the part
+    #: of a package or None) -- so that a finding can name its line. The
+    #: document itself is not kept: it is read again, once a finding asks,
+    #: which is what keeps a payload's bytes from living through every rule.
+    sources: list = field(default_factory=list)
 
     @property
     def nothing_was_judged(self) -> bool:
@@ -482,14 +491,47 @@ def _other_edition(text: str):
                                     REFUSED_NOT_JUDGED))
 
 
-def _payload_error(loaded: Loaded, part: Optional[str], exc, answered) -> None:
+def _payload_error(loaded: Loaded, part: Optional[str], exc, answered,
+                   text=None, form=None) -> None:
     """An environment document that did not come out, with the answer
     `_failure` or `_out_of_room` gave, or the standing one where they gave
     none."""
     message, fix = answered or ("the document could not be read as an AAS environment", None)
     loaded.errors.append(LoadError(
         "payload", message, subject=part or loaded.path,
-        detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
+        detail="%s: %s" % (type(exc).__name__, exc), fix=fix,
+        line=_failure_line(exc, text, form), part=part))
+
+
+def _failure_line(exc, data, form) -> Optional[int]:
+    """The line a document stopped being readable on: where its parser
+    stopped, the byte that would not decode, or -- for a document that
+    parsed and would not build -- the innermost object on the path the
+    library reports."""
+    if isinstance(exc, json.JSONDecodeError):
+        return exc.lineno
+    if isinstance(exc, ElementTree.ParseError) and getattr(exc, "position", None):
+        return exc.position[0]
+    if isinstance(exc, UnicodeDecodeError) and isinstance(exc.object, (bytes, bytearray)):
+        return exc.object.count(b"\n", 0, exc.start) + 1
+    if data is None:
+        return None
+    try:
+        if isinstance(exc, jsonization.DeserializationException):
+            steps = [getattr(segment, "name", None) if isinstance(
+                segment, jsonization.PropertySegment) else segment.index
+                for segment in exc.path.segments]
+            return positions.json_line_along(
+                _decode(data) if isinstance(data, bytes) else data, steps)
+        if isinstance(exc, xmlization.DeserializationException):
+            steps = [segment.index if isinstance(segment, xmlization.IndexSegment)
+                     else segment.element.tag.rpartition("}")[2]
+                     for segment in exc.path.segments]
+            return positions.xml_line_along(
+                _decode(data) if isinstance(data, bytes) else data, steps)
+    except Exception:  # noqa: BLE001 - a line not found is a line not given
+        return None
+    return None
 
 
 #: A JSON string -- escapes inside it taken whole, and one the document never
@@ -502,6 +544,7 @@ def _payload_error(loaded: Loaded, part: Optional[str], exc, answered) -> None:
 _JSON_STRING = re.compile(r'"[^"\\]*(?:\\.[^"\\]*)*(?:"|\\?\Z)', re.S)
 _JSON_STRING_IN_BYTES = re.compile(rb'"[^"\\]*(?:\\.[^"\\]*)*(?:"|\\?\Z)', re.S)
 _NOT_A_BRACKET = re.compile(r'[^\[\]{}]+')
+_A_BRACKET = re.compile(r'[\[\]{}]')
 _NOT_A_BRACKET_IN_BYTES = re.compile(rb'[^\[\]{}]+')
 #: Each bracket, as a step in or out -- by character, and by byte value.
 _STEPS = {"[": 1, "{": 1, "]": -1, "}": -1, 0x5B: 1, 0x7B: 1, 0x5D: -1, 0x7D: -1}
@@ -580,19 +623,54 @@ def nesting_remedy() -> str:
             "it runs. %s" % (container.MAX_NESTING, REFUSED_NOT_JUDGED))
 
 
-def _too_deep(subject: str, depth: int) -> LoadError:
+def _too_deep(subject: str, depth: int, line: Optional[int] = None,
+              part: Optional[str] = None) -> LoadError:
     return LoadError("bounds", "%s nests deeper than the %d levels this reader follows"
                      % (subject, container.MAX_NESTING), subject=subject,
-                     fix=nesting_remedy(), detail="at least %d levels deep" % depth)
+                     fix=nesting_remedy(), detail="at least %d levels deep" % depth,
+                     line=line, part=part)
+
+
+def crossing_line(data, form: str, bound: int) -> Optional[int]:
+    """The line a document goes past `bound` levels on -- asked only of one
+    refused for it, so a slower reading costs nothing anywhere else."""
+    if form == "xml":
+        state = {"depth": 0, "line": None}
+        parser = expat.ParserCreate(encoding="utf-8")
+
+        def opened(_name, _attributes):
+            state["depth"] += 1
+            if state["depth"] > bound:
+                state["line"] = parser.CurrentLineNumber
+                raise _Deeper
+
+        def closed(_name):
+            state["depth"] -= 1
+
+        parser.StartElementHandler, parser.EndElementHandler = opened, closed
+        with contextlib.suppress(_Deeper, expat.ExpatError):
+            parser.Parse(data if isinstance(data, bytes) else data.encode("utf-8"), True)
+        return state["line"]
+    text = data.decode("utf-8", "replace") if isinstance(data, bytes) else data
+    # Strings out first, as the scan takes them out: none holds a raw line
+    # break, so every line stays where it was.
+    shape = _JSON_STRING.sub("", text)
+    depth = 0
+    for match in _A_BRACKET.finditer(shape):
+        depth += 1 if match.group() in "[{" else -1
+        if depth > bound:
+            return shape.count("\n", 0, match.start()) + 1
+    return None
 
 
 class NestedTooDeep(Exception):
     """A JSON document past `container.MAX_NESTING`, refused before it is parsed."""
 
-    def __init__(self, depth: int):
+    def __init__(self, depth: int, line: Optional[int] = None):
         super().__init__(depth)
-        #: How deep the scan had read when it stopped.
-        self.depth = depth
+        #: How deep the scan had read when it stopped, and the line the
+        #: bound was crossed on.
+        self.depth, self.line = depth, line
 
 
 def _json_document(raw: bytes):
@@ -601,7 +679,7 @@ def _json_document(raw: bytes):
     text = _decode(raw)
     depth = nesting(text, "json", stop=container.MAX_NESTING)
     if depth > container.MAX_NESTING:
-        raise NestedTooDeep(depth)
+        raise NestedTooDeep(depth, crossing_line(text, "json", container.MAX_NESTING))
     return json.loads(text)
 
 
@@ -640,7 +718,9 @@ def _xml_as_utf8_or_recorded(loaded: Loaded, raw: bytes, part: Optional[str]):
         return None
     depth = nesting(raw, "xml", stop=container.MAX_NESTING)
     if depth > container.MAX_NESTING:
-        loaded.errors.append(_too_deep(part or loaded.path, depth))
+        loaded.errors.append(_too_deep(part or loaded.path, depth,
+                                       crossing_line(raw, "xml", container.MAX_NESTING),
+                                       part=part))
         return None
     return raw
 
@@ -660,8 +740,10 @@ def _build_environment(loaded: Loaded, text: str, part: Optional[str]) -> None:
         environment = xmlization.environment_from_str(text)
     except Exception as exc:
         _payload_error(loaded, part, exc,
-                       _out_of_room(exc, building=False) or _other_edition(text))
+                       _out_of_room(exc, building=False) or _other_edition(text),
+                       text=text, form="xml")
         return
+    loaded.sources.append((environment, "xml", part))
     loaded.environments.append(environment)
     loaded.submodels.extend(environment.submodels or [])
 
@@ -694,14 +776,15 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
         decoding = False
         environment = jsonization.environment_from_jsonable(document)
     except NestedTooDeep as exc:
-        loaded.errors.append(_too_deep(part or loaded.path, exc.depth))
+        loaded.errors.append(_too_deep(part or loaded.path, exc.depth, exc.line, part=part))
         return
     except Exception as exc:
         # Asked the way `_load_json` asks it of a bare file (`_failure`), so
         # the same failure gets the same answer zipped or not.
         answered = _failure(exc, decoding=decoding, packaged=part is not None)
-        _payload_error(loaded, part, exc, answered)
+        _payload_error(loaded, part, exc, answered, text=raw, form="json")
         return
+    loaded.sources.append((environment, "json", part))
     loaded.environments.append(environment)
     loaded.submodels.extend(environment.submodels or [])
 
@@ -824,25 +907,29 @@ def _load_json(path: Path) -> Loaded:
     try:
         document = _json_document(raw)
     except NestedTooDeep as exc:
-        loaded.errors.append(_too_deep(str(path), exc.depth))
+        loaded.errors.append(_too_deep(str(path), exc.depth, exc.line))
         return loaded
     except Exception as exc:
         message, fix = _failure(exc, decoding=True) or ("the file is not JSON", None)
         loaded.errors.append(LoadError(
             "payload", message, subject=str(path),
-            detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
+            detail="%s: %s" % (type(exc).__name__, exc), fix=fix,
+            line=_failure_line(exc, raw, "json")))
         return loaded
 
     if isinstance(document, dict) and document.get("modelType") == "Submodel":
         loaded.form = "submodel-json"
         try:
-            loaded.submodels.append(jsonization.submodel_from_jsonable(document))
+            submodel = jsonization.submodel_from_jsonable(document)
         except Exception as exc:
             message, fix = (_failure(exc, decoding=False)
                             or ("the document could not be read as a Submodel", None))
             loaded.errors.append(LoadError("payload", message, subject=str(path),
                                            detail="%s: %s" % (type(exc).__name__, exc),
-                                           fix=fix))
+                                           fix=fix, line=_failure_line(exc, raw, "json")))
+            return loaded
+        loaded.sources.append((submodel, "json", None))
+        loaded.submodels.append(submodel)
         return loaded
 
     _parse_environment(loaded, raw, part=None, form="environment-json",
@@ -911,13 +998,17 @@ def _load_xml(path: Path) -> Loaded:
     if _root_is_submodel(text):
         loaded.form = "submodel-xml"
         try:
-            loaded.submodels.append(xmlization.submodel_from_str(text))
+            submodel = xmlization.submodel_from_str(text)
         except Exception as exc:
             message, fix = (_out_of_room(exc, building=False) or _other_edition(text)
                             or ("the document could not be read as a Submodel", None))
             loaded.errors.append(LoadError(
                 "payload", message, subject=loaded.path,
-                detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
+                detail="%s: %s" % (type(exc).__name__, exc), fix=fix,
+                line=_failure_line(exc, text, "xml")))
+            return loaded
+        loaded.sources.append((submodel, "xml", None))
+        loaded.submodels.append(submodel)
         return loaded
     _build_environment(loaded, text, part=None)
     return loaded

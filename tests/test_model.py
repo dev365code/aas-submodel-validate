@@ -129,6 +129,9 @@ ADDED_SINCE_V1_FINDING = {
     # findings point. All three are additions a consumer that does not
     # know them can ignore, which is why the version stays at 1.
     "fixability", "fixabilityWhy", "path",
+    # The line in the file the subject begins on, and the part of a
+    # package it is in: two more a consumer may ignore.
+    "line", "part",
 }
 
 #: And this is everything the document carries today.

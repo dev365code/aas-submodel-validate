@@ -418,7 +418,7 @@ def bat_r2_shared_identifier_without_a_table(ctx):
                 yield Violation(
                     "this submodel's semanticId is claimed by %s, and nothing "
                     "here can tell them apart" % " and ".join(claimants),
-                    subject=subject,
+                    subject=subject, at=submodel,
                     detail="%s; no table for either, so this submodel was not "
                            "judged against a template" % identifier)
             else:
@@ -445,7 +445,7 @@ def bat_r2_shared_identifier_without_a_table(ctx):
                     "this submodel's semanticId is claimed by %s; it was judged "
                     "against the one this tool has a table for"
                     % " and ".join(claimants),
-                    subject=subject, detail=detail)
+                    subject=subject, at=submodel, detail=detail)
 
 
 #: A clause reference, and nothing else on the line. A row's citations
@@ -593,7 +593,7 @@ def bat_r8_template_optional_but_law_requires(ctx):
                 # went -- the element sits two collections down where it
                 # is present at all -- so the finding pointed at one
                 # location and accepted the identifier at any other.
-                subject=row["element_id_short"],
+                subject=row["element_id_short"], at=submodel,
                 # Whose reading, and of what. The row's own citations,
                 # because a table joined from several sources cites a
                 # different provision on every line; and `read ... as

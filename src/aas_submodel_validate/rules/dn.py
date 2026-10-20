@@ -108,7 +108,7 @@ def dn_d1_uri_of_the_product_is_absolute(ctx):
                               "or another scheme altogether -- is not "
                               "something the value settles"))
             yield Violation("URIOfTheProduct is not an absolute URI",
-                            subject=subject, detail="%r" % value,
+                            subject=subject, at=element, detail="%r" % value,
                             fixability=grade, fixability_why=why)
 
 

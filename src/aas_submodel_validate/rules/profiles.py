@@ -246,7 +246,7 @@ def smt_d2_the_report_names_the_profile(ctx):
             continue
         yield Violation(
             "judged as %s%s" % (name, " (%s)" % why if why else ""),
-            subject=submodel.id_short or "submodel",
+            subject=submodel.id_short or "submodel", at=submodel,
             detail=_what_the_choice_cost(profile, tables)
                    + ("; this submodel declares %s" % profile.name
                       if declared and tables is profile.default else ""),
