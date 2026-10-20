@@ -25,7 +25,7 @@ import urllib.parse
 import zipfile
 import zlib
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from xml.etree import ElementTree
 from xml.parsers import expat
 
@@ -334,7 +334,8 @@ def _as_utf8(raw: bytes, encoding: str) -> bytes:
     if len(converted) > MAX_PART_BYTES:
         raise PartTooLarge(
             "a document declaring %s is %d bytes as UTF-8, above the %d byte "
-            "limit" % (encoding, len(converted), MAX_PART_BYTES))
+            "limit" % (encoding, len(converted), MAX_PART_BYTES),
+            detail="%d bytes as UTF-8, read as %s" % (len(converted), encoding))
     return converted
 
 
@@ -546,7 +547,15 @@ def part_name_problem(value: str):
 
 
 class ContainerError(Exception):
-    """The file is not something this reader can follow as an AASX."""
+    """The file is not something this reader can follow as an AASX.
+
+    `detail` is what the reader read that the refusal rests on -- a size,
+    the bytes a file begins with, what a relationships part declares --
+    and it is what the finding shows as `saw`."""
+
+    def __init__(self, message: str = "", *, detail: Optional[str] = None):
+        super().__init__(message)
+        self.detail = detail
 
 
 class RefusedContent(ContainerError):
@@ -575,8 +584,8 @@ class ForeignOrigin(ContainerError):
     the vocabulary it uses, so "repair the chain" is not its remedy.
     """
 
-    def __init__(self, message, declared):
-        super().__init__(message)
+    def __init__(self, message, declared, *, detail=None):
+        super().__init__(message, detail=detail)
         self.declared = declared
 
 
@@ -660,8 +669,9 @@ class OutOfMemory(ContainerError):
     not read" is false of the first.
     """
 
-    def __init__(self, message: str, *, building: bool = False):
-        super().__init__(message)
+    def __init__(self, message: str, *, building: bool = False,
+                 detail: str = "the interpreter raised MemoryError"):
+        super().__init__(message, detail=detail)
         self.building = building
 
 
@@ -669,19 +679,21 @@ class _Refusal:
     """What a remembered failure said: its class, its message, and where a
     memory stop happened -- and nothing it held."""
 
-    __slots__ = ("kind", "message", "building")
+    __slots__ = ("kind", "message", "building", "detail")
 
-    def __init__(self, kind, message: str, building: bool):
+    def __init__(self, kind, message: str, building: bool, detail=None):
         self.kind, self.message, self.building = kind, message, building
+        self.detail = detail
 
     @classmethod
     def of(cls, exc):
-        return cls(type(exc), str(exc), getattr(exc, "building", False))
+        return cls(type(exc), str(exc), getattr(exc, "building", False),
+                   getattr(exc, "detail", None))
 
     def again(self):
         if self.kind is OutOfMemory:
-            return OutOfMemory(self.message, building=self.building)
-        return self.kind(self.message)
+            return OutOfMemory(self.message, building=self.building, detail=self.detail)
+        return self.kind(self.message, detail=self.detail)
 
 
 def _rels_name(source: str) -> str:
@@ -696,6 +708,73 @@ def _rels_name(source: str) -> str:
 #: about that part, and filed under its name -- not under the payload's,
 #: which was read and judged beside it.
 relationships_part_name = _rels_name
+
+
+#: ZIP's compression methods by number (APPNOTE 4.4.5), for saying how a
+#: part that would not come out was stored.
+_METHODS = {0: "stored", 8: "deflated", 9: "deflate64", 12: "bzip2", 14: "LZMA",
+            93: "Zstandard", 95: "xz", 98: "PPMd", 99: "AES-encrypted"}
+
+
+def _entry(info) -> str:
+    """How the central directory describes a part: its method and sizes."""
+    method = _METHODS.get(info.compress_type, "method %d" % info.compress_type)
+    if info.flag_bits & 0x1:
+        method += ", encrypted"
+    return "%s, %d bytes stored for %d declared" % (method, info.compress_size,
+                                                     info.file_size)
+
+
+def _opening(path) -> str:
+    """What a file that would not open as a ZIP holds: its size and the
+    bytes it begins with -- which is what tells a document saved under the
+    wrong extension from a download cut short."""
+    try:
+        if isinstance(path, InMemory):
+            size, head = len(path.data), bytes(path.data[:8])
+        else:
+            size = size_of(path)
+            with open_regular(path) as handle:
+                head = handle.read(8)
+    except (OSError, MemoryError):
+        return "nothing could be read from it"
+    if not head:
+        return "0 bytes"
+    shown = "".join(chr(byte) if 32 <= byte < 127 else "." for byte in head)
+    return "%d bytes, beginning %s (%s)" % (size, " ".join("%02x" % byte for byte in head),
+                                             shown)
+
+
+def doctype_written(raw: bytes) -> str:
+    """The DOCTYPE declaration as the document writes it, cut at its
+    internal subset or end, or at 80 characters."""
+    at = raw.find(b"<!DOCTYPE")
+    if at < 0:
+        return "a DOCTYPE declaration"
+    declared = raw[at:at + 80]
+    for stop in (b"[", b">"):
+        cut = declared.find(stop)
+        if cut >= 0:
+            declared = declared[:cut + 1]
+            break
+    return declared.decode("utf-8", "replace")
+
+
+def _where_it_stopped(exc) -> str:
+    """Where a parser gave up on a relationships part."""
+    position = getattr(exc, "position", None)
+    if position:
+        return "the parser stopped at line %d, column %d" % position
+    return "%s: %s" % (type(exc).__name__, exc)
+
+
+def _declares(rels: str, declared) -> str:
+    """What a relationships part declares, by the last segment of each type."""
+    if not declared:
+        return "%s declares no relationships" % rels
+    kinds = [rel_type.rsplit("/", 1)[-1] or rel_type for rel_type, _target, _external in declared]
+    return "%s declares %d relationship%s: %s" % (
+        rels, len(kinds), "" if len(kinds) == 1 else "s", ", ".join(kinds))
 
 
 class InMemory:
@@ -815,7 +894,9 @@ class AasxPackage:
         if declared is not None and declared > MAX_DIRECTORY_BYTES:
             raise DirectoryTooLarge(
                 "%s: its central directory declares %d bytes of names, above "
-                "the %d byte limit" % (self.path, declared, MAX_DIRECTORY_BYTES))
+                "the %d byte limit" % (self.path, declared, MAX_DIRECTORY_BYTES),
+                detail="%d bytes of names, as the central directory declares them"
+                       % declared)
         # Opened here rather than by name inside `ZipFile`, so the one
         # resolution this object makes is the one it keeps -- and so a
         # path that is not a regular file is refused before anything
@@ -835,7 +916,8 @@ class AasxPackage:
                               % self.path) from exc
         except UNREADABLE as exc:
             raise ContainerError("cannot open %s as a ZIP container: %s: %s"
-                                 % (self.path, type(exc).__name__, exc)) from exc
+                                 % (self.path, type(exc).__name__, exc),
+                                 detail=_opening(self.path)) from exc
         # A part name identifies one part (ECMA-376 Part 2). An archive
         # holding two members of the identical name is malformed, and which
         # bytes a reader gets is which entry its ZIP library returns -- this
@@ -849,7 +931,9 @@ class AasxPackage:
             raise ContainerError(
                 "%s names %d part%s more than once: %s"
                 % (self.path, len(twice), "" if len(twice) == 1 else "s",
-                   ", ".join(twice)))
+                   ", ".join(twice)),
+                detail="the central directory lists %d entries under %d names"
+                       % (len(names), len(self._names)))
         #: What `relationships` answered for each source, failures included.
         self._relationships = {}
         #: Distinct bytes handed out so far, for MAX_TOTAL_PART_BYTES.
@@ -1001,12 +1085,16 @@ class AasxPackage:
 
     def read(self, name: str) -> bytes:
         if name not in self._names:
-            raise ContainerError("%s names no part %s" % (self.path, name))
+            raise ContainerError("%s names no part %s" % (self.path, name),
+                                 detail="%d parts in the central directory, none by "
+                                        "this name" % len(self._names))
         info = self._zip.getinfo(name)
         if info.file_size > MAX_PART_BYTES:
             raise PartTooLarge(
                 "%s refuses %s: %d bytes uncompressed, above the %d byte limit"
-                % (self.path, name, info.file_size, MAX_PART_BYTES))
+                % (self.path, name, info.file_size, MAX_PART_BYTES),
+                detail="%d bytes uncompressed, as the central directory declares"
+                       % info.file_size)
         # zipfile raises for a part the archive describes wrongly: a
         # method no reader implements, an encryption flag, a checksum
         # that does not match what came out. Those are defects in the
@@ -1043,7 +1131,8 @@ class AasxPackage:
         except UNREADABLE as exc:
             raise UnreadablePart(
                 "%s: %s cannot be read: %s: %s"
-                % (self.path, name, type(exc).__name__, exc)) from exc
+                % (self.path, name, type(exc).__name__, exc),
+                detail=_entry(info)) from exc
         if name not in self._counted:
             # Once per part. A rule may re-walk the chain -- X4 does --
             # and reading the same bytes a second time is not the
@@ -1070,7 +1159,8 @@ class AasxPackage:
         if self._read_total > MAX_TOTAL_PART_BYTES:
             raise PartTooLarge(
                 "%s: its parts come to more than %d bytes together"
-                % (self.path, MAX_TOTAL_PART_BYTES))
+                % (self.path, MAX_TOTAL_PART_BYTES),
+                detail="%d bytes read from its parts" % self._read_total)
 
     # -- the OPC chain -------------------------------------------------------
     def relationships(self, source: str = "") -> List[Tuple[str, str, bool]]:
@@ -1151,7 +1241,8 @@ class AasxPackage:
         held = self.part(rels)
         if held is None:
             raise NoRelationships("%s has no %s, so the chain from %r goes nowhere"
-                                 % (self.path, rels, source or "the package root"))
+                                 % (self.path, rels, source or "the package root"),
+                                 detail="no part named %s" % rels)
         raw = xml_as_utf8(self.read(held))
         # A relationships part has no legitimate use for a DTD, and a
         # nested-entity DTD is a decompression-free way to exhaust memory
@@ -1159,7 +1250,7 @@ class AasxPackage:
         # Refuse the declaration rather than try to bound the expansion.
         if declares_doctype(raw):
             raise RefusedContent("%s: %s declares a DOCTYPE, which is refused"
-                                 % (self.path, rels))
+                                 % (self.path, rels), detail=doctype_written(raw))
         try:
             root = ElementTree.fromstring(raw)
         except (ElementTree.ParseError, LookupError, ValueError) as exc:
@@ -1172,7 +1263,8 @@ class AasxPackage:
             # defect in the archive, as it is for the payload one layer over.
             if isinstance(exc, ElementTree.ParseError) and ran_out_of_memory(exc):
                 raise MemoryError(str(exc)) from exc        # a stop; see `relationships`
-            raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc)) from exc
+            raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc),
+                                 detail=_where_it_stopped(exc)) from exc
         # It has to be a relationships part. Another root element, no
         # namespace, or the wrong one parses and holds no `Relationship`
         # this reader recognises -- and that came back as "declares none",
@@ -1182,7 +1274,8 @@ class AasxPackage:
         if root.tag != _RELATIONSHIPS:
             raise ContainerError(
                 "%s: %s is not an OPC relationships part (its root is %s)"
-                % (self.path, rels, root.tag))
+                % (self.path, rels, root.tag),
+                detail="its root element is %s" % root.tag)
         try:
             return self._resolved(root, source)
         except MemoryError as exc:
@@ -1266,8 +1359,10 @@ class AasxPackage:
                 raise ForeignOrigin(
                     "%s declares its aasx-origin relationship with the type `%s`, "
                     "not the one this reader follows (`%s`)"
-                    % (self.path, rel_type, ORIGIN_REL), rel_type)
-        raise ContainerError("%s declares no aasx-origin relationship" % self.path)
+                    % (self.path, rel_type, ORIGIN_REL), rel_type,
+                    detail=_declares(_rels_name(""), declared))
+        raise ContainerError("%s declares no aasx-origin relationship" % self.path,
+                             detail=_declares(_rels_name(""), declared))
 
     @property
     def spec_parts(self) -> List[str]:
@@ -1279,12 +1374,13 @@ class AasxPackage:
         # a bound that never arrives. Measured before this: sixty-four
         # declarations of a one-megabyte part reached sixteen times the
         # total from an archive of two kilobytes.
+        declared = self.relationships(self.origin)
         targets = list(dict.fromkeys(
-            target for rel_type, target, _external in self.relationships(self.origin)
-            if rel_type == SPEC_REL))
+            target for rel_type, target, _external in declared if rel_type == SPEC_REL))
         if not targets:
             raise ContainerError("%s declares no aas-spec relationship on its origin"
-                                 % self.path)
+                                 % self.path,
+                                 detail=_declares(_rels_name(self.origin), declared))
         return targets
 
     # -- lifecycle -----------------------------------------------------------

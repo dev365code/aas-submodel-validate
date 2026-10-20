@@ -121,7 +121,11 @@
         },
         {
           "text": "the evidence as read from the file",
-          "done": false
+          "done": true,
+          "evidence": {
+            "file": "README.md",
+            "says": "and shows what it read"
+          }
         },
         {
           "text": "a remedy, for every rule",
@@ -144,8 +148,8 @@
           "done": false
         }
       ],
-      "now_text": "what is wrong, remedy, requirement",
-      "target_text": "+ evidence, the line in the file"
+      "now_text": "what is wrong, evidence, remedy, requirement",
+      "target_text": "+ the line in the file"
     },
     {
       "key": "report",

@@ -441,7 +441,8 @@ def run(path, *, strict_meta: bool = False, allow_unmatched: bool = False,
     except UnreadablePath as exc:
         loaded = Loaded(path=str(path), form="unopened")
         loaded.errors.append(LoadError("access", str(exc), subject=str(path),
-                                       fix=getattr(exc, "fix", None)))
+                                       fix=getattr(exc, "fix", None),
+                                       detail=getattr(exc, "detail", None)))
     rules_to_run = all_rules()
     # The same bound the reader itself applies to a bare document. A
     # container may deliver more in total, and a container this reader

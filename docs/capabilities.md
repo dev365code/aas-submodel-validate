@@ -1,7 +1,7 @@
 | Axis | Now | 1.0 condition |
 |---|---|---|
 | Coverage | 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7 | met |
-| Explanation | what is wrong, remedy, requirement | + evidence, the line in the file |
+| Explanation | what is wrong, evidence, remedy, requirement | + the line in the file |
 | Report contract | schemaVersion, golden report, exit codes, schema page | met |
 | Entrances | command line, library, single file, Action, browser | met |
 | Input safety | read budgets, advisory, own mutations | + encodings |
@@ -21,9 +21,9 @@
 - IDTA 02035-4 Digital Battery Passport, part 4 — done (`docs/scope.md`: "Twelve official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate, 02035-5 Digital Battery Passport part 5, 02035-1 Digital Battery Passport part 1, 02035-4 Digital Battery Passport part 4")
 - IDTA 02035-7 Digital Battery Passport, part 7 — done (`docs/scope.md`: "Twelve official templates are given rule tables: IDTA 02004 Handover Documentation, 02003 Technical Data, 02035-2 Digital Battery Passport part 2, 02006 Digital Nameplate, 02023 Carbon Footprint, 02002 Contact Information, 02011 Hierarchical Structures, 02007 Software Nameplate, 02035-5 Digital Battery Passport part 5, 02035-1 Digital Battery Passport part 1, 02035-4 Digital Battery Passport part 4, and 02035-7 Digital Battery Passport part 7")
 
-**Explanation** — 3 of 5:
+**Explanation** — 4 of 5:
 - what is wrong, in one sentence — done (`README.md`: "Every finding says what is wrong")
-- the evidence as read from the file — not yet
+- the evidence as read from the file — done (`README.md`: "and shows what it read")
 - a remedy, for every rule — done (`README.md`: "A rule without a remedy sentence does not ship")
 - where each rule's requirement lives — done (`docs/report-schema.md`: "Where the requirement lives, and always present")
 - the line in the file — not yet

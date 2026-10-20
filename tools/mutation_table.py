@@ -798,14 +798,8 @@ TABLE = [
 
     ("loader/a-payloads-relationships-running-out-is-refused-not-a-chain",
      "src/aas_submodel_validate/loader.py",
-     "        except OutOfMemory as exc:\n"
-     "            loaded.errors.append(_ran_out(exc, subject=rels))\n"
-     "        except UnreadablePart as exc:\n"
-     "            loaded.errors.append(LoadError(\"zip\", str(exc), subject=rels))\n"
-     "        except NoRelationships:\n",
-     "        except UnreadablePart as exc:\n"
-     "            loaded.errors.append(LoadError(\"zip\", str(exc), subject=rels))\n"
-     "        except NoRelationships:\n",
+     '        except OutOfMemory as exc:\n            loaded.errors.append(_ran_out(exc, subject=rels))\n        except UnreadablePart as exc:\n            loaded.errors.append(LoadError("zip", str(exc), detail=exc.detail, subject=rels))\n        except NoRelationships:\n',
+     '        except UnreadablePart as exc:\n            loaded.errors.append(LoadError("zip", str(exc), detail=exc.detail, subject=rels))\n        except NoRelationships:\n',
      ["tests/test_hostile_input.py::"
       "test_a_payload_whose_relationships_ran_this_reader_out_of_memory_is_still_read"],
      "without its own handler the stop falls to the chain stage and is "
@@ -940,11 +934,7 @@ TABLE = [
 
     ("container/an-oversized-conversion-is-refused-not-handed-on",
      "src/aas_submodel_validate/container.py",
-     '    if len(converted) > MAX_PART_BYTES:\n'
-     '        raise PartTooLarge(\n'
-     '            "a document declaring %s is %d bytes as UTF-8, above the %d byte "\n'
-     '            "limit" % (encoding, len(converted), MAX_PART_BYTES))\n'
-     '    return converted',
+     '    if len(converted) > MAX_PART_BYTES:\n        raise PartTooLarge(\n            "a document declaring %s is %d bytes as UTF-8, above the %d byte "\n            "limit" % (encoding, len(converted), MAX_PART_BYTES),\n            detail="%d bytes as UTF-8, read as %s" % (len(converted), encoding))\n    return converted',
      "    return raw if len(converted) > MAX_PART_BYTES else converted",
      ["tests/test_hostile_input.py::"
       "test_a_relationships_part_whose_utf8_form_is_over_the_cap_is_refused",
@@ -3243,15 +3233,15 @@ TABLE.extend([
 TABLE.extend([
     ('bound/json-is-asked-how-deep-before-it-is-parsed',
      'src/aas_submodel_validate/loader.py',
-     '    if nesting(text, "json", stop=container.MAX_NESTING) > container.MAX_NESTING:\n        raise NestedTooDeep()\n',
-     '    if False:\n        raise NestedTooDeep()\n',
+     '    if depth > container.MAX_NESTING:\n        raise NestedTooDeep(depth)\n',
+     '    if False:\n        raise NestedTooDeep(depth)\n',
      ['tests/test_a_document_nested_past_the_bound.py::test_the_scan_neither_recurses_nor_takes_long[json-_json-1000000]'],
      "without the scan a deep document reaches the parser, and how deep it may nest is again the machine's stack: a report at one entrance and a crash at another"),
 
     ('bound/xml-is-asked-how-deep-before-it-is-parsed',
      'src/aas_submodel_validate/loader.py',
-     '    if nesting(raw, "xml", stop=container.MAX_NESTING) > container.MAX_NESTING:\n        loaded.errors.append(_too_deep(part or loaded.path))\n',
-     '    if False:\n        loaded.errors.append(_too_deep(part or loaded.path))\n',
+     '    if depth > container.MAX_NESTING:\n        loaded.errors.append(_too_deep(part or loaded.path, depth))\n',
+     '    if False:\n        loaded.errors.append(_too_deep(part or loaded.path, depth))\n',
      ['tests/test_a_document_nested_past_the_bound.py::test_a_document_nested_to_the_bound_is_read_and_one_level_more_is_refused[xml-_xml]'],
      "XML is the same class: the browser's runtime ran out of stack on it near 3,000 levels while the command read on"),
 

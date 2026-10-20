@@ -242,7 +242,7 @@ def file_part_violations(container, subject, value):
     elif container.part(value) is None:
         grade, why = _file_grade(container, value)
         yield Violation("the container holds no part at this File's value",
-                        subject=subject, detail=value,
+                        subject=subject, detail=value or shown_value(value),
                         fixability=grade, fixability_why=why)
 
 

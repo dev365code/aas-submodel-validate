@@ -80,19 +80,20 @@ few that are its own); and what to change (`fix`). Reproduce:
 `smtv --example`.
 
 - what is wrong, in one sentence — done
-- the evidence as read from the file — not yet
+- the evidence as read from the file — done
 - a remedy, for every rule — done
 - where each rule's requirement lives — done
 - the line in the file — not yet
 
-The evidence is not yet on every finding. On the bundled example all 87
-carry a place, a remedy and a `saw` line -- on the 77 relayed metamodel
-findings it is what aas-core3.0's check read, its attributes taken from the
-check's own source -- and a finding that an element is missing shows what
-the scope it looked in holds. A refusal of the file or the container does
-not yet carry one everywhere it could. A finding names a path of
-`idShort`s, not a line of the file -- except a syntax error (`X3`), which
-carries the parser's line and column.
+The evidence is on every finding. On the bundled example all 87 carry a
+place, a remedy and a `saw` line -- on the 77 relayed metamodel findings it
+is what aas-core3.0's check read, its attributes taken from the check's own
+source. A finding that an element is missing shows what the scope it
+looked in holds, and a refusal shows the fact it rests on: a size, the
+bytes a file begins with, how a part that would not come out is stored,
+what a relationships part declares, what the operating system answered. A
+finding names a path of `idShort`s, not a line of the file -- except a
+syntax error (`X3`), which carries the parser's line and column.
 
 Before 1.0: every finding shows what it read, and where in the file it read
 it.

@@ -28,6 +28,7 @@ the shape this repository keeps finding in its own gates.
 """
 from __future__ import annotations
 
+from ..evidence import listed
 from ..model import Violation
 from ..registry import rule
 from ..upstream import is_english_language_tag, is_multi_language_property
@@ -77,9 +78,13 @@ VDI2770_CLASS_IDS = frozenset((
 PDF_CONTENT_TYPES = frozenset(("application/pdf",))
 
 
+def _classifications(document, tables):
+    return children_of(child_of(document, "DocumentClassifications", tables)
+                       or document, "DocumentClassification", tables)
+
+
 def _vdi_classifications(document, tables):
-    classifications = children_of(child_of(document, "DocumentClassifications", tables)
-                                  or document, "DocumentClassification", tables)
+    classifications = _classifications(document, tables)
     return [c for c in classifications
             if (property_value(c, "ClassificationSystem", tables) or "").strip()
             in VDI2770_SPELLINGS]
@@ -108,8 +113,12 @@ def _d2(tables):
         the one this sentence quotes (docs/divergences.md #9)."""
         for subject, document in instances_of(ctx, "Document", tables):
             if not _vdi_classifications(document, tables):
+                systems = [property_value(c, "ClassificationSystem", tables)
+                           for c in _classifications(document, tables)]
                 yield Violation("no DocumentClassification declares the mandatory "
-                                "VDI 2770 classification system", subject=subject)
+                                "VDI 2770 classification system", subject=subject,
+                                detail=("ClassificationSystem: %s" % listed(systems))
+                                       if systems else "no DocumentClassification here")
     return check
 
 
@@ -229,7 +238,10 @@ def _d5(tables):
                          in ("true", "1")]
             if len(ids) >= 2 and not primaries:
                 yield Violation("%d DocumentIds and none is marked primary" % len(ids),
-                                subject=subject)
+                                subject=subject,
+                                detail="DocumentIsPrimary: %s" % listed(
+                                    [property_value(d, "DocumentIsPrimary", tables)
+                                     for d in ids]))
     return check
 
 

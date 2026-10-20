@@ -53,7 +53,8 @@ def _named(obj) -> str:
     return kind
 
 
-def _listed(values) -> str:
+def listed(values) -> str:
+    """Values in order, the first few shown and the rest counted."""
     shown = ", ".join(shown_value(value) for value in values[:SHOWN])
     if len(values) > SHOWN:
         shown += " and %d more" % (len(values) - SHOWN)
@@ -74,7 +75,7 @@ def shown_value(value) -> str:
     if upstream.is_model_object(value):
         return _named(value)
     if isinstance(value, (list, tuple)):
-        return "[%s]" % _listed(list(value))
+        return "[%s]" % listed(list(value))
     return repr(value)
 
 
@@ -99,7 +100,7 @@ def _followed(obj, path) -> str:
             values = [getattr(value, step, None) if value is not None else None
                       for value in values]
     if fanned:
-        return "%s: %s" % (label, _listed(values) if values else "[]")
+        return "%s: %s" % (label, listed(values) if values else "[]")
     return "%s: %s" % (label, shown_value(values[0]))
 
 

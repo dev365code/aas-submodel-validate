@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import codecs
 import contextlib
+import errno
 import itertools
 import json
 import re
@@ -98,9 +99,11 @@ class UnreadablePath(Exception):
     sentence about the path instead of the payload.
     """
 
-    def __init__(self, message, fix=None):
+    def __init__(self, message, fix=None, detail=None):
         super().__init__(message)
         self.fix = fix
+        #: What the operating system answered, for the finding's `saw`.
+        self.detail = detail
 
 
 @dataclass(frozen=True)
@@ -318,9 +321,13 @@ def _cannot_reach(path, exc) -> UnreadablePath:
     sentence, because from where they stand it is the same fact. Built
     in one place so they cannot drift into two sentences about it.
     """
+    code = errno.errorcode.get(getattr(exc, "errno", None) or -1)
     return UnreadablePath("cannot read %s: %s: %s"
                           % (path, type(exc).__name__, exc),
-                          fix=_access_remedy(exc))
+                          fix=_access_remedy(exc),
+                          detail="the operating system answered %s"
+                                 % ("%s (%s)" % (code, exc.strerror) if code
+                                    else type(exc).__name__))
 
 
 @dataclass
@@ -405,7 +412,7 @@ def _read_bounded(loaded: Loaded, path: Path):
         if size > cap:
             loaded.errors.append(LoadError(
                 "bounds", "%s: %d bytes, above the %d byte limit" % (path, size, cap),
-                subject=str(path)))
+                subject=str(path), detail="%d bytes, as the file system reports it" % size))
             return None
         with container.open_regular(path) as handle:
             raw = handle.read(cap + 1)
@@ -415,7 +422,8 @@ def _read_bounded(loaded: Loaded, path: Path):
         raise _cannot_reach(path, exc) from exc
     if len(raw) > cap:
         loaded.errors.append(LoadError(
-            "bounds", "%s: more than %d bytes" % (path, cap), subject=str(path)))
+            "bounds", "%s: more than %d bytes" % (path, cap), subject=str(path),
+            detail="%d bytes read, one past the limit, and no more" % len(raw)))
         return None
     return raw
 
@@ -572,22 +580,28 @@ def nesting_remedy() -> str:
             "it runs. %s" % (container.MAX_NESTING, REFUSED_NOT_JUDGED))
 
 
-def _too_deep(subject: str) -> LoadError:
+def _too_deep(subject: str, depth: int) -> LoadError:
     return LoadError("bounds", "%s nests deeper than the %d levels this reader follows"
                      % (subject, container.MAX_NESTING), subject=subject,
-                     fix=nesting_remedy())
+                     fix=nesting_remedy(), detail="at least %d levels deep" % depth)
 
 
 class NestedTooDeep(Exception):
     """A JSON document past `container.MAX_NESTING`, refused before it is parsed."""
+
+    def __init__(self, depth: int):
+        super().__init__(depth)
+        #: How deep the scan had read when it stopped.
+        self.depth = depth
 
 
 def _json_document(raw: bytes):
     """The JSON a document holds, asked how deep it nests before it is
     parsed -- one function for a bare document and a part in a package."""
     text = _decode(raw)
-    if nesting(text, "json", stop=container.MAX_NESTING) > container.MAX_NESTING:
-        raise NestedTooDeep()
+    depth = nesting(text, "json", stop=container.MAX_NESTING)
+    if depth > container.MAX_NESTING:
+        raise NestedTooDeep(depth)
     return json.loads(text)
 
 
@@ -616,15 +630,17 @@ def _xml_as_utf8_or_recorded(loaded: Loaded, raw: bytes, part: Optional[str]):
         # by, and the size shows only once it is converted the way the
         # parser reads it. Recorded as `_read_bounded` records a bound,
         # with no fix of its own, so X5 gives the per-form remedy.
-        loaded.errors.append(LoadError("bounds", str(exc), subject=part or loaded.path))
+        loaded.errors.append(LoadError("bounds", str(exc), detail=exc.detail, subject=part or loaded.path))
         return None
     if declares_doctype(raw):
         loaded.errors.append(LoadError(
             "payload", "the XML declares a DOCTYPE, which is refused",
-            subject=part or loaded.path, fix=PAYLOAD_DOCTYPE_REMEDY))
+            subject=part or loaded.path, fix=PAYLOAD_DOCTYPE_REMEDY,
+            detail=container.doctype_written(raw)))
         return None
-    if nesting(raw, "xml", stop=container.MAX_NESTING) > container.MAX_NESTING:
-        loaded.errors.append(_too_deep(part or loaded.path))
+    depth = nesting(raw, "xml", stop=container.MAX_NESTING)
+    if depth > container.MAX_NESTING:
+        loaded.errors.append(_too_deep(part or loaded.path, depth))
         return None
     return raw
 
@@ -677,8 +693,8 @@ def _parse_environment(loaded: Loaded, raw: bytes, *, part: Optional[str], form:
             document = _json_document(raw)
         decoding = False
         environment = jsonization.environment_from_jsonable(document)
-    except NestedTooDeep:
-        loaded.errors.append(_too_deep(part or loaded.path))
+    except NestedTooDeep as exc:
+        loaded.errors.append(_too_deep(part or loaded.path, exc.depth))
         return
     except Exception as exc:
         # Asked the way `_load_json` asks it of a bare file (`_failure`), so
@@ -708,7 +724,7 @@ def load(path) -> Loaded:
         raise UnreadablePath(
             "this reader does not take standard input: it seeks inside "
             "containers and bounds what it reads before reading it. "
-            "Give it a path")
+            "Give it a path", detail="the path given is '-'")
     # Whether there is a file to read at all is one question, asked once,
     # before the extension decides anything. Asking it inside each branch
     # is how a directory came to exit 2 when it was called .xml and 1 --
@@ -736,13 +752,16 @@ def load(path) -> Loaded:
         raise UnreadablePath(
             "no such file: %s" % path,
             fix="Check the path. Nothing was opened, so nothing here is a "
-                "statement about a document.")
+                "statement about a document.",
+            detail="the operating system has nothing at this path")
     if not a_file:
         raise UnreadablePath(
             "not a file: %s" % path,
             fix="Point this at a file rather than at a directory. Nothing "
                 "was opened, so nothing here is a statement about a "
-                "document.")
+                "document.",
+            detail="the operating system has %s at this path"
+                   % ("a directory" if path.is_dir() else "something that is not a regular file"))
     # And whether it opens, asked in the same place and for the same
     # reason. It was asked by whichever reader the extension chose, and
     # they answer differently: an unreadable `.aasx` reached
@@ -788,7 +807,8 @@ def _by_format(path) -> Loaded:
         "cannot tell what %s is: expected .aasx, .json or .xml" % path,
         fix="Name the file .aasx for a package, .json or .xml for an AAS "
             "environment or a bare Submodel. The extension is how the "
-            "format is chosen here; the contents were not looked at.")
+            "format is chosen here; the contents were not looked at.",
+        detail=("its extension is %s" % suffix) if suffix else "its name has no extension")
 
 
 def _load_json(path: Path) -> Loaded:
@@ -803,8 +823,8 @@ def _load_json(path: Path) -> Loaded:
         return loaded
     try:
         document = _json_document(raw)
-    except NestedTooDeep:
-        loaded.errors.append(_too_deep(str(path)))
+    except NestedTooDeep as exc:
+        loaded.errors.append(_too_deep(str(path), exc.depth))
         return loaded
     except Exception as exc:
         message, fix = _failure(exc, decoding=True) or ("the file is not JSON", None)
@@ -914,7 +934,8 @@ def _ran_out(exc, subject=None) -> LoadError:
     parsed to its end and stopped while its targets were resolved was read,
     and told otherwise."""
     return LoadError("bounds", str(exc), subject=subject,
-                     fix=limit_remedy("memory", building=exc.building))
+                     fix=limit_remedy("memory", building=exc.building),
+                     detail=getattr(exc, "detail", None))
 
 
 def _load_aasx(path: Path) -> Loaded:
@@ -926,14 +947,14 @@ def _load_aasx(path: Path) -> Loaded:
         # would tell the author to re-create the package, and there is
         # nothing wrong with it to repair. This is a decision of ours.
         loaded.errors.append(LoadError(
-            "bounds", str(exc), subject=str(path),
+            "bounds", str(exc), detail=exc.detail, subject=str(path),
             fix=directory_bound_remedy()))
         return loaded
     except OutOfMemory as exc:
         loaded.errors.append(_ran_out(exc, subject=str(path)))
         return loaded
     except ContainerError as exc:
-        loaded.errors.append(LoadError("zip", str(exc)))
+        loaded.errors.append(LoadError("zip", str(exc), detail=exc.detail))
         return loaded
     loaded.container = package
 
@@ -944,38 +965,38 @@ def _load_aasx(path: Path) -> Loaded:
     try:
         parts = package.spec_parts
     except PartTooLarge as exc:
-        loaded.errors.append(LoadError("bounds", str(exc)))
+        loaded.errors.append(LoadError("bounds", str(exc), detail=exc.detail))
         return loaded
     except OutOfMemory as exc:
         loaded.errors.append(_ran_out(exc))
         return loaded
     except UnreadablePart as exc:
-        loaded.errors.append(LoadError("zip", str(exc)))
+        loaded.errors.append(LoadError("zip", str(exc), detail=exc.detail))
         return loaded
     except RefusedContent as exc:
-        loaded.errors.append(LoadError("chain", str(exc), fix=RELATIONSHIP_DOCTYPE_REMEDY))
+        loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, fix=RELATIONSHIP_DOCTYPE_REMEDY))
         return loaded
     except ForeignOrigin as exc:
-        loaded.errors.append(LoadError("chain", str(exc), fix=FOREIGN_ORIGIN_REMEDY))
+        loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, fix=FOREIGN_ORIGIN_REMEDY))
         return loaded
     except ContainerError as exc:
-        loaded.errors.append(LoadError("chain", str(exc)))
+        loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail))
         return loaded
 
     for part in parts:
         try:
             raw = package.read(part)
         except PartTooLarge as exc:
-            loaded.errors.append(LoadError("bounds", str(exc), subject=part))
+            loaded.errors.append(LoadError("bounds", str(exc), detail=exc.detail, subject=part))
             continue
         except OutOfMemory as exc:
             loaded.errors.append(_ran_out(exc, subject=part))
             continue
         except UnreadablePart as exc:
-            loaded.errors.append(LoadError("zip", str(exc), subject=part))
+            loaded.errors.append(LoadError("zip", str(exc), detail=exc.detail, subject=part))
             continue
         except ContainerError as exc:
-            loaded.errors.append(LoadError("chain", str(exc), subject=part))
+            loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=part))
             continue
         # Touch the part's own relationships here, where a failure can be
         # loaded as an error. The rules read this later (X4 walks it for
@@ -990,20 +1011,20 @@ def _load_aasx(path: Path) -> Loaded:
         try:
             package.relationships(part)
         except PartTooLarge as exc:
-            loaded.errors.append(LoadError("bounds", str(exc), subject=rels))
+            loaded.errors.append(LoadError("bounds", str(exc), detail=exc.detail, subject=rels))
         except OutOfMemory as exc:
             loaded.errors.append(_ran_out(exc, subject=rels))
         except UnreadablePart as exc:
-            loaded.errors.append(LoadError("zip", str(exc), subject=rels))
+            loaded.errors.append(LoadError("zip", str(exc), detail=exc.detail, subject=rels))
         except NoRelationships:
             pass        # this part declares none, which is not a defect
         except RefusedContent as exc:
-            loaded.errors.append(LoadError("chain", str(exc), subject=rels, fix=RELATIONSHIP_DOCTYPE_REMEDY))
+            loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=rels, fix=RELATIONSHIP_DOCTYPE_REMEDY))
         except ContainerError as exc:
             # Would not parse. Quiet here until now for sharing an
             # exception type with "declares none" above, which left a
             # container this reader would not read coming back `ok`.
-            loaded.errors.append(LoadError("chain", str(exc), subject=rels))
+            loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=rels))
         form = "environment-json" if part.lower().endswith(".json") else "environment-xml"
         _parse_environment(loaded, raw, part=part, form=form)
     return loaded

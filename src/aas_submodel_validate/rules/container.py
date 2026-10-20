@@ -215,7 +215,7 @@ def x6_the_path_can_be_opened(ctx):
           "relationship removes only the declaration: if a File value in "
           "the model names the same part, the part is still missing.")
 def x4_supplementary_parts_exist(ctx):
-    from ..container import SUPPL_REL, ContainerError
+    from ..container import SUPPL_REL, ContainerError, relationships_part_name
     container = ctx.loaded.container
     if container is None:
         return
@@ -260,4 +260,7 @@ def x4_supplementary_parts_exist(ctx):
                 continue
             if container.part(target) is None:
                 yield Violation("an aas-suppl relationship names a part the "
-                                "archive does not hold", subject=target)
+                                "archive does not hold", subject=target,
+                                detail="declared in %s, and the central directory "
+                                       "holds no part by this name"
+                                       % relationships_part_name(part))

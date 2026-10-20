@@ -113,22 +113,22 @@ def test_a_check_the_table_does_not_know_still_says_what_it_looked_at(tmp_path, 
     assert finding.violation.detail == "ConceptDescription 'urn:example:cd:1'"
 
 
-def test_every_relayed_finding_in_the_corpus_says_what_it_read(tmp_path):
+def test_every_finding_in_the_corpus_says_what_it_read(tmp_path):
+    """The whole corpus, every rule: a finding without a `saw` line is a
+    finding that did not say what it read."""
     import verdict_diff
 
-    seen = 0
+    seen = relayed = 0
     for case in verdict_diff.build_corpus(tmp_path):
-        if not Path(case.path).is_file():
-            continue
         try:
             report = runner.run(Path(case.path), template=case.template)
         except TemplateRefused:
             continue
         for finding in report.findings:
-            if finding.id == "META":
-                seen += 1
-                assert finding.violation.detail, (case.label, finding.violation.subject)
-    assert seen > 700
+            seen += 1
+            relayed += finding.id == "META"
+            assert finding.violation.detail, (case.label, finding.id, finding.violation.subject)
+    assert seen > 900 and relayed > 700
 
 
 # -- a finding that found nothing ----------------------------------------------
@@ -182,3 +182,140 @@ def test_a_scope_with_nothing_in_it_says_so(tmp_path):
     findings = _absent(tmp_path, env)
     assert findings
     assert {f.violation.detail for f in findings} == {"this scope holds no elements"}
+
+
+# -- a refusal ------------------------------------------------------------------
+#
+# A file refused before it is judged was still read: its size, the bytes it
+# begins with, what its relationships part declares, what the operating
+# system answered. That is its `saw`. The corpus holds five refusals; the
+# loader can record some twenty more, so the places that record them are
+# held here too -- each passes on what it read.
+
+
+def _calls(path, name):
+    import ast
+
+    tree = ast.parse((ROOT / path).read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and getattr(node.func, "id", None) == name:
+            yield node
+
+
+def test_every_refusal_the_loader_records_says_what_it_read():
+    for path in ("src/aas_submodel_validate/loader.py", "src/aas_submodel_validate/runner.py"):
+        for call in _calls(path, "LoadError"):
+            assert any(keyword.arg == "detail" for keyword in call.keywords), (path, call.lineno)
+
+
+def test_every_path_refused_says_what_the_system_answered():
+    calls = list(_calls("src/aas_submodel_validate/loader.py", "UnreadablePath"))
+    assert calls
+    for call in calls:
+        assert any(keyword.arg == "detail" for keyword in call.keywords), call.lineno
+
+
+def test_every_refusal_the_container_raises_says_what_it_read():
+    """Out of memory is the one that need not: what the reader met there is
+    the interpreter running out, and the class says so by default."""
+    import ast
+
+    from aas_submodel_validate import container
+
+    family = {name for name, value in vars(container).items()
+              if isinstance(value, type) and issubclass(value, container.ContainerError)
+              and value is not container.OutOfMemory}
+    tree = ast.parse((ROOT / "src/aas_submodel_validate/container.py").read_text(encoding="utf-8"))
+    raised = 0
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call)
+                and getattr(node.exc.func, "id", None) in family):
+            raised += 1
+            assert any(keyword.arg == "detail" for keyword in node.exc.keywords), node.lineno
+    assert raised >= 15
+
+
+def test_a_file_that_is_not_a_zip_shows_what_it_begins_with(tmp_path):
+    path = tmp_path / "saved-under-the-wrong-name.aasx"
+    path.write_bytes(b'{"assetAdministrationShells": []}')
+    [finding] = [f for f in runner.run(path).findings if f.id == "X1"]
+    assert finding.violation.detail == (
+        '33 bytes, beginning 7b 22 61 73 73 65 74 41 ({"assetA)')
+
+
+def test_a_package_with_no_origin_shows_what_its_relationships_declare(tmp_path):
+    import zipfile
+
+    from builders import CONTENT_TYPES, rels
+
+    path = tmp_path / "no-origin.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels([
+            ("http://schemas.openxmlformats.org/package/2006/relationships/metadata/"
+             "core-properties", "/docProps/core.xml")]))
+    [finding] = [f for f in runner.run(path).findings if f.id == "X2"]
+    assert finding.violation.detail == "_rels/.rels declares 1 relationship: core-properties"
+
+
+def test_a_document_over_the_size_bound_shows_its_size(tmp_path, monkeypatch):
+    from aas_submodel_validate import container
+
+    monkeypatch.setattr(container, "MAX_PART_BYTES", 100)
+    path = tmp_path / "big.json"
+    path.write_bytes(b'{"submodels": []}' + b" " * 183)
+    [finding] = [f for f in runner.run(path).findings if f.id == "X5"]
+    assert finding.violation.detail == "200 bytes, as the file system reports it"
+
+
+def test_a_document_declaring_a_dtd_shows_the_declaration(tmp_path):
+    path = tmp_path / "with-a-dtd.xml"
+    path.write_bytes(b'<?xml version="1.0"?>\n<!DOCTYPE environment [<!ENTITY a "b">]>\n'
+                     b'<environment xmlns="https://admin-shell.io/aas/3/0"/>')
+    [finding] = [f for f in runner.run(path).findings if f.id == "X3"]
+    assert finding.violation.detail == "<!DOCTYPE environment ["
+
+
+# -- the two hand rules the corpus never reaches --------------------------------
+
+
+def _named(children, name):
+    return next(child for child in children if child.get("idShort") == name)
+
+
+def test_a_document_without_the_vdi_classification_shows_the_systems_it_declares(tmp_path):
+    env = copy.deepcopy(hd_env())
+    document = env["submodels"][0]["submodelElements"][0]["value"][0]
+    classification = _named(document["value"], "DocumentClassifications")["value"][0]
+    _named(classification["value"], "ClassificationSystem")["value"] = "IEC 61355"
+    [finding] = [f for f in _run(tmp_path, env).findings
+                 if "VDI 2770 classification system" in f.violation.message]
+    assert finding.violation.detail == "ClassificationSystem: 'IEC 61355'"
+
+
+def test_ids_none_of_which_is_primary_show_what_each_says(tmp_path):
+    env = copy.deepcopy(hd_env())
+    document = env["submodels"][0]["submodelElements"][0]["value"][0]
+    ids = _named(document["value"], "DocumentIds")
+    ids["value"].append(copy.deepcopy(ids["value"][0]))
+    for item in ids["value"]:
+        _named(item["value"], "DocumentIsPrimary")["value"] = "false"
+    [finding] = [f for f in _run(tmp_path, env).findings
+                 if "none is marked primary" in f.violation.message]
+    assert finding.violation.detail == "DocumentIsPrimary: 'false', 'false'"
+
+
+def test_every_rule_passes_on_what_it_read():
+    """Held where findings are written, not only where the corpus reaches:
+    a rule that makes a finding gives it a `detail`."""
+    import ast
+
+    written = 0
+    for path in sorted((ROOT / "src" / "aas_submodel_validate").rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "Violation":
+                written += 1
+                assert len(node.args) >= 3 or any(k.arg == "detail" for k in node.keywords), \
+                    (path.name, node.lineno)
+    assert written >= 30
