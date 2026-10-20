@@ -57,6 +57,17 @@ def test_the_gate_counts_the_page_among_what_the_release_publishes():
     assert "'%s'" % PAGE in build
 
 
+def test_the_round_trip_expects_every_file_the_release_path_sends():
+    """CI's release path uploads what a release would publish, and a second
+    job downloads it and counts it. That job kept the count from before the
+    page, so the commit that added the page went red there and nowhere a
+    check runs before a push. The two counts are one number."""
+    sent = re.search(r'"\$count" != "(\d+)"', _job(CI, "release-path"))
+    came_back = re.search(r'"\$count" != "(\d+)"', _job(CI, "round-trip"))
+    assert sent and came_back, "a count is no longer where this reads it"
+    assert came_back.group(1) == sent.group(1) == "6"
+
+
 def test_the_page_is_signed_and_named_in_the_notes():
     assert "dist/%s" % PAGE in _job(RELEASE, "attest")
     notes = _job(RELEASE, "github-release")

@@ -443,8 +443,8 @@ jobs:
           cd dist
           ls -1
           count=$(ls -1 | wc -l | tr -d ' ')
-          if [ "$count" != "5" ]; then
-            echo "the round trip returned $count files, not the 5 that went out"
+          if [ "$count" != "6" ]; then
+            echo "the round trip returned $count files, not the 6 that went out"
             exit 1
           fi
           shasum -a 256 -c SHA256SUMS
