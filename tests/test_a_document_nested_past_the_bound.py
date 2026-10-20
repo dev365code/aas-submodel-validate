@@ -157,3 +157,50 @@ def _documents(path):
                         yield name.rsplit(".", 1)[1], archive.read(name)
                     except Exception:  # noqa: BLE001 - a corpus part meant to be unreadable
                         continue
+
+
+def _read_character_by_character(text: str) -> int:
+    """The JSON depth as a reader walking one character at a time sees it:
+    a quote opens and closes a string, a backslash inside one takes the
+    character after it, and only brackets outside strings count."""
+    depth = deepest = 0
+    quoted = escaped = False
+    for char in text:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                quoted = False
+        elif char == '"':
+            quoted = True
+        elif char in "[{":
+            depth += 1
+            deepest = max(deepest, depth)
+        elif char in "]}":
+            depth -= 1
+    return deepest
+
+
+def test_the_scan_reads_json_as_a_character_by_character_reader_would(tmp_path):
+    """The scan reads whole strings and whole runs of other characters at a
+    time, so that asking costs about what parsing costs; what it answers is
+    held to the slow reading above, on the corpus and on strings of nothing
+    but the characters that decide the answer, as text and as bytes."""
+    import random
+
+    sys.path.insert(0, str(ROOT / "tools"))
+    import verdict_diff
+
+    texts = [Path(case.path).read_bytes().decode("utf-8-sig", "replace")
+             for case in verdict_diff.build_corpus(tmp_path)
+             if Path(case.path).suffix == ".json" and Path(case.path).is_file()]
+    chooser = random.Random(2770)
+    texts += ["".join(chooser.choice('[]{}"\\ a') for _ in range(chooser.randint(0, 90)))
+              for _ in range(3000)]
+    texts += ['["\\', '"[[[', "]", "]][[[", '{"a": "x\\"[[["}', '{"a":"\\\\"}[[']
+    for text in texts:
+        expected = _read_character_by_character(text)
+        assert loader.nesting(text, "json") == expected, text[:80]
+        assert loader.nesting(text.encode("utf-8"), "json") == expected, text[:80]

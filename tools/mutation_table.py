@@ -3264,15 +3264,15 @@ TABLE.extend([
 
     ('bound/an-escaped-quote-stays-inside-its-string',
      'src/aas_submodel_validate/loader.py',
-     '            if mark in ("\\\\", b"\\\\"):\n                escaped = at + 1\n',
-     '            if False:\n                escaped = at + 1\n',
-     ['tests/test_a_document_nested_past_the_bound.py::test_brackets_inside_a_string_are_text_and_not_nesting'],
+     '_JSON_STRING = re.compile(r\'"[^"\\\\]*(?:\\\\.[^"\\\\]*)*(?:"|\\\\?\\Z)\', re.S)\n',
+     '_JSON_STRING = re.compile(r\'"[^"]*(?:"|\\Z)\', re.S)\n',
+     ['tests/test_a_document_nested_past_the_bound.py::test_the_scan_reads_json_as_a_character_by_character_reader_would'],
      'an escaped quote read as the end of its string turns the text after it into nesting, and a document full of brackets in its notes is refused'),
 
     ('bound/a-bracket-inside-a-string-is-text',
      'src/aas_submodel_validate/loader.py',
-     '        elif mark in (\'"\', b\'"\'):\n            quoted = True\n',
-     '        elif False:\n            quoted = True\n',
+     '    brackets = others.sub(nothing, strings.sub(nothing, data))\n',
+     '    brackets = others.sub(nothing, data)\n',
      ['tests/test_a_document_nested_past_the_bound.py::test_brackets_inside_a_string_are_text_and_not_nesting'],
      'a bracket inside a string is text; counted as nesting it refuses a document for what its descriptions say'),
 ])

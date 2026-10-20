@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import codecs
 import contextlib
+import itertools
 import json
 import re
 from dataclasses import dataclass, field
@@ -483,9 +484,21 @@ def _payload_error(loaded: Loaded, part: Optional[str], exc, answered) -> None:
         detail="%s: %s" % (type(exc).__name__, exc), fix=fix))
 
 
-#: The characters that decide how deep JSON nests, as text or as bytes.
-_JSON_MARKS = re.compile(r'[\[\]{}"\\]')
-_JSON_MARKS_IN_BYTES = re.compile(rb'[\[\]{}"\\]')
+#: A JSON string -- escapes inside it taken whole, and one the document never
+#: closed running to the end -- which the depth scan leaves out, because a
+#: bracket in a string is text. Written unrolled, a run of ordinary
+#: characters at a time, because the scan runs over every document before
+#: it is parsed: measured over the corpus's JSON, it takes about four times
+#: what `json.loads` takes on the same text, and a little over half of what
+#: reading that text into the model takes.
+_JSON_STRING = re.compile(r'"[^"\\]*(?:\\.[^"\\]*)*(?:"|\\?\Z)', re.S)
+_JSON_STRING_IN_BYTES = re.compile(rb'"[^"\\]*(?:\\.[^"\\]*)*(?:"|\\?\Z)', re.S)
+_NOT_A_BRACKET = re.compile(r'[^\[\]{}]+')
+_NOT_A_BRACKET_IN_BYTES = re.compile(rb'[^\[\]{}]+')
+#: Each bracket, as a step in or out -- by character, and by byte value.
+_STEPS = {"[": 1, "{": 1, "]": -1, "}": -1, 0x5B: 1, 0x7B: 1, 0x5D: -1, 0x7D: -1}
+#: How many brackets are read as steps at a time.
+_STRETCH = 1 << 16
 
 
 class _Deeper(Exception):
@@ -494,19 +507,18 @@ class _Deeper(Exception):
 
 def nesting(data, form: str, stop: Optional[int] = None) -> int:
     """How deep a JSON or XML document nests: arrays and objects inside one
-    another, or elements inside one another. Stops at `stop + 1` once it
-    knows the document goes past `stop`.
+    another, or elements inside one another.
 
-    One pass, and no recursion: it is asked of documents nested deeper
-    than any stack will follow, and that is the whole point of asking. For
-    JSON it reads only the characters that open and close an array, an
-    object or a string, and the escape that keeps a quote inside one -- a
-    bracket inside a string is text. For XML it counts what expat reports
-    opening and closing, so a comment, a CDATA section or an attribute
-    value holding an angle bracket opens nothing; expat keeps its own place
-    in memory rather than on the stack, and calls back once per element.
+    No recursion anywhere: it is asked of documents nested deeper than any
+    stack will follow, and that is the whole point of asking. For JSON it
+    sets the strings aside -- a bracket inside one is text, and an escaped
+    quote does not end one -- and reads what is left as steps in and out,
+    each a pass in C rather than a character at a time in Python. For
+    XML it counts what expat reports opening and closing, so a comment, a
+    CDATA section or an attribute value holding an angle bracket opens
+    nothing; expat keeps its own place in memory rather than on the stack,
+    and the scan stops once it knows the document goes past `stop`.
     """
-    deepest = depth = 0
     if form == "xml":
         state = {"depth": 0, "deepest": 0}
 
@@ -531,28 +543,25 @@ def nesting(data, form: str, stop: Optional[int] = None) -> int:
         with contextlib.suppress(_Deeper, expat.ExpatError):
             parser.Parse(data if isinstance(data, bytes) else data.encode("utf-8"), True)
         return state["deepest"]
-    marks = _JSON_MARKS_IN_BYTES if isinstance(data, bytes) else _JSON_MARKS
-    quoted, escaped = False, -1
-    for match in marks.finditer(data):
-        at = match.start()
-        if at == escaped:
-            continue
-        mark = match.group()
-        if quoted:
-            if mark in ("\\", b"\\"):
-                escaped = at + 1
-            elif mark in ('"', b'"'):
-                quoted = False
-        elif mark in ('"', b'"'):
-            quoted = True
-        elif mark in ("[", "{", b"[", b"{"):
-            depth += 1
-            if depth > deepest:
-                deepest = depth
-                if stop is not None and deepest > stop:
-                    break
-        elif mark in ("]", "}", b"]", b"}"):
-            depth -= 1
+    if isinstance(data, bytes):
+        strings, others, nothing = _JSON_STRING_IN_BYTES, _NOT_A_BRACKET_IN_BYTES, b""
+    else:
+        strings, others, nothing = _JSON_STRING, _NOT_A_BRACKET, ""
+    # The strings out, then everything that is not a bracket, then the
+    # brackets as steps in and out: each a pass in C over what is left. Only
+    # the last goes a stretch at a time, so a document past `stop` is not
+    # counted to its end; the first two still read all of it. A closing
+    # bracket before any opening one is malformed and is the parser's to
+    # report: it takes the count below zero, and the answer stays where it
+    # was.
+    brackets = others.sub(nothing, strings.sub(nothing, data))
+    depth = deepest = 0
+    for start in range(0, len(brackets), _STRETCH):
+        steps = list(itertools.accumulate(
+            map(_STEPS.__getitem__, brackets[start:start + _STRETCH]), initial=depth))
+        deepest, depth = max(deepest, max(steps)), steps[-1]
+        if stop is not None and deepest > stop:
+            break
     return deepest
 
 
