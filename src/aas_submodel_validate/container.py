@@ -78,10 +78,10 @@ MAX_DIRECTORY_BYTES = MAX_PART_BYTES // 4
 #: How deep a JSON or XML document may nest: arrays and objects inside one
 #: another, or elements inside one another. Past it a document is refused
 #: before it is parsed, as one past the byte bound is. It was the machine's
-#: bound until this one: CPython's JSON parser follows 9,998 levels before
-#: its stack does not, and the browser's build of the same Python runs out
-#: near 2,000 -- so one file was a report at one entrance and a crash at
-#: another. Measured, not chosen: ten times the deepest nesting in the corpus
+#: bound until this one: the JSON parser of CPython 3.13.2 follows 9,998
+#: levels before its stack does not, that of 3.9.6 994, and the browser's
+#: build of 3.13.2 runs out near 2,000 -- so one file was a report at one
+#: entrance and a crash at another. Measured, not chosen: ten times the deepest nesting in the corpus
 #: the release notes measure and the vendored templates -- 20 levels -- rounded
 #: up to the hundred. The official samples this repository keeps nest 27 deep
 #: at the most, in XML.

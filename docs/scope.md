@@ -64,8 +64,9 @@ finding.
   ten times the deepest nesting in the corpus the release notes measure
   and the vendored templates (20 levels), rounded up to the hundred. It
   is this reader's, so the answer is the same wherever it runs; the
-  limit before it was the machine's -- 9,998 levels for CPython's JSON
-  parser, about 2,000 in the browser's build of the same Python.
+  limit before it was the machine's -- 9,998 levels for the JSON parser of
+  CPython 3.13.2 and 994 for that of 3.9.6, about 2,000 in the browser's
+  build of 3.13.2.
 
 **Deferred, not rejected**: IIFU composition — detecting an iiRDS
 Information for Use submodel and handing its iiRDS payload to

@@ -632,7 +632,10 @@ def nesting_remedy() -> str:
     """Built when the finding is, so the number is the bound the run applied."""
     return ("This reader follows a document %d levels deep and no deeper, and asks "
             "how deep before it parses anything, so the answer is the same wherever "
-            "it runs. %s" % (container.MAX_NESTING, REFUSED_NOT_JUDGED))
+            "it runs. The bound is this reader's, not the metamodel's: a reader that "
+            "follows deeper can judge the document, and a real file that needs more "
+            "is worth reporting to this project with the depth it needs. %s"
+            % (container.MAX_NESTING, REFUSED_NOT_JUDGED))
 
 
 def _too_deep(subject: str, depth: int, line: Optional[int] = None,

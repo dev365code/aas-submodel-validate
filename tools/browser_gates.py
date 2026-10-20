@@ -23,8 +23,11 @@ counts.
 * **Nothing is fetched to start it.** While it loads, the page asks for
   nothing but itself: the runtime, the reader and the rules travel inside
   the file.
-* **Nothing is installed.** No cookie, no storage, no cache, no service
-  worker, no download it did not ask for.
+* **Nothing is installed.** No cookie and no local storage, and on the page
+  served no cache and no service worker; no download it did not ask for.
+  A page opened from a disk is asked for cookies only, and IndexedDB and
+  the origin's private file system are not read: that the page keeps
+  nothing there is its source's to show, and it calls no storage at all.
 * **The report is the command's.** Every file the release notes measure and
   every official sample here is judged by the page and by the command, with
   the same arguments, as text and as JSON, and stdout, stderr and the exit
@@ -418,9 +421,11 @@ def judge(watched, label, todo, expected, base, problems, run_page=page_runs) ->
 
 
 def installs_nothing(context, watched, label, problems):
-    """No cookie and no storage, and -- where a page could have them at all
-    -- no service worker and no cache. A document opened from a disk cannot
-    register either: the browser refuses the question for it."""
+    """No cookie and no local storage, as the browser context reports them,
+    and -- where a page could have them at all -- no service worker and no
+    cache. A document opened from a disk cannot register either: the browser
+    refuses the question for it. IndexedDB and the origin's private file
+    system are not asked."""
     state = context.storage_state()
     if state.get("cookies") or state.get("origins"):
         problems.append("%s: the page left something stored: %s" % (label, state))

@@ -174,9 +174,10 @@ def test_the_codes_it_reads_as_verdicts_are_the_ones_smtv_documents():
 
 
 def test_the_code_is_published_before_anything_can_end_the_step():
-    """GitHub publishes no outputs of a step it has decided failed, so the
-    code is written before the branch that can fail it -- the log has it
-    even when the job cannot."""
+    """The code is written before the branch that can fail the step, so it
+    is written whichever way the step ends; what a later step can read of a
+    failed one is GitHub's to decide, and fail-on-finding false is the way
+    that does not depend on it."""
     body, _ = _step("check")
     assert body.index("exit-code=") < body.index("fail-on-finding is false")
     assert re.search(r'(?m)^exit "\$worst"$', body), "the code is computed and thrown away"
@@ -422,6 +423,35 @@ def test_the_release_it_installs_is_the_one_it_was_pinned_at(tmp_path, wanted, r
     argv = asked.read_text("utf-8").split("\n")
     assert "aas-submodel-validate==%s" % version in argv
     assert {"--only-binary", ":all:", "--target"} <= set(argv)
+
+
+@bash
+def test_an_install_that_fails_says_which_release_it_asked_for(tmp_path):
+    """A release the index does not have -- not published yet, or an index
+    this runner cannot reach -- stops the step at pip, before anything is
+    judged, and pip's words are about a distribution and not about this
+    step. The step says which release it asked for and the two ways round:
+    a release that is published, or a single file carried in."""
+    body, _ = _step("obtain")
+    script = tmp_path / "obtain.sh"
+    script.write_text(body, encoding="utf-8")
+    shim = tmp_path / "bin"
+    shim.mkdir()
+    (shim / "python3").write_text('#!/bin/sh\necho "ERROR: No matching distribution" >&2\nexit 1\n')
+    (shim / "python3").chmod(0o755)
+    outputs = tmp_path / "outputs"
+    outputs.write_text("", encoding="utf-8")
+    done = subprocess.run(
+        [BASH, "--noprofile", "--norc", "-e", "-o", "pipefail", _posix(script)],
+        capture_output=True, text=True, timeout=60,
+        env={**os.environ, "PATH": "%s%s%s" % (shim, os.pathsep, os.environ.get("PATH", "")),
+             "WANTED": "9.9.9", "ACTION_REF": "main", "ACTION_PATH": str(ROOT),
+             "RUNNER_TEMP": str(tmp_path), "GITHUB_OUTPUT": str(outputs)})
+    assert done.returncode == 1, (done.returncode, done.stderr)
+    said = [line for line in done.stdout.splitlines() if line.startswith("::error::")]
+    assert len(said) == 1 and "aas-submodel-validate==9.9.9" in said[0], done.stdout
+    assert "version:" in said[0] and "pyz:" in said[0], said
+    assert outputs.read_text("utf-8") == "", "a failed install published what it would have run"
 
 
 def test_this_repository_runs_its_own_action():

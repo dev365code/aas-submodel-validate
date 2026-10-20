@@ -1,10 +1,10 @@
 """How deep a document may nest is this reader's bound, not the machine's.
 
 A document nested deeper than the parser can follow used to be refused
-where the interpreter's stack ran out: CPython's JSON parser follows 9,998
-levels, the browser's build of the same Python runs out of stack near
-2,000, and so the same file was a report at one entrance and a crash at
-another. A bound the reader sets does not depend on where it runs. Every
+where the interpreter's stack ran out: the JSON parser of CPython 3.13.2
+follows 9,998 levels and that of 3.9.6 994, the browser's build of 3.13.2
+runs out of stack near 2,000, and so the same file was a report at one
+entrance and a crash at another. A bound the reader sets does not depend on where it runs. Every
 JSON and XML document -- a bare one and a part in a package -- is scanned
 for how deep it nests before it is parsed, by one linear pass that does
 not recurse, and one past the bound is refused as X5 refuses a document

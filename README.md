@@ -193,16 +193,21 @@ from 0.13.0 has it among its assets, at
 That one file carries a build of CPython
 for the browser, this engine, its rules and its one dependency, each taken
 at a pinned digest, with the licence of everything in it printed inside it;
-two builds of one tree are the same bytes. Opened -- from a disk is fine --
+two builds of one tree are the same bytes, given the same
+`SOURCE_DATE_EPOCH` or none. Opened -- from a disk is fine --
 it judges the file you choose and shows what `smtv --no-bundle FILE`
 prints at a UTF-8 console on the Python the page carries, byte for byte,
 with the JSON report that `-f json` gives to save. Once it has loaded it
-makes no request at all, and it stores nothing. Both of those are counted,
-not assumed: CI opens the page in a browser on every commit, served and
-from a disk, counts every request it makes after loading four different
-ways, hands it files built to make a reader reach for the network, and
-compares what it says with the command on every input the release notes
-measure.
+makes no request at all, and it stores nothing. The first is counted, not
+assumed: CI opens the page in a browser on every commit, served and from a
+disk, counts every request it makes after loading four different ways,
+hands it files built to make a reader reach for the network, and compares
+what it says with the command on every input the release notes measure.
+The second is what the page's source does -- it calls no storage at all --
+and CI checks it in part: the page it serves leaves no cookie, local
+storage, service worker or cache, a page opened from a disk is asked for
+cookies only, and IndexedDB and the origin's private file system are not
+read.
 
 **For a machine with no package manager**, take `smtv.pyz` from the
 [releases page](https://github.com/dev365code/aas-submodel-validate/releases/latest)
@@ -296,7 +301,7 @@ breath.
 - **It refuses rather than guesses.** A refused input exits 2, not 1: "could not run" and "ran and failed" are different sentences, and the report says which.
 - **Offline, always.** No network call in any code path. The single-file build is an ordinary zip with no compiled artefacts — a reviewer can read every line of it before it crosses a threshold.
 - **Bounded by what it opens, not by what arrives.** A container declares far more than it holds: a few hundred kilobytes can declare hundreds of megabytes. This reader opens only what the relationship chain hands it, asks whether a supplemental part exists by *name* rather than by reading it, and compares a member's declared size against its limits before anything is decompressed — so a member it will not use costs it nothing, and there is no point at which one is inflated and then discarded. Measured on an archive of two hundred members declaring 400 MB: the bytes it charged itself are three orders of magnitude below what the file claimed, and the suite holds that as a ledger assertion rather than a stopwatch.
-- **Deterministic.** Two builds of one tree produce the same bytes; two runs over one file produce the same report, ordered.
+- **Deterministic.** Two builds of one tree produce the same bytes, given the same `SOURCE_DATE_EPOCH` or none; two runs over one file produce the same report, ordered.
 - **Every chosen reading is written down.** Where the published template and its own published example disagree — and they do — [docs/divergences.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/divergences.md) records which reading this tool follows and the evidence for it.
 - **What it says of IDTA's own samples is published.** Every official sample vendored here -- IDTA's own, pinned by upstream commit and hash -- is listed in [docs/official-samples.md](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/official-samples.md) with the verdict this version gives it, rule by rule; the page is generated from a run, and the build fails when the two disagree.
 - **A gate is not trusted here until it has been made to fail.** One that has never failed is one nobody has tested, and it is indistinguishable from one that cannot.
@@ -474,8 +479,11 @@ file, each byte for byte what `smtv` prints for that file: read the
 output as a sequence of documents, not as one. The step leaves by the
 code that says the most of theirs: 64, then
 2, then 1, then 0, published as the output `exit-code` as well; with
-`fail-on-finding: false` it passes and leaves the code to be read. The
-install is the one thing the step does that reaches a network; judging
+`fail-on-finding: false` it passes and leaves the code to be read. A
+validator that does not start is reported as that, not as a verdict; one
+that starts and then fails while judging a file leaves by 1, as a finding
+does, and the step cannot tell the two apart. The install is the one thing
+the step does that reaches a network; judging
 opens no socket, here as anywhere. Given `pyz:`, a single file you
 carried in, it installs nothing and fetches nothing, and `sha256:` checks
 that file before it runs. It needs a Python
@@ -638,7 +646,9 @@ What the package root exports is the whole library: `validate`,
 `judged`, `list_rules()` for what `--rules` lists and `example_path()` for
 the file `--example` judges. The names and their keywords are written down
 in the test suite and checked against every build; a keyword may be added,
-with a default, and none is renamed or removed.
+with a default, so that a call written against an earlier release still
+runs, and one is renamed or removed only on purpose, under a CHANGELOG
+entry that names it.
 
 From a program that does not import Python, the supported way to call this
 is the command and the JSON:

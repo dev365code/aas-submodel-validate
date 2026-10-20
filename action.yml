@@ -58,9 +58,10 @@ outputs:
     description: >
       The code that says the most of those the files left by: 64 a mistake in
       how smtv was called, then 2 a file that could not be judged, then 1 at
-      least one error (or a warning, under -W), then 0. A failed step publishes
-      no outputs, so read this with fail-on-finding false; the code is printed
-      either way.
+      least one error (or a warning, under -W, or a submodel not judged, under
+      --require-all-judged), then 0. It is written before the step decides
+      whether to fail, and is in the log either way; with fail-on-finding false
+      the step passes, so the steps after it run as they would and can read it.
     value: ${{ steps.check.outputs.exit-code }}
   pyz:
     description: >
@@ -118,7 +119,11 @@ runs:
         # `--only-binary :all:`, so nothing is built on a machine this action
         # does not own.
         "$PY" -m pip install --disable-pip-version-check --no-input \
-          --only-binary :all: --target "$target" "aas-submodel-validate==$version"
+          --only-binary :all: --target "$target" "aas-submodel-validate==$version" || {
+          rc=$?
+          echo "::error::could not install aas-submodel-validate==$version, which the index may not have yet or this runner may not reach. Name a published release with version:, or give pyz: a single file you carried in."
+          exit "$rc"
+        }
         echo "target=$target" >> "$GITHUB_OUTPUT"
         echo "version=$version" >> "$GITHUB_OUTPUT"
 
@@ -236,8 +241,8 @@ runs:
             worst=$rc
           fi
         done
-        # Before either branch: on the failing one GitHub discards this
-        # step's outputs, and this line is what the log then has.
+        # Before either branch, so the code is written whichever way the
+        # step ends.
         echo "exit-code=$worst" >> "$GITHUB_OUTPUT"
         # `tr`, not bash 4's `${x,,}`: macOS runners still ship bash 3.2.
         if [ "$(printf '%s' "$FAIL_ON_FINDING" | tr '[:upper:]' '[:lower:]')" = "false" ]; then
