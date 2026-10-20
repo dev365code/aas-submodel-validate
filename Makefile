@@ -54,6 +54,7 @@ browser:
 generated:
 	"$(PYTHON)" tools/extract_smt_rules.py --check
 	"$(PYTHON)" tools/golden_report.py --check
+	"$(PYTHON)" tools/extract_meta_reads.py --check
 
 vendored:
 	"$(PYTHON)" tools/vendor_template.py --check

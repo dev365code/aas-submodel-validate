@@ -39,7 +39,7 @@
    "title": "files named by DigitalFile/PreviewFile exist in the container"
   },
   {
-   "detail": null,
+   "detail": "this scope holds 3 elements: 'DocumentIds' (0173-1#02-ABI501#003), 'DocumentClassifications' (0173-1#02-ABI502#004), 'DocumentVersions' (0173-1#02-ABI503#003)",
    "fix": "Provide exactly one 'DocumentClassifications' element(s) under Document with semanticId 0173-1#02-ABI502#003. The template declares it a SubmodelElementList.",
    "fixability": 2,
    "fixabilityWhy": "one element here that no row claimed carries this row's idShort or an identifier close to its own; the correction is determined once it is confirmed to be the one meant",
@@ -58,7 +58,7 @@
    "title": "'DocumentClassifications' as the template declares it (0173-1#02-ABI502#003)"
   },
   {
-   "detail": null,
+   "detail": "this scope holds 8 elements: 'Language' (0173-1#02-AAN468#008), 'Title' (0173-1#02-ABG940#003), 'Description' (0173-1#02-AAN466#004), 'StatusSetDate' (0173-1#02-ABI000#003), 'StatusValue' (0173-1#02-ABI001#003) and 3 more",
    "fix": "Provide exactly one 'Version' element(s) under DocumentVersion with semanticId 0173-1#02-AAP003#005; example value: 'V1.2'. The template declares it a Property of valueType xs:string.",
    "fixability": 5,
    "fixabilityWhy": "nothing else here resembles the missing element, and what it holds is content the template does not give",

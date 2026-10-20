@@ -430,7 +430,8 @@ def test_a_reference_addresses_by_position_only_inside_a_list(tmp_path):
 
 def test_a_count_finding_lists_the_elements_only_when_there_are_some(tmp_path):
     """A cardinality finding carries the elements it counted, and when it
-    counted none there is nothing to carry.
+    counted none there is nothing of that to carry -- it shows what the
+    scope holds instead, under words that do not call it what was counted.
 
     Both directions were unmeasured. Forced on, a "found 0" finding
     reports `detail="elements: "` -- a label introducing a list that is
@@ -453,9 +454,11 @@ def test_a_count_finding_lists_the_elements_only_when_there_are_some(tmp_path):
     document = absent["submodels"][0]["submodelElements"][0]["value"][0]
     document["value"] = [child for child in document["value"]
                          if child.get("idShort") != "DocumentIds"]
-    assert count_finding(absent, "found 0").detail is None, (
+    detail = count_finding(absent, "found 0").detail
+    assert not detail.startswith("elements:"), (
         "a finding that counted nothing introduced a list of what it "
-        "counted")
+        "counted: %r" % detail)
+    assert detail.startswith("this scope holds "), detail
 
     doubled = copy.deepcopy(hd_env())
     document = doubled["submodels"][0]["submodelElements"][0]["value"][0]

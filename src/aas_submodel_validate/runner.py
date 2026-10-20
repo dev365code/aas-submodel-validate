@@ -14,6 +14,7 @@ from aas_core3 import verification
 
 from . import (
     container,
+    evidence,
     rules,  # noqa: F401  - importing registers every rule
     tablegen,
 )
@@ -208,7 +209,8 @@ def _meta_findings(loaded: Loaded, strict):
         try:
             for error in verification.verify(target):
                 yield Finding(rule, Violation(error.cause,
-                                              subject=str(error.path)))
+                                              subject=str(error.path),
+                                              detail=evidence.relayed(error, target)))
         except Exception as exc:                     # noqa: BLE001
             # The remedy `execute()` gives a rule that dies, because
             # this is the same event: a defect in the validator, and

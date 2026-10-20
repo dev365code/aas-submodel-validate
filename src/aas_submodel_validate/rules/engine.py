@@ -32,6 +32,7 @@ from collections import Counter
 from dataclasses import replace
 from typing import Dict, List
 
+from ..evidence import SHOWN, shown_value
 from ..model import Violation
 from ..semantics import (
     candidate_values,
@@ -882,6 +883,27 @@ def reftype_remedy(expected: str) -> str:
             % (article, expected))
 
 
+def _held(elements) -> str:
+    """What a scope holds, for a finding that found nothing in it: each
+    element by the name it carries and the identifier rows are matched on,
+    as the file writes them -- what the walk read to come up empty. Not a
+    list of what it counted, which is nothing, and not a claim that none of
+    them carries the row's identifier: an element can match one row and be
+    claimed by another first."""
+    if not elements:
+        return "this scope holds no elements"
+    shown = []
+    for index, element in enumerate(elements[:SHOWN]):
+        name = shown_value(element.id_short) if element.id_short else "[%d]" % index
+        keys = element.semantic_id.keys if element.semantic_id is not None else None
+        shown.append("%s (%s)" % (name, keys[0].value if keys else "no semanticId"))
+    listed = ", ".join(shown)
+    if len(elements) > SHOWN:
+        listed += " and %d more" % (len(elements) - SHOWN)
+    return "this scope holds %d element%s: %s" % (
+        len(elements), "" if len(elements) == 1 else "s", listed)
+
+
 def _subject(path: str, element, index: int, shared=()) -> str:
     """Where an element sits, as a reader reads it.
 
@@ -1157,7 +1179,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                 fixability=_SURPLUS[0] if count >= low else _MISSING[0],
                 fixability_why=_SURPLUS[1] if count >= low else _MISSING[1],
                 detail=("elements: %s" % ", ".join(
-                    _subject(path, e, i, shared) for i, e in matched)) if matched else None))
+                    _subject(path, e, i, shared) for i, e in matched)) if matched
+                else _held(elements)))
             if count < low:
                 short.append((row, len(found) - 1))
             # No `continue`: a wrong count must not silence the per-element

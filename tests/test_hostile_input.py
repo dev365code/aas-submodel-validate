@@ -2150,8 +2150,19 @@ def test_the_whole_report_is_bounded_by_the_findings_it_carries(tmp_path):
                       files=(("aasx/files/manual.pdf", b"%PDF-1.4"),))
     report = runner.run(str(path))
     assert report.findings, "the fixture stopped producing a finding"
+    # Two findings repeat the 200 KB value, and each stops at the field
+    # bound: the rule that looked for the part it names, and the relayed
+    # check that read it (`saw` is what a finding read, and a relayed one
+    # shows it too). A third copy, or one past the bound, is what this is
+    # here to catch -- so which fields carry it is pinned, and the size
+    # follows from them rather than from a number chosen for one copy.
+    carrying = [(finding.id, name) for finding in report.findings
+                for name, value in finding.as_dict().items()
+                if isinstance(value, str) and "A" * 1000 in value]
+    assert carrying == [("HD-D7", "detail"), ("META", "detail")], carrying
     assert len(render(report)) < 6000, len(render(report))
-    assert len(json.dumps(report.as_dict())) < 9000, len(json.dumps(report.as_dict()))
+    assert len(json.dumps(report.as_dict())) < 6000 + 3100 * len(carrying), \
+        len(json.dumps(report.as_dict()))
 
 
 # -- work a refused or unreferenced member may cost --------------------------

@@ -19,6 +19,7 @@ may import the library.
 """
 from __future__ import annotations
 
+import aas_core3.types as _types
 import aas_core3.verification as _verification
 from aas_core3.types import MultiLanguageProperty as _MultiLanguageProperty
 
@@ -53,3 +54,33 @@ def is_multi_language_property(element) -> bool:
     a class object from the library.
     """
     return isinstance(element, _MultiLanguageProperty)
+
+
+def is_model_object(value) -> bool:
+    """Whether `value` is an object of the metamodel the library built -- an
+    element, a reference, a language string -- rather than a value one holds."""
+    return isinstance(value, _types.Class)
+
+
+def is_reference(value) -> bool:
+    return isinstance(value, _types.Reference)
+
+
+def is_key(value) -> bool:
+    return isinstance(value, _types.Key)
+
+
+def pointed_at(error, target):
+    """What an error from the library's verification points at: the value at
+    the end of its path, the attribute holding it as the library names it
+    (`is_case_of`), and its index when it is an item of a list. A path that
+    ends at the object verified points at `target`, by no name."""
+    segments = list(error.path.segments)
+    if not segments:
+        return target, None, None
+    last = segments[-1]
+    if isinstance(last, _verification.PropertySegment):
+        return getattr(last.instance, last.name, None), last.name, None
+    before = segments[-2] if len(segments) > 1 else None
+    holder = before.name if isinstance(before, _verification.PropertySegment) else None
+    return last.sequence[last.index], holder, last.index

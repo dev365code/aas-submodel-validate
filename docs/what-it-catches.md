@@ -85,11 +85,14 @@ few that are its own); and what to change (`fix`). Reproduce:
 - where each rule's requirement lives — done
 - the line in the file — not yet
 
-The evidence is not yet on every finding: on the bundled example all 87
-findings carry a place and a remedy, and 10 carry a `saw` line; the other
-77 are relayed metamodel findings, which name a path and no value (see the
-README). A finding names a path of `idShort`s, not a line of the file --
-except a syntax error (`X3`), which carries the parser's line and column.
+The evidence is not yet on every finding. On the bundled example all 87
+carry a place, a remedy and a `saw` line -- on the 77 relayed metamodel
+findings it is what aas-core3.0's check read, its attributes taken from the
+check's own source -- and a finding that an element is missing shows what
+the scope it looked in holds. A refusal of the file or the container does
+not yet carry one everywhere it could. A finding names a path of
+`idShort`s, not a line of the file -- except a syntax error (`X3`), which
+carries the parser's line and column.
 
 Before 1.0: every finding shows what it read, and where in the file it read
 it.
