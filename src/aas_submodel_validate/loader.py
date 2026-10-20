@@ -355,6 +355,11 @@ class Loaded:
     #: document itself is not kept: it is read again, once a finding asks,
     #: which is what keeps a payload's bytes from living through every rule.
     sources: list = field(default_factory=list)
+    #: The digest of each document's bytes as the model was built from them,
+    #: by part (None for a bare file). A document read again for its lines is
+    #: used only if it is these bytes: a file can change once it has been
+    #: read, and its lines would then be another document's.
+    digests: dict = field(default_factory=dict)
 
     @property
     def nothing_was_judged(self) -> bool:
@@ -379,6 +384,12 @@ class Loaded:
         here and both ask it.
         """
         return bool(self.errors) and not self.submodels and not self.environments
+
+
+def document_digest(raw: bytes) -> bytes:
+    """The sha256 of a document's bytes, as `Loaded.digests` holds it."""
+    import hashlib
+    return hashlib.sha256(raw).digest()
 
 
 def _decode(raw: bytes) -> str:
@@ -434,6 +445,7 @@ def _read_bounded(loaded: Loaded, path: Path):
             "bounds", "%s: more than %d bytes" % (path, cap), subject=str(path),
             detail="%d bytes read, one past the limit, and no more" % len(raw)))
         return None
+    loaded.digests[None] = document_digest(raw)
     return raw
 
 
@@ -1117,5 +1129,6 @@ def _load_aasx(path: Path) -> Loaded:
             # container this reader would not read coming back `ok`.
             loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=rels))
         form = "environment-json" if part.lower().endswith(".json") else "environment-xml"
+        loaded.digests[part] = document_digest(raw)
         _parse_environment(loaded, raw, part=part, form=form)
     return loaded

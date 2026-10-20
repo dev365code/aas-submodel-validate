@@ -3439,10 +3439,11 @@ TABLE.extend([
 TABLE.extend([
     ('line/an-input-that-changed-under-the-run-gives-no-line',
      'src/aas_submodel_validate/runner.py',
-     '        if _digest(path, container.MAX_TOTAL_PART_BYTES) != digest:\n            return []\n',
-     '        if False:\n            return []\n',
-     ['tests/test_every_finding_names_its_line.py::test_an_input_that_changed_under_the_run_gives_no_line'],
-     "a second reading of a file that changed under the run pairs this file's findings with another file's lines"),
+     '            if document_digest(raw) != loaded.digests.get(part):\n                return []\n',
+     '            if False:\n                return []\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_file_changed_after_it_was_read_gives_no_line',
+      'tests/test_every_finding_names_its_line.py::test_a_package_whose_document_changed_after_it_was_read_gives_no_line'],
+     "a second reading of a file that changed after it was read pairs this file's findings with another file's lines"),
 
     ('line/a-package-past-its-total-is-not-read-again',
      'src/aas_submodel_validate/runner.py',

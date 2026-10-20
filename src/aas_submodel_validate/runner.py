@@ -20,7 +20,7 @@ from . import (
     tablegen,
     upstream,
 )
-from .loader import Loaded, LoadError, UnreadablePath, _decode, load
+from .loader import Loaded, LoadError, UnreadablePath, _decode, document_digest, load
 from .model import KINDS, META_KIND, Finding, Report, Rule, Severity, Violation
 from .registry import all_rules
 from .rules import detect
@@ -192,10 +192,16 @@ def _meta_level(strict) -> str:
 
 def _read_again(path, loaded: Loaded, digest) -> List[positions.Source]:
     """Each document a model was built from, read again for the lines the
-    findings name -- from the input as it was read the first time, or not
-    at all. An input whose digest is not the one the report carries changed
-    under the run, and no line is given rather than the lines of another
-    file; one that cannot be read again gives none either."""
+    findings name -- the bytes the model was built from, or not at all.
+
+    Each document read again is hashed and held to the digest the loader
+    took of the same document as it built the model, and one that differs
+    gives the whole input no line, rather than the lines of another file
+    under findings about this one. Holding it to the report's digest of the
+    input was not that: the report hashes the file after the loader is
+    done, and a file changed in between is hashed as it is by then -- the
+    same bytes the second reading gets. An input the report gives no digest
+    for, or one that cannot be read again, gives no line either."""
     if not loaded.sources or digest is None:
         return []
     # A package read past its total is not read again: that bound is what
@@ -204,8 +210,6 @@ def _read_again(path, loaded: Loaded, digest) -> List[positions.Source]:
         return []
     package, documents = None, []
     try:
-        if _digest(path, container.MAX_TOTAL_PART_BYTES) != digest:
-            return []
         for root, form, part in loaded.sources:
             if part is None:
                 with container.open_regular(path) as handle:
@@ -213,6 +217,8 @@ def _read_again(path, loaded: Loaded, digest) -> List[positions.Source]:
             else:
                 package = package or container.AasxPackage(path)
                 raw = package.read(part)
+            if document_digest(raw) != loaded.digests.get(part):
+                return []
             if form == "xml":
                 raw = container.xml_as_utf8(raw)
             documents.append(positions.Source(root, form, _decode(raw), part))

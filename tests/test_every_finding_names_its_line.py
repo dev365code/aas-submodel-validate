@@ -19,7 +19,7 @@ from aas_core3 import jsonization, types, xmlization
 from aas_submodel_validate import positions, runner
 from aas_submodel_validate.evidence import spelt
 from aas_submodel_validate.tablegen import TemplateRefused
-from builders import hd_env
+from builders import build_aasx, hd_env
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -350,25 +350,57 @@ def test_a_rule_finding_names_the_line_of_the_element_it_judged(tmp_path):
     assert finding.violation.line == lines[path[:-2]]
 
 
-def test_an_input_that_changed_under_the_run_gives_no_line(tmp_path, monkeypatch):
-    """The lines are found by reading the document again once the run is
-    over, so the second reading has to be of the same file: one whose
-    digest is not the one the report carries gives no line at all, rather
-    than lines of another file under findings about this one."""
+def _changed_once_read(monkeypatch, edited: bytes):
+    """The input as it is after the run read it: `edited` written over it
+    the moment the loader returns, before anything else asks of it."""
+    real = runner.load
+
+    def load_then_edit(path):
+        loaded = real(path)
+        Path(path).write_bytes(edited)
+        return loaded
+
+    monkeypatch.setattr(runner, "load", load_then_edit)
+
+
+def _datasheet():
     env = copy.deepcopy(hd_env())
     env["submodels"][0]["submodelElements"][0]["value"][0]["idShort"] = "Datasheet"
     text = json.dumps(env, indent=1)
+    # The same shape ten lines further down, with the value the findings are
+    # about changed: walked beside the first document's model, it fits, and
+    # every line it gave would be ten out.
+    return text, ("\n" * 10 + text.replace("Datasheet", "Different")).encode()
+
+
+def test_a_file_changed_after_it_was_read_gives_no_line(tmp_path, monkeypatch):
+    """The lines are found by reading the document again once the run is
+    over, so the second reading has to be of the bytes the model was built
+    from -- and a digest of the file taken any later than the loader's own
+    read is a digest of whatever is there by then. Edited the moment the
+    loader is done, the file read again is another document, whose lines
+    under findings about the first would point a reader at the wrong
+    place: no line is given at all."""
+    text, edited = _datasheet()
     assert any(f.violation.line for f in _run(tmp_path, text).findings)
-    asked = []
-    real = runner._digest
-
-    def changed(path, limit):
-        asked.append(path)
-        return real(path, limit) if len(asked) == 1 else "0" * 64
-
-    monkeypatch.setattr(runner, "_digest", changed)
+    _changed_once_read(monkeypatch, edited)
     report = _run(tmp_path, text)
-    assert report.findings and len(asked) == 2
+    assert report.findings
+    assert all(f.violation.line is None for f in report.findings)
+
+
+def test_a_package_whose_document_changed_after_it_was_read_gives_no_line(
+        tmp_path, monkeypatch):
+    """The same of a document inside a package: the part read again for its
+    lines has to be the part the model was built from."""
+    text, edited = _datasheet()
+    path, other = tmp_path / "env.aasx", tmp_path / "edited.aasx"
+    build_aasx(path, text.encode())
+    build_aasx(other, edited)
+    assert any(f.violation.line for f in runner.run(path).findings)
+    _changed_once_read(monkeypatch, other.read_bytes())
+    report = runner.run(path)
+    assert report.findings
     assert all(f.violation.line is None for f in report.findings)
 
 

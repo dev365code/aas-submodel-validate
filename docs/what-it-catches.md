@@ -105,8 +105,9 @@ about a file refused for its size, and none is given in a package read past
 the total its parts may come to. The line is found once the run is over, by
 reading the document again -- the model keeps no positions, and holding
 every document through every rule is the memory this reader does not spend
--- so an input that changed under the run gives no line rather than
-another file's.
+-- and is used only if its digest is the one the loader took of the bytes
+it built the model from, so an input that changed after it was read gives
+no line rather than another file's.
 
 Before 1.0: every finding shows what it read, and where in the file it read
 it.
