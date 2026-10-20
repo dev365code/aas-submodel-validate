@@ -3445,6 +3445,22 @@ TABLE.extend([
       'tests/test_every_finding_names_its_line.py::test_a_package_whose_document_changed_after_it_was_read_gives_no_line'],
      "a second reading of a file that changed after it was read pairs this file's findings with another file's lines"),
 
+    ('line/a-file-is-held-to-the-bytes-the-model-was-built-from',
+     'src/aas_submodel_validate/loader.py',
+     '    loaded.digests[None] = document_digest(raw)\n',
+     '    loaded.digests[None] = document_digest(b"")\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_file_changed_after_it_was_read_gives_no_line',
+      'tests/test_every_finding_names_its_line.py::test_a_rule_finding_names_the_line_of_the_element_it_judged'],
+     "the digest a bare file is held to has to be of the bytes the model was built from, or no finding in one names its line"),
+
+    ('line/a-part-is-held-to-the-bytes-the-model-was-built-from',
+     'src/aas_submodel_validate/loader.py',
+     '        loaded.digests[part] = document_digest(raw)\n',
+     '        loaded.digests[part] = document_digest(b"")\n',
+     ['tests/test_every_finding_names_its_line.py::test_a_package_names_the_part_each_line_is_in',
+      'tests/test_every_finding_names_its_line.py::test_a_package_whose_document_changed_after_it_was_read_gives_no_line'],
+     "the digest a package's part is held to has to be of the bytes the model was built from, or no finding in a package names its line"),
+
     ('line/a-package-past-its-total-is-not-read-again',
      'src/aas_submodel_validate/runner.py',
      '    if loaded.container is not None and loaded.container.went_past_its_total:\n        return []\n',
