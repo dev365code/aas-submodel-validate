@@ -3483,6 +3483,13 @@ TABLE.extend([
      '          python tools/build_browser.py -o "$RUNNER_TEMP/aas-submodel-validate.html"\n',
      ['tests/test_the_release_carries_the_page.py::test_the_release_builds_the_page_into_what_it_sums_and_compares_it_with_ci'],
      "a page built anywhere but dist is one no checksum vouches for and no release attaches, and the front page points at an asset that is not there"),
+
+    ('ci/the-round-trip-counts-what-the-release-path-sent',
+     '.github/workflows/ci.yml',
+     '          if [ "$count" != "6" ]; then\n            echo "the round trip returned $count files, not the 6 that went out"\n',
+     '          if [ "$count" != "5" ]; then\n            echo "the round trip returned $count files, not the 6 that went out"\n',
+     ['tests/test_the_release_carries_the_page.py::test_the_round_trip_expects_every_file_the_release_path_sends'],
+     "the job that downloads what the release path sent counts it, and a count left behind when the release grew a file fails the commit that grew it, in CI alone"),
 ])
 
 
