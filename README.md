@@ -184,9 +184,13 @@ A file can be perfectly valid against the AAS metamodel and still not be the sub
 
 The same rules and the same verdict behind all four. There is no hosted service: the browser door is one file you open, and it judges the file you choose inside the tab. Nothing here uploads a file anywhere, because nothing that judges opens a socket.
 
-**For a machine with no Python at all**, build the page in a clone where
-there is a network, and carry it: `python3 tools/build_browser.py` writes
-`dist/aas-submodel-validate.html`. That one file carries a build of CPython
+**For a machine with no Python at all**, carry the page. Every release
+from 0.13.0 has it among its assets, at
+`https://github.com/dev365code/aas-submodel-validate/releases/latest/download/aas-submodel-validate.html`
+-- the bytes CI opened in a browser for that commit, vouched for in
+`SHA256SUMS` with the rest -- and a clone with a network builds it too:
+`python3 tools/build_browser.py` writes `dist/aas-submodel-validate.html`.
+That one file carries a build of CPython
 for the browser, this engine, its rules and its one dependency, each taken
 at a pinned digest, with the licence of everything in it printed inside it;
 two builds of one tree are the same bytes. Opened -- from a disk is fine --

@@ -117,7 +117,7 @@ TABLE = [
 
     ("release/dist-holds-only-what-we-publish",
      ".github/workflows/release.yml",
-     '          if [ "$count" != "5" ]; then',
+     '          if [ "$count" != "6" ]; then',
      '          if [ "$count" != "$count" ]; then',
      ["tests/test_ci_parity.py::"
       "test_a_file_nobody_built_does_not_ride_out_with_them"],

@@ -1233,11 +1233,13 @@ def _dist(tmp_path, names, records=None, sums_lists_itself=False):
 BUILT = ["aas_submodel_validate-0.1.3-py3-none-any.whl",
          "aas_submodel_validate-0.1.3.tar.gz",
          "smtv.pyz",
+         # The browser page, which a release carries since 0.13.0.
+         "aas-submodel-validate.html",
          "aas_core3_0-1.1.4-py3-none-any.whl"]
 
 
 def test_the_release_directory_holds_what_the_release_publishes(tmp_path):
-    """The five that go out, and nothing else."""
+    """The six that go out, and nothing else."""
     done = _dist(tmp_path, BUILT + ["SHA256SUMS"], records=BUILT)
     assert done.returncode == 0, done.stdout + done.stderr
 
@@ -1255,11 +1257,11 @@ def test_an_empty_checksum_file_is_not_a_passing_one(tmp_path):
     vouches for everything. The count is asserted rather than assumed."""
     done = _dist(tmp_path, BUILT + ["SHA256SUMS"], records=[])
     assert done.returncode != 0
-    assert "0 record" in done.stdout or "not 4" in done.stdout, done.stdout
+    assert "0 record" in done.stdout or "not 5" in done.stdout, done.stdout
 
 
 def test_a_missing_artifact_is_caught_before_it_is_published(tmp_path):
-    """One of the four absent means the offline route ships incomplete."""
+    """One of the five absent means the release ships incomplete."""
     done = _dist(tmp_path, BUILT[:-1] + ["SHA256SUMS"], records=BUILT[:-1])
     assert done.returncode != 0
 
