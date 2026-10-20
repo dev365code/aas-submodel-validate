@@ -243,6 +243,14 @@ def test_several_files_leave_by_the_heaviest_code_in_either_order(tmp_path):
         assert left == 2 and written["exit-code"] == "2"
     printed, left, _ = _check(tmp_path, "%s\n%s\n" % (EXAMPLE, EXAMPLE), "-W")
     assert left == 1
+    # A finding and a file that could not be judged in one run: 2 says more
+    # than 1, whichever comes first. No run above holds both, so the order
+    # of the two middle weights was asked of nothing, and swapping them
+    # survived the suite.
+    for order in ((EXAMPLE, broken), (broken, EXAMPLE)):
+        printed, left, written = _check(tmp_path, "\n".join(map(str, order)), "-W")
+        assert printed == "".join(_smtv(path, "-W")[0] for path in order)
+        assert left == 2 and written["exit-code"] == "2"
     # On one line the names are separated by spaces, as documented; these
     # two have none in them.
     copy = tmp_path / "copy.aasx"

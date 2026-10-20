@@ -48,7 +48,8 @@ inputs:
     description: >
       Fail the step when a file leaves by anything but 0. True by default,
       because a gate that stops nothing is decoration. Set it false to carry on
-      and read `exit-code` instead -- to report rather than to stop.
+      and read `exit-code` instead -- to report rather than to stop. Only
+      `false`, in any case, turns it off: `no` and `0` leave it on.
     required: false
     default: "true"
 
