@@ -458,6 +458,60 @@ def test_a_declaration_its_first_bytes_agree_with_is_read(label, raw):
     assert ElementTree.fromstring(xml_as_utf8(raw)).text == "a", label
 
 
+def _rels(declared):
+    return ('<?xml version="1.0" encoding="%s"?><Relationships xmlns="%s">'
+            '<Relationship Type="%s" Target="/aasx/aasx-origin" Id="R0"/></Relationships>'
+            % (declared, RELS_NS, ORIGIN_REL))
+
+
+#: UTF-16 by its mark or by its shape, declared by one of the registry's
+#: names for it that the parser does not know, and holding bytes that are not
+#: UTF-16: a lone surrogate, or an odd byte at the end. Handed on as they came,
+#: the parser asked Python what the name meant -- and stopped the run with a
+#: traceback inside a relationships part.
+UNDECODABLE = [
+    ("a little-endian mark, csUTF16, a lone surrogate",
+     lambda text: b"\xff\xfe" + text("csUTF16").encode("utf-16-le") + b"\x00\xd8"),
+    ("a little-endian mark, csUTF16LE, an odd last byte",
+     lambda text: b"\xff\xfe" + text("csUTF16LE").encode("utf-16-le") + b"\x00"),
+    ("a big-endian mark, csUTF16BE, a lone surrogate",
+     lambda text: b"\xfe\xff" + text("csUTF16BE").encode("utf-16-be") + b"\xd8\x00"),
+    ("no mark, little-endian, csUTF16LE, a lone surrogate",
+     lambda text: text("csUTF16LE").encode("utf-16-le") + b"\x00\xd8"),
+    ("no mark, little-endian, csUTF16, a lone surrogate",
+     lambda text: text("csUTF16").encode("utf-16-le") + b"\x00\xd8"),
+]
+
+
+@pytest.mark.parametrize("label,make", UNDECODABLE, ids=[u[0] for u in UNDECODABLE])
+def test_utf16_under_a_name_the_parser_does_not_know_is_refused_for_bytes_that_are_not_it(
+        label, make):
+    """Refused here, for the bytes, rather than handed to a parser that would
+    have to ask what the name means."""
+    with pytest.raises(EncodingNotRead) as refused:
+        xml_as_utf8(make(lambda name: _DECLARING % name))
+    assert refused.value.kind == "bytes", label
+
+
+@pytest.mark.parametrize("label,make", UNDECODABLE, ids=[u[0] for u in UNDECODABLE])
+def test_a_relationships_part_like_that_is_filed_as_the_chain_and_not_a_traceback(
+        tmp_path, label, make):
+    path = tmp_path / "p.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", make(_rels))
+        archive.writestr("aasx/aasx-origin", b"")
+    (error,) = loader.load(path).errors
+    assert error.stage == "chain" and error.fix.startswith("Declare "), (label, error)
+
+
+def test_utf16_under_the_parser_s_own_name_is_still_the_parser_s_to_refuse():
+    """`UTF-16` the parser knows, and bytes it cannot decode under that name
+    are still handed to it -- the one name of UTF-16's that is."""
+    raw = b"\xff\xfe" + (_DECLARING % "UTF-16").encode("utf-16-le") + b"\x00\xd8"
+    assert xml_as_utf8(raw) == raw
+
+
 def test_a_mark_the_declaration_contradicts_is_refused_naming_the_mark_s_encoding(tmp_path):
     path = tmp_path / "declared.xml"
     path.write_bytes(_environment("ISO-8859-1", "a").encode("utf-16"))

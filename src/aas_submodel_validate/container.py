@@ -292,6 +292,11 @@ _UNMARKED = {"utf-16-le": ("UTF-16LE", _MARKS[b"\xff\xfe"][1]),
 #: Every name of UTF-16, which a document whose first bytes are not cannot be in.
 _UTF16_NAMES = _MARKS[b"\xff\xfe"][1] | _MARKS[b"\xfe\xff"][1]
 
+#: The names of UTF-16 the parser reads by itself. The registry's others --
+#: `csUTF16` and its two byte orders -- it asks Python about, which does not
+#: know them either, so bytes declared by one of those are never handed to it.
+_PARSER_READS_UTF16 = {"utf-16", "utf-16le", "utf-16be"}
+
 #: How XML 1.0 (Appendix F) knows, from the first four bytes and before any
 #: declaration, an encoding this reader does not read: UCS-4 -- its byte order
 #: mark in each of the four orders, or three of the four bytes NUL beside the
@@ -446,6 +451,13 @@ def _declared_in(raw: bytes, codec: str) -> Optional[str]:
     return found.group("name") if found else None
 
 
+def _unknown_to_the_parser(raw: bytes, codec: str) -> Optional[str]:
+    """The name a UTF-16 document declares, where the parser would have to
+    ask what it means -- or None, for none or one the parser reads itself."""
+    name = _declared_in(raw, codec)
+    return name if name is not None and name.lower() not in _PARSER_READS_UTF16 else None
+
+
 def _held_to(raw: bytes, codec: str, settled: str, agrees, opening: str, saying: str) -> None:
     """Refuse a declaration that names another encoding than the one the
     document's first bytes settle: a fatal error (XML 1.0, 4.3.3), and the
@@ -577,7 +589,7 @@ def xml_as_utf8(raw: bytes) -> bytes:
                 settled, names = _MARKS[bom]
                 _held_to(raw, encoding, settled, names.__contains__,
                          "starts with a UTF-16 byte order mark", "the mark says")
-                return _as_utf8(raw, encoding)
+                return _as_utf8(raw, encoding, declared=_unknown_to_the_parser(raw, encoding))
             # After a UTF-8 mark, a declaration of UTF-16 is the one every
             # parser refuses -- expat says the declaration is incorrect --
             # and so is it here.
@@ -618,7 +630,7 @@ def xml_as_utf8(raw: bytes) -> bytes:
         _held_to(raw, encoding, settled, names.__contains__,
                  "is %s by its first bytes, with no byte order mark," % settled,
                  "its first bytes say")
-        return _as_utf8(raw, encoding)
+        return _as_utf8(raw, encoding, declared=_unknown_to_the_parser(raw, encoding))
     return _as_declared(raw)
 
 
@@ -673,8 +685,9 @@ def _as_declared(raw: bytes) -> bytes:
 def _as_utf8(raw: bytes, encoding: str, declared: Optional[str] = None) -> bytes:
     """The bytes as UTF-8, or as they arrived if that cannot be done.
 
-    As they arrived only for UTF-16, which the parser reads itself and
-    refuses itself. A document that names its charset (`declared`) and is
+    As they arrived only for UTF-16 under no name or one the parser knows,
+    which the parser reads itself and refuses itself. A document that names
+    its charset by any other name (`declared`) and is
     not it is refused here, at the line it stopped on: bytes that are not
     legal in the declared encoding are the fatal error XML 1.0 (4.3.3)
     says they are, and nothing is replaced.
