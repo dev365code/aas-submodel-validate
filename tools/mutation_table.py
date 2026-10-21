@@ -3490,6 +3490,34 @@ TABLE.extend([
      '          if [ "$count" != "5" ]; then\n            echo "the round trip returned $count files, not the 6 that went out"\n',
      ['tests/test_the_release_carries_the_page.py::test_the_round_trip_expects_every_file_the_release_path_sends'],
      "the job that downloads what the release path sent counts it, and a count left behind when the release grew a file fails the commit that grew it, in CI alone"),
+
+    ('upstream/a-folder-that-moved-is-a-move',
+     'tools/upstream_moved.py',
+     '        moved = [folder for folder in folders if current.get(folder) != then[folder]]\n',
+     '        moved = []\n',
+     ['tests/test_the_templates_upstream_are_watched.py::test_a_new_edition_is_a_move_and_says_what_arrived'],
+     "a folder upstream changed after the pin is the one answer this check exists to give; read as unmoved, a new edition waits for somebody to notice it by hand"),
+
+    ('upstream/no-answer-is-not-an-answer',
+     'tools/upstream_moved.py',
+     '        print("upstream did not answer: %s" % error)\n        return 2\n',
+     '        print("upstream did not answer: %s" % error)\n        return 0\n',
+     ['tests/test_the_templates_upstream_are_watched.py::test_a_question_upstream_does_not_answer_is_neither_answer'],
+     "an outage read as nothing moved is a green week that asked nothing"),
+
+    ('upstream/a-folder-is-cut-where-its-edition-begins',
+     'tools/upstream_moved.py',
+     '        folders.add("/".join(parts[:cut]))\n',
+     '        folders.add("/".join(parts[:-1]))\n',
+     ['tests/test_the_templates_upstream_are_watched.py::test_every_vendored_file_comes_from_a_folder_that_is_watched'],
+     "a folder cut at the edition the pin chose holds that edition alone, and the next one is published beside it, where nothing looks"),
+
+    ('upstream/the-check-runs-every-week',
+     '.github/workflows/upstream.yml',
+     '  schedule:\n    - cron: "17 6 * * 1"          # 06:17 UTC every Monday\n',
+     '',
+     ['tests/test_the_templates_upstream_are_watched.py::test_the_workflow_asks_every_week_and_when_the_pin_or_the_check_changes'],
+     "without the schedule the check runs when somebody edits the pin, which is the one time nobody needs telling"),
 ])
 
 
