@@ -8,7 +8,7 @@ those return and raise. Nothing below the root is a contract.
 """
 from __future__ import annotations
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 __all__ = ("validate", "exit_code", "Report", "TemplateRefused", "example_path",
            "list_rules")
