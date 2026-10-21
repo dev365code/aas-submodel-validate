@@ -222,12 +222,22 @@ Reproduce: `python3 tools/vendor_template.py --check` in a clone; CI runs it
 on every change.
 
 - upstream templates pinned by commit — done
-- checked for upstream change — not yet
+- checked for upstream change — done
 - one pin move shipped — done
 
 The pin has moved once: 0.12.0 moved it from `11ef3353`, where it had
 stood since 0.1.0, to `f3790038`, and its CHANGELOG entry names every
 verdict the move changed.
+
+Whether upstream has moved since is asked every Monday, and on a push that
+changes the pin or the check: `.github/workflows/upstream.yml` runs
+`tools/upstream_moved.py`, which asks of each folder a vendored file comes
+from -- a template's folder, every edition in it -- whether it is still the
+tree it was at the pin. A red run there is not a defect here: exit 1 names
+the folders that moved and what changed in them, a decision to make about
+the pin, and exit 2 says upstream did not answer.
+`python3 -m pytest tests/test_the_templates_upstream_are_watched.py` runs
+the tests that hold it, with no network.
 
 Before 1.0: a scheduled check that notices when the upstream templates move,
 and one release that moved the pin and said what the move changed.

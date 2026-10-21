@@ -2,6 +2,8 @@
 
 ## 0.14.0 — unreleased
 
+**Whether the vendored templates have moved upstream is asked every Monday.** `.github/workflows/upstream.yml` runs `tools/upstream_moved.py`, which asks upstream, for each folder a vendored file comes from -- a template's folder, every edition in it -- whether it is still the tree it was at the pin; a new edition, an edited file or a folder gone is a move, named with what changed in it. It runs as well on a push that changes the pin or the check. A red run is a decision to make about the pin, not a defect, and the check judges no file: no verdict moves.
+
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
 ## 0.13.0 — 2026-10-21

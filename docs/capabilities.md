@@ -5,7 +5,7 @@
 | Report contract | schemaVersion, golden report, exit codes, schema page | met |
 | Entrances | command line, library, single file, Action, browser | met |
 | Input safety | read budgets, advisory, own mutations | + encodings |
-| Upstream | pinned by commit, one pin move shipped | + checked for upstream change |
+| Upstream | pinned, checked for upstream change, pin move shipped | met |
 
 **Coverage** — 12 of 12:
 - IDTA 02004 Handover Documentation — done (`docs/scope.md`: "Twelve official templates are given rule tables: IDTA 02004 Handover Documentation")
@@ -47,9 +47,9 @@
 - tests verified against their own mutations — done (`.github/workflows/ci.yml`: "every mutation in the table dies")
 - declared encodings read without loss — not yet
 
-**Upstream** — 2 of 3:
+**Upstream** — 3 of 3:
 - upstream templates pinned by commit — done (`THIRD_PARTY.md`: "Taken from commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (commit date 2026-10-05T14:26:16Z) and hash-verified")
-- checked for upstream change — not yet
+- checked for upstream change — done (`.github/workflows/upstream.yml`: "06:17 UTC every Monday")
 - one pin move shipped — done (`CHANGELOG.md`: "The template pin moves to upstream main commit")
 
 Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02004 Handover Documentation · IDTA 02003 Technical Data · IDTA 02035-2 Digital Battery Passport, part 2 · IDTA 02006 Digital Nameplate · IDTA 02023 Carbon Footprint · IDTA 02002 Contact Information · IDTA 02011 Hierarchical Structures · IDTA 02007 Software Nameplate · IDTA 02035-5 Digital Battery Passport, part 5 · IDTA 02035-1 Digital Battery Passport, part 1 · IDTA 02035-4 Digital Battery Passport, part 4 · IDTA 02035-7 Digital Battery Passport, part 7; Explanation: what is wrong, in one sentence · the evidence as read from the file · a remedy, for every rule · where each rule's requirement lives · the line in the file; Report contract: schemaVersion in every report · a golden report held by a test · exit codes 0, 1, 2 and 64 under test · a field-by-field schema page; Entrances: command line · Python library · single file, nothing to install · GitHub Action · browser, nothing installed; Input safety: read budgets, per file and per run · a security fix ships with an advisory · tests verified against their own mutations · declared encodings read without loss; Upstream: upstream templates pinned by commit · checked for upstream change · one pin move shipped.
