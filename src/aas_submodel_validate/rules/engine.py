@@ -329,10 +329,22 @@ def near_miss_violations(ctx, tables):
     watched one of these pairs diverge in the field.
     """
     from ..model import Violation
-    for subject, seen, expected, element in analyze(ctx, tables)["near_misses"]:
+    for subject, seen, expected, element, current in analyze(ctx, tables)["near_misses"]:
+        detail, fix = "%s, where the template says %s" % (seen, expected), None
+        if current is not None:
+            # Near an alias: a spelling an earlier edition gave the row, still
+            # read so that files written to it keep their verdicts. Said to be
+            # what "the template says", it was; and the remedy, "the template's
+            # spelling", led an author to write the alias -- which clears the
+            # finding and is not what the template writes.
+            detail = ("%s, which resembles %s, the spelling an earlier edition of the "
+                      "template gave; the template says %s" % (seen, expected, current))
+            fix = ("Correct the semanticId to the template's spelling, %s; the earlier "
+                   "edition's spelling it resembles is still read, and it is not the "
+                   "template's. A near-miss matches nothing, and every rule that would have "
+                   "applied to the element silently stops applying." % current)
         yield Violation("semanticId almost matches the template",
-                        subject=subject, at=element,
-                        detail="%s, where the template says %s" % (seen, expected))
+                        subject=subject, at=element, detail=detail, fix=fix)
 
 
 def install_near_miss_lint(rule_id: str, tables):
@@ -449,7 +461,8 @@ def _analyze(ctx, tables) -> Dict:
         "owners": {},
         "instances": {},       # row id -> [(subject path, element)]
         "matched_spellings": [],  # (subject, attribute, intersecting value)
-        "near_misses": [],     # (subject path, seen value, expected value)
+        "near_misses": [],     # (subject path, seen value, expected value, element,
+                               #  the row's own spelling where expected is an alias)
         "idshort_drift": [],   # (subject, id_short, pattern, is a list child)
         #: (subject, seen type, template type, route) -- the route
         #: because the submodel's own reference is one of these, named
@@ -1462,7 +1475,8 @@ def _scope(rows, elements, path: str, result, in_list: bool,
                     break  # nothing ranks above it
         if nearest:
             _rank, (_distance, seen, expected), row = nearest
-            result["near_misses"].append((subject, seen, expected, element))
+            current = row["sid"] if expected in row.get("legacy_identifiers", ()) else None
+            result["near_misses"].append((subject, seen, expected, element, current))
             near_here.append((subject, seen, expected, row, element))
 
     # What each "too few" finding here would take to repair, now that the

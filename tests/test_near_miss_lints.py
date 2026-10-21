@@ -274,3 +274,26 @@ def test_the_nearest_row_is_the_one_named(tmp_path):
     [lint] = [f for f in report.findings if f.id == "SNL1"]
     assert lint.violation.detail.endswith("SoftwareNameplateInstance/InstallationPath"), \
         lint.violation.detail
+
+
+def test_a_near_miss_of_an_earlier_edition_s_spelling_says_so_and_names_the_template_s(tmp_path):
+    """An element of a contact carrying the submodel's own identifier is one
+    trailing slash from the spelling 02002 1.0 gave IPCommunication, which
+    is still read, as an alias (docs/divergences.md #51). The finding said
+    "where the template says" of that spelling and its remedy said to use
+    the template's, so an author was led to write the alias: it clears the
+    finding, and it is not what the template writes. The finding says which
+    spelling it resembles now, and the remedy names the template's."""
+    env = copy.deepcopy(contact_env())
+    element = _find(env, "IPCommunication01")
+    element["semanticId"]["keys"][0]["value"] = "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
+    report = _run(tmp_path, env, "contact-ip.json")
+    [finding] = [f for f in report.findings if f.id == "CIL1"]
+    alias = "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
+    current = ("https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
+               "ContactInformation/IPCommunication")
+    assert finding.violation.detail == (
+        "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations, which resembles %s, "
+        "the spelling an earlier edition of the template gave; the template says %s"
+        % (alias, current))
+    assert finding.fix.startswith("Correct the semanticId to the template's spelling, %s;" % current)

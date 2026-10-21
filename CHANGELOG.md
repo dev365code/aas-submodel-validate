@@ -10,6 +10,8 @@
 
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
+- A near miss of a spelling an earlier edition gave a row now says so. An element of a contact carrying the submodel's own identifier drew `CIL1` saying "where the template says `https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/`" -- the 1.0 spelling, still read as an alias -- and a remedy that sent the author to it. The finding says which spelling it resembles and that an earlier edition gave it, and the remedy names the template's, `https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication`. No verdict and no exit code moves.
+
 ## 0.13.0 — 2026-10-21
 
 **A finding now shows what it read and the line it is about, and the reader comes as a Python call, a GitHub Action and a page that runs in a browser as well as a command -- one engine, judging the same at every entrance.**
