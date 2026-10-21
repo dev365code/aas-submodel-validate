@@ -29,6 +29,7 @@ import io
 import json
 import re
 import zipfile
+from xml.etree import ElementTree
 
 import pytest
 
@@ -271,6 +272,106 @@ def test_a_relationships_part_in_a_name_this_reader_does_not_read_is_filed_with_
             with pytest.raises(EncodingNotRead) as refused:
                 _ = package.spec_parts
             assert refused.value.instead == "windows-1252"
+
+
+#: The registry's names for UTF-8 and US-ASCII other than the two the parser
+#: knows: expat reads `utf-8` and `us-ascii` by itself, has never heard of
+#: these, and asks Python about a name it has not heard of -- and no Python
+#: has heard of `csUTF8`, which stopped a relationships part with a traceback.
+OTHER_SPELLINGS = sorted((name for name in container._REGISTERED["utf-8"] + container._REGISTERED["ascii"]
+                          if name.lower() not in ("utf-8", "us-ascii")), key=str.lower)
+
+
+@pytest.mark.parametrize("declared", OTHER_SPELLINGS)
+def test_a_registered_name_the_parser_does_not_know_is_read_before_it_parses(declared):
+    """What this hands on parses, on any Python: the bytes the table decoded,
+    with no declaration left for the parser to look up."""
+    raw = ('<?xml version="1.0" encoding="%s"?><root>a</root>' % declared).encode("ascii")
+    assert ElementTree.fromstring(xml_as_utf8(raw)).text == "a"
+
+
+def _package_whose_relationships_declare(tmp_path, declared):
+    rels = ('<?xml version="1.0" encoding="%s"?><Relationships xmlns="%s">'
+            '<Relationship Type="%s" Target="/aasx/aasx-origin" Id="R0"/></Relationships>'
+            % (declared, RELS_NS, ORIGIN_REL)).encode("ascii")
+    path = tmp_path / ("%s.aasx" % declared)
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", rels)
+        archive.writestr("aasx/aasx-origin", b"")
+    return path
+
+
+@pytest.mark.parametrize("declared", OTHER_SPELLINGS)
+def test_a_relationships_part_in_any_registered_name_is_read_as_utf_8_s_is(tmp_path, declared):
+    """A package whose relationships part declares one of them goes as far as
+    the one that declares UTF-8 does, and stops where it stops."""
+    def seen(name):
+        path = _package_whose_relationships_declare(tmp_path, name)
+        return [(error.stage, error.message.replace(str(path), "the package"))
+                for error in loader.load(path).errors]
+
+    assert seen(declared) == seen("UTF-8")
+
+
+_DECLARING = '<?xml version="1.0" encoding="%s"?><root>a</root>'
+
+#: A declaration the document's first bytes contradict: a byte order mark
+#: that settles one encoding and a declaration that names another, or bytes
+#: whose shape settles one. XML 1.0 makes each a fatal error (4.3.3), and
+#: expat and aas-core3 refuse each one.
+CONTRADICTED = [
+    ("a UTF-16 mark, declaring ISO-8859-1", (_DECLARING % "ISO-8859-1").encode("utf-16"), "UTF-16"),
+    ("a UTF-8 mark, declaring UTF-16", b"\xef\xbb\xbf" + (_DECLARING % "UTF-16").encode("ascii"),
+     "UTF-8"),
+    ("ASCII, declaring UTF-16", (_DECLARING % "UTF-16").encode("ascii"), None),
+    ("ASCII, declaring csUTF16LE", (_DECLARING % "csUTF16LE").encode("ascii"), None),
+    ("UTF-16 with no mark, declaring ISO-8859-1", (_DECLARING % "ISO-8859-1").encode("utf-16-le"),
+     "UTF-16LE"),
+]
+
+#: And the ones the first bytes agree with, the registry's names among them.
+AGREED = [
+    ("a UTF-16 mark, declaring UTF-16", (_DECLARING % "UTF-16").encode("utf-16")),
+    ("a UTF-16 mark, declaring csUTF16", (_DECLARING % "csUTF16").encode("utf-16")),
+    ("a little-endian mark, declaring UTF-16LE", b"\xff\xfe" + (_DECLARING % "UTF-16LE").encode("utf-16-le")),
+    ("a big-endian mark, declaring csUTF16BE", b"\xfe\xff" + (_DECLARING % "csUTF16BE").encode("utf-16-be")),
+    ("UTF-16 with no mark, declaring UTF-16LE", (_DECLARING % "UTF-16LE").encode("utf-16-le")),
+    ("a UTF-8 mark, declaring UTF-8", b"\xef\xbb\xbf" + (_DECLARING % "UTF-8").encode("ascii")),
+    ("a UTF-8 mark, declaring csUTF8", b"\xef\xbb\xbf" + (_DECLARING % "csUTF8").encode("ascii")),
+]
+
+
+@pytest.mark.parametrize("label,raw,instead", CONTRADICTED, ids=[c[0] for c in CONTRADICTED])
+def test_a_declaration_its_first_bytes_contradict_is_refused_as_the_parser_refuses_it(
+        label, raw, instead):
+    """Refused at line 1, as the bytes against the declaration -- the answer
+    expat gives too, so no reader in the ecosystem and this one disagree
+    about whether the document can be read. Where a mark or the bytes' shape
+    settles the encoding, the remedy names it."""
+    with pytest.raises(EncodingNotRead) as refused:
+        xml_as_utf8(raw)
+    assert refused.value.kind == "bytes" and refused.value.line == 1, label
+    assert refused.value.instead == instead, label
+    with pytest.raises((ElementTree.ParseError, LookupError)):
+        ElementTree.fromstring(raw)
+
+
+@pytest.mark.parametrize("label,raw", AGREED, ids=[a[0] for a in AGREED])
+def test_a_declaration_its_first_bytes_agree_with_is_read(label, raw):
+    assert ElementTree.fromstring(xml_as_utf8(raw)).text == "a", label
+
+
+def test_a_mark_the_declaration_contradicts_is_refused_naming_the_mark_s_encoding(tmp_path):
+    path = tmp_path / "declared.xml"
+    path.write_bytes(_environment("ISO-8859-1", "a").encode("utf-16"))
+    (error,) = loader.load(path).errors
+    assert error.message == ("the document starts with a UTF-16 byte order mark and declares "
+                             "ISO-8859-1; its declaration has to name the encoding the mark "
+                             "says it is in")
+    assert error.fix == ("Declare it as UTF-16, the name the IANA charset registry gives that "
+                         "charset, or save the document as UTF-8 and drop the declaration. %s"
+                         % loader.REFUSED_NOT_JUDGED)
 
 
 def test_the_library_gives_the_same_answers():

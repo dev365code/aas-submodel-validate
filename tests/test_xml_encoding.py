@@ -130,10 +130,18 @@ def test_a_document_declaring_utf8_is_not_round_tripped():
     bytes. The shortcut is what keeps the common case identical, and
     `us-ascii` is a subset that needs no more work than `utf-8`. The
     names are the registry's: `ASCII` and `utf_8` are Python's spellings
-    and are refused by name now, the same on every Python."""
-    for encoding in ("utf-8", "UTF-8", "csUTF8", "us-ascii", "US-ASCII", "ANSI_X3.4-1968"):
+    and are refused by name now, the same on every Python. And only the
+    two the parser reads by itself are handed on as they came: the
+    registry's other names for the same charsets the parser has never
+    heard of, and asks Python, which has not heard of `csUTF8` -- so they
+    are decoded, and the declaration it would have asked about goes."""
+    for encoding in ("utf-8", "UTF-8", "us-ascii", "US-ASCII"):
         raw = ('<?xml version="1.0" encoding="%s"?><root/>' % encoding).encode("ascii")
         assert xml_as_utf8(raw) == raw, encoding
+    for encoding in ("csUTF8", "ANSI_X3.4-1968"):
+        raw = ('<?xml version="1.0" encoding="%s"?><root/>' % encoding).encode("ascii")
+        out = xml_as_utf8(raw)
+        assert out != raw and b"encoding=" not in out, encoding
 
 
 def test_a_conversion_that_would_break_the_part_bound_is_refused(monkeypatch):

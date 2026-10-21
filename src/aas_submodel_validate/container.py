@@ -272,10 +272,26 @@ _PREFERRED = {"iso8859-1": "ISO-8859-1", "iso8859-2": "ISO-8859-2", "iso8859-3":
               "iso8859-7": "ISO-8859-7", "iso8859-8": "ISO-8859-8", "iso8859-9": "ISO-8859-9",
               "euc_jp": "EUC-JP", "euc_kr": "EUC-KR", "gb2312": "GB2312", "utf-7": "UTF-7"}
 
-#: The declared names the parser reads by itself, handed to it as they are:
-#: the registry's names for UTF-8 and US-ASCII, and for UTF-16.
-_PARSER_READS = ({name.lower() for name in _REGISTERED["utf-8"] + _REGISTERED["ascii"]}
-                 | {"utf-16", "utf-16be", "utf-16le", "csutf16", "csutf16be", "csutf16le"})
+#: The two declared names the parser reads by itself, handed to it as they
+#: are. The registry's other names for UTF-8 and US-ASCII -- `csUTF8`,
+#: `csASCII`, `iso-ir-6` and the rest -- the parser has never heard of and
+#: asks Python about, which has not heard of `csUTF8` either: they are
+#: decoded by the table, as every other name is, and the declaration goes.
+#: UTF-16 is settled by the first bytes, as `_MARKS` says.
+_PARSER_READS = {"utf-8", "us-ascii"}
+
+#: A UTF-16 byte order mark, and the names a declaration after it may give
+#: UTF-16 in that byte order -- the registry's, compared without regard to
+#: case (4.3.3), the sets VDI 2770's reader holds a mark to. A document in
+#: UTF-16 with no mark is held to the same names, by the byte order its first
+#: bytes show.
+_MARKS = {b"\xff\xfe": ("UTF-16", {"utf-16", "csutf16", "utf-16le", "csutf16le"}),
+          b"\xfe\xff": ("UTF-16", {"utf-16", "csutf16", "utf-16be", "csutf16be"})}
+_UNMARKED = {"utf-16-le": ("UTF-16LE", _MARKS[b"\xff\xfe"][1]),
+             "utf-16-be": ("UTF-16BE", _MARKS[b"\xfe\xff"][1])}
+
+#: Every name of UTF-16, which a document whose first bytes are not cannot be in.
+_UTF16_NAMES = _MARKS[b"\xff\xfe"][1] | _MARKS[b"\xfe\xff"][1]
 
 #: How XML 1.0 (Appendix F) knows, from the first four bytes and before any
 #: declaration, an encoding this reader does not read: UCS-4 -- its byte order
@@ -291,6 +307,25 @@ _ENC_NAME = re.compile(r"[A-Za-z][A-Za-z0-9._-]*")
 def registered_name(codec: str) -> str:
     """The name to declare a charset by: the registry's preferred MIME name."""
     return _PREFERRED.get(codec) or _REGISTERED[codec][0]
+
+
+def _declared_in(raw: bytes, codec: str) -> Optional[str]:
+    """The name the declaration gives, read as `codec` -- or None."""
+    found = _ENCODING_NAME.match(raw[:4096].decode(codec, "replace"))
+    return found.group("name") if found else None
+
+
+def _held_to(raw: bytes, codec: str, settled: str, agrees, opening: str, saying: str) -> None:
+    """Refuse a declaration that names another encoding than the one the
+    document's first bytes settle: a fatal error (XML 1.0, 4.3.3), and the
+    one expat and aas-core3 give the same document."""
+    name = _declared_in(raw, codec)
+    if name is not None and not agrees(name.lower()):
+        raise EncodingNotRead(
+            "the document %s and declares %s; its declaration has to name the encoding "
+            "%s it is in" % (opening, _shown(name), saying),
+            what=name, kind="bytes", instead=settled,
+            detail="it begins %s, and declares encoding=%s" % (raw[:4].hex(" "), _shown(name)))
 
 
 def _not_read(raw: bytes) -> Optional[str]:
@@ -400,7 +435,15 @@ def xml_as_utf8(raw: bytes) -> bytes:
     for bom, encoding in _BOMS:
         if raw.startswith(bom):
             if encoding is not None:
+                settled, names = _MARKS[bom]
+                _held_to(raw, encoding, settled, names.__contains__,
+                         "starts with a UTF-16 byte order mark", "the mark says")
                 return _as_utf8(raw, encoding)
+            # After a UTF-8 mark, a declaration of UTF-16 is the one every
+            # parser refuses -- expat says the declaration is incorrect --
+            # and so is it here.
+            _held_to(raw, "utf-8", "UTF-8", lambda name: name not in _UTF16_NAMES,
+                     "starts with a UTF-8 byte order mark", "the mark says")
             # A UTF-8 mark says the bytes after it are UTF-8, and a
             # document may still declare something else -- ill-formed by
             # XML 1.0, and read by every parser, which is the standard
@@ -432,6 +475,10 @@ def xml_as_utf8(raw: bytes) -> bytes:
             return raw if converted is body else converted
     encoding = _sniff(raw)
     if encoding is not None:
+        settled, names = _UNMARKED[encoding]
+        _held_to(raw, encoding, settled, names.__contains__,
+                 "is %s by its first bytes, with no byte order mark," % settled,
+                 "its first bytes say")
         return _as_utf8(raw, encoding)
     return _as_declared(raw)
 
@@ -468,6 +515,10 @@ def _as_declared(raw: bytes) -> bytes:
     if declared is None:
         return raw
     name = declared.group("name")
+    if name.lower() in _UTF16_NAMES:
+        raise EncodingNotRead(
+            "the document declares %s, and its first bytes are not UTF-16" % _shown(name),
+            what=name, kind="bytes", detail="it begins %s" % raw[:4].hex(" "))
     if name.lower() in _PARSER_READS:
         return raw
     codec = _CODEC_OF.get(name.lower())

@@ -215,8 +215,10 @@ Big5 among them -- and what the report quotes from it comes back as the
 characters the file holds, the same on every Python. A name outside the
 table is refused, naming the registered one to declare where one can be
 named; a document in UCS-4 or EBCDIC is refused saying which, as
-aas-core3's own XML reader refuses it; and bytes that are not the charset
-declared are refused at the line they are on.
+aas-core3's own XML reader refuses it; bytes that are not the charset
+declared are refused at the line they are on; and so is a declaration
+the first bytes contradict, a byte order mark or UTF-16's shape against
+another name, as the parser refuses it.
 `python3 -m pytest tests/test_a_document_is_read_in_the_encoding_it_declares.py`
 runs the tests that hold it. A JSON document -- which declares no encoding
 -- is read as UTF-8.
