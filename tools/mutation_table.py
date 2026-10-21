@@ -3525,6 +3525,62 @@ TABLE.extend([
      '',
      ['tests/test_the_templates_upstream_are_watched.py::test_the_workflow_asks_every_week_and_when_the_pin_or_the_check_changes'],
      "without the schedule the check runs when somebody edits the pin, which is the one time nobody needs telling"),
+
+    ('container/a-declared-name-is-read-by-the-registry-not-by-python',
+     'src/aas_submodel_validate/container.py',
+     '    codec = _CODEC_OF.get(name.lower())\n    if codec is None:\n',
+     '    codec = _CODEC_OF.get(name.lower(), name)\n    if codec is None:\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_name_the_registry_does_not_give_is_refused_naming_the_one_it_does'],
+     "a name Python reads and the registry does not give was read on some Pythons and not others; asked of the running Python, cp1252 is read again and one document reads two ways at two entrances"),
+
+    ('container/unmarked-ucs4-is-known-by-its-nuls',
+     'src/aas_submodel_validate/container.py',
+     '    if head in _UCS4_MARKS or head.count(0) == 3:\n',
+     '    if head in _UCS4_MARKS:\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_ucs4_and_ebcdic_are_refused_saying_which'],
+     "UCS-4 without its mark, in any of its four byte orders, went on to the parser to be refused as not well-formed -- the reader's limit reported as the document's syntax"),
+
+    ('container/ebcdic-is-known-by-its-first-bytes',
+     'src/aas_submodel_validate/container.py',
+     '    return "EBCDIC" if head == _EBCDIC_OPENING else None\n',
+     '    return None\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_ucs4_and_ebcdic_are_refused_saying_which'],
+     "a document in EBCDIC, whose declaration cannot be read as ASCII, was refused as not well-formed rather than as an encoding this reader does not read"),
+
+    ('container/bytes-that-are-not-the-declared-charset-are-refused',
+     'src/aas_submodel_validate/container.py',
+     '        if declared is None:\n            return raw\n        line = raw.count(b"\\n", 0, error.start) + 1\n',
+     '        if True:\n            return raw\n        line = raw.count(b"\\n", 0, error.start) + 1\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_bytes_that_are_not_the_declared_charset_are_refused_where_they_are'],
+     "bytes that were not the charset declared went on undecoded to a parser that refused them as syntax; XML 1.0 makes them the fatal error, and the line they are on is where it is"),
+
+    ('container/a-remedy-names-the-registered-charset',
+     'src/aas_submodel_validate/container.py',
+     '    if codec in _REGISTERED:\n        return registered_name(codec)\n',
+     '    if False:\n        return registered_name(codec)\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_name_the_registry_does_not_give_is_refused_naming_the_one_it_does'],
+     "a refusal that names no charset to declare leaves the author to find the registry's spelling of the one they meant"),
+
+    ('container/a-remedy-reads-the-bytes-where-no-registration-names-the-charset',
+     'src/aas_submodel_validate/container.py',
+     '            if raw.decode(candidate) == text:\n',
+     '            if False:\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_name_the_registry_does_not_give_is_refused_naming_the_one_it_does'],
+     "cp949 has no registration of its own, and a file in it that holds only EUC-KR's characters reads the same as EUC-KR, which is the name to give it"),
+
+    ('container/ms-kanji-is-shift-jis',
+     'src/aas_submodel_validate/container.py',
+     '    "shift_jis": ("Shift_JIS", "MS_Kanji", "csShiftJIS"),\n',
+     '    "shift_jis": ("Shift_JIS", "csShiftJIS"),\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_ms_kanji_is_shift_jis_and_not_what_python_calls_it'],
+     "the registry gives MS_Kanji as Shift_JIS and Python reads it as Windows-31J; without the registry's name it is refused as unregistered, and a reader that asked Python would read NEC's extensions under it"),
+
+    ('container/a-remembered-encoding-refusal-keeps-what-it-named',
+     'src/aas_submodel_validate/container.py',
+     '        if self.encoding is not None:\n',
+     '        if False:\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_relationships_part_in_a_name_this_reader_does_not_read_is_filed_with_its_remedy'],
+     "a relationships part refused for its encoding is asked again by the rules after the loader; rebuilt from its message alone the refusal raised a TypeError, and the run left by a traceback"),
 ])
 
 
