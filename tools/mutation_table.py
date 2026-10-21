@@ -3581,6 +3581,13 @@ TABLE.extend([
      '        if False:\n',
      ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_relationships_part_in_a_name_this_reader_does_not_read_is_filed_with_its_remedy'],
      "a relationships part refused for its encoding is asked again by the rules after the loader; rebuilt from its message alone the refusal raised a TypeError, and the run left by a traceback"),
+
+    ('rules/a-near-miss-of-an-alias-names-the-template-s-spelling',
+     'src/aas_submodel_validate/rules/engine.py',
+     '        if current is not None:\n            # Near an alias: a spelling an earlier edition gave the row, still\n',
+     '        if False:\n            # Near an alias: a spelling an earlier edition gave the row, still\n',
+     ['tests/test_near_miss_lints.py::test_a_near_miss_of_an_earlier_edition_s_spelling_says_so_and_names_the_template_s'],
+     "a near miss of an alias said the earlier edition's spelling was what the template says, and its remedy sent the author to write it"),
 ])
 
 
