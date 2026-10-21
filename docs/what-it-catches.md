@@ -164,7 +164,10 @@ moves a verdict, is held by a test to one byte and one exit code between
 them. Bytes and an open file are judged as the file they were read from.
 The action's own script is run by the suite the way a runner runs it, and
 held to printing what `smtv` prints and leaving by the code `smtv` leaves
-by; CI runs the action itself on Linux and on Windows, from a carried
+by -- a validator that does not start is reported as that, not as a
+verdict, and one that starts and then fails while judging a file leaves
+by 1, as a finding does, so the step cannot tell the two apart; CI runs
+the action itself on Linux and on Windows, from a carried
 single file checked against its digest and from the index. The page runs the
 command's own entry point inside the tab, on the Python it carries, and CI
 opens it in a browser, served and from a disk: what it prints for every

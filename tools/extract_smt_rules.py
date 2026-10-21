@@ -115,10 +115,11 @@ TD_ITEM_NAMES = {
 }
 
 #: 02035-2's six list items, in 02004's words -- it is a profile of that
-#: template and every one of its elements is one of 02004's. Only two are
-#: read today: the published file gives the other four an idShort, which
-#: AASd-120 forbids and which therefore wins. They are named anyway so
-#: that repairing that defect upstream renames nothing here.
+#: template and every one of its elements is one of 02004's. 1.0 gave four
+#: of them an idShort, which AASd-120 forbids and which the generator
+#: takes first, so two of these were read then; 1.1 repaired the four, and
+#: all six are the labels the rows carry now. They were named before the
+#: repair so that it renamed nothing here.
 DBP_ITEM_NAMES = {
     "Documents": "Document",
     "DocumentClassifications": "DocumentClassification",
@@ -168,10 +169,11 @@ PCF_ITEM_NAMES = {
 DN_ARBITRARY = ARBITRARY
 
 #: 02035-1's list items: the markings, and the document identifiers of
-#: its two reference lists. The template gives every item an idShort
+#: its two reference lists. 1.0 gave every item an idShort
 #: (`Markings__00__`, `DocumentIdentifier` -- AASd-120), which the
-#: generator takes first, so these name nothing today; they are here so an
-#: upstream repair of that defect renames no row, as for 02035-5's.
+#: generator takes first; 1.1 gives none, so these are the labels the rows
+#: carry now. They were named before that repair so that it renamed no
+#: row, as 02035-5's are.
 DBP1_ITEM_NAMES = {
     "Markings": "Marking",
     "EUDeclarationOfConformity": "DocumentIdentifier",
@@ -179,18 +181,18 @@ DBP1_ITEM_NAMES = {
 }
 
 #: 02035-4's list items: the product images, and the power capability at
-#: each state of charge. The template gives both an idShort (AASd-120),
-#: which the generator takes first, so these name nothing today; they are
-#: here so an upstream repair of that defect renames no row.
+#: each state of charge. 1.0.1 gave both an idShort (AASd-120), which the
+#: generator takes first; 1.0.2 gives neither, so these are the labels the
+#: rows carry now, named before the repair so that it renamed no row.
 DBP4_ITEM_NAMES = {
     "ProductImages": "ProductImage",
     "OriginalPowerCapability": "PowerCapabilityAt",
 }
 
-#: 02035-7's nine list items. The template gives every one an idShort
-#: (AASd-120), which the generator takes first, so these name nothing
-#: today; they are here so an upstream repair of that defect renames no
-#: row.
+#: 02035-7's nine list items. 1.0.1 gave every one an idShort (AASd-120),
+#: which the generator takes first; 1.0.2 gives none, so these are the
+#: labels the rows carry now, named before the repair so that it renamed
+#: no row.
 DBP7_ITEM_NAMES = {
     "DismantlingAndRemovalInformation": "DocumentIdentifier",
     "SparePartSources": "SparePartSupplier",
