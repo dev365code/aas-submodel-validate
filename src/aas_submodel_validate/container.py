@@ -181,8 +181,8 @@ _ENCODING_NAME = re.compile(
 #: supports carries. Not here: UTF-16, which a declaration found as ASCII
 #: cannot be in and the parser reads by itself; UCS-4 and the EBCDIC code
 #: pages, which `_not_read` refuses from the first bytes; and the charsets no
-#: supported Python has a codec for. One codec for each registration, whatever
-#: Python calls its aliases: `MS_Kanji` is registered as Shift_JIS, which
+#: supported Python has a codec for. Each registration is read by one codec,
+#: whatever Python calls its aliases: `MS_Kanji` is registered as Shift_JIS, which
 #: Python reads as Windows-31J, and `ISO-8859-11` as TIS-620. ISO-8859-6-E
 #: and -I and ISO-8859-8-E and -I are ISO-8859-6 and ISO-8859-8 with their
 #: direction made explicit (RFC 1556), the same bytes for the same characters,
@@ -558,9 +558,12 @@ def xml_as_utf8(raw: bytes) -> bytes:
     and the page this project publishes runs another Python than the
     command.
 
-    Untouched is the common case and the intended one. Only a document
-    the parser reads as UTF-16 is rewritten, because only there do the
-    bytes downstream needs differ from the bytes that arrived.
+    Untouched is the common case and the intended one: UTF-8 or US-ASCII,
+    declared by the name the parser knows it by, or not declared at all.
+    Every other document is decoded and handed on as UTF-8 without its
+    declaration, because there the bytes downstream needs differ from the
+    bytes that arrived -- and a declaration the first bytes contradict is
+    refused before any of that, as the parser refuses it.
     """
     what = _not_read(raw)
     if what is not None:
@@ -636,9 +639,9 @@ def _as_declared(raw: bytes) -> bytes:
     The name is read as the IANA charset registry gives it, by the table
     above, compared without regard to case (XML 1.0, 4.3.3); a name it
     does not give a charset this reader decodes is refused, naming the
-    registered one where one can be named. The names the parser reads by
-    itself -- UTF-8's, US-ASCII's and UTF-16's -- are handed to it as they
-    are, as they always were.
+    registered one where one can be named. The two names the parser reads
+    by itself, `utf-8` and `us-ascii`, are handed to it as they are; a name
+    of UTF-16's, on bytes whose shape is not UTF-16's, is refused.
 
     Only the prolog is consulted, and only when it is ASCII -- which it
     must be, since a parser has to read the declaration before it knows
