@@ -107,7 +107,8 @@ reading the document again -- the model keeps no positions, and holding
 every document through every rule is the memory this reader does not spend
 -- and is used only if its digest is the one the loader took of the bytes
 it built the model from, so an input that changed after it was read gives
-no line rather than another file's.
+no line rather than another file's; run it again on the file as it now
+stands.
 
 Before 1.0: every finding shows what it read, and where in the file it read
 it.

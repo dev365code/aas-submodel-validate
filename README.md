@@ -110,7 +110,7 @@ key     at=where saw=what is there now per=the clause fix=what to change
 |---|---|
 | `at` | where in the submodel — the path of idShorts down to the element |
 | `saw` | what was actually there, so you can tell this finding from a similar one |
-| `per` | the clause this reading comes from, for when you have to cite it. A generated rule names the template file it comes from and that file's edition (`IDTA 02004-2-0-2 template`); a hand-written rule names a section of the specification (`IDTA 02004-2-0 §2.3`), which can carry an older number, because a bug-fix edition corrects a template's files and carries its specification over unchanged. The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
+| `per` | the clause this reading comes from, for when you have to cite it. A generated rule names the template file it comes from and that file's edition (`IDTA 02004-2-0-2 template`); a hand-written rule names a section of the specification (`IDTA 02004-2-0 §2.3`), which can carry an older number, because a bug-fix edition corrects a template's files and carries its specification over with its text unchanged. The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
 | `fix` | what to change. Every finding has one; a finding without a remedy is a complaint |
 | `note` | something this run did, not a defect in the file. Nothing to change — which is why a note has no `fix` |
 
@@ -479,7 +479,10 @@ file, each byte for byte what `smtv` prints for that file: read the
 output as a sequence of documents, not as one. The step leaves by the
 code that says the most of theirs: 64, then
 2, then 1, then 0, published as the output `exit-code` as well; with
-`fail-on-finding: false` it passes and leaves the code to be read. A
+`fail-on-finding: false` it passes and leaves the code to be read.
+`version:` installs another release than the tag's, and beside
+`exit-code` the step publishes `version` and `pyz`, the release or the
+single file it ran -- `action.yml` describes each. A
 validator that does not start is reported as that, not as a verdict; one
 that starts and then fails while judging a file leaves by 1, as a finding
 does, and the step cannot tell the two apart. The install is the one thing
@@ -636,7 +639,8 @@ raise SystemExit(exit_code(judged))  # 0, 1, or 2 when nothing was judged
 ```
 
 Its other keywords are the flags that move the report -- `meta=`,
-`allow_unmatched=`, `profile=` and `template=` -- and `exit_code` takes the
+`allow_unmatched=`, `profile=` and `template=` -- and `name=`, what the
+report calls bytes or an open file; `exit_code` takes the
 two that move only the code, `warnings_as_errors=` and
 `require_all_judged=`. A call made wrong raises `TypeError` or `ValueError`
 where the command line leaves by 64, and a template of yours this reader

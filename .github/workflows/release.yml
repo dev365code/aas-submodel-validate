@@ -373,8 +373,9 @@ jobs:
           - `aas-submodel-validate.html` — one page, for a machine with
             nothing installed: open it in a browser, from a disk if you like,
             and it judges the file you choose there and sends nothing once it
-            has loaded. It shows what `smtv --no-bundle FILE` prints, byte for
-            byte, and is the page CI opened in a browser for this release.
+            has loaded. It shows what `smtv --no-bundle FILE` prints at a UTF-8
+            console on the Python the page carries, byte for byte, and is the
+            page CI opened in a browser for this release.
           - the two `.whl` files — for a machine that has pip but no index.
             Put both in a directory and run
             `python3 -m pip install --no-index --find-links . aas-submodel-validate`
