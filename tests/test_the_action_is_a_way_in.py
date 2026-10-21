@@ -131,18 +131,18 @@ def _check_bytes(tmp_path, paths, args="", *, fail_on_finding="true", pyz="", sh
     return done.stdout, done.stderr, done.returncode, written
 
 
-def _smtv_bytes(path, args=""):
+def _smtv_bytes(path, args="", cwd=None):
     """`smtv` itself on one file: both streams, as bytes, and its code."""
     done = subprocess.run([sys.executable, "-m", "aas_submodel_validate", *args.split(), str(path)],
-                          capture_output=True, timeout=300,
+                          capture_output=True, timeout=300, cwd=cwd,
                           env={**os.environ, "PYTHONPATH": str(ROOT / "src"),
                                "PYTHONIOENCODING": "utf-8"})
     return done.stdout, done.stderr, done.returncode
 
 
-def _smtv(path, args=""):
+def _smtv(path, args="", cwd=None):
     """What `smtv` printed on stdout and what it left by."""
-    out, _, code = _smtv_bytes(path, args)
+    out, _, code = _smtv_bytes(path, args, cwd)
     return out.decode("utf-8").replace("\r\n", "\n"), code
 
 
@@ -253,11 +253,13 @@ def test_several_files_leave_by_the_heaviest_code_in_either_order(tmp_path):
         assert printed == "".join(_smtv(path, "-W")[0] for path in order)
         assert left == 2 and written["exit-code"] == "2"
     # On one line the names are separated by spaces, as documented; these
-    # two have none in them.
+    # two have none in them, named from the folder the step runs in -- the
+    # folder that holds it may have one, wherever the temporary files go.
     copy = tmp_path / "copy.aasx"
     shutil.copy(EXAMPLE, copy)
-    printed, left, _ = _check(tmp_path, "%s %s" % (copy, broken))
-    assert printed == _smtv(copy)[0] + _smtv(broken)[0]
+    printed, left, _ = _check(tmp_path, "%s %s" % (copy.name, broken.name))
+    assert printed == (_smtv(copy.name, cwd=tmp_path)[0]
+                       + _smtv(broken.name, cwd=tmp_path)[0])
     assert left == 2
 
 

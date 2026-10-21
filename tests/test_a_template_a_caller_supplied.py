@@ -191,9 +191,11 @@ def _verdicts_through_every_entrance(tmp_path):
     comparison ran the package, the library and the single file, and the
     gate that reads it passed.
 
-    The template is a copy beside the instance, handed to every entrance
-    by the same path: the action passes its `args:` on split at spaces,
-    as it documents, and this checkout's own folder has one in its name.
+    The template is a copy beside the instance, and every entrance runs in
+    the folder that holds the two and is handed them by name: the action
+    passes its `args:` on split at spaces, as it documents, and this
+    checkout's own folder has one in its name -- as the folder above the
+    temporary files may, wherever they are made.
     """
     import os
     import shutil
@@ -211,8 +213,8 @@ def _verdicts_through_every_entrance(tmp_path):
 
     def through(argv):
         done = subprocess.run(argv, capture_output=True, text=True,
-                              cwd=str(ROOT),
-                              env=dict(os.environ, PYTHONPATH="src"))
+                              cwd=str(tmp_path),
+                              env=dict(os.environ, PYTHONPATH=str(ROOT / "src")))
         assert done.returncode in (0, 1), done.stderr
         return done.stdout.rstrip("\n")
 
@@ -223,7 +225,7 @@ def _verdicts_through_every_entrance(tmp_path):
                            cwd=str(ROOT))
     assert built.returncode == 0, built.stdout + built.stderr
 
-    tail = [str(instance), "--template", str(template), "-f", "json"]
+    tail = [instance.name, "--template", template.name, "-f", "json"]
 
     # The action's own step, run the way a runner runs it, on the single file
     # built above: the path a runner with no route to an index takes.
@@ -233,17 +235,24 @@ def _verdicts_through_every_entrance(tmp_path):
     outputs.write_text("", encoding="utf-8")
     stepped = subprocess.run(
         [BASH, "--noprofile", "--norc", "-e", "-o", "pipefail", _posix(script)],
-        capture_output=True, text=True, cwd=str(ROOT),
+        capture_output=True, text=True, cwd=str(tmp_path),
         env=dict(os.environ,
                  PATH=os.pathsep.join([str(_shim(tmp_path)), os.environ.get("PATH", "")]),
-                 PATHS="%s\n" % instance, EXTRA="--template %s -f json" % template,
+                 PATHS="%s\n" % instance.name, EXTRA="--template %s -f json" % template.name,
                  PYZ=str(single), WANT_SHA="", TARGET="", FAIL_ON_FINDING="true",
                  GITHUB_OUTPUT=str(outputs)))
     assert stepped.returncode in (0, 1), stepped.stdout + stepped.stderr
 
+    here = os.getcwd()
+    os.chdir(str(tmp_path))
+    try:
+        library = json.dumps(runner.run(pathlib.Path(instance.name),
+                                        template=pathlib.Path(template.name)).as_dict(),
+                             indent=2)
+    finally:
+        os.chdir(here)
     return {
-        "library": json.dumps(
-            runner.run(instance, template=template).as_dict(), indent=2),
+        "library": library,
         "python -m": through([sys.executable, "-m", "aas_submodel_validate"]
                              + tail),
         "console script": through([sys.executable,
@@ -262,7 +271,7 @@ def test_the_same_template_gives_the_same_verdict_from_every_entrance(tmp_path):
     anywhere in it is a difference a consumer sees.
 
     `path` is the one field that could legitimately differ and does not
-    here: every entrance is handed the same absolute path.
+    here: every entrance is handed the same names, from the same folder.
     """
     verdicts = _verdicts_through_every_entrance(tmp_path)
     expected = verdicts["library"]
