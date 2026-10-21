@@ -25,10 +25,13 @@ encoding it names are refused at the line they are on.
 from __future__ import annotations
 
 import codecs
+import encodings.aliases
 import io
 import json
 import re
+import sys
 import zipfile
+from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
@@ -167,7 +170,8 @@ def test_bytes_that_are_not_the_declared_charset_are_refused_where_they_are(tmp_
 UNREGISTERED = [("UTF8", "UTF-8"), ("utf8", "UTF-8"), ("utf_8", "UTF-8"), ("ascii", "US-ASCII"),
                 ("ASCII", "US-ASCII"), ("latin-1", "ISO-8859-1"), ("iso8859-1", "ISO-8859-1"),
                 ("cp1252", "windows-1252"), ("sjis", "Shift_JIS"), ("shift-jis", "Shift_JIS"),
-                ("cp932", "Windows-31J"), ("euc_kr", "EUC-KR"), ("cp949", "EUC-KR")]
+                ("cp932", "Windows-31J"), ("euc_kr", "EUC-KR"), ("cp949", "EUC-KR"),
+                ("windows_31j", "Windows-31J")]
 
 
 @pytest.mark.parametrize("declared,instead", UNREGISTERED, ids=[u[0] for u in UNREGISTERED])
@@ -176,16 +180,108 @@ def test_a_name_the_registry_does_not_give_is_refused_naming_the_one_it_does(
     """The same refusal and the same remedy on every Python, word for word --
     where a document declaring `sjis` was read on all of them and one
     declaring `Windows-31J` on some. `cp949` has no registration of its own;
-    a file that holds only EUC-KR's characters reads the same as EUC-KR."""
+    a file that holds only EUC-KR's characters reads the same as EUC-KR.
+    `windows_31j` is the registry's Windows-31J with an underscore, which
+    3.13.2 knows as a spelling and 3.9.6 does not: the remedy names it on
+    both. Every other document here holds ASCII alone, its bytes the same
+    under every name in the list."""
     path = tmp_path / "declared.xml"
     path.write_bytes(_environment(declared, "기술" if declared == "cp949" else "a")
-                     .encode(codecs.lookup(declared).name))
+                     .encode("cp949" if declared == "cp949" else "ascii"))
     (error,) = loader.load(path).errors
     assert error.message == ("the document declares %s, which is not a name the IANA "
                              "charset registry gives a charset this reader reads" % declared)
     assert error.fix == ("Declare it as %s, the name the IANA charset registry gives that "
                          "charset, or save the document as UTF-8 and drop the declaration. %s"
                          % (instead, loader.REFUSED_NOT_JUDGED))
+
+
+#: Spellings no registration gives and CPython 3.9 does not know as any
+#: charset's: the remedy names nothing, on every Python -- 3.13.15 knows
+#: `pc_multilingual_850_euro` as IBM00858 and 3.13.2 does not.
+NAMED_BY_NEITHER = ["pc_multilingual_850_euro", "a_spelling_a_later_python_adds"]
+
+
+@pytest.mark.parametrize("declared", NAMED_BY_NEITHER)
+def test_a_spelling_a_later_python_adds_draws_the_remedy_it_draws_on_every_python(
+        tmp_path, monkeypatch, declared):
+    """The running Python is not asked what a spelling means, so knowing one
+    more than CPython 3.9 does phrases no remedy differently. The second
+    spelling is given a charset here, the way a later Python's alias table
+    gives one, and the remedy does not hear of it either."""
+    monkeypatch.setitem(encodings.aliases.aliases, "a_spelling_a_later_python_adds", "cp858")
+    path = tmp_path / "declared.xml"
+    path.write_bytes(_environment(declared, "a").encode("ascii"))
+    (error,) = loader.load(path).errors
+    assert error.fix == ("Declare the encoding the file is in, by the name the IANA charset "
+                         "registry gives it, or save the document as UTF-8 and drop the "
+                         "declaration. %s" % loader.REFUSED_NOT_JUDGED)
+
+
+def test_a_remedy_asks_nothing_of_the_python_that_runs_it(monkeypatch):
+    """Every name in the list above, with the running Python's codec lookup
+    made to refuse every question: the same registered name each time."""
+    raws = [(declared, instead, _environment(declared, "기술" if declared == "cp949" else "a")
+             .encode("cp949" if declared == "cp949" else "ascii"))
+            for declared, instead in UNREGISTERED]
+
+    def asked(name):
+        raise AssertionError("the running Python was asked what %r means" % name)
+
+    monkeypatch.setattr(codecs, "lookup", asked)
+    for declared, instead, raw in raws:
+        with pytest.raises(EncodingNotRead) as refused:
+            xml_as_utf8(raw)
+        assert refused.value.instead == instead, declared
+
+
+def _spelled():
+    return sorted((spelling, codec) for codec, spellings in container._PYTHON_SPELLINGS.items()
+                  for spelling in spellings)
+
+
+@pytest.mark.parametrize("spelling,codec", _spelled(), ids=[s for s, _ in _spelled()])
+def test_every_spelling_the_remedy_reads_is_read_the_same_on_this_python(spelling, codec):
+    """The table was written on CPython 3.9; it is only worth reading where
+    this Python still means by each spelling the charset 3.9 meant."""
+    info = codecs.lookup(spelling)
+    assert info.name == codec and getattr(info, "_is_text_encoding", True), (spelling, info.name)
+
+
+def test_the_table_holds_only_what_the_tool_that_writes_it_would_write_here():
+    """Every spelling the table holds is one `tools/python_spellings.py`, run
+    on this Python, gives the same charset and keeps -- a text codec, and not
+    a spelling the registry's own names answer. The tool writes the table on
+    CPython 3.9 and `--check` holds it to that Python; a later one gives more
+    spellings, which is why the table is not asked of it."""
+    tools = Path(__file__).resolve().parents[1] / "tools"
+    if not (tools / "python_spellings.py").exists():
+        pytest.skip("no tools/ here (installed package, not a checkout)")
+    sys.path.insert(0, str(tools))
+    try:
+        import python_spellings
+    finally:
+        sys.path.remove(str(tools))
+    made = python_spellings.spellings()
+    for codec, spellings in container._PYTHON_SPELLINGS.items():
+        assert set(spellings) <= set(made.get(codec, ())), (codec, sorted(
+            set(spellings) - set(made.get(codec, ()))))
+
+
+def test_no_spelling_names_two_charsets():
+    """Folded the way the remedy folds a name -- no case, none of EncName's
+    punctuation -- the registry's names and the spellings each name one
+    charset, and no spelling is one the registry's names already answer."""
+    registry = [(container._folded(name), codec)
+                for codec, names in container._REGISTERED.items() for name in names]
+    spelled = [(container._folded(spelling), codec)
+               for codec, spellings in container._PYTHON_SPELLINGS.items()
+               for spelling in spellings]
+    for pairs in (registry, spelled):
+        named = {}
+        for key, codec in pairs:
+            assert named.setdefault(key, codec) == codec, key
+    assert not {key for key, _ in spelled} & {key for key, _ in registry}
 
 
 def test_cp949_beyond_euc_kr_names_no_charset_it_is_not(tmp_path):
@@ -383,3 +479,18 @@ def test_the_library_gives_the_same_answers():
     assert any(f.violation.detail == "idShort: %r" % "技術①" for f in report.findings)
     refused = validate(_environment("sjis", "a").encode("shift_jis"), format="xml")
     assert exit_code(refused) == 2
+
+
+def test_the_library_and_the_command_give_one_refusal_word_for_word(tmp_path, capsys):
+    """The remedy is part of the answer: what the command prints for a
+    document it refuses, the library returns, fix and all."""
+    from aas_submodel_validate import validate
+
+    raw = _environment("sjis", "a").encode("ascii")
+    path = tmp_path / "declared.xml"
+    path.write_bytes(raw)
+    code, printed = _judged(path, capsys)
+    returned = [{key: value for key, value in finding.as_dict().items() if key != "subject"}
+                for finding in validate(raw, format="xml", allow_unmatched=True).findings]
+    assert code == 2 and printed == returned
+    assert "Declare it as Shift_JIS" in printed[0]["fix"]

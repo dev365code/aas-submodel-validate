@@ -13,7 +13,6 @@ where every wheel crosses an air gap by hand.
 """
 from __future__ import annotations
 
-import codecs
 import errno
 import io
 import lzma
@@ -304,6 +303,138 @@ _EBCDIC_OPENING = b"\x4c\x6f\xa7\x94"
 _ENC_NAME = re.compile(r"[A-Za-z][A-Za-z0-9._-]*")
 
 
+def _folded(name: str) -> str:
+    """`name` as a remedy compares it: without case or the punctuation EncName
+    allows, so `windows_31j` is the registry's `Windows-31J`. Anything else a
+    name holds -- a NUL, a space -- stays, and matches nothing."""
+    return re.sub(r"[._-]", "", name.lower())
+
+
+#: The registry's names, folded, by the codec each names.
+_FOLDED = {_folded(name): codec for codec, names in _REGISTERED.items() for name in names}
+
+#: The spellings CPython 3.9's codec registry gives a charset and the
+#: registry's own names do not already answer, by the codec it reads them as.
+#: A remedy reads them here and not from the running Python, so every Python
+#: phrases the same one: a later Python knows spellings 3.9 does not --
+#: 3.13.2 `windows_31j`, 3.13.15 `pc_multilingual_850_euro` -- and the
+#: remedy for a document would otherwise turn on which Python read it.
+# -- the spellings CPython 3.9 gives: written by tools/python_spellings.py --
+_PYTHON_SPELLINGS = {
+    "ascii": ("646", "ascii", "iso_646.irv_1991"),
+    "big5": ("big5_tw", "x_mac_trad_chinese"),
+    "big5hkscs": ("hkscs",),
+    "charmap": ("charmap",),
+    "cp037": (
+        "037", "cp037", "csibm037", "ebcdic_cp_ca", "ebcdic_cp_nl", "ebcdic_cp_us", "ebcdic_cp_wt",
+        "ibm037", "ibm039",
+    ),
+    "cp1006": ("cp1006",),
+    "cp1026": ("1026", "cp1026", "csibm1026", "ibm1026"),
+    "cp1125": ("1125", "cp1125", "cp866u", "ibm1125", "ruscii"),
+    "cp1140": ("1140", "cp1140", "ibm1140"),
+    "cp1250": ("1250", "cp1250"),
+    "cp1251": ("1251", "cp1251"),
+    "cp1252": ("1252", "cp1252"),
+    "cp1253": ("1253", "cp1253"),
+    "cp1254": ("1254", "cp1254"),
+    "cp1255": ("1255", "cp1255"),
+    "cp1256": ("1256", "cp1256"),
+    "cp1257": ("1257", "cp1257"),
+    "cp1258": ("1258", "cp1258"),
+    "cp273": ("273", "cp273", "csibm273", "ibm273"),
+    "cp424": ("424", "cp424", "csibm424", "ebcdic_cp_he", "ibm424"),
+    "cp437": ("437",),
+    "cp500": ("500", "cp500", "csibm500", "ebcdic_cp_be", "ebcdic_cp_ch", "ibm500"),
+    "cp720": ("cp720",),
+    "cp737": ("cp737",),
+    "cp775": ("775",),
+    "cp850": ("850",),
+    "cp852": ("852",),
+    "cp855": ("855",),
+    "cp856": ("cp856",),
+    "cp857": ("857",),
+    "cp858": ("858", "cp858", "csibm858", "ibm858"),
+    "cp860": ("860",),
+    "cp861": ("861",),
+    "cp862": ("862",),
+    "cp863": ("863",),
+    "cp864": ("864",),
+    "cp865": ("865",),
+    "cp866": ("866",),
+    "cp869": ("869",),
+    "cp874": ("cp874",),
+    "cp875": ("cp875",),
+    "cp932": ("932", "cp932", "ms932"),
+    "cp949": ("949", "cp949", "ms949", "uhc"),
+    "cp950": ("950", "cp950", "ms950"),
+    "euc_jis_2004": ("euc_jis2004", "euc_jis_2004", "eucjis2004", "jisx0213"),
+    "euc_jisx0213": ("euc_jisx0213", "eucjisx0213"),
+    "euc_jp": ("u_jis", "ujis"),
+    "euc_kr": ("ks_x_1001", "ksx1001", "x_mac_korean"),
+    "gb18030": ("gb18030_2000",),
+    "gb2312": ("euc_cn", "euccn", "eucgb2312_cn", "gb2312_1980", "x_mac_simp_chinese"),
+    "gbk": ("936",),
+    "hp-roman8": ("cp1051", "ibm1051"),
+    "hz": ("hz", "hz_gb", "hzgb"),
+    "idna": ("idna",),
+    "iso2022_jp_1": ("iso2022_jp_1", "iso2022jp_1", "iso_2022_jp_1"),
+    "iso2022_jp_2004": ("iso2022_jp_2004", "iso2022jp_2004", "iso_2022_jp_2004"),
+    "iso2022_jp_3": ("iso2022_jp_3", "iso2022jp_3", "iso_2022_jp_3"),
+    "iso2022_jp_ext": ("iso2022_jp_ext", "iso2022jp_ext", "iso_2022_jp_ext"),
+    "iso8859-1": ("8859", "iso8859", "iso_8859_1_1987", "latin"),
+    "iso8859-10": ("iso_8859_10_1992",),
+    "iso8859-11": ("iso_8859_11_2001", "thai"),
+    "iso8859-13": ("l7", "latin7"),
+    "iso8859-14": ("iso_8859_14_1998",),
+    "iso8859-15": ("l9",),
+    "iso8859-16": ("iso_8859_16_2001",),
+    "iso8859-2": ("iso_8859_2_1987",),
+    "iso8859-3": ("iso_8859_3_1988",),
+    "iso8859-4": ("iso_8859_4_1988",),
+    "iso8859-5": ("iso_8859_5_1988",),
+    "iso8859-6": ("iso_8859_6_1987",),
+    "iso8859-7": ("iso_8859_7_1987",),
+    "iso8859-8": ("iso_8859_8_1988",),
+    "iso8859-9": ("iso_8859_9_1989",),
+    "johab": ("cp1361", "johab", "ms1361"),
+    "koi8-t": ("koi8_t",),
+    "mac-arabic": ("mac_arabic",),
+    "mac-croatian": ("mac_croatian",),
+    "mac-cyrillic": ("mac_cyrillic", "maccyrillic"),
+    "mac-farsi": ("mac_farsi",),
+    "mac-greek": ("mac_greek", "macgreek"),
+    "mac-iceland": ("mac_iceland", "maciceland"),
+    "mac-latin2": ("mac_centeuro", "mac_latin2", "maccentraleurope", "maclatin2"),
+    "mac-roman": ("mac_roman", "macroman"),
+    "mac-romanian": ("mac_romanian",),
+    "mac-turkish": ("mac_turkish", "macturkish"),
+    "palmos": ("palmos",),
+    "punycode": ("punycode",),
+    "raw-unicode-escape": ("raw_unicode_escape",),
+    "shift_jis": ("s_jis", "sjis", "x_mac_japanese"),
+    "shift_jis_2004": ("s_jis_2004", "shift_jis_2004", "shiftjis2004", "sjis_2004"),
+    "shift_jisx0213": ("s_jisx0213", "shift_jisx0213", "shiftjisx0213", "sjisx0213"),
+    "tis-620": ("iso_ir_166", "tis_620_0", "tis_620_2529_0", "tis_620_2529_1"),
+    "undefined": ("undefined",),
+    "unicode-escape": ("unicode_escape",),
+    "utf-16": ("u16", "utf16", "utf_16"),
+    "utf-16-be": ("unicodebigunmarked", "utf_16_be", "utf_16be"),
+    "utf-16-le": ("unicodelittleunmarked", "utf_16_le", "utf_16le"),
+    "utf-32": ("u32", "utf32", "utf_32"),
+    "utf-32-be": ("utf_32_be", "utf_32be"),
+    "utf-32-le": ("utf_32_le", "utf_32le"),
+    "utf-7": ("u7",),
+    "utf-8": ("cp65001", "u8", "utf", "utf8_ucs2", "utf8_ucs4"),
+    "utf-8-sig": ("utf_8_sig",),
+}
+# -- end of the spellings CPython 3.9 gives --
+
+#: Those spellings, folded, by codec.
+_SPELLED = {_folded(spelling): codec for codec, spellings in _PYTHON_SPELLINGS.items()
+            for spelling in spellings}
+
+
 def registered_name(codec: str) -> str:
     """The name to declare a charset by: the registry's preferred MIME name."""
     return _PREFERRED.get(codec) or _REGISTERED[codec][0]
@@ -346,17 +477,22 @@ def _shown(name: str) -> str:
 def _instead(name: str, raw: bytes) -> Optional[str]:
     """The registered name to declare in place of `name`, or None.
 
-    Python's own reading of `name` is asked here and only here, to phrase a
-    remedy and never to read a document: the registered name of the charset
-    Python decodes under `name` -- `UTF8` is UTF-8, `cp1252` windows-1252 --
-    and, where no registration names that charset, the registered charset
-    under which these bytes read as the same characters. `cp949` is the one a
-    remedy meets most: no registration names it, and a file in it that holds
-    only EUC-KR's characters reads the same as EUC-KR.
+    Asked only to phrase a remedy, never to read a document, and answered from
+    tables, the same on every Python: the registry's own names first, without
+    case or EncName's punctuation -- `UTF8` is UTF-8, `windows_31j`
+    Windows-31J -- then the spellings CPython 3.9 gives a charset -- `cp1252`
+    is windows-1252, `sjis` Shift_JIS -- and, where no registration names that
+    charset, the registered charset under which these bytes read as the same
+    characters. `cp949` is the one a remedy meets most: no registration names
+    it, and a file in it that holds only EUC-KR's characters reads the same as
+    EUC-KR.
     """
-    try:
-        codec = codecs.lookup(name).name
-    except (LookupError, ValueError):
+    key = _folded(name)
+    codec = _FOLDED.get(key)
+    if codec is not None:
+        return registered_name(codec)
+    codec = _SPELLED.get(key)
+    if codec is None:
         return None
     if codec in _REGISTERED:
         return registered_name(codec)

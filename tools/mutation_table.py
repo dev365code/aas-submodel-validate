@@ -991,19 +991,6 @@ TABLE = [
      "parser, it is filed with the encoding's remedy rather than told to "
      "repair a chain nothing says is broken"),
 
-    ("loader/an-encoding-with-a-nul-in-the-name-does-not-crash",
-     "src/aas_submodel_validate/container.py",
-     "    try:\n        codec = codecs.lookup(name).name\n    except (LookupError, ValueError):\n        return None\n",
-     "    try:\n        codec = codecs.lookup(name).name\n    except LookupError:\n        return None\n",
-     ["tests/test_a_document_is_read_in_the_encoding_it_declares.py::"
-      "test_a_name_that_is_no_charset_at_all_is_refused_by_name",
-      "tests/test_hostile_input.py::"
-      "test_a_document_the_reader_cannot_decode_does_not_crash"],
-     "an encoding name with a NUL in it raised ValueError from the codec "
-     "lookup, uncaught, so a bare document and a payload left by a "
-     "traceback and exit 1; the lookup that phrases a refusal's remedy is "
-     "where such a name meets Python now"),
-
     ("loader/an-environment-that-reached-the-rules-is-judged",
      "src/aas_submodel_validate/loader.py",
      "        return bool(self.errors) and not self.submodels and not self.environments",
@@ -3567,6 +3554,27 @@ TABLE.extend([
      '            if False:\n',
      ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_name_the_registry_does_not_give_is_refused_naming_the_one_it_does'],
      "cp949 has no registration of its own, and a file in it that holds only EUC-KR's characters reads the same as EUC-KR, which is the name to give it"),
+
+    ('container/a-remedy-reads-the-registry-s-own-names-first',
+     'src/aas_submodel_validate/container.py',
+     '    codec = _FOLDED.get(key)\n',
+     '    codec = None\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_name_the_registry_does_not_give_is_refused_naming_the_one_it_does'],
+     "windows_31j is the registry's Windows-31J with an underscore, and CPython 3.9 has no spelling for it: without the registry's names, folded, the remedy names nothing there"),
+
+    ('container/a-remedy-reads-the-spellings-cpython-3-9-gives',
+     'src/aas_submodel_validate/container.py',
+     '    codec = _SPELLED.get(key)\n',
+     '    codec = None\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_name_the_registry_does_not_give_is_refused_naming_the_one_it_does'],
+     "sjis, cp1252, cp932 and ascii are spellings no registration gives, and the remedy names their charsets only from the table CPython 3.9 wrote"),
+
+    ('container/a-remedy-asks-no-python-that-runs-it',
+     'src/aas_submodel_validate/container.py',
+     '    codec = _SPELLED.get(key)\n',
+     '    codec = _SPELLED.get(key) or getattr(__import__("encodings").search_function(name), "name", None)\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_spelling_a_later_python_adds_draws_the_remedy_it_draws_on_every_python'],
+     "falling back to the running Python's own spellings is the remedy turning on which Python read the document: 3.13.15 named IBM00858 for pc_multilingual_850_euro where 3.13.2 named nothing"),
 
     ('container/ms-kanji-is-shift-jis',
      'src/aas_submodel_validate/container.py',
