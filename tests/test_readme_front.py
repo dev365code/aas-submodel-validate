@@ -459,13 +459,14 @@ def _numbers_are_this_trees(heading, version):
     For a dated entry it depends, and "no" was the whole answer for a
     while. A dated entry is history and must not be edited, so checking
     0.4.1's numbers against a tree three rules further on would demand
-    exactly the edit the shape rule forbids. But this project dates the
-    heading and bumps the version in **one commit**, and until that
-    commit the package still carries the previous version -- so between
-    the bump and the next draft heading the newest entry *is* this tree,
-    and that window contains the release commit itself. The gate was off
-    for precisely the commit that matters: a release that moved a count
-    and dated the entry in one go had nothing reading either.
+    exactly the edit the shape rule forbids. But the release commit dates
+    the heading of an entry whose version the package already carries --
+    raised in that same commit or earlier, under the draft heading -- so
+    from that commit until the next draft heading the newest entry *is*
+    this tree, and that window contains the release commit itself. The
+    gate was off for precisely the commit that matters: a release that
+    moved a count and dated the entry in one go had nothing reading
+    either.
 
     So: a dated entry whose version is the package's own is this tree's
     and is checked. The moment a new draft heading goes in, the draft
@@ -1177,13 +1178,14 @@ def test_which_changelog_headings_are_checked_against_this_tree(heading, version
                                                                 checked):
     """The window the number gate was blind to, stated as a table.
 
-    The second row is the one that was missing: this project dates the
-    heading and bumps the version in one commit, so the release commit
-    itself had no gate on its counts. The third and fourth are why the
-    gate cannot simply always run -- a dated entry is history, and
-    checking it against a later tree would demand the edit the shape
-    rule forbids. The last is a malformed heading, which is neither and
-    is caught by the shape assertion rather than silently checked.
+    The second row is the one that was missing: the release commit dates
+    the heading of the version the package already carries, so the
+    release commit itself had no gate on its counts. The third and
+    fourth are why the gate cannot simply always run -- a dated entry is
+    history, and checking it against a later tree would demand the edit
+    the shape rule forbids. The last is a malformed heading, which is
+    neither and is caught by the shape assertion rather than silently
+    checked.
     """
     assert _numbers_are_this_trees(heading, version) is checked
 
