@@ -41,8 +41,13 @@ def test_a_document_written_in_the_encoding_it_declares_is_read(
     reported that the document could not be read -- telling the author
     to fix syntax that was not wrong. What a German, Korean or Japanese
     Windows editor writes without being asked.
+
+    `latin1` is the registry's name for the charset Python also calls
+    `latin-1`; the second spelling is Python's own and is refused by name
+    now, the same on every Python
+    (`test_a_document_is_read_in_the_encoding_it_declares.py`).
     """
-    for encoding in ("iso-8859-1", "windows-1252", "latin-1"):
+    for encoding in ("iso-8859-1", "windows-1252", "latin1"):
         out = xml_as_utf8(_document(encoding))
         assert "café" in out.decode("utf-8"), encoding
         assert b"encoding=" not in out, (
@@ -50,27 +55,32 @@ def test_a_document_written_in_the_encoding_it_declares_is_read(
             "bytes downstream claim to be something they are not: %r" % out)
 
 
-def test_a_prolog_naming_a_codec_that_is_not_a_text_encoding_does_not_raise():
+def test_a_prolog_naming_a_codec_that_is_not_a_text_encoding_is_refused_by_name():
     """`codecs.lookup` accepts a dozen names `bytes.decode` refuses --
     `base64`, `rot13`, `zlib_codec`, `hex`. One line in a prolog was
     enough for a traceback, no report and exit 1, against the one thing
-    this reader promises about hostile input.
+    this reader promises about hostile input. They were handed on to the
+    parser after that, to refuse as not well-formed; none is a name the
+    IANA registry gives a charset, so they are refused by name here now,
+    as `EncodingNotRead` -- a refusal, not a traceback.
 
     `punycode` is in the list on purpose: it raises `UnicodeError`
-    rather than the decode child everything else raises, which is why
-    the guard names the parent.
+    rather than the decode child everything else raises.
     """
     for codec in ("base64", "rot13", "zlib_codec", "hex", "punycode",
                   "quopri_codec", "uu_codec"):
         raw = ('<?xml version="1.0" encoding="%s"?><root/>' % codec).encode("ascii")
-        assert xml_as_utf8(raw) == raw, codec
+        with pytest.raises(container.EncodingNotRead, match=codec):
+            xml_as_utf8(raw)
 
 
-def test_a_prolog_naming_no_codec_at_all_does_not_raise():
+def test_a_prolog_naming_no_codec_at_all_is_refused_by_name():
     """And the other half: a name Python has never heard of. The parser
-    is the one that gets to say so."""
+    used to be the one that said so, as a syntax error; the table of
+    registered names says so now, naming it."""
     raw = b'<?xml version="1.0" encoding="not-a-real-encoding"?><root/>'
-    assert xml_as_utf8(raw) == raw
+    with pytest.raises(container.EncodingNotRead, match="not-a-real-encoding"):
+        xml_as_utf8(raw)
 
 
 def test_a_declaration_further_in_than_a_short_window_is_still_read():
@@ -118,8 +128,10 @@ def test_a_marked_utf8_document_is_handed_on_exactly_as_it_arrived():
 def test_a_document_declaring_utf8_is_not_round_tripped():
     """Declaring what is already true is not a reason to rewrite the
     bytes. The shortcut is what keeps the common case identical, and
-    `us-ascii` is a subset that needs no more work than `utf-8`."""
-    for encoding in ("utf-8", "UTF-8", "us-ascii", "ASCII", "utf_8"):
+    `us-ascii` is a subset that needs no more work than `utf-8`. The
+    names are the registry's: `ASCII` and `utf_8` are Python's spellings
+    and are refused by name now, the same on every Python."""
+    for encoding in ("utf-8", "UTF-8", "csUTF8", "us-ascii", "US-ASCII", "ANSI_X3.4-1968"):
         raw = ('<?xml version="1.0" encoding="%s"?><root/>' % encoding).encode("ascii")
         assert xml_as_utf8(raw) == raw, encoding
 
@@ -156,9 +168,12 @@ def test_utf16_is_rewritten_because_downstream_cannot_read_it(encoding):
 
 
 def test_utf32_stays_refused_marked_or_not():
-    """Refused by the parser whether it is marked or not, so decoding it
-    here would admit documents nothing else in the ecosystem opens -- and
-    a validator calling a file conformant that no other reader can parse
-    has done the worst thing it can do."""
-    raw = ("<root/>").encode("utf-32")
-    assert xml_as_utf8(raw) == raw
+    """Refused by the parser whether it is marked or not, and by
+    aas-core3's own reader, so decoding it here would admit documents
+    nothing else in the ecosystem opens -- and a validator calling a file
+    conformant that no other reader can parse has done the worst thing it
+    can do. It was handed on to the parser to refuse as not well-formed;
+    it is refused here now, saying it is UCS-4."""
+    for raw in (("<root/>").encode("utf-32"), ("<root/>").encode("utf-32-le")):
+        with pytest.raises(container.EncodingNotRead, match="UCS-4"):
+            xml_as_utf8(raw)

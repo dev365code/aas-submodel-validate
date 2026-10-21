@@ -4,7 +4,7 @@
 | Explanation | what is wrong, evidence, remedy, requirement, line | met |
 | Report contract | schemaVersion, golden report, exit codes, schema page | met |
 | Entrances | command line, library, single file, Action, browser | met |
-| Input safety | read budgets, advisory, own mutations | + encodings |
+| Input safety | read budgets, advisory, own mutations, encodings | met |
 | Upstream | pinned, checked for upstream change, pin move shipped | met |
 
 **Coverage** — 12 of 12:
@@ -41,11 +41,11 @@
 - GitHub Action — done (`action.yml`: "installs the released validator from PyPI")
 - browser, nothing installed — done (`browser/page.html`: "once this page has loaded it makes no network request")
 
-**Input safety** — 3 of 4:
+**Input safety** — 4 of 4:
 - read budgets, per file and per run — done (`SECURITY.md`: "one document at 64 MiB, and a container's parts at 64 MiB each and 256 MiB together")
 - a security fix ships with an advisory — done (`SECURITY.md`: "From 0.3.0 on, a security fix that ships in a release has a GitHub security advisory")
 - tests verified against their own mutations — done (`.github/workflows/ci.yml`: "every mutation in the table dies")
-- declared encodings read without loss — not yet
+- declared encodings read without loss — done (`tests/test_a_document_is_read_in_the_encoding_it_declares.py`: "a document declared under any name the table in container.py holds is read")
 
 **Upstream** — 3 of 3:
 - upstream templates pinned by commit — done (`THIRD_PARTY.md`: "Taken from commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (commit date 2026-10-05T14:26:16Z) and hash-verified")

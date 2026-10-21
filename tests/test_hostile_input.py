@@ -401,7 +401,7 @@ def test_an_encoding_the_parser_refuses_is_not_read_here_either(tmp_path, encodi
     with pytest.raises(ElementTree.ParseError):     # what every other reader does
         ElementTree.fromstring(path.read_bytes())
     assert [e.message for e in loader.load(path).errors] == [
-        "the document could not be read as an AAS environment"]
+        "the document is in UCS-4, as its first bytes say, and this reader does not read UCS-4"]
 
 
 def test_only_the_declaration_loses_its_encoding(tmp_path):
@@ -2031,7 +2031,7 @@ def test_a_year_too_long_to_convert_is_a_finding_and_not_a_crash(tmp_path):
         % [f.id for f in crashed])
 
 
-@pytest.mark.parametrize("encoding", ["iso-8859-1", "iso-8859-15", "cp1252"])
+@pytest.mark.parametrize("encoding", ["iso-8859-1", "iso-8859-15", "windows-1252"])
 def test_a_legacy_encoding_the_parser_reads_is_read_here_too(tmp_path, encoding):
     """An XML document that declares a legacy code page and carries one
     non-ASCII character in it.
@@ -2048,7 +2048,9 @@ def test_a_legacy_encoding_the_parser_reads_is_read_here_too(tmp_path, encoding)
     it is in neither list.
 
     German-language industrial documents are the likeliest place for
-    one, which is this project's audience."""
+    one, which is this project's audience. Each is named here as the IANA
+    registry names it: `cp1252` is Python's spelling of windows-1252, and
+    is refused by name now, the same on every Python."""
     from aas_submodel_validate.cli import EXIT_OK, main
     from aas_submodel_validate.container import xml_as_utf8
 

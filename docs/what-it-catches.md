@@ -194,7 +194,7 @@ runs the test that holds the summary line.
 - read budgets, per file and per run — done
 - a security fix ships with an advisory — done
 - tests verified against their own mutations — done
-- declared encodings read without loss — not yet
+- declared encodings read without loss — done
 
 From 0.3.0 on, a security fix that ships has an advisory; `SECURITY.md`
 names the two earlier repairs that have a changelog entry only. Each gate
@@ -203,12 +203,21 @@ a test fails (`tools/mutation_table.py` lists them). CI runs the whole table
 on every commit, and a release is cut only from a commit CI passed, so
 every row has died on the tree that ships; `docs/mutation-record.json`
 keeps the last full run, with the commit it measured. Availability of `--template` is exercised with local readers with and
-without the option, so the comparison tests require no older installation. XML in UTF-8, UTF-16
-and the single-byte encodings it declares is read and judged, but UTF-32 is
-refused, and a JSON document -- which declares no encoding -- is read as
-UTF-8.
+without the option, so the comparison tests require no older installation. XML is read in
+UTF-8, in UTF-16 and in every charset its declaration names by a name the
+IANA charset registry gives it -- the table `_REGISTERED` in
+`src/aas_submodel_validate/container.py`, Shift_JIS, EUC-KR, GB18030 and
+Big5 among them -- and what the report quotes from it comes back as the
+characters the file holds, the same on every Python. A name outside the
+table is refused, naming the registered one to declare where one can be
+named; a document in UCS-4 or EBCDIC is refused saying which, as
+aas-core3's own XML reader refuses it; and bytes that are not the charset
+declared are refused at the line they are on.
+`python3 -m pytest tests/test_a_document_is_read_in_the_encoding_it_declares.py`
+runs the tests that hold it. A JSON document -- which declares no encoding
+-- is read as UTF-8.
 
-Before 1.0: every row of the mutation table killed on the tree it ships with, and every encoding a document may declare, read without loss.
+Before 1.0: every row of the mutation table killed on the tree it ships with, and every name the IANA charset registry gives a charset this reader decodes read without loss -- a document under a name outside that table, or in UCS-4 or EBCDIC, refused saying so.
 
 ## Upstream
 

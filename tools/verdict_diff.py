@@ -135,6 +135,14 @@ UNVENDORED = "urn:example:verdict-diff:no-pack-answers-for-this"
 LANGUAGE_FOLDS = [("upper", str.upper), ("title", str.title), ("lower", str.lower)]
 DECLARED_ENCODINGS = ["utf-8", "iso-8859-1", "windows-1252", "utf-16", "us-ascii"]
 
+#: Declared by a name the IANA registry gives that some Python does not know,
+#: by multi-byte charsets the registry names, by a spelling only Python gives,
+#: and written in UCS-4 and in EBCDIC -- each with the codec that writes it, so
+#: a reader that decides a name by asking its own Python is measured here.
+DECLARED_AS = [("Shift_JIS", "shift_jis"), ("Windows-31J", "cp932"), ("EUC-KR", "euc_kr"),
+               ("GB18030", "gb18030"), ("Big5", "big5"), ("ISO-2022-JP", "iso2022_jp"),
+               ("cp1252", "cp1252"), ("UTF-32", "utf-32"), ("IBM500", "cp500")]
+
 
 def _members(path):
     with zipfile.ZipFile(path) as archive:
@@ -190,6 +198,16 @@ def build_corpus(into: Path):
             return text.encode(encoding, "xmlcharrefreplace")
         cases.append(Case("the payload declares %s" % encoding,
                       _write(into / ("enc-%s.aasx" % encoding),
+                             _rewrite_payload(base, change))))
+
+    for declared, codec in DECLARED_AS:
+        def change(data, declared=declared, codec=codec):
+            text = data.decode("utf-8-sig")
+            text = re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", text)
+            text = '<?xml version="1.0" encoding="%s"?>\n' % declared + text
+            return text.encode(codec, "xmlcharrefreplace")
+        cases.append(Case("the payload declares %s, written in %s" % (declared, codec),
+                      _write(into / ("enc-as-%s.aasx" % declared),
                              _rewrite_payload(base, change))))
 
     # A File value is where the most verdicts moved, so each shape gets

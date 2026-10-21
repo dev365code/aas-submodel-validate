@@ -976,26 +976,33 @@ TABLE = [
      "container passed complete while a consumer might extract the other"),
 
     ("container/an-encoding-the-parser-cannot-honour-is-caught",
-     "src/aas_submodel_validate/container.py",
-     "        except (ElementTree.ParseError, LookupError, ValueError) as exc:",
-     "        except ElementTree.ParseError as exc:",
-     ["tests/test_hostile_input.py::"
+     "src/aas_submodel_validate/loader.py",
+     '    except EncodingNotRead as exc:\n'
+     '        loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, fix=encoding_remedy(exc)))\n'
+     '        return loaded\n',
+     "",
+     ["tests/test_a_document_is_read_in_the_encoding_it_declares.py::"
+      "test_a_relationships_part_in_a_name_this_reader_does_not_read_is_filed_with_its_remedy",
+      "tests/test_hostile_input.py::"
       "test_a_relationships_part_the_reader_cannot_decode_is_a_finding_not_a_crash"],
      "a relationships part declaring a codec the parser cannot honour (a "
      "NUL in the name, an unknown codec) left the process by a traceback "
-     "and exit 1, on a file it never read"),
+     "and exit 1, on a file it never read; refused by name now, before the "
+     "parser, it is filed with the encoding's remedy rather than told to "
+     "repair a chain nothing says is broken"),
 
     ("loader/an-encoding-with-a-nul-in-the-name-does-not-crash",
      "src/aas_submodel_validate/container.py",
-     "    except (UnicodeError, LookupError, ValueError):",
-     "    except (UnicodeError, LookupError):",
-     ["tests/test_hostile_input.py::"
-      "test_a_document_the_reader_cannot_decode_does_not_crash",
+     "    try:\n        codec = codecs.lookup(name).name\n    except (LookupError, ValueError):\n        return None\n",
+     "    try:\n        codec = codecs.lookup(name).name\n    except LookupError:\n        return None\n",
+     ["tests/test_a_document_is_read_in_the_encoding_it_declares.py::"
+      "test_a_name_that_is_no_charset_at_all_is_refused_by_name",
       "tests/test_hostile_input.py::"
-      "test_a_relationships_part_the_reader_cannot_decode_is_a_finding_not_a_crash"],
+      "test_a_document_the_reader_cannot_decode_does_not_crash"],
      "an encoding name with a NUL in it raised ValueError from the codec "
      "lookup, uncaught, so a bare document and a payload left by a "
-     "traceback and exit 1"),
+     "traceback and exit 1; the lookup that phrases a refusal's remedy is "
+     "where such a name meets Python now"),
 
     ("loader/an-environment-that-reached-the-rules-is-judged",
      "src/aas_submodel_validate/loader.py",

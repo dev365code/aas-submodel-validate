@@ -13,6 +13,7 @@ where every wheel crosses an air gap by hand.
 """
 from __future__ import annotations
 
+import codecs
 import errno
 import io
 import lzma
@@ -126,16 +127,15 @@ UNREADABLE = (zipfile.BadZipFile, NotImplementedError, RuntimeError,
 # question. The question is "can this reader open it", and anything
 # raised while trying is an answer to that.
 
-#: Byte order marks, longest first, because a UTF-32 mark begins with a
-#: UTF-16 one and the order is what tells them apart.
+#: Byte order marks.
 #:
-#: The UTF-32 rows are here to be *recognised*, not read. The parser
-#: refuses UTF-32 whether it is marked or not, so decoding it here would
-#: admit documents nothing else in the ecosystem will open -- and a
+#: UCS-4's marks are not among them. `_not_read`, asked before this table
+#: is, refuses a document in UCS-4 by name, marked or not: the parser
+#: refuses it too, and so does aas-core3's own reader, so reading it here
+#: would admit documents nothing else in the ecosystem will open -- and a
 #: validator calling a file conformant that no other reader can parse has
-#: done the worst thing it can do. Dropping the rows instead is not an
-#: option either: `FF FE 00 00` would then match the UTF-16 mark two rows
-#: below and be read as something it is not.
+#: done the worst thing it can do. Asked first, too, because `FF FE 00 00`
+#: would match the UTF-16 mark below and be read as something it is not.
 #:
 #: The UTF-16 rows name `utf-16` rather than a byte order, because that
 #: codec consumes the mark it just matched on. `utf-16-le` leaves it
@@ -146,8 +146,7 @@ UNREADABLE = (zipfile.BadZipFile, NotImplementedError, RuntimeError,
 #: parser skips the mark itself. Every official AASX in the corpus is
 #: marked UTF-8, so this is the row most documents take -- and the one
 #: where doing nothing is the whole job.
-_BOMS = ((b"\xff\xfe\x00\x00", None), (b"\x00\x00\xfe\xff", None),
-         (b"\xff\xfe", "utf-16"), (b"\xfe\xff", "utf-16"),
+_BOMS = ((b"\xff\xfe", "utf-16"), (b"\xfe\xff", "utf-16"),
          (b"\xef\xbb\xbf", None))
 
 #: An encoding declaration that survived a decode would contradict the
@@ -168,6 +167,176 @@ _DECLARED_ENCODING = re.compile(
 _ENCODING_NAME = re.compile(
     r'\A﻿?<\?xml[^?>]*?\s+encoding\s*=\s*(["\'])(?P<name>[^"\']+)\1')
 
+#: The names the IANA charset registry gives each charset this reader decodes,
+#: by the codec that decodes it. XML 1.0 (4.3.3) asks a processor to read a
+#: registered name, compared without regard to case, as the charset registered
+#: under it, or to treat the name as unknown; a name the running Python happens
+#: to know is not thereby one of these, and Pythons do not agree on which they
+#: know -- 3.9 has no `Windows-31J`, and the page this project publishes runs
+#: 3.13 -- so a reader that asked whichever one ran it read one document two
+#: ways at two entrances. So the names are written down here, once, as the
+#: sibling readers this project's family keeps write them.
+#:
+#: Each charset is one whose declaration reads as ASCII, which is how a
+#: declaration is found, and each codec is one every Python this package
+#: supports carries. Not here: UTF-16, which a declaration found as ASCII
+#: cannot be in and the parser reads by itself; UCS-4 and the EBCDIC code
+#: pages, which `_not_read` refuses from the first bytes; and the charsets no
+#: supported Python has a codec for. One codec for each registration, whatever
+#: Python calls its aliases: `MS_Kanji` is registered as Shift_JIS, which
+#: Python reads as Windows-31J, and `ISO-8859-11` as TIS-620. ISO-8859-6-E
+#: and -I and ISO-8859-8-E and -I are ISO-8859-6 and ISO-8859-8 with their
+#: direction made explicit (RFC 1556), the same bytes for the same characters,
+#: and `windows-874` is the code page Python calls cp874.
+_REGISTERED = {
+    "ascii": ("US-ASCII", "iso-ir-6", "ANSI_X3.4-1968", "ANSI_X3.4-1986", "ISO646-US", "us",
+        "IBM367", "cp367", "csASCII"),
+    "iso8859-1": ("iso-ir-100", "ISO_8859-1", "ISO-8859-1", "latin1", "l1", "IBM819", "CP819",
+        "csISOLatin1"),
+    "iso8859-2": ("iso-ir-101", "ISO_8859-2", "ISO-8859-2", "latin2", "l2", "csISOLatin2"),
+    "iso8859-3": ("iso-ir-109", "ISO_8859-3", "ISO-8859-3", "latin3", "l3", "csISOLatin3"),
+    "iso8859-4": ("iso-ir-110", "ISO_8859-4", "ISO-8859-4", "latin4", "l4", "csISOLatin4"),
+    "iso8859-5": ("iso-ir-144", "ISO_8859-5", "ISO-8859-5", "cyrillic", "csISOLatinCyrillic"),
+    "iso8859-6": ("iso-ir-127", "ISO_8859-6", "ISO-8859-6", "ECMA-114", "ASMO-708", "arabic",
+        "csISOLatinArabic", "ISO_8859-6-E", "csISO88596E", "ISO-8859-6-E", "ISO_8859-6-I",
+        "csISO88596I", "ISO-8859-6-I"),
+    "iso8859-7": ("iso-ir-126", "ISO_8859-7", "ISO-8859-7", "ELOT_928", "ECMA-118", "greek",
+        "greek8", "csISOLatinGreek"),
+    "iso8859-8": ("iso-ir-138", "ISO_8859-8", "ISO-8859-8", "hebrew", "csISOLatinHebrew",
+        "ISO_8859-8-E", "csISO88598E", "ISO-8859-8-E", "ISO_8859-8-I", "csISO88598I",
+        "ISO-8859-8-I"),
+    "iso8859-9": ("iso-ir-148", "ISO_8859-9", "ISO-8859-9", "latin5", "l5", "csISOLatin5"),
+    "iso8859-10": ("ISO-8859-10", "iso-ir-157", "l6", "csISOLatin6", "latin6"),
+    "shift_jis": ("Shift_JIS", "MS_Kanji", "csShiftJIS"),
+    "euc_jp": ("Extended_UNIX_Code_Packed_Format_for_Japanese", "csEUCPkdFmtJapanese",
+        "EUC-JP"),
+    "euc_kr": ("KS_C_5601-1987", "iso-ir-149", "KS_C_5601-1989", "KSC_5601", "korean",
+        "csKSC56011987", "EUC-KR", "csEUCKR"),
+    "iso2022_kr": ("ISO-2022-KR", "csISO2022KR"),
+    "iso2022_jp": ("ISO-2022-JP", "csISO2022JP"),
+    "iso2022_jp_2": ("ISO-2022-JP-2", "csISO2022JP2"),
+    "gb2312": ("GB_2312-80", "iso-ir-58", "chinese", "csISO58GB231280", "GB2312", "csGB2312"),
+    "utf-7": ("UNICODE-1-1-UTF-7", "csUnicode11UTF7", "UTF-7", "csUTF7"),
+    "utf-8": ("UTF-8", "csUTF8"),
+    "iso8859-13": ("ISO-8859-13", "csISO885913"),
+    "iso8859-14": ("ISO-8859-14", "iso-ir-199", "ISO_8859-14", "latin8", "iso-celtic", "l8",
+        "csISO885914"),
+    "iso8859-15": ("ISO-8859-15", "ISO_8859-15", "Latin-9", "csISO885915"),
+    "iso8859-16": ("ISO-8859-16", "iso-ir-226", "ISO_8859-16", "latin10", "l10", "csISO885916"),
+    "gbk": ("GBK", "CP936", "MS936", "windows-936", "csGBK"),
+    "gb18030": ("GB18030", "csGB18030"),
+    "kz1048": ("KZ-1048", "STRK1048-2002", "RK1048", "csKZ1048"),
+    "hp-roman8": ("hp-roman8", "roman8", "r8", "csHPRoman8"),
+    "cp850": ("IBM850", "cp850", "csPC850Multilingual"),
+    "cp852": ("IBM852", "cp852", "csPCp852"),
+    "cp437": ("IBM437", "cp437", "csPC8CodePage437"),
+    "cp862": ("IBM862", "cp862", "csPC862LatinHebrew"),
+    "cp932": ("Windows-31J", "csWindows31J"),
+    "big5": ("Big5", "csBig5"),
+    "mac-roman": ("macintosh", "mac", "csMacintosh"),
+    "cp855": ("IBM855", "cp855", "csIBM855"),
+    "cp857": ("IBM857", "cp857", "csIBM857"),
+    "cp860": ("IBM860", "cp860", "csIBM860"),
+    "cp861": ("IBM861", "cp861", "cp-is", "csIBM861"),
+    "cp863": ("IBM863", "cp863", "csIBM863"),
+    "cp864": ("IBM864", "cp864", "csIBM864"),
+    "cp865": ("IBM865", "cp865", "csIBM865"),
+    "cp869": ("IBM869", "cp869", "cp-gr", "csIBM869"),
+    "koi8-r": ("KOI8-R", "csKOI8R"),
+    "hz": ("HZ-GB-2312",),
+    "cp866": ("IBM866", "cp866", "csIBM866"),
+    "cp775": ("IBM775", "cp775", "csPC775Baltic"),
+    "koi8-u": ("KOI8-U", "csKOI8U"),
+    "cp858": ("IBM00858", "CCSID00858", "CP00858", "csIBM00858"),
+    "big5hkscs": ("Big5-HKSCS", "csBig5HKSCS"),
+    "ptcp154": ("PTCP154", "csPTCP154", "PT154", "CP154", "Cyrillic-Asian"),
+    "cp874": ("windows-874", "cswindows874"),
+    "cp1250": ("windows-1250", "cswindows1250"),
+    "cp1251": ("windows-1251", "cswindows1251"),
+    "cp1252": ("windows-1252", "cswindows1252"),
+    "cp1253": ("windows-1253", "cswindows1253"),
+    "cp1254": ("windows-1254", "cswindows1254"),
+    "cp1255": ("windows-1255", "cswindows1255"),
+    "cp1256": ("windows-1256", "cswindows1256"),
+    "cp1257": ("windows-1257", "cswindows1257"),
+    "cp1258": ("windows-1258", "cswindows1258"),
+    "tis-620": ("TIS-620", "csTIS620", "ISO-8859-11"),
+}
+
+_CODEC_OF = {name.lower(): codec for codec, names in _REGISTERED.items() for name in names}
+
+#: The name a remedy asks for, where the first one listed above is not it:
+#: the registry's preferred MIME name for that charset.
+_PREFERRED = {"iso8859-1": "ISO-8859-1", "iso8859-2": "ISO-8859-2", "iso8859-3": "ISO-8859-3",
+              "iso8859-4": "ISO-8859-4", "iso8859-5": "ISO-8859-5", "iso8859-6": "ISO-8859-6",
+              "iso8859-7": "ISO-8859-7", "iso8859-8": "ISO-8859-8", "iso8859-9": "ISO-8859-9",
+              "euc_jp": "EUC-JP", "euc_kr": "EUC-KR", "gb2312": "GB2312", "utf-7": "UTF-7"}
+
+#: The declared names the parser reads by itself, handed to it as they are:
+#: the registry's names for UTF-8 and US-ASCII, and for UTF-16.
+_PARSER_READS = ({name.lower() for name in _REGISTERED["utf-8"] + _REGISTERED["ascii"]}
+                 | {"utf-16", "utf-16be", "utf-16le", "csutf16", "csutf16be", "csutf16le"})
+
+#: How XML 1.0 (Appendix F) knows, from the first four bytes and before any
+#: declaration, an encoding this reader does not read: UCS-4 -- its byte order
+#: mark in each of the four orders, or three of the four bytes NUL beside the
+#: first character -- and EBCDIC, `<?xm` in its code pages.
+_UCS4_MARKS = (b"\x00\x00\xfe\xff", b"\xff\xfe\x00\x00", b"\x00\x00\xff\xfe", b"\xfe\xff\x00\x00")
+_EBCDIC_OPENING = b"\x4c\x6f\xa7\x94"
+
+#: A name a declaration can hold: XML 1.0 production 81, `EncName`.
+_ENC_NAME = re.compile(r"[A-Za-z][A-Za-z0-9._-]*")
+
+
+def registered_name(codec: str) -> str:
+    """The name to declare a charset by: the registry's preferred MIME name."""
+    return _PREFERRED.get(codec) or _REGISTERED[codec][0]
+
+
+def _not_read(raw: bytes) -> Optional[str]:
+    """UCS-4 or EBCDIC, where the first bytes say the document is in one."""
+    head = raw[:4]
+    if len(head) < 4:
+        return None
+    if head in _UCS4_MARKS or head.count(0) == 3:
+        return "UCS-4"
+    return "EBCDIC" if head == _EBCDIC_OPENING else None
+
+
+def _shown(name: str) -> str:
+    """A declared name as a sentence can hold it."""
+    return name if _ENC_NAME.fullmatch(name) else repr(name)
+
+
+def _instead(name: str, raw: bytes) -> Optional[str]:
+    """The registered name to declare in place of `name`, or None.
+
+    Python's own reading of `name` is asked here and only here, to phrase a
+    remedy and never to read a document: the registered name of the charset
+    Python decodes under `name` -- `UTF8` is UTF-8, `cp1252` windows-1252 --
+    and, where no registration names that charset, the registered charset
+    under which these bytes read as the same characters. `cp949` is the one a
+    remedy meets most: no registration names it, and a file in it that holds
+    only EUC-KR's characters reads the same as EUC-KR.
+    """
+    try:
+        codec = codecs.lookup(name).name
+    except (LookupError, ValueError):
+        return None
+    if codec in _REGISTERED:
+        return registered_name(codec)
+    try:
+        text = raw.decode(codec)
+    except (UnicodeError, LookupError):
+        return None
+    for candidate in ("utf-8",) + tuple(c for c in _REGISTERED if c != "utf-8"):
+        try:
+            if raw.decode(candidate) == text:
+                return registered_name(candidate)
+        except UnicodeError:
+            continue
+    return None
+
 
 def _sniff(raw: bytes):
     """The encoding the parser will take an unmarked document for, or None.
@@ -183,23 +352,15 @@ def _sniff(raw: bytes):
     Keying on the document beginning with `<` is keying on the fixtures: a
     document may open with whitespace, a comment or a processing
     instruction, and may carry no declaration at all. Four bytes, not two,
-    because unmarked UTF-32-LE also begins `3C 00` -- reading it as UTF-16
+    because unmarked UCS-4 also begins `3C 00` -- reading it as UTF-16
     would hand the parser text riddled with nulls and claim to understand
-    an encoding it refuses.
+    an encoding it refuses. `_not_read`, asked before this, has refused
+    every four bytes with three NULs in them, which is how XML 1.0
+    (Appendix F) knows UCS-4 in each of its byte orders.
     """
     if len(raw) < 4:
         return None
     null = tuple(byte == 0 for byte in raw[:4])
-    # Named rather than folded into the fall-through below, and it does
-    # not change the answer: neither UTF-32 shape equals either UTF-16
-    # shape, so deleting these two lines leaves them reaching the same
-    # `return None` at the end. What actually separates the two families
-    # is asking four bytes instead of two -- `3C 00` opens both. This
-    # says which four-byte shapes were considered and rejected, so that a
-    # later reader does not have to re-derive it from the ones that were
-    # accepted.
-    if null in ((False, True, True, True), (True, True, True, False)):
-        return None                                 # unmarked UTF-32
     if null == (False, True, False, True):
         return "utf-16-le"
     if null == (True, False, True, False):
@@ -213,15 +374,29 @@ def xml_as_utf8(raw: bytes) -> bytes:
     Everything downstream reads these bytes. If this disagrees with the
     parser about what the document says, every guard below is inspecting a
     different document from the one that gets parsed -- which is the whole
-    defect this exists to close. Bytes that cannot be decoded as the
-    encoding they claim come back untouched: the parser will refuse them
-    too, and refusing here instead would be this reader inventing a
-    verdict.
+    defect this exists to close.
+
+    A document in an encoding this reader does not read is refused here,
+    by name and the same way on every Python, as `EncodingNotRead`: UCS-4
+    and EBCDIC by their first bytes, a declared name the IANA charset
+    registry does not give a charset in `_REGISTERED`, and bytes that are
+    not the charset they declare. The parser refused each of them too, as
+    not well-formed -- which reported this reader's limit, or a name spelt
+    the way one Python spells it, as the document's syntax. Python's own
+    codec table decides none of it: Pythons differ in the names they know,
+    and the page this project publishes runs another Python than the
+    command.
 
     Untouched is the common case and the intended one. Only a document
     the parser reads as UTF-16 is rewritten, because only there do the
     bytes downstream needs differ from the bytes that arrived.
     """
+    what = _not_read(raw)
+    if what is not None:
+        raise EncodingNotRead(
+            "the document is in %s, as its first bytes say, and this reader does "
+            "not read %s" % (what, what), what=what, kind="first bytes",
+            detail="it begins %s" % raw[:4].hex(" "))
     for bom, encoding in _BOMS:
         if raw.startswith(bom):
             if encoding is not None:
@@ -270,10 +445,17 @@ def _as_declared(raw: bytes) -> bytes:
     environment" -- with a remedy telling the author to fix syntax that
     is not wrong. ElementTree reads it, aas-core3 reads it, and the
     docstring above says this is decided the way the parser decides it.
-    UTF-32 is refused by that same standard and stays refused; the
+    UCS-4 is refused by that same standard and stays refused; the
     legacy code pages were in neither list, which is what made this a
     gap rather than a choice. German-language industrial documents are
     the likeliest place for one.
+
+    The name is read as the IANA charset registry gives it, by the table
+    above, compared without regard to case (XML 1.0, 4.3.3); a name it
+    does not give a charset this reader decodes is refused, naming the
+    registered one where one can be named. The names the parser reads by
+    itself -- UTF-8's, US-ASCII's and UTF-16's -- are handed to it as they
+    are, as they always were.
 
     Only the prolog is consulted, and only when it is ASCII -- which it
     must be, since a parser has to read the declaration before it knows
@@ -286,22 +468,26 @@ def _as_declared(raw: bytes) -> bytes:
     if declared is None:
         return raw
     name = declared.group("name")
-    if not name or name.lower().replace("_", "-") in ("utf-8", "us-ascii", "ascii"):
+    if name.lower() in _PARSER_READS:
         return raw
-    # A name Python has never heard of is handed on for the parser to
-    # answer for, and that happens one function down: `_as_utf8` catches
-    # `LookupError` and returns the bytes as they arrived. There used to
-    # be a `codecs.lookup` here saying the same thing first, and it had
-    # no case of its own -- measured across every name either of them
-    # rejects, `lookup` never refuses one that `decode` accepts. Two
-    # guards with no case between them are not two guards: neither can
-    # be tested, so either can be deleted without a red, which is how a
-    # guard leaves a codebase.
-    return _as_utf8(raw, name)
+    codec = _CODEC_OF.get(name.lower())
+    if codec is None:
+        raise EncodingNotRead(
+            "the document declares %s, which is not a name the IANA charset registry "
+            "gives a charset this reader reads" % _shown(name),
+            what=name, kind="name", instead=_instead(name, raw),
+            detail="encoding=%s, in the XML declaration" % _shown(name))
+    return _as_utf8(raw, codec, declared=name)
 
 
-def _as_utf8(raw: bytes, encoding: str) -> bytes:
+def _as_utf8(raw: bytes, encoding: str, declared: Optional[str] = None) -> bytes:
     """The bytes as UTF-8, or as they arrived if that cannot be done.
+
+    As they arrived only for UTF-16, which the parser reads itself and
+    refuses itself. A document that names its charset (`declared`) and is
+    not it is refused here, at the line it stopped on: bytes that are not
+    legal in the declared encoding are the fatal error XML 1.0 (4.3.3)
+    says they are, and nothing is replaced.
 
     This is the one transform here that can grow: a legacy code page is
     one byte per character and UTF-8 is up to four -- and UTF-16 is two
@@ -319,18 +505,27 @@ def _as_utf8(raw: bytes, encoding: str) -> bytes:
     """
     try:
         text = raw.decode(encoding)
-    except (UnicodeError, LookupError, ValueError):
-        # `LookupError` because `codecs.lookup` accepts a dozen names
-        # that are not text encodings -- `base64`, `rot13`, `zlib_codec`
-        # -- and `bytes.decode` refuses them. `ValueError` because a name
-        # with a NUL in it (`latin\x001`) raises that from the lookup, and
-        # it reached this decode uncaught: a traceback on a file nobody
-        # read. Undecodable here, and the parser will refuse it too;
-        # refusing here would invent a verdict. `UnicodeError` (a
-        # `ValueError` subclass, named for the record) is a decode child;
-        # `punycode` raises the base `UnicodeError`.
-        return raw
-    converted = _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
+    except UnicodeDecodeError as error:
+        if declared is None:
+            return raw
+        line = raw.count(b"\n", 0, error.start) + 1
+        shown = raw[error.start:error.end][:8].hex(" ")
+        raise EncodingNotRead(
+            "the document declares %s, and the bytes on line %d are not %s: %s"
+            % (declared, line, declared, shown), what=declared, kind="bytes",
+            line=line, detail="%s at byte %d" % (shown, error.start)) from None
+    try:
+        converted = _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
+    except UnicodeEncodeError as error:
+        # A decoder that hands back half of a surrogate pair -- UTF-7 can --
+        # has made a code point no document holds (production 2).
+        line = text.count("\n", 0, error.start) + 1
+        half = ord(error.object[error.start])
+        raise EncodingNotRead(
+            "the document declares %s, and its bytes on line %d make half of a "
+            "character, U+%04X" % (declared or encoding, line, half),
+            what=declared or encoding, kind="bytes", line=line,
+            detail="U+%04X on line %d" % (half, line)) from None
     if len(converted) > MAX_PART_BYTES:
         raise PartTooLarge(
             "a document declaring %s is %d bytes as UTF-8, above the %d byte "
@@ -615,6 +810,25 @@ class PartTooLarge(ContainerError):
     """
 
 
+class EncodingNotRead(ContainerError):
+    """A document in an encoding this reader does not read, said by name.
+
+    Not a claim about the document's syntax, which is what the parser's
+    refusal used to make of it. `what` is the encoding as the document
+    gives it -- a declared name, or UCS-4 or EBCDIC from its first bytes --
+    `kind` which of those the refusal rests on (`"first bytes"`, `"name"`
+    or `"bytes"`, for bytes that are not the charset they declare),
+    `instead` the name to declare in its place where one can be named, and
+    `line` where the reader stopped.
+    """
+
+    def __init__(self, message: str, *, what: str, kind: str,
+                 instead: Optional[str] = None, line: int = 1,
+                 detail: Optional[str] = None):
+        super().__init__(message, detail=detail)
+        self.what, self.kind, self.instead, self.line = what, kind, instead, line
+
+
 class DirectoryTooLarge(ContainerError):
     """The archive declares more names than this reader will index.
 
@@ -676,23 +890,30 @@ class OutOfMemory(ContainerError):
 
 
 class _Refusal:
-    """What a remembered failure said: its class, its message, and where a
-    memory stop happened -- and nothing it held."""
+    """What a remembered failure said: its class, its message, where a
+    memory stop happened, and what an encoding refusal named -- and nothing
+    it held."""
 
-    __slots__ = ("kind", "message", "building", "detail")
+    __slots__ = ("kind", "message", "building", "detail", "encoding")
 
-    def __init__(self, kind, message: str, building: bool, detail=None):
+    def __init__(self, kind, message: str, building: bool, detail=None, encoding=None):
         self.kind, self.message, self.building = kind, message, building
-        self.detail = detail
+        self.detail, self.encoding = detail, encoding
 
     @classmethod
     def of(cls, exc):
+        encoding = ((exc.what, exc.kind, exc.instead, exc.line)
+                    if isinstance(exc, EncodingNotRead) else None)
         return cls(type(exc), str(exc), getattr(exc, "building", False),
-                   getattr(exc, "detail", None))
+                   getattr(exc, "detail", None), encoding)
 
     def again(self):
         if self.kind is OutOfMemory:
             return OutOfMemory(self.message, building=self.building, detail=self.detail)
+        if self.encoding is not None:
+            what, kind, instead, line = self.encoding
+            return EncodingNotRead(self.message, what=what, kind=kind, instead=instead,
+                                   line=line, detail=self.detail)
         return self.kind(self.message, detail=self.detail)
 
 
@@ -1259,14 +1480,13 @@ class AasxPackage:
                                  % (self.path, rels), detail=doctype_written(raw))
         try:
             root = ElementTree.fromstring(raw)
-        except (ElementTree.ParseError, LookupError, ValueError) as exc:
-            # `ParseError` for malformed XML. `LookupError`/`ValueError`
-            # because the parser reads the encoding declaration from the
-            # bytes and raises for a name it cannot honour -- a codec no
-            # reader has, or one with a NUL in it -- which `_as_utf8` handed
-            # on rather than convert, so the parser meets them here; unread,
-            # they left as a traceback. A part that does not parse is a
-            # defect in the archive, as it is for the payload one layer over.
+        except ElementTree.ParseError as exc:
+            # Malformed XML. A name the parser cannot honour -- a codec no
+            # reader has, one with a NUL in it -- does not reach it any more:
+            # `xml_as_utf8` refuses the name first, as `EncodingNotRead`, and
+            # the loader files that under this part. A part that does not
+            # parse is a defect in the archive, as it is for the payload one
+            # layer over.
             if isinstance(exc, ElementTree.ParseError) and ran_out_of_memory(exc):
                 raise MemoryError(str(exc)) from exc        # a stop; see `relationships`
             raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc),

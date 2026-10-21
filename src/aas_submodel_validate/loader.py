@@ -31,6 +31,7 @@ from .container import (
     AasxPackage,
     ContainerError,
     DirectoryTooLarge,
+    EncodingNotRead,
     ForeignOrigin,
     NoRelationships,
     OutOfMemory,
@@ -68,6 +69,22 @@ PAYLOAD_DOCTYPE_REMEDY = (
     "DTD is a decompression-free way to exhaust a reader, so this one "
     "refuses the declaration rather than try to bound what it expands "
     "to. %s" % REFUSED_NOT_JUDGED)
+
+
+def encoding_remedy(refusal: EncodingNotRead) -> str:
+    """What to do about a document in an encoding this reader does not read:
+    the registered name to declare where the refusal could name one."""
+    if refusal.kind == "first bytes":
+        return ("Save the document as UTF-8, or as UTF-16 with its byte order mark -- the "
+                "two every XML processor reads (XML 1.0, 4.3.3). This reader does not read "
+                "%s, and aas-core3's own XML reader refuses it as well. %s"
+                % (refusal.what, REFUSED_NOT_JUDGED))
+    if refusal.instead:
+        return ("Declare it as %s, the name the IANA charset registry gives that charset, or "
+                "save the document as UTF-8 and drop the declaration. %s"
+                % (refusal.instead, REFUSED_NOT_JUDGED))
+    return ("Declare the encoding the file is in, by the name the IANA charset registry gives "
+            "it, or save the document as UTF-8 and drop the declaration. %s" % REFUSED_NOT_JUDGED)
 
 
 def directory_bound_remedy() -> str:
@@ -716,6 +733,11 @@ def _xml_as_utf8_or_recorded(loaded: Loaded, raw: bytes, part: Optional[str]):
     except MemoryError as exc:
         _payload_error(loaded, part, exc, _out_of_room(exc, building=False))
         return None
+    except EncodingNotRead as exc:
+        loaded.errors.append(LoadError(
+            "payload", str(exc), subject=part or loaded.path, fix=encoding_remedy(exc),
+            detail=exc.detail, line=exc.line, part=part))
+        return None
     except PartTooLarge as exc:
         # The document's UTF-8 form is over the bound. Its bytes on disk
         # were under it -- UTF-16 is narrower than UTF-8 for the CJK it
@@ -1085,6 +1107,9 @@ def _load_aasx(path: Path) -> Loaded:
     except ForeignOrigin as exc:
         loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, fix=FOREIGN_ORIGIN_REMEDY))
         return loaded
+    except EncodingNotRead as exc:
+        loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, fix=encoding_remedy(exc)))
+        return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail))
         return loaded
@@ -1126,6 +1151,8 @@ def _load_aasx(path: Path) -> Loaded:
             pass        # this part declares none, which is not a defect
         except RefusedContent as exc:
             loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=rels, fix=RELATIONSHIP_DOCTYPE_REMEDY))
+        except EncodingNotRead as exc:
+            loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=rels, fix=encoding_remedy(exc)))
         except ContainerError as exc:
             # Would not parse. Quiet here until now for sharing an
             # exception type with "declares none" above, which left a
