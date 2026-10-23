@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "62167e0a7f0861e05f7078dba1f5ac2e78c1c2bf",
+ "commit": "fe21ed587d0919aaf60bbae4b2ef0f87535b4a35",
  "python": "3.9.6",
  "rows": [
   "gates/the-time-budget-actually-compares",
@@ -376,7 +376,7 @@
   "container/a-utf-8-mark-refuses-a-declaration-of-utf-16",
   "container/unmarked-utf-16-holds-the-declaration-to-its-byte-order",
   "container/ascii-s-shape-cannot-be-utf-16",
-  "container/utf-16-under-a-name-the-parser-would-ask-about-is-refused-here",
+  "container/utf-16-declaring-nothing-is-refused-for-bytes-that-are-not-it",
   "rules/a-near-miss-of-an-alias-names-the-template-s-spelling",
   "canary/a-comment-nobody-reads"
  ],
@@ -754,7 +754,7 @@
   "container/a-utf-8-mark-refuses-a-declaration-of-utf-16",
   "container/unmarked-utf-16-holds-the-declaration-to-its-byte-order",
   "container/ascii-s-shape-cannot-be-utf-16",
-  "container/utf-16-under-a-name-the-parser-would-ask-about-is-refused-here",
+  "container/utf-16-declaring-nothing-is-refused-for-bytes-that-are-not-it",
   "rules/a-near-miss-of-an-alias-names-the-template-s-spelling"
  ],
  "survived": [
