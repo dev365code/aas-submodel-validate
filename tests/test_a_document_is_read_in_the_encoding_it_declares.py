@@ -505,11 +505,93 @@ def test_a_relationships_part_like_that_is_filed_as_the_chain_and_not_a_tracebac
     assert error.stage == "chain" and error.fix.startswith("Declare "), (label, error)
 
 
-def test_utf16_under_the_parser_s_own_name_is_still_the_parser_s_to_refuse():
+def test_utf16_under_the_parser_s_own_name_is_refused_here_too():
     """`UTF-16` the parser knows, and bytes it cannot decode under that name
-    are still handed to it -- the one name of UTF-16's that is."""
+    used to be handed to it for it to refuse. It does not always: expat
+    reads a surrogate with no partner inside an attribute value, so the
+    refusal is this reader's whatever the name."""
     raw = b"\xff\xfe" + (_DECLARING % "UTF-16").encode("utf-16-le") + b"\x00\xd8"
-    assert xml_as_utf8(raw) == raw
+    with pytest.raises(EncodingNotRead) as refused:
+        xml_as_utf8(raw)
+    assert refused.value.kind == "bytes"
+
+
+def _rels_with_a_lone_surrogate(declared, codec, mark=b""):
+    """A relationships part in UTF-16 (`codec`), declaring `declared` or, for
+    None, nothing, whose Id holds a surrogate with no partner -- the place
+    expat takes one without a word."""
+    head = '<?xml version="1.0"%s?>' % ("" if declared is None else ' encoding="%s"' % declared)
+    before = ('%s<Relationships xmlns="%s"><Relationship Type="%s" Target="/aasx/aasx-origin" Id="'
+              % (head, RELS_NS, ORIGIN_REL))
+    surrogate = b"\x00\xd8" if codec == "utf-16-le" else b"\xd8\x00"
+    return mark + before.encode(codec) + surrogate + 'R0"/></Relationships>'.encode(codec)
+
+
+#: UTF-16 under the names the parser reads itself, or under none, holding
+#: bytes that are not UTF-16. Handed on as they came, a relationships part
+#: with a surrogate and no partner in an attribute was read and the package
+#: judged; a document with no mark and an odd last byte came back as a
+#: finding about its XML rather than a refusal of its bytes.
+THE_PARSER_S_NAMES = [
+    ("a little-endian mark, UTF-16, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16", "utf-16-le", b"\xff\xfe")),
+    ("a big-endian mark, UTF-16, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16", "utf-16-be", b"\xfe\xff")),
+    ("no mark, little-endian, UTF-16, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16", "utf-16-le")),
+    ("no mark, big-endian, UTF-16, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16", "utf-16-be")),
+    ("a little-endian mark, UTF-16LE, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16LE", "utf-16-le", b"\xff\xfe")),
+    ("no mark, little-endian, UTF-16LE, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16LE", "utf-16-le")),
+    ("a big-endian mark, UTF-16BE, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16BE", "utf-16-be", b"\xfe\xff")),
+    ("no mark, big-endian, UTF-16BE, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate("UTF-16BE", "utf-16-be")),
+    ("a little-endian mark, no declaration, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate(None, "utf-16-le", b"\xff\xfe")),
+    ("a big-endian mark, no declaration, a lone surrogate in an attribute",
+     _rels_with_a_lone_surrogate(None, "utf-16-be", b"\xfe\xff")),
+]
+
+#: The same names, a whole document and no mark, ending on an odd byte.
+ODD_LAST_BYTE = [
+    ("no mark, little-endian, UTF-16, an odd last byte", "UTF-16", "utf-16-le"),
+    ("no mark, big-endian, UTF-16, an odd last byte", "UTF-16", "utf-16-be"),
+    ("no mark, little-endian, UTF-16LE, an odd last byte", "UTF-16LE", "utf-16-le"),
+    ("no mark, big-endian, UTF-16BE, an odd last byte", "UTF-16BE", "utf-16-be"),
+]
+
+
+@pytest.mark.parametrize("label,raw", THE_PARSER_S_NAMES, ids=[u[0] for u in THE_PARSER_S_NAMES])
+def test_utf16_bytes_that_are_not_utf16_are_refused_whatever_the_name(label, raw):
+    """Refused here, for the bytes -- the parser is not the one that does."""
+    with pytest.raises(EncodingNotRead) as refused:
+        xml_as_utf8(raw)
+    assert refused.value.kind == "bytes", label
+
+
+@pytest.mark.parametrize("label,raw", THE_PARSER_S_NAMES, ids=[u[0] for u in THE_PARSER_S_NAMES])
+def test_a_relationships_part_with_a_lone_surrogate_is_refused_and_not_read(tmp_path, label, raw):
+    path = tmp_path / "p.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", raw)
+        archive.writestr("aasx/aasx-origin", b"")
+    (error,) = loader.load(path).errors
+    assert error.stage == "chain" and error.fix.startswith("Declare "), (label, error)
+
+
+@pytest.mark.parametrize("label,declared,codec", ODD_LAST_BYTE, ids=[u[0] for u in ODD_LAST_BYTE])
+def test_a_document_with_no_mark_and_an_odd_last_byte_is_refused_for_its_bytes(
+        tmp_path, capsys, label, declared, codec):
+    path = tmp_path / "odd.xml"
+    path.write_bytes(_environment(declared, "a").encode(codec) + b"\x00")
+    (error,) = loader.load(path).errors
+    assert error.fix.startswith("Declare "), (label, error)
+    code, _ = _judged(path, capsys)
+    assert code == 2, label
 
 
 def test_a_mark_the_declaration_contradicts_is_refused_naming_the_mark_s_encoding(tmp_path):

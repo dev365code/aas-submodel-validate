@@ -199,13 +199,19 @@ def test_a_thumbnail_relationship_does_not_become_the_payload(tmp_path):
     assert report.ok, [f.id for f in report.findings]
 
 
-def test_bytes_the_declared_encoding_cannot_decode_come_back_untouched():
+def test_bytes_utf16_cannot_decode_are_refused_here_for_the_bytes():
     """A UTF-16 byte order mark over bytes UTF-16 refuses -- a lone
-    surrogate. The promise is the docstring's: refused bytes come back
-    untouched, because the parser will refuse them too and refusing here
-    would be this reader inventing a verdict."""
+    surrogate. They used to come back untouched, on the ground that the
+    parser would refuse them too and refusing here would be this reader
+    inventing a verdict. The parser does not always: expat reads a
+    surrogate with no partner inside an attribute value, and the package
+    holding it was judged. XML 1.0 (4.3.3) makes such bytes a fatal error,
+    so the refusal is the verdict the standard gives, made here where it
+    can be made every time."""
     raw = b"\xff\xfe\x00\xd8"
-    assert container.xml_as_utf8(raw) == raw
+    with pytest.raises(container.EncodingNotRead) as refused:
+        container.xml_as_utf8(raw)
+    assert refused.value.kind == "bytes"
 
 
 def test_only_a_declaration_at_the_top_is_rewritten():

@@ -3536,9 +3536,10 @@ TABLE.extend([
 
     ('container/bytes-that-are-not-the-declared-charset-are-refused',
      'src/aas_submodel_validate/container.py',
-     '        if declared is None:\n            return raw\n        line = raw.count(b"\\n", 0, error.start) + 1\n',
-     '        if True:\n            return raw\n        line = raw.count(b"\\n", 0, error.start) + 1\n',
-     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_bytes_that_are_not_the_declared_charset_are_refused_where_they_are'],
+     '        raise EncodingNotRead(\n            "the document declares %s, and the bytes on line %d are not %s: %s"',
+     '        return raw\n        raise EncodingNotRead(\n            "the document declares %s, and the bytes on line %d are not %s: %s"',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_bytes_that_are_not_the_declared_charset_are_refused_where_they_are',
+      'tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_utf16_bytes_that_are_not_utf16_are_refused_whatever_the_name'],
      "bytes that were not the charset declared went on undecoded to a parser that refused them as syntax; XML 1.0 makes them the fatal error, and the line they are on is where it is"),
 
     ('container/a-remedy-names-the-registered-charset',
@@ -3625,12 +3626,12 @@ TABLE.extend([
      ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_declaration_its_first_bytes_contradict_is_refused_as_the_parser_refuses_it'],
      "a document whose first bytes are ASCII's cannot be in UTF-16 whatever it declares, and expat refuses the declaration as incorrect"),
 
-    ('container/utf-16-under-a-name-the-parser-would-ask-about-is-refused-here',
+    ('container/utf-16-declaring-nothing-is-refused-for-bytes-that-are-not-it',
      'src/aas_submodel_validate/container.py',
-     '    return name if name is not None and name.lower() not in _PARSER_READS_UTF16 else None\n',
-     '    return None\n',
-     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_utf16_under_a_name_the_parser_does_not_know_is_refused_for_bytes_that_are_not_it'],
-     "UTF-16 bytes that do not decode, declared by csUTF16 or one of its byte orders, went to the parser, which asked Python what the name meant: a relationships part stopped the run with a traceback"),
+     '        if declared is None:\n            raise EncodingNotRead(\n                "the document is in %s by its first bytes',
+     '        if declared is None:\n            return raw\n            raise EncodingNotRead(\n                "the document is in %s by its first bytes',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_utf16_bytes_that_are_not_utf16_are_refused_whatever_the_name'],
+     "UTF-16 by its first bytes, declaring nothing, with bytes that do not decode went to the parser, which reads a surrogate with no partner inside an attribute value: the package holding one was judged"),
 
     ('rules/a-near-miss-of-an-alias-names-the-template-s-spelling',
      'src/aas_submodel_validate/rules/engine.py',

@@ -2,6 +2,25 @@
 
 ## 1.0.0 — unreleased
 
+**Bytes that are not UTF-16 are refused at the line they are on in any document UTF-16 by its first bytes, whatever it declares and when it declares nothing.** 0.14.0 refused them under the registry's other names for UTF-16 and handed them to the parser under `UTF-16`, `UTF-16LE` and `UTF-16BE`, or under no name, for the parser to refuse -- and expat does not always: it reads a surrogate with no partner inside an attribute value, and a package whose relationships part held one was judged.
+
+**Who gates a build on the exit code**: two kinds of input move against 0.14.0, both from judged to refused, and every one measured is below. None of the inputs this repository measures every release moves.
+
+| input | 0.14.0 | 1.0.0 |
+|---|---|---|
+| a relationships part in UTF-16, with a little-endian byte order mark, declaring `UTF-16`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a big-endian byte order mark, declaring `UTF-16`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, little-endian with no byte order mark, declaring `UTF-16`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, big-endian with no byte order mark, declaring `UTF-16`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a little-endian byte order mark, declaring `UTF-16LE`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, little-endian with no byte order mark, declaring `UTF-16LE`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a big-endian byte order mark, declaring `UTF-16BE`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, big-endian with no byte order mark, declaring `UTF-16BE`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a document in UTF-16, little-endian with no byte order mark, declaring `UTF-16`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+| a document in UTF-16, big-endian with no byte order mark, declaring `UTF-16`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+| a document in UTF-16, little-endian with no byte order mark, declaring `UTF-16LE`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+| a document in UTF-16, big-endian with no byte order mark, declaring `UTF-16BE`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
 ## 0.14.0 — 2026-10-24
