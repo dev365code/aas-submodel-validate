@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0 — unreleased
+
+It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
+
 ## 0.14.0 — 2026-10-24
 
 **Which XML documents are read now turns on the encoding they declare, by the name the registry gives it, and on bytes that agree with it -- the same on every Python and at every entrance, with every verdict that moves named below -- and whether the vendored templates have moved upstream is asked every week.**
