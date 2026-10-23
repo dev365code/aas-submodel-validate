@@ -3625,6 +3625,13 @@ TABLE.extend([
      ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_declaration_its_first_bytes_contradict_is_refused_as_the_parser_refuses_it'],
      "a document whose first bytes are ASCII's cannot be in UTF-16 whatever it declares, and expat refuses the declaration as incorrect"),
 
+    ('container/utf-16-under-a-name-the-parser-would-ask-about-is-refused-here',
+     'src/aas_submodel_validate/container.py',
+     '    return name if name is not None and name.lower() not in _PARSER_READS_UTF16 else None\n',
+     '    return None\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_utf16_under_a_name_the_parser_does_not_know_is_refused_for_bytes_that_are_not_it'],
+     "UTF-16 bytes that do not decode, declared by csUTF16 or one of its byte orders, went to the parser, which asked Python what the name meant: a relationships part stopped the run with a traceback"),
+
     ('rules/a-near-miss-of-an-alias-names-the-template-s-spelling',
      'src/aas_submodel_validate/rules/engine.py',
      '        if current is not None:\n            # Near an alias: a spelling an earlier edition gave the row, still\n',
