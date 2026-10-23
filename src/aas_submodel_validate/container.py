@@ -551,9 +551,12 @@ def xml_as_utf8(raw: bytes) -> bytes:
     by name and the same way on every Python, as `EncodingNotRead`: UCS-4
     and EBCDIC by their first bytes, a declared name the IANA charset
     registry does not give a charset in `_REGISTERED`, and bytes that are
-    not the charset they declare. The parser refused each of them too, as
-    not well-formed -- which reported this reader's limit, or a name spelt
-    the way one Python spells it, as the document's syntax. Python's own
+    not the charset they declare -- or, declaring none, not the UTF-16
+    their first bytes settle. The parser refused most of them too, as not
+    well-formed -- which reported this reader's limit, or a name spelt the
+    way one Python spells it, as the document's syntax -- and one it did
+    not: expat reads a UTF-16 surrogate with no partner inside an
+    attribute value. Python's own
     codec table decides none of it: Pythons differ in the names they know,
     and the page this project publishes runs another Python than the
     command.
@@ -707,11 +710,11 @@ def _as_utf8(raw: bytes, encoding: str, declared: Optional[str] = None,
             raise EncodingNotRead(
                 "the document is in %s by its first bytes, and the bytes on line %d are not "
                 "%s: %s" % (settled, line, settled, shown), what=settled, kind="bytes",
-                line=line, detail="%s at byte %d" % (shown, error.start)) from None
+                line=line, detail="%s at byte %d" % (shown, error.start), settled=settled) from None
         raise EncodingNotRead(
             "the document declares %s, and the bytes on line %d are not %s: %s"
             % (declared, line, declared, shown), what=declared, kind="bytes",
-            line=line, detail="%s at byte %d" % (shown, error.start)) from None
+            line=line, detail="%s at byte %d" % (shown, error.start), settled=settled) from None
     try:
         converted = _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
     except UnicodeEncodeError as error:
@@ -1013,18 +1016,21 @@ class EncodingNotRead(ContainerError):
 
     Not a claim about the document's syntax, which is what the parser's
     refusal used to make of it. `what` is the encoding as the document
-    gives it -- a declared name, or UCS-4 or EBCDIC from its first bytes --
-    `kind` which of those the refusal rests on (`"first bytes"`, `"name"`
-    or `"bytes"`, for bytes that are not the charset they declare),
-    `instead` the name to declare in its place where one can be named, and
-    `line` where the reader stopped.
+    gives it -- a declared name, UCS-4 or EBCDIC from its first bytes, or
+    the UTF-16 its first bytes settle when it declares none -- `kind` which
+    of those the refusal rests on (`"first bytes"`, `"name"` or `"bytes"`,
+    for bytes that are not that encoding), `instead` the name to declare in
+    its place where one can be named, `line` where the reader stopped, and
+    `settled` the UTF-16 the first bytes settle when the refusal is of
+    bytes in a document they settle -- where no declaration is the remedy.
     """
 
     def __init__(self, message: str, *, what: str, kind: str,
                  instead: Optional[str] = None, line: int = 1,
-                 detail: Optional[str] = None):
+                 detail: Optional[str] = None, settled: Optional[str] = None):
         super().__init__(message, detail=detail)
         self.what, self.kind, self.instead, self.line = what, kind, instead, line
+        self.settled = settled
 
 
 class DirectoryTooLarge(ContainerError):
@@ -1100,7 +1106,7 @@ class _Refusal:
 
     @classmethod
     def of(cls, exc):
-        encoding = ((exc.what, exc.kind, exc.instead, exc.line)
+        encoding = ((exc.what, exc.kind, exc.instead, exc.line, exc.settled)
                     if isinstance(exc, EncodingNotRead) else None)
         return cls(type(exc), str(exc), getattr(exc, "building", False),
                    getattr(exc, "detail", None), encoding)
@@ -1109,9 +1115,9 @@ class _Refusal:
         if self.kind is OutOfMemory:
             return OutOfMemory(self.message, building=self.building, detail=self.detail)
         if self.encoding is not None:
-            what, kind, instead, line = self.encoding
+            what, kind, instead, line, settled = self.encoding
             return EncodingNotRead(self.message, what=what, kind=kind, instead=instead,
-                                   line=line, detail=self.detail)
+                                   line=line, detail=self.detail, settled=settled)
         return self.kind(self.message, detail=self.detail)
 
 

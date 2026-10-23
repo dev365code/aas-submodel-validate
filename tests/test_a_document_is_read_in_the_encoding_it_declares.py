@@ -502,7 +502,8 @@ def test_a_relationships_part_like_that_is_filed_as_the_chain_and_not_a_tracebac
         archive.writestr("_rels/.rels", make(_rels))
         archive.writestr("aasx/aasx-origin", b"")
     (error,) = loader.load(path).errors
-    assert error.stage == "chain" and error.fix.startswith("Declare "), (label, error)
+    # Repaired, not redeclared: the name already agrees with the first bytes.
+    assert error.stage == "chain" and error.fix.startswith("The file is in UTF-16"), (label, error)
 
 
 def test_utf16_under_the_parser_s_own_name_is_refused_here_too():
@@ -580,7 +581,16 @@ def test_a_relationships_part_with_a_lone_surrogate_is_refused_and_not_read(tmp_
         archive.writestr("_rels/.rels", raw)
         archive.writestr("aasx/aasx-origin", b"")
     (error,) = loader.load(path).errors
-    assert error.stage == "chain" and error.fix.startswith("Declare "), (label, error)
+    assert error.stage == "chain" and error.fix.startswith("The file is in UTF-16"), (label, error)
+
+
+def test_a_declaration_of_utf16_over_ascii_bytes_still_asks_for_the_right_declaration(tmp_path):
+    """Here the declaration is what is wrong, not the bytes: the remedy is
+    still to declare the encoding the file is in."""
+    path = tmp_path / "declared.xml"
+    path.write_bytes(_environment("UTF-16", "a").encode("ascii"))
+    (error,) = loader.load(path).errors
+    assert error.fix.startswith("Declare "), error
 
 
 @pytest.mark.parametrize("label,declared,codec", ODD_LAST_BYTE, ids=[u[0] for u in ODD_LAST_BYTE])
@@ -589,7 +599,7 @@ def test_a_document_with_no_mark_and_an_odd_last_byte_is_refused_for_its_bytes(
     path = tmp_path / "odd.xml"
     path.write_bytes(_environment(declared, "a").encode(codec) + b"\x00")
     (error,) = loader.load(path).errors
-    assert error.fix.startswith("Declare "), (label, error)
+    assert error.fix.startswith("The file is in UTF-16"), (label, error)
     code, _ = _judged(path, capsys)
     assert code == 2, label
 

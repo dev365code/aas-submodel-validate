@@ -16,10 +16,23 @@
 | a relationships part in UTF-16, little-endian with no byte order mark, declaring `UTF-16LE`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
 | a relationships part in UTF-16, with a big-endian byte order mark, declaring `UTF-16BE`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
 | a relationships part in UTF-16, big-endian with no byte order mark, declaring `UTF-16BE`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a little-endian byte order mark, with an XML declaration that names no encoding, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a big-endian byte order mark, with an XML declaration that names no encoding, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a little-endian byte order mark and no XML declaration, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, little-endian with no byte order mark, with an XML declaration that names no encoding, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a little-endian byte order mark, declaring `utf-16`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, little-endian with no byte order mark and no XML declaration, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
+| a relationships part in UTF-16, with a little-endian byte order mark, declaring `utf-16le`, an attribute holding a surrogate with no partner | exit 0 | exit 2, X2 |
 | a document in UTF-16, little-endian with no byte order mark, declaring `UTF-16`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
 | a document in UTF-16, big-endian with no byte order mark, declaring `UTF-16`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
 | a document in UTF-16, little-endian with no byte order mark, declaring `UTF-16LE`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
 | a document in UTF-16, big-endian with no byte order mark, declaring `UTF-16BE`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+| a document in UTF-16, little-endian with no byte order mark, with an XML declaration that names no encoding, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+| a document in UTF-16, big-endian with no byte order mark and no XML declaration, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+| a document in UTF-16, little-endian with no byte order mark and no XML declaration, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+| a document in UTF-16, big-endian with no byte order mark, declaring `utf-16be`, ending on a byte with no partner | exit 1, SMT-D1 | exit 2, X3 |
+
+A document in UTF-16 whose bytes do not decode and that 0.14.0 already refused -- a payload part, a document with a byte order mark, a relationships part the parser refused, or one under `csUTF16` or one of its byte orders -- is refused as before, exit 2 under the same rule. Where 0.14.0 said "the document could not be read as an AAS environment" or gave the parser's "not well-formed", the sentence now names the line and the bytes; and its remedy now asks for the bytes to be repaired, not an encoding declared.
 
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 

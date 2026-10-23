@@ -79,6 +79,12 @@ def encoding_remedy(refusal: EncodingNotRead) -> str:
                 "two every XML processor reads (XML 1.0, 4.3.3). This reader does not read "
                 "%s, and aas-core3's own XML reader refuses it as well. %s"
                 % (refusal.what, REFUSED_NOT_JUDGED))
+    if refusal.kind == "bytes" and refusal.settled:
+        # The name already agrees with the first bytes, or there is none to
+        # change: what is wrong is the bytes, and a declaration repairs none.
+        return ("The file is in %s by its first bytes, and the bytes named above are not: "
+                "repair them, or save the document as UTF-8 from a copy that holds the "
+                "characters meant. %s" % (refusal.settled, REFUSED_NOT_JUDGED))
     if refusal.instead:
         return ("Declare it as %s, the name the IANA charset registry gives that charset, or "
                 "save the document as UTF-8 and drop the declaration. %s"
