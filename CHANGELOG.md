@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.14.0 — unreleased
+## 0.14.0 — 2026-10-24
 
 **Which XML documents are read now turns on the encoding they declare, by the name the registry gives it, and on bytes that agree with it -- the same on every Python and at every entrance, with every verdict that moves named below -- and whether the vendored templates have moved upstream is asked every week.**
 
