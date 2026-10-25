@@ -518,7 +518,7 @@ jobs:
         uses: ./
         with:
           paths: src/aas_submodel_validate/data/example/idta-02004-2.0.aasx
-          version: "0.14.0"
+          version: "1.0.0"
       - name: A file that has to fail, read as a report
         id: failing
         uses: ./
