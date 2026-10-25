@@ -110,7 +110,7 @@ it built the model from, so an input that changed after it was read gives
 no line rather than another file's; run it again on the file as it now
 stands.
 
-Before 1.0: every finding shows what it read, and where in the file it read
+Since 1.0: every finding shows what it read, and where in the file it read
 it.
 
 ## Report contract
@@ -175,7 +175,7 @@ input the release notes measure is held to what the command prints on that
 same Python, at a UTF-8 console, byte for byte, and every request it makes
 after loading is counted four ways -- and has to be none.
 
-Before 1.0: all five ways in, each reaching the same verdict on the same
+Since 1.0: all five ways in, each reaching the same verdict on the same
 input — the library, a GitHub Action, and a browser page that checks a file
 where it is, with nothing installed and nothing uploaded.
 
@@ -208,11 +208,11 @@ on every commit, and a release is cut only from a commit CI passed, so
 every row has died on the tree that ships; `docs/mutation-record.json`
 keeps the last full run, with the commit it measured. Availability of `--template` is exercised with local readers with and
 without the option, so the comparison tests require no older installation. XML is read in
-UTF-8, in UTF-16 and in every charset its declaration names by a name the
-IANA charset registry gives it -- the table `_REGISTERED` in
-`src/aas_submodel_validate/container.py`, Shift_JIS, EUC-KR, GB18030 and
-Big5 among them -- and what the report quotes from it comes back as the
-characters the file holds, the same on every Python. A name outside the
+UTF-8, in UTF-16 and in each charset the table `_REGISTERED` in
+`src/aas_submodel_validate/container.py` holds -- Shift_JIS, EUC-KR, GB18030
+and Big5 among them -- under any name the IANA charset registry gives it,
+and what the report quotes from it comes back as the characters the file
+holds, the same on every Python. A name outside the
 table is refused, naming the registered one to declare where one can be
 named -- from tables, `tools/python_spellings.py` writing the one of
 Python's spellings, so a later Python's aliases change no remedy; a
@@ -225,7 +225,7 @@ name, as the parser refuses it.
 runs the tests that hold it. A JSON document -- which declares no encoding
 -- is read as UTF-8.
 
-Before 1.0: every row of the mutation table killed on the tree it ships with, and every name the IANA charset registry gives a charset this reader decodes read without loss -- a document under a name outside that table, or in UCS-4 or EBCDIC, refused saying so.
+Since 1.0: every row of the mutation table killed on the tree it ships with, and every name the IANA charset registry gives a charset this reader decodes read without loss -- a document under a name outside that table, or in UCS-4 or EBCDIC, refused saying so.
 
 ## Upstream
 
@@ -246,8 +246,11 @@ The pin has moved once: 0.12.0 moved it from `11ef3353`, where it had
 stood since 0.1.0, to `f3790038`, and its CHANGELOG entry names every
 verdict the move changed.
 
-Whether upstream has moved since is asked every Monday, and on a push that
-changes the pin or the check: `.github/workflows/upstream.yml` runs
+Whether upstream has moved since is asked every Monday -- on the default
+branch, the only one GitHub runs a schedule on, and only while the
+repository is active, since GitHub turns a public repository's schedules
+off after 60 days without activity -- and on a push that changes the pin
+or the check: `.github/workflows/upstream.yml` runs
 `tools/upstream_moved.py`, which asks of each folder a vendored file comes
 from -- a template's folder, every edition in it -- whether it is still the
 tree it was at the pin. A red run there is not a defect here: exit 1 names
@@ -256,7 +259,7 @@ the pin, and exit 2 says upstream did not answer.
 `python3 -m pytest tests/test_the_templates_upstream_are_watched.py` runs
 the tests that hold it, with no network.
 
-Before 1.0: a scheduled check that notices when the upstream templates move,
+Since 1.0: a scheduled check that notices when the upstream templates move,
 and one release that moved the pin and said what the move changed.
 
 The same six facts as a table: [`docs/capabilities.md`](capabilities.md).

@@ -359,8 +359,8 @@ is public.
 
 ## Releases and version numbers
 
-This is a 0.x tool, and a release goes out when a unit of judgement is
-ready rather than on a calendar. While a template pack is being built
+A release goes out when a unit of judgement is ready rather than on a
+calendar. While a template pack is being built
 that can mean a few days apart; when nothing is ready it can mean
 nothing for a while. Neither is a signal about the project.
 
@@ -392,7 +392,7 @@ are covered and to what depth, so that "covered" stops being a word you
 have to read the source to size. It does not mean the template list is
 finished.
 
-That is what the number promises. What this project asks of itself before it uses the number is longer, and the picture under [Where it stands](#where-it-stands) draws it:
+That is what the number promises. What this project asked of itself before it took the number is longer, and the picture under [Where it stands](#where-it-stands) draws it:
 
 Before it calls a release 1.0, this project asks of itself — Coverage: IDTA 02004 Handover Documentation · IDTA 02003 Technical Data · IDTA 02035-2 Digital Battery Passport, part 2 · IDTA 02006 Digital Nameplate · IDTA 02023 Carbon Footprint · IDTA 02002 Contact Information · IDTA 02011 Hierarchical Structures · IDTA 02007 Software Nameplate · IDTA 02035-5 Digital Battery Passport, part 5 · IDTA 02035-1 Digital Battery Passport, part 1 · IDTA 02035-4 Digital Battery Passport, part 4 · IDTA 02035-7 Digital Battery Passport, part 7; Explanation: what is wrong, in one sentence · the evidence as read from the file · a remedy, for every rule · where each rule's requirement lives · the line in the file; Report contract: schemaVersion in every report · a golden report held by a test · exit codes 0, 1, 2 and 64 under test · a field-by-field schema page; Entrances: command line · Python library · single file, nothing to install · GitHub Action · browser, nothing installed; Input safety: read budgets, per file and per run · a security fix ships with an advisory · tests verified against their own mutations · declared encodings read without loss; Upstream: upstream templates pinned by commit · checked for upstream change · one pin move shipped.
 
@@ -669,8 +669,9 @@ for finding in report["findings"]:
     print(finding["rule"], finding["severity"], finding["message"], finding["fix"])
 ```
 
-**Versions and updates.** The package is in `0.x`, and that is the
-honest statement of what may change. The reading behind a rule, the set
+**Versions and updates.** The package is at `1.x`: a patch release
+repairs, a minor release may move a verdict and names every one that
+moves, and the report stays `schemaVersion: 1`. The reading behind a rule, the set
 of findings a given file draws, and the exit code that follows from them
 have all moved between releases here — 0.1.3 judged seven of fifty-two
 corpus inputs differently, and five of those changed an exit code. Every

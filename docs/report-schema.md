@@ -17,8 +17,9 @@ otherwise always writes one: an input this reader refused comes back
 with a report saying what was refused and what to do about it, and so
 does a path it could not read at all -- that one names the path, carries
 an `X6` finding, and has a null `provenance.inputSha256` because nothing
-was opened to take a digest of. Both also write a line on stderr, so
-read stdout when it is not empty. A reader that parses it
+was opened to take a digest of. Both also write a line on stderr -- a
+refusal adds a second that names `--bug-report` -- so read stdout when
+it is not empty. A reader that parses it
 unconditionally meets its first `JSONDecodeError` on the case it most
 needs to handle.
 
