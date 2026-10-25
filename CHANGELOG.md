@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — unreleased
+## 1.0.0 — 2026-10-25
 
 **Two kinds of UTF-16 input move against 0.14.0, both from judged to refused, and every one is listed below. Past them, this release puts a number on what 0.14.0 already does: the report stays `schemaVersion: 1`, a patch release only repairs, and a release that moves a verdict names it here.**
 
