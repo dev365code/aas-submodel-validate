@@ -178,8 +178,8 @@ _ENCODING_NAME = re.compile(
 #:
 #: Each charset is one whose declaration reads as ASCII, which is how a
 #: declaration is found, and each codec is one every Python this package
-#: supports carries. Not here: UTF-16, which a declaration found as ASCII
-#: cannot be in and the parser reads by itself; UCS-4 and the EBCDIC code
+#: supports carries. Not here: UTF-16, which the first bytes settle and
+#: this reader decodes before parsing; UCS-4 and the EBCDIC code
 #: pages, which `_not_read` refuses from the first bytes; and the charsets no
 #: supported Python has a codec for. Each registration is read by one codec,
 #: whatever Python calls its aliases: `MS_Kanji` is registered as Shift_JIS, which
@@ -1685,12 +1685,12 @@ class AasxPackage:
         try:
             root = ElementTree.fromstring(raw)
         except ElementTree.ParseError as exc:
-            # Malformed XML. A name the parser cannot honour -- a codec no
-            # reader has, one with a NUL in it -- does not reach it any more:
-            # `xml_as_utf8` refuses the name first, as `EncodingNotRead`, and
-            # the loader files that under this part. A part that does not
-            # parse is a defect in the archive, as it is for the payload one
-            # layer over.
+            # Malformed XML. Only utf-8 and us-ascii declarations reach this
+            # parser: `xml_as_utf8` decodes the other supported charsets and
+            # drops their declarations, or refuses an unread name as
+            # `EncodingNotRead`. The loader files that as a chain refusal.
+            # A part that does not parse is a defect in the archive, as it
+            # is for the payload one layer over.
             if isinstance(exc, ElementTree.ParseError) and ran_out_of_memory(exc):
                 raise MemoryError(str(exc)) from exc        # a stop; see `relationships`
             raise ContainerError("%s: %s does not parse: %s" % (self.path, rels, exc),

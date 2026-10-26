@@ -4,8 +4,11 @@ name: upstream
 #
 # tools/vendor_template.py names the one commit of
 # admin-shell-io/submodel-templates every vendored file is taken from, and
-# that pin does not move on its own. This asks upstream, every Monday and on
-# a push that changes the pin or the check, whether any folder those files
+# that pin does not move on its own. This asks upstream every Monday -- on
+# the default branch, the only one GitHub runs a schedule on, and only while
+# the repository is active, since GitHub turns a public repository's schedules
+# off after 60 days without activity -- and on a push that changes the pin or
+# the check, whether any folder those files
 # come from is a different tree now -- a new edition, an edited file, a
 # folder gone. A red run here is not a defect in this project: exit 1 lists
 # what moved and is a decision to make about the pin, and exit 2 is a
@@ -13,6 +16,8 @@ name: upstream
 
 on:
   workflow_dispatch:
+  # Schedules run only on the default branch; GitHub disables them in a
+  # public repository after 60 days without activity.
   schedule:
     - cron: "17 6 * * 1"          # 06:17 UTC every Monday
   push:
