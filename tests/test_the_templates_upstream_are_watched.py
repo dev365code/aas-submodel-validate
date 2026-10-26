@@ -250,3 +250,19 @@ def test_the_workflow_asks_every_week_and_when_the_pin_or_the_check_changes():
     assert "secrets." not in text
     assert re.search(r"(?m)^\s+- run: python tools/upstream_moved.py$", text)
     assert "GH_TOKEN: ${{ github.token }}" in text
+
+
+def test_a_moved_pin_names_the_steps_to_refresh_it(monkeypatch, capsys):
+    """The moved answer ends with the steps that keep the pin, hashes,
+    attribution, generated documents and changed verdicts together."""
+    folder = "published/Technical_Data"
+    now = {f: tree for f, tree in _same().items() if f != folder}
+    _upstream(monkeypatch, HEAD, _same(), now)
+    assert upstream_moved.main([]) == 1
+    assert capsys.readouterr().out.splitlines()[-1] == (
+        "Moving the pin is a decision, made in one commit that says why: edit COMMIT in "
+        "tools/vendor_template.py, run it with --refresh (which writes every sha256sums.txt "
+        "again), change the commit THIRD_PARTY.md names, write again what is generated "
+        "from the templates -- make check names each generated file that no longer "
+        "matches, docs/official-samples.md among them -- and name in the CHANGELOG every "
+        "verdict the move changed.")
