@@ -3866,14 +3866,16 @@ TABLE.extend([
      '          if not first.startswith("Who should take this release: "):',
      '          if False:',
      ['tests/test_ci_parity.py::test_release_opening_refuses_a_missing_first_paragraph'],
-     'a dated release with no audience paragraph must stop before any bytes are published'),
+     'without the check, a dated entry whose first paragraph names no audience still opens '
+     'the release notes with that paragraph'),
 
     ('docs/dated-release-opens-with-the-audience',
      'tests/test_readme_front.py',
      '            assert first.startswith("Who should take this release: "), heading',
      '            assert True, heading',
      ['tests/test_readme_front.py::test_dated_release_openings_refuse_a_missing_first_paragraph'],
-     'a dated entry after 1.0.0 must name its audience even while the newest entry is a draft'),
+     'without the assertion, a dated entry after 1.0.0 whose first paragraph names no '
+     'audience passes the documentation tests, even while the newest entry is a draft'),
 
 ])
 
@@ -3884,7 +3886,9 @@ TABLE.extend([
      '    if refusal.kind == "bytes":\n        return ("Save the document as UTF-8 and drop the declaration, or declare the encoding "\n                "the file is in, by the name the IANA charset registry gives it. %s"\n                % REFUSED_NOT_JUDGED)\n',
      '',
      ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_declared_byte_refusal_offers_utf8_first'],
-     'bytes refused under a declared name need the same UTF-8-first remedy for every charset'),
+     'a Windows code page 949 file declared as KS_C_5601-1987 and holding a character '
+     'KS X 1001 does not have was asked first to declare the encoding it is in, which no '
+     'registration names'),
 ])
 
 

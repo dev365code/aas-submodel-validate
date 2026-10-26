@@ -4,8 +4,8 @@
     python tools/build_browser.py          # dist/aas-submodel-validate.html
     python tools/browser_gates.py          # open it, judge everything here, count
 
-The page says it judges a submodel in the browser, installing nothing and
-sending the file nowhere, and that its report is the one the command line
+The page says it judges a submodel in the browser, sending the file nowhere
+and calling no storage, and that its report is the one the command line
 gives. A browser can be made to answer each of those by counting, so this
 counts.
 

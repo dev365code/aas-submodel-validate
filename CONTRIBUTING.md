@@ -113,7 +113,7 @@ together.
 
 ## Release notes
 
-From 1.0.1 on, each release's CHANGELOG entry opens with one sentence that begins `Who should take this release:`; the release workflow refuses a tag whose entry does not, and that sentence is the first line of the release notes.
+From 1.0.1 on, each release's CHANGELOG entry opens with a paragraph of one sentence that begins `Who should take this release:` followed by a space; the release workflow refuses a tag whose entry does not begin so, and that paragraph, on one line, is the first line of the release notes.
 
 ## The time budget
 

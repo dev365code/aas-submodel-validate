@@ -181,12 +181,13 @@ def main(argv=None) -> int:
             print("    %s" % line)
         if len(lines) > SHOWN:
             print("    ... and %d more" % (len(lines) - SHOWN))
-    print("Moving the pin is a decision, made in one commit that says why: edit COMMIT in "
-          "tools/vendor_template.py, run it with --refresh (which writes every sha256sums.txt "
-          "again), change the commit THIRD_PARTY.md names, write again what is generated "
-          "from the templates -- make check names each generated file that no longer "
-          "matches, docs/official-samples.md among them -- and name in the CHANGELOG every "
-          "verdict the move changed.")
+    print("Moving the pin is a decision, made in one commit that says why: edit COMMIT, and "
+          "the date above it, in tools/vendor_template.py, run it with --refresh (which "
+          "writes every sha256sums.txt again), change the commit and its date where "
+          "THIRD_PARTY.md and README.md name them, write again what is generated from the "
+          "templates -- make check stops at the first generator whose files no longer match "
+          "and names them, so run it until it passes; docs/official-samples.md is among "
+          "those files -- and name in the CHANGELOG every verdict the move changed.")
     return 1
 
 

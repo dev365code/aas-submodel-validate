@@ -198,7 +198,7 @@ two builds of one tree are the same bytes, given the same
 it judges the file you choose and shows what `smtv --no-bundle FILE`
 prints at a UTF-8 console on the Python the page carries, byte for byte,
 with the JSON report that `-f json` gives to save. Once it has loaded it
-makes no request at all, and it stores nothing. The first is counted, not
+makes no request at all, and nothing in it calls storage. The first is counted, not
 assumed: CI opens the page in a browser on every commit, served and from a
 disk, counts every request it makes after loading four different ways,
 hands it files built to make a reader reach for the network, and compares
