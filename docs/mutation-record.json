@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "7cfb66f29a986afa13ff6187a539bc770fa1a782",
+ "commit": "5f229590fae48d5151a5cacc0642d0df4323bb1a",
  "python": "3.13.2",
  "rows": [
   "loader/relationships-refusal-keeps-the-line",
@@ -379,7 +379,9 @@
   "container/ascii-s-shape-cannot-be-utf-16",
   "container/utf-16-declaring-nothing-is-refused-for-bytes-that-are-not-it",
   "rules/a-near-miss-of-an-alias-names-the-template-s-spelling",
-  "canary/a-comment-nobody-reads"
+  "canary/a-comment-nobody-reads",
+  "release/first-paragraph-names-the-audience",
+  "docs/dated-release-opens-with-the-audience"
  ],
  "killed": [
   "loader/relationships-refusal-keeps-the-line",
@@ -757,7 +759,9 @@
   "container/unmarked-utf-16-holds-the-declaration-to-its-byte-order",
   "container/ascii-s-shape-cannot-be-utf-16",
   "container/utf-16-declaring-nothing-is-refused-for-bytes-that-are-not-it",
-  "rules/a-near-miss-of-an-alias-names-the-template-s-spelling"
+  "rules/a-near-miss-of-an-alias-names-the-template-s-spelling",
+  "release/first-paragraph-names-the-audience",
+  "docs/dated-release-opens-with-the-audience"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
