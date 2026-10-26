@@ -3,8 +3,8 @@
 The cases behind the picture under [Where it stands](https://github.com/dev365code/aas-submodel-validate#where-it-stands)
 on the front page. For each of its six axes: what a run shows, where the
 requirement comes from, and a command that reproduces it; then where the
-axis stands, item by item, and what this project asks of itself before it
-calls a release 1.0. Every item marked done names a file in this repository
+axis stands, item by item, and what this project asked of itself before it
+called a release 1.0. Every item marked done names a file in this repository
 and quotes what it says. The values are set by hand in
 [`docs/capabilities.json`](capabilities.json); the tests keep the picture
 drawn from them, this page's sections and item lines in step with them, and
