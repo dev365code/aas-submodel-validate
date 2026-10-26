@@ -28,7 +28,7 @@ details pre { max-height: 22rem; overflow-y: auto; }
 <body>
 <main>
 <h1>aas-submodel-validate @@VERSION@@</h1>
-<p class="lead">Judges an AAS submodel against its IDTA template in this browser tab -- an <code>.aasx</code> package, or an AAS environment or a bare Submodel as <code>.json</code> or <code>.xml</code>. The file is read here and sent nowhere: once this page has loaded it makes no network request, and it installs and stores nothing.</p>
+<p class="lead">Judges an AAS submodel against its IDTA template in this browser tab -- an <code>.aasx</code> package, or an AAS environment or a bare Submodel as <code>.json</code> or <code>.xml</code>. The file is read here and sent nowhere: once this page has loaded it makes no network request, and nothing in it calls storage.</p>
 <label id="drop" for="file">Choose a file, or drop one here
 <input type="file" id="file" accept=".aasx,.json,.xml" disabled></label>
 <p id="status" role="status" aria-live="polite">Starting the validator&hellip;</p>

@@ -212,7 +212,9 @@ UTF-8, in UTF-16 and in each charset the table `_REGISTERED` in
 `src/aas_submodel_validate/container.py` holds -- Shift_JIS, EUC-KR, GB18030
 and Big5 among them -- under any name the IANA charset registry gives it,
 and what the report quotes from it comes back as the characters the file
-holds, the same on every Python. A name outside the
+holds, the same on every Python. A character that does not print is quoted
+as the escape Python writes for it -- a no-break space as `\xa0` -- so the
+quote still shows it is there. A name outside the
 table is refused, naming the registered one to declare where one can be
 named -- from tables, `tools/python_spellings.py` writing the one of
 Python's spellings, so a later Python's aliases change no remedy; a
