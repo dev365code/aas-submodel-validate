@@ -6,6 +6,8 @@ Who should take this release: anyone who needs clearer encoding refusal reports.
 
 An X2 refusal of a `.rels` part now carries in `line` the line its encoding message names. The verdict and exit code are unchanged.
 
+A refusal of bytes that do not match a declared encoding now asks first to save the document as UTF-8 and drop the declaration, then to declare the encoding the file is in. The verdict and exit code are unchanged.
+
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
 ## 1.0.0 — 2026-10-25
