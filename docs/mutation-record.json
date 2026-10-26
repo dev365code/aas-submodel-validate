@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "5f229590fae48d5151a5cacc0642d0df4323bb1a",
+ "commit": "c8050927d06de0f32e494023f140346d2d5112a0",
  "python": "3.13.2",
  "rows": [
   "loader/relationships-refusal-keeps-the-line",
@@ -381,7 +381,8 @@
   "rules/a-near-miss-of-an-alias-names-the-template-s-spelling",
   "canary/a-comment-nobody-reads",
   "release/first-paragraph-names-the-audience",
-  "docs/dated-release-opens-with-the-audience"
+  "docs/dated-release-opens-with-the-audience",
+  "loader/declared-byte-refusal-offers-utf8-first"
  ],
  "killed": [
   "loader/relationships-refusal-keeps-the-line",
@@ -761,7 +762,8 @@
   "container/utf-16-declaring-nothing-is-refused-for-bytes-that-are-not-it",
   "rules/a-near-miss-of-an-alias-names-the-template-s-spelling",
   "release/first-paragraph-names-the-audience",
-  "docs/dated-release-opens-with-the-audience"
+  "docs/dated-release-opens-with-the-audience",
+  "loader/declared-byte-refusal-offers-utf8-first"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
