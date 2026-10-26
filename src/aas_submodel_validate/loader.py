@@ -1162,7 +1162,7 @@ def _load_aasx(path: Path) -> Loaded:
         except RefusedContent as exc:
             loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=rels, fix=RELATIONSHIP_DOCTYPE_REMEDY))
         except EncodingNotRead as exc:
-            loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, subject=rels, fix=encoding_remedy(exc)))
+            loaded.errors.append(LoadError("chain", str(exc), line=exc.line, part=rels, detail=exc.detail, subject=rels, fix=encoding_remedy(exc)))
         except ContainerError as exc:
             # Would not parse. Quiet here until now for sharing an
             # exception type with "declares none" above, which left a

@@ -39,7 +39,7 @@ import pytest
 from aas_submodel_validate import container, loader
 from aas_submodel_validate.cli import main
 from aas_submodel_validate.container import EncodingNotRead, xml_as_utf8
-from builders import CONTENT_TYPES, ORIGIN_REL
+from builders import CONTENT_TYPES, ORIGIN_REL, build_aasx, env_json
 
 RELS_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 
@@ -667,6 +667,30 @@ def test_a_relationships_refusal_keeps_its_message_line(
     assert code == 2
     (finding,) = [f for f in findings if f["rule"] == "X2"]
     (named,) = re.findall(r"\bline (\d+)\b", finding["message"])
+    assert finding["line"] == int(named) == lines + 1
+
+
+@pytest.mark.parametrize("declared,codec,mark,ending,lines", [
+    ("UTF-16", "utf-16-le", b"\xff\xfe", b"\x00\xd8", 1),
+    ("csUTF16LE", "utf-16-le", b"", b"\x00", 2),
+    ("windows-1252", "cp1252", b"", b"\x81", 3),
+], ids=["surrogate", "odd-byte", "charset-byte"])
+def test_a_payload_relationships_refusal_keeps_its_message_line(
+        tmp_path, capsys, declared, codec, mark, ending, lines):
+    """The same for the relationships part of the payload itself, which X2
+    files under that part's name: the line is in that part, so `part` names
+    it as well."""
+    text = ('<?xml version="1.0" encoding="%s"?><Relationships xmlns="%s"></Relationships>'
+            % (declared, RELS_NS))
+    raw = mark + (text + "\n" * lines).encode(codec) + ending
+    rels = "aasx/_rels/env.json.rels"
+    path = build_aasx(tmp_path / "input.aasx", env_json(), files=[(rels, raw)], suppl_targets=[])
+    code = main(["-f", "json", "--allow-unmatched", str(path)])
+    findings = json.loads(capsys.readouterr().out)["findings"]
+    assert code == 1
+    (finding,) = [f for f in findings if f["rule"] == "X2"]
+    (named,) = re.findall(r"\bline (\d+)\b", finding["message"])
+    assert finding["subject"] == finding["part"] == rels
     assert finding["line"] == int(named) == lines + 1
 
 

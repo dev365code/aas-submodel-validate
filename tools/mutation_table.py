@@ -74,6 +74,15 @@ TABLE = [
      "message while X2 reported null; carrying the exception line makes "
      "the report point to the same place"),
 
+    ("loader/payload-relationships-refusal-keeps-the-line",
+     "src/aas_submodel_validate/loader.py",
+     'LoadError("chain", str(exc), line=exc.line, part=rels, detail=exc.detail, subject=rels, fix=encoding_remedy(exc))',
+     'LoadError("chain", str(exc), detail=exc.detail, subject=rels, fix=encoding_remedy(exc))',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_payload_relationships_refusal_keeps_its_message_line'],
+     "a payload part's own relationships part, refused for its encoding, "
+     "named line 3 in its message while X2 reported null for both the line "
+     "and the part"),
+
     ("gates/the-time-budget-actually-compares",
      "tools/time_budget.py",
      "        self.ok = factor is None or factor < FAIL_AT",
