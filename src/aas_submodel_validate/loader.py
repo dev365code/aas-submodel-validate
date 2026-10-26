@@ -89,6 +89,10 @@ def encoding_remedy(refusal: EncodingNotRead) -> str:
         return ("Declare it as %s, the name the IANA charset registry gives that charset, or "
                 "save the document as UTF-8 and drop the declaration. %s"
                 % (refusal.instead, REFUSED_NOT_JUDGED))
+    if refusal.kind == "bytes":
+        return ("Save the document as UTF-8 and drop the declaration, or declare the encoding "
+                "the file is in, by the name the IANA charset registry gives it. %s"
+                % REFUSED_NOT_JUDGED)
     return ("Declare the encoding the file is in, by the name the IANA charset registry gives "
             "it, or save the document as UTF-8 and drop the declaration. %s" % REFUSED_NOT_JUDGED)
 

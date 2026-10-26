@@ -161,8 +161,10 @@ def test_bytes_that_are_not_the_declared_charset_are_refused_where_they_are(tmp_
     (error,) = loader.load(path).errors
     assert error.message == "the document declares Shift_JIS, and the bytes on line 4 are not Shift_JIS: ff"
     assert error.line == 4
-    assert error.fix.startswith("Declare the encoding the file is in, by the name the IANA "
-                                "charset registry gives it, or save the document as UTF-8")
+    # A declared-byte refusal offers the UTF-8 route before redeclaring.
+    assert error.fix == ("Save the document as UTF-8 and drop the declaration, or declare the "
+                         "encoding the file is in, by the name the IANA charset registry gives "
+                         "it. %s" % loader.REFUSED_NOT_JUDGED)
 
 
 #: A name a Python may know and the registry does not give, and the
@@ -585,12 +587,15 @@ def test_a_relationships_part_with_a_lone_surrogate_is_refused_and_not_read(tmp_
 
 
 def test_a_declaration_of_utf16_over_ascii_bytes_still_asks_for_the_right_declaration(tmp_path):
-    """Here the declaration is what is wrong, not the bytes: the remedy is
-    still to declare the encoding the file is in."""
+    """The bytes do not settle UTF-16: this is the declared-byte remedy,
+    whose first option is UTF-8 before changing the declaration."""
     path = tmp_path / "declared.xml"
     path.write_bytes(_environment("UTF-16", "a").encode("ascii"))
     (error,) = loader.load(path).errors
-    assert error.fix.startswith("Declare "), error
+    # A declared-byte refusal offers the UTF-8 route before redeclaring.
+    assert error.fix == ("Save the document as UTF-8 and drop the declaration, or declare the "
+                         "encoding the file is in, by the name the IANA charset registry gives "
+                         "it. %s" % loader.REFUSED_NOT_JUDGED)
 
 
 @pytest.mark.parametrize("label,declared,codec", ODD_LAST_BYTE, ids=[u[0] for u in ODD_LAST_BYTE])
@@ -663,3 +668,26 @@ def test_a_relationships_refusal_keeps_its_message_line(
     (finding,) = [f for f in findings if f["rule"] == "X2"]
     (named,) = re.findall(r"\bline (\d+)\b", finding["message"])
     assert finding["line"] == int(named) == lines + 1
+
+
+@pytest.mark.parametrize("declared,codec,value", [
+    ("KS_C_5601-1987", "cp949", "똠"),
+    ("EUC-KR", "cp949", "똠"),
+    ("csASCII", "utf-8", "é"),
+    ("Shift_JIS", "latin-1", "ÿ"),
+    ("csUTF8", "latin-1", "ÿ"),
+    ("windows-1252", "latin-1", "\x81"),
+])
+def test_declared_byte_refusal_offers_utf8_first(tmp_path, declared, codec, value):
+    path = tmp_path / "input.xml"
+    raw = _environment(declared, value).encode(codec)
+    path.write_bytes(raw)
+    with pytest.raises(EncodingNotRead) as refused:
+        xml_as_utf8(raw)
+    assert refused.value.kind == "bytes" and not refused.value.settled
+    assert refused.value.instead is None
+    (error,) = loader.load(path).errors
+    assert error.fix.startswith("Save the document as UTF-8 and drop the declaration, or declare ")
+    assert error.fix == ("Save the document as UTF-8 and drop the declaration, or declare the "
+                         "encoding the file is in, by the name the IANA charset registry gives "
+                         "it. %s" % loader.REFUSED_NOT_JUDGED)

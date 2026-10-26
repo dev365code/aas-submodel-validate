@@ -3869,6 +3869,16 @@ TABLE.extend([
 ])
 
 
+TABLE.extend([
+    ('loader/declared-byte-refusal-offers-utf8-first',
+     'src/aas_submodel_validate/loader.py',
+     '    if refusal.kind == "bytes":\n        return ("Save the document as UTF-8 and drop the declaration, or declare the encoding "\n                "the file is in, by the name the IANA charset registry gives it. %s"\n                % REFUSED_NOT_JUDGED)\n',
+     '',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_declared_byte_refusal_offers_utf8_first'],
+     'bytes refused under a declared name need the same UTF-8-first remedy for every charset'),
+])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", action="store_true")
