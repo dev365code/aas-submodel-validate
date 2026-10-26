@@ -1,9 +1,10 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "c8050927d06de0f32e494023f140346d2d5112a0",
+ "commit": "f5d177ece150c419bfd78ebc7e0ea39a45a56772",
  "python": "3.13.2",
  "rows": [
   "loader/relationships-refusal-keeps-the-line",
+  "loader/payload-relationships-refusal-keeps-the-line",
   "gates/the-time-budget-actually-compares",
   "gates/the-time-budget-reports-what-it-found",
   "release/signature-covers-only-what-we-built",
@@ -386,6 +387,7 @@
  ],
  "killed": [
   "loader/relationships-refusal-keeps-the-line",
+  "loader/payload-relationships-refusal-keeps-the-line",
   "gates/the-time-budget-actually-compares",
   "gates/the-time-budget-reports-what-it-found",
   "release/signature-covers-only-what-we-built",
