@@ -1683,3 +1683,102 @@ def test_a_job_that_checks_out_asks_for_the_contents_it_reads():
                 "%s: job %r checks out and declares %s, and a job block "
                 "replaces the floor rather than adding to it -- so it has "
                 "`contents: none`" % (workflow.name, name, granted))
+
+
+# The opening travels separately from the six files the release publishes.
+_OPENING_STEP = "the changelog names who should take this release"
+
+
+def _opening_step():
+    build = _release_jobs()["build"]
+    names = re.findall(r"^      - name: (.*)$", build, re.M)
+    assert _OPENING_STEP in names, "the build has no release-opening gate"
+    assert names.index(_OPENING_STEP) == names.index("the tag and the version agree") + 1
+    step = build.split("      - name: " + _OPENING_STEP + "\n", 1)[1].split("\n      - ", 1)[0]
+    commands = step.split("        run: |\n", 1)[1]
+    return "\n".join(line[10:] for line in commands.splitlines())
+
+
+def _run_opening(tmp_path, version, body):
+    if not shutil.which("sh"):
+        pytest.skip("no POSIX shell here")
+    (tmp_path / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## %s — 2026-01-01\n\n%s\n\n"
+        "## 0.1.0 — 2026-01-01\n\nHistory.\n" % (version, body), encoding="utf-8")
+    return subprocess.run(
+        ["sh", "-e", "-c", _opening_step()], cwd=tmp_path,
+        capture_output=True, text=True,
+        env={**os.environ, "GITHUB_REF_NAME": "v" + version,
+             "GITHUB_OUTPUT": str(tmp_path / "outputs"),
+             "PATH": str(Path(sys.executable).parent) + os.pathsep + os.environ.get("PATH", "")})
+
+
+@pytest.mark.parametrize("body", ["", "A repair.", "## Details\n\nWho should take this release: readers."])
+def test_release_opening_refuses_a_missing_first_paragraph(tmp_path, body):
+    done = _run_opening(tmp_path, "1.0.1", body)
+    assert done.returncode == 1, (done.stdout, done.stderr)
+    assert "CHANGELOG first paragraph for 1.0.1 must begin Who should take this release: " in done.stdout
+    assert not (tmp_path / "release-notes" / "opening.md").exists()
+
+
+@pytest.mark.parametrize("version", ["1.0.1", "1.1.0", "1.10.0", "2.0.0"])
+def test_release_opening_carries_the_first_paragraph(tmp_path, version):
+    done = _run_opening(tmp_path, version, "Who should take this release: readers\nof these reports.\n\nA repair.")
+    assert done.returncode == 0, (done.stdout, done.stderr)
+    assert (tmp_path / "release-notes" / "opening.md").read_text("utf-8") == (
+        "Who should take this release: readers of these reports.\n")
+    assert (tmp_path / "outputs").read_text("utf-8") == "required=true\n"
+    assert not (tmp_path / "dist").exists()
+
+
+@pytest.mark.parametrize("version", ["0.9.0", "1.0.0"])
+def test_release_opening_does_not_gate_earlier_tags(tmp_path, version):
+    done = _run_opening(tmp_path, version, "History.")
+    assert done.returncode == 0, (done.stdout, done.stderr)
+    assert (tmp_path / "outputs").read_text("utf-8") == "required=false\n"
+    assert not (tmp_path / "release-notes").exists()
+
+
+def test_release_opening_has_its_own_artifact():
+    jobs = _release_jobs()
+    build = jobs["build"]
+    assert "audience: ${{ steps.release-audience.outputs.required }}" in build
+    assert re.search(r"id: release-audience\n", build)
+    uploads = re.findall(r"      - uses: actions/upload-artifact@[^\n]+\n(.*?)(?=      -|\Z)", build, re.S)
+    opening = [block for block in uploads if "name: release-opening\n" in block]
+    assert len(opening) == 1
+    assert "if: steps.release-audience.outputs.required == 'true'" in opening[0]
+    assert "path: release-notes/opening.md" in opening[0]
+    release = jobs["github-release"]
+    assert "needs: [build, attest]" in release
+    downloads = re.findall(r"      - uses: actions/download-artifact@[^\n]+\n(.*?)(?=      -|\Z)", release, re.S)
+    opening = [block for block in downloads if "name: release-opening\n" in block]
+    assert len(opening) == 1
+    assert "if: needs.build.outputs.audience == 'true'" in opening[0]
+    assert "path: release-notes" in opening[0]
+
+
+@pytest.mark.parametrize("opening", [None, "Who should take this release: readers.\n"])
+def test_release_notes_begin_with_the_opening(tmp_path, opening):
+    if not shutil.which("sh"):
+        pytest.skip("no POSIX shell here")
+    block = _release_jobs()["github-release"]
+    # Run the note-writing prefix only; no command that creates a release.
+    lines = block.split("        run: |\n", 1)[1].splitlines()
+    lines = [line[10:] for line in lines]
+    end = lines.index("NOTES")
+    script = "\n".join(lines[:end + 1]) + "\n"
+    if opening:
+        (tmp_path / "release-notes").mkdir()
+        (tmp_path / "release-notes" / "opening.md").write_text(opening, encoding="utf-8")
+    done = subprocess.run(["sh", "-e", "-c", script], cwd=tmp_path,
+                          capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    notes = (tmp_path / "notes.md").read_text("utf-8")
+    expected = (opening + "\n") if opening else ""
+    assert notes.startswith(expected + "See CHANGELOG.md for what changed.")
+    baseline = subprocess.run(["git", "show", "v1.0.0:.github/workflows/release.yml"],
+                              cwd=ROOT, capture_output=True, text=True)
+    if baseline.returncode == 0:
+        body = baseline.stdout.split("cat > notes.md <<'NOTES'\n", 1)[1].split("          NOTES\n", 1)[0]
+        assert notes[len(expected):] == "\n".join(line[10:] for line in body.splitlines()) + "\n"

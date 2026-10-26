@@ -3851,6 +3851,24 @@ def _record(path: Path, commit: str, killed: list, survivors: list) -> None:
     print("recorded in %s" % path)
 
 
+TABLE.extend([
+    ('release/first-paragraph-names-the-audience',
+     '.github/workflows/release.yml',
+     '          if not first.startswith("Who should take this release: "):',
+     '          if False:',
+     ['tests/test_ci_parity.py::test_release_opening_refuses_a_missing_first_paragraph'],
+     'a dated release with no audience paragraph must stop before any bytes are published'),
+
+    ('docs/dated-release-opens-with-the-audience',
+     'tests/test_readme_front.py',
+     '            assert first.startswith("Who should take this release: "), heading',
+     '            assert True, heading',
+     ['tests/test_readme_front.py::test_dated_release_openings_refuse_a_missing_first_paragraph'],
+     'a dated entry after 1.0.0 must name its audience even while the newest entry is a draft'),
+
+])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", action="store_true")

@@ -1247,3 +1247,30 @@ def test_the_pin_move_gate_advice_names_the_old_cdp_and_missing_ip_child():
     assert "TD-E01" in paragraph
     assert "IPCommunication" in paragraph and "AddressOfAdditionalLink" in paragraph
     assert "CI-E22" in paragraph
+
+
+def _dated_release_openings(text):
+    for entry in text.split("\n## ")[1:]:
+        heading, _, body = entry.partition("\n")
+        dated = re.fullmatch(r"(\d+\.\d+\.\d+) — \d{4}-\d{2}-\d{2}", heading)
+        if dated and tuple(map(int, dated[1].split("."))) > (1, 0, 0):
+            first = re.split(r"\n[ \t]*\n", body.strip(), maxsplit=1)[0]
+            assert first.startswith("Who should take this release: "), heading
+
+
+def test_dated_release_openings():
+    _dated_release_openings(CHANGELOG)
+
+
+@pytest.mark.parametrize("body", ["", "A repair.", "## Details\n\nWho should take this release: readers."])
+def test_dated_release_openings_refuse_a_missing_first_paragraph(body):
+    with pytest.raises(AssertionError):
+        _dated_release_openings("# Changelog\n\n## 1.0.1 — 2026-01-01\n\n" + body)
+
+
+def test_dated_release_openings_leave_history_and_drafts_alone():
+    _dated_release_openings("# Changelog\n\n## 1.1.0 — unreleased\n\nA draft."
+                            "\n\n## 1.0.0 — 2026-01-01\n\nHistory."
+                            "\n\n## 0.9.0 — 2026-01-01\n")
+    _dated_release_openings("# Changelog\n\n## 1.0.1 — 2026-01-01\n\n"
+                            "Who should take this release: readers.\n\nA repair.")

@@ -111,6 +111,10 @@ the run (`python3 tools/mutation_table.py --run --record
 docs/mutation-record.json`, on that clean checkout), and the two are pushed
 together.
 
+## Release notes
+
+From 1.0.1 on, each release's CHANGELOG entry opens with one sentence that begins `Who should take this release:`; the release workflow refuses a tag whose entry does not, and that sentence is the first line of the release notes.
+
 ## The time budget
 
 `make check` times five layers and compares each against a ratio recorded

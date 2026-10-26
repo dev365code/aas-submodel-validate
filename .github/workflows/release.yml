@@ -35,6 +35,8 @@ permissions:
 
 jobs:
   build:
+    outputs:
+      audience: ${{ steps.release-audience.outputs.required }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -120,6 +122,43 @@ jobs:
           esac
           echo "$heading" | grep -qE ' — [0-9]{4}-[0-9]{2}-[0-9]{2}$' \
             || { echo "CHANGELOG heading carries no date: $heading"; exit 1; }
+
+      - name: the changelog names who should take this release
+        id: release-audience
+        # Older tags keep their original notes. From 1.0.1 the first
+        # paragraph names the audience, and travels outside dist so it
+        # cannot become a seventh published file.
+        run: |
+          python - <<'PYTHON'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["GITHUB_REF_NAME"][1:]
+          required = tuple(map(int, version.split("."))) >= (1, 0, 1)
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+              output.write("required=%s\n" % str(required).lower())
+          if not required:
+              raise SystemExit(0)
+          text = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          entry = re.search(r"^## %s — \d{4}-\d{2}-\d{2}\n(.*?)(?=^## |\Z)"
+                            % re.escape(version), text, re.M | re.S)
+          first = re.split(r"\n[ \t]*\n", entry[1].strip(), maxsplit=1)[0] if entry else ""
+          if not first.startswith("Who should take this release: "):
+              print("CHANGELOG first paragraph for %s must begin Who should take this release: " % version)
+              raise SystemExit(1)
+          opening = Path("release-notes/opening.md")
+          opening.parent.mkdir(exist_ok=True)
+          opening.write_text(" ".join(line.strip() for line in first.splitlines()) + "\n", encoding="utf-8")
+          PYTHON
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: steps.release-audience.outputs.required == 'true'
+        with:
+          name: release-opening
+          path: release-notes/opening.md
+          if-no-files-found: error
+          overwrite: true
 
       - name: everything must be green first
         # The readers the battery extractors import are installed here
@@ -328,7 +367,7 @@ jobs:
 
 
   github-release:
-    needs: attest
+    needs: [build, attest]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -337,9 +376,9 @@ jobs:
       # job made and signed, writes the notes, and attaches them.
       contents: write
     env:
-      # No checkout. The notes are written here and the CHANGELOG is
-      # named in them rather than read, so the only thing a checkout was
-      # providing was somewhere for `gh` to find the repository -- and
+      # No checkout. The build sends the CHANGELOG opening as an
+      # artifact; the rest of the notes are written here. The only other
+      # thing a checkout provided was a repository for `gh` to find, and
       # this says it directly. The job that can write to this repository
       # therefore never has a credential-bearing git remote for a later
       # step to reach, which is what `persist-credentials: false` would
@@ -350,6 +389,11 @@ jobs:
         with:
           name: dist
           path: dist
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        if: needs.build.outputs.audience == 'true'
+        with:
+          name: release-opening
+          path: release-notes
       - name: attach them to a GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -359,7 +403,12 @@ jobs:
         # one is a trip back out of the plant to find out, measured in
         # half-days rather than minutes.
         run: |
-          cat > notes.md <<'NOTES'
+          : > notes.md
+          if [ -f release-notes/opening.md ]; then
+            cat release-notes/opening.md > notes.md
+            printf '\n' >> notes.md
+          fi
+          cat >> notes.md <<'NOTES'
           See CHANGELOG.md for what changed. **Requires Python 3.9 or newer.**
 
           **Which file to carry**
