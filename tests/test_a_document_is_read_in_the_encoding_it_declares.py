@@ -640,3 +640,26 @@ def test_the_library_and_the_command_give_one_refusal_word_for_word(tmp_path, ca
                 for finding in validate(raw, format="xml", allow_unmatched=True).findings]
     assert code == 2 and printed == returned
     assert "Declare it as Shift_JIS" in printed[0]["fix"]
+
+
+@pytest.mark.parametrize("declared,codec,mark,ending,lines", [
+    ("UTF-16", "utf-16-le", b"\xff\xfe", b"\x00\xd8", 1),
+    ("csUTF16LE", "utf-16-le", b"", b"\x00", 2),
+    ("windows-1252", "cp1252", b"", b"\x81", 3),
+], ids=["surrogate", "odd-byte", "charset-byte"])
+def test_a_relationships_refusal_keeps_its_message_line(
+        tmp_path, capsys, declared, codec, mark, ending, lines):
+    """X2 carries the line the encoding refusal names, through the chain
+    loader and the command's report, even when decoding stops at the end."""
+    text = _rels(declared).replace('Target="/aasx/', 'Target="aasx/')
+    raw = mark + (text + "\n" * lines).encode(codec) + ending
+    path = tmp_path / "input.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", raw)
+        archive.writestr("aasx/aasx-origin", b"")
+    code, findings = _judged(path, capsys)
+    assert code == 2
+    (finding,) = [f for f in findings if f["rule"] == "X2"]
+    (named,) = re.findall(r"\bline (\d+)\b", finding["message"])
+    assert finding["line"] == int(named) == lines + 1

@@ -65,6 +65,15 @@ ROOT = Path(__file__).resolve().parent.parent
 #: that is a tool. `why` is a reproduced event, never a description: a row
 #: whose reason has not happened is a row nobody can weigh.
 TABLE = [
+    ("loader/relationships-refusal-keeps-the-line",
+     "src/aas_submodel_validate/loader.py",
+     'LoadError("chain", str(exc), line=exc.line, detail=exc.detail, fix=encoding_remedy(exc))',
+     'LoadError("chain", str(exc), detail=exc.detail, fix=encoding_remedy(exc))',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_relationships_refusal_keeps_its_message_line'],
+     "an encoding refusal in the relationships chain named the line in its "
+     "message while X2 reported null; carrying the exception line makes "
+     "the report point to the same place"),
+
     ("gates/the-time-budget-actually-compares",
      "tools/time_budget.py",
      "        self.ok = factor is None or factor < FAIL_AT",
@@ -978,7 +987,7 @@ TABLE = [
     ("container/an-encoding-the-parser-cannot-honour-is-caught",
      "src/aas_submodel_validate/loader.py",
      '    except EncodingNotRead as exc:\n'
-     '        loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, fix=encoding_remedy(exc)))\n'
+     '        loaded.errors.append(LoadError("chain", str(exc), line=exc.line, detail=exc.detail, fix=encoding_remedy(exc)))\n'
      '        return loaded\n',
      "",
      ["tests/test_a_document_is_read_in_the_encoding_it_declares.py::"
