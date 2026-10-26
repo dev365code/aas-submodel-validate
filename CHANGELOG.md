@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 — unreleased
+
+It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
+
 ## 1.0.0 — 2026-10-25
 
 **Two kinds of UTF-16 input move against 0.14.0, both from judged to refused, and every one is listed below. Past them, this release puts a number on what 0.14.0 already does: the report stays `schemaVersion: 1`, a patch release only repairs, and a release that moves a verdict names it here.**

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aas-submodel-validate"
-version = "1.0.0"
+version = "1.0.1"
 description = "Offline conformance validator for AAS submodels, judged against the IDTA templates they are instances of"
 readme = "README.md"
 requires-python = ">=3.9"
