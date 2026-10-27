@@ -1777,8 +1777,10 @@ def test_release_notes_begin_with_the_opening(tmp_path, opening):
     notes = (tmp_path / "notes.md").read_text("utf-8")
     expected = (opening + "\n") if opening else ""
     assert notes.startswith(expected + "See CHANGELOG.md for what changed.")
+    # git prints the file's bytes, which are UTF-8; read in the locale's encoding
+    # (cp1252 on windows-latest) each dash in the notes came back as three characters.
     baseline = subprocess.run(["git", "show", "v1.0.0:.github/workflows/release.yml"],
-                              cwd=ROOT, capture_output=True, text=True)
+                              cwd=ROOT, capture_output=True, encoding="utf-8")
     if baseline.returncode == 0:
         body = baseline.stdout.split("cat > notes.md <<'NOTES'\n", 1)[1].split("          NOTES\n", 1)[0]
         assert notes[len(expected):] == "\n".join(line[10:] for line in body.splitlines()) + "\n"

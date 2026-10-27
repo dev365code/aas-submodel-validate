@@ -51,4 +51,4 @@ def test_a_run_time_id_stays_out_of_the_coverage_record(tmp_path, monkeypatch):
     monkeypatch.setattr(conftest, "OBSERVED", observation)
     monkeypatch.setattr(conftest, "_WHOLE_SUITE", True)
     conftest._record(conftest.FIRED)
-    assert not any(rid.startswith("TPL-") for rid in json.loads(observation.read_text()))
+    assert not any(rid.startswith("TPL-") for rid in json.loads(observation.read_text("utf-8")))
