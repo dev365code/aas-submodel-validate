@@ -2,7 +2,7 @@
 
 ## 1.0.1 — unreleased
 
-Who should take this release: anyone who needs clearer encoding refusal reports.
+Who should take this release: anyone who reads the line an encoding refusal names or `part` on an X2 one, or matches the remedy text of a byte refusal under a charset declared by name, as the paragraphs below set out; no verdict or exit code changes.
 
 An X2 refusal of a `.rels` part for its encoding now carries in `line` the line the refusal rests on: the line its message names, or line 1 where it rests on the declaration or the first bytes. On a payload part's own `.rels`, `part` names that `.rels` too; on the package's `.rels` and its origin's, `part` stays null. `docs/report-schema.md` says which findings carry a line and a part. The verdict and exit code are unchanged.
 
