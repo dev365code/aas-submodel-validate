@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 — unreleased
+## 1.0.1 — 2026-10-29
 
 Who should take this release: anyone who reads the line an encoding refusal names or `part` on an X2 one, or matches the remedy text of a byte refusal under a charset declared by name, as the paragraphs below set out; no verdict or exit code changes.
 
