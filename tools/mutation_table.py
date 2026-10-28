@@ -83,6 +83,31 @@ TABLE = [
      "named line 3 in its message while X2 reported null for both the line "
      "and the part"),
 
+    ("container/an-encoding-refusal-counts-utf16-lines-in-characters",
+     "src/aas_submodel_validate/container.py",
+     '        before = raw[:error.start].decode(encoding, "replace")\n        line = _line_at(before, len(before))',
+     '        line = raw.count(b"\\n", 0, error.start) + 1',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_utf_16_lines_are_counted_in_characters_and_not_in_bytes_0a'],
+     "a lone surrogate on line 3 of a UTF-16 document was refused on line 4, "
+     "in its message and in X3 and X2 `line`, when line 2 held U+010A, whose "
+     "code unit holds a byte 0A"),
+
+    ("container/a-carriage-return-alone-ends-a-line",
+     "src/aas_submodel_validate/container.py",
+     '    return text.count("\\n", 0, at) + text.count("\\r", 0, at) - text.count("\\r\\n", 0, at) + 1',
+     '    return text.count("\\n", 0, at) + 1',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_line_ended_by_a_carriage_return_alone_is_a_line'],
+     "a windows-1252 document whose lines end in a carriage return alone was "
+     "refused on line 1 for a byte on line 3, where the parser counts line 3"),
+
+    ("container/a-utf7-half-is-counted-past-the-declaration",
+     "src/aas_submodel_validate/container.py",
+     '            at += taken.end() - taken.end(1)',
+     '            pass',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_half_character_utf_7_decodes_is_refused_on_its_own_line'],
+     "half of a character at the start of line 3 of a UTF-7 document was "
+     "refused on line 1, counted in the text with the declaration taken out"),
+
     ("gates/the-time-budget-actually-compares",
      "tools/time_budget.py",
      "        self.ok = factor is None or factor < FAIL_AT",

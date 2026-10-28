@@ -674,6 +674,14 @@ def _as_declared(raw: bytes) -> bytes:
     return _as_utf8(raw, codec, declared=name)
 
 
+def _line_at(text: str, at: int) -> int:
+    """The line the character at `at` is on, counted as XML 1.0 (2.11) ends
+    a line and as the parser counts the lines of a document it stops in: at
+    a line feed, at a carriage return and a line feed together, and at a
+    carriage return alone."""
+    return text.count("\n", 0, at) + text.count("\r", 0, at) - text.count("\r\n", 0, at) + 1
+
+
 def _as_utf8(raw: bytes, encoding: str, declared: Optional[str] = None,
              settled: Optional[str] = None) -> bytes:
     """The bytes as UTF-8.
@@ -704,7 +712,11 @@ def _as_utf8(raw: bytes, encoding: str, declared: Optional[str] = None,
     try:
         text = raw.decode(encoding)
     except UnicodeDecodeError as error:
-        line = raw.count(b"\n", 0, error.start) + 1
+        # Counted in what the bytes before the refused ones decode to: in
+        # UTF-16 a byte 0A is half of many a character, and a line feed
+        # only as the code unit 000A.
+        before = raw[:error.start].decode(encoding, "replace")
+        line = _line_at(before, len(before))
         shown = raw[error.start:error.end][:8].hex(" ")
         if declared is None:
             raise EncodingNotRead(
@@ -719,8 +731,14 @@ def _as_utf8(raw: bytes, encoding: str, declared: Optional[str] = None,
         converted = _DECLARED_ENCODING.sub(r"\1", text, count=1).encode("utf-8")
     except UnicodeEncodeError as error:
         # A decoder that hands back half of a surrogate pair -- UTF-7 can --
-        # has made a code point no document holds (production 2).
-        line = text.count("\n", 0, error.start) + 1
+        # has made a code point no document holds (production 2). It is
+        # found in the text the declaration was taken out of, and counted
+        # where the document has it: past the declaration, as far on again
+        # as what was taken out.
+        at, taken = error.start, _DECLARED_ENCODING.match(text)
+        if taken is not None and at >= taken.end(1):
+            at += taken.end() - taken.end(1)
+        line = _line_at(text, at)
         half = ord(error.object[error.start])
         raise EncodingNotRead(
             "the document declares %s, and its bytes on line %d make half of a "

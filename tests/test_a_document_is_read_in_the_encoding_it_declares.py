@@ -694,6 +694,61 @@ def test_a_payload_relationships_refusal_keeps_its_message_line(
     assert finding["line"] == int(named) == lines + 1
 
 
+def _lines_named(tmp_path, capsys, make):
+    """The exit, and `line` beside the line the message names, for a bare
+    document and for the package's own relationships part refused for their
+    encoding -- each made by `make` from its root's start tag."""
+    document = tmp_path / "document.xml"
+    document.write_bytes(make("<r>"))
+    package = tmp_path / "package.aasx"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        archive.writestr("_rels/.rels", make('<Relationships xmlns="%s">' % RELS_NS))
+        archive.writestr("aasx/aasx-origin", b"")
+    seen = []
+    for path, rule in ((document, "X3"), (package, "X2")):
+        code, findings = _judged(path, capsys)
+        (finding,) = [f for f in findings if f["rule"] == rule]
+        (named,) = re.findall(r"\bline (\d+)\b", finding["message"])
+        seen.append((rule, code, finding["line"], int(named)))
+    return seen
+
+
+def test_a_half_character_utf_7_decodes_is_refused_on_its_own_line(tmp_path, capsys):
+    """UTF-7 can decode to half of a character, which is found once the
+    declaration is out of the text: its line is counted in the text with
+    the declaration in, so a half at the start of line 3 is on line 3 and
+    not on a line before it."""
+    def make(root):
+        return ('<?xml version="1.0" encoding="UTF-7"?>\n%s\n' % root).encode("ascii") + b"+2AA-"
+
+    assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
+
+
+def test_utf_16_lines_are_counted_in_characters_and_not_in_bytes_0a(tmp_path, capsys):
+    """In UTF-16 a line feed is the code unit 000A, and a byte 0A is also half
+    of U+010A, of U+4E0A and of every character from U+0A00 to U+0AFF: the
+    lines before the refused bytes are counted in what those bytes decode
+    to, so U+010A on line 2 does not put a lone surrogate on line 3 on
+    line 4."""
+    def make(root):
+        return (b"\xff\xfe" + ('<?xml version="1.0" encoding="UTF-16"?>\n%s<!--\u010a-->\n' % root)
+                .encode("utf-16-le") + b"\x00\xd8")
+
+    assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
+
+
+def test_a_line_ended_by_a_carriage_return_alone_is_a_line(tmp_path, capsys):
+    """XML 1.0 (2.11) ends a line at a carriage return no line feed follows,
+    as at a line feed and at the two together, and the parser counts the
+    lines of a document it stops in so: the refusal counts them the same
+    way."""
+    def make(root):
+        return ('<?xml version="1.0" encoding="windows-1252"?>\r%s\r' % root).encode("ascii") + b"\x81"
+
+    assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
+
+
 @pytest.mark.parametrize("declared,codec,value", [
     ("KS_C_5601-1987", "cp949", "똠"),
     ("EUC-KR", "cp949", "똠"),
