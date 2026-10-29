@@ -4,6 +4,8 @@
 
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
+An `X2` finding refusing the package's own relationships part or its origin's for its encoding now names the refused relationships part in `part`; 1.0.1 gave null there. The verdict and exit code are unchanged.
+
 ## 1.0.1 — 2026-10-29
 
 Who should take this release: anyone who reads the line an encoding refusal names or `part` on an X2 one, or matches the remedy text of a byte refusal under a charset declared by name, as the paragraphs below set out; no verdict or exit code changes.
