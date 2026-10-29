@@ -3915,6 +3915,17 @@ TABLE.extend([
 ])
 
 
+TABLE.extend([
+    ('loader/chain-encoding-refusal-names-the-relationships-part',
+     'src/aas_submodel_validate/loader.py',
+     'LoadError("chain", str(exc), line=exc.line, part=rels, detail=exc.detail, fix=encoding_remedy(exc))',
+     'LoadError("chain", str(exc), line=exc.line, detail=exc.detail, fix=encoding_remedy(exc))',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_chain_encoding_refusal_names_its_relationships_part'],
+     'the package and origin relationships encoding refusals carried a line with no part; naming the refused relationships part points to the same place'),
+
+])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", action="store_true")
