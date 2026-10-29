@@ -3926,6 +3926,31 @@ TABLE.extend([
 ])
 
 
+TABLE.extend([
+    ('container/a-paired-carriage-return-ends-one-line',
+     'src/aas_submodel_validate/container.py',
+     '    return text.count("\\n", 0, at) + text.count("\\r", 0, at) - text.count("\\r\\n", 0, at) + 1',
+     '    return text.count("\\n", 0, at) + text.count("\\r", 0, at) + 1',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_carriage_return_and_line_feed_end_one_line'],
+     'a windows-1252 byte on line 3 was counted on line 5 when a paired carriage return and line feed ended two lines instead of one'),
+
+    ('container/a-utf7-half-before-the-encoding-keeps-its-line',
+     'src/aas_submodel_validate/container.py',
+     '        if taken is not None and at >= taken.end(1):',
+     '        if taken is not None:',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_utf7_half_before_the_encoding_keeps_its_line'],
+     'a UTF-7 half on line 3 before the encoding in a declaration was counted on line 4 when restoring positions moved characters before the removed text too'),
+
+    ('tools/capability-data-directory-is-the-same-folder',
+     'tools/capabilities_svg.py',
+     '    if not os.path.samefile(os.path.dirname(src), os.path.join(ROOT, "docs")):',
+     '    if os.path.dirname(src) != os.path.join(ROOT, "docs"):',
+     ['tests/test_capability_data_directory.py::test_capability_data_accepts_two_spellings_of_one_directory'],
+     'NFC and NFD names for the same data folder were refused as different folders when the generator compared path text'),
+
+])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", action="store_true")
