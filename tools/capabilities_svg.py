@@ -441,7 +441,7 @@ def main(argv):
     if not os.path.isfile(src):
         print(f"no such data file: {src}")
         return 2
-    if os.path.dirname(src) != os.path.join(ROOT, "docs"):
+    if not os.path.samefile(os.path.dirname(src), os.path.join(ROOT, "docs")):
         print(f"the data file must live in {os.path.join(ROOT, 'docs')} (found {src})")
         return 2
     data = load(src)
