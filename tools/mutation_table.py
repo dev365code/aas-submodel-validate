@@ -3705,7 +3705,7 @@ def shim(tree: Path) -> Path:
     d = tree / ".harness-bin"
     d.mkdir(exist_ok=True)
     p = d / "python"
-    p.write_text('#!/bin/sh\nexec "%s" "$@"\n' % sys.executable)
+    p.write_text('#!/bin/sh\nexec "%s" "$@"\n' % sys.executable, encoding="utf-8")
     p.chmod(0o755)
     return d
 
@@ -3800,7 +3800,7 @@ def run(tree: Path, checks: list) -> tuple:
     for spec in checks:
         if spec.startswith("step:"):
             script = tree / ".harness-step.sh"
-            script.write_text(lift(tree, spec))
+            script.write_text(lift(tree, spec), encoding="utf-8")
             # The tag the workflow would see, taken from the tree being
             # measured, so the baseline is green by construction and a
             # row that breaks the agreement is what makes it red.

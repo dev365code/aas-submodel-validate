@@ -97,7 +97,7 @@ def _shim(tmp_path):
     """`python3` on PATH meaning this interpreter, as setup-python supplies one."""
     shim = tmp_path / "bin"
     shim.mkdir(exist_ok=True)
-    (shim / "python3").write_text('#!/bin/sh\nexec "%s" "$@"\n' % _posix(sys.executable))
+    (shim / "python3").write_text('#!/bin/sh\nexec "%s" "$@"\n' % _posix(sys.executable), encoding="utf-8")
     (shim / "python3").chmod(0o755)
     return shim
 
@@ -403,7 +403,7 @@ def test_the_release_it_installs_is_the_one_it_was_pinned_at(tmp_path, wanted, r
     shim = tmp_path / "bin"
     shim.mkdir()
     asked = tmp_path / "asked"
-    (shim / "python3").write_text('#!/bin/sh\nprintf "%%s\\n" "$@" > "%s"\n' % _posix(asked))
+    (shim / "python3").write_text('#!/bin/sh\nprintf "%%s\\n" "$@" > "%s"\n' % _posix(asked), encoding="utf-8")
     (shim / "python3").chmod(0o755)
     outputs = tmp_path / "outputs"
     outputs.write_text("", encoding="utf-8")
@@ -439,7 +439,7 @@ def test_an_install_that_fails_says_which_release_it_asked_for(tmp_path):
     script.write_text(body, encoding="utf-8")
     shim = tmp_path / "bin"
     shim.mkdir()
-    (shim / "python3").write_text('#!/bin/sh\necho "ERROR: No matching distribution" >&2\nexit 1\n')
+    (shim / "python3").write_text('#!/bin/sh\necho "ERROR: No matching distribution" >&2\nexit 1\n', encoding="utf-8")
     (shim / "python3").chmod(0o755)
     outputs = tmp_path / "outputs"
     outputs.write_text("", encoding="utf-8")

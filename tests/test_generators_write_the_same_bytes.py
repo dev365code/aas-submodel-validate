@@ -123,13 +123,13 @@ def _run_generator(tree, tool, flags, windows):
                 return stream.write(data)
 
         Path.write_text = write_text
-        # A positive control prevents a no-op simulation from passing.
+        # The explicit UTF-8 control still passes through the simulated line endings.
         probe = tree / "platform-probe.txt"
-        probe.write_text("a\nb\n©")
-        assert probe.read_bytes() == b"a\r\nb\r\n\xa9"
-        with open(probe, "w") as stream:
+        probe.write_text("a\nb\n©", encoding="utf-8")
+        assert probe.read_bytes() == b"a\r\nb\r\n\xc2\xa9"
+        with open(probe, "w", encoding="utf-8") as stream:
             stream.write("a\nb\n©")
-        assert probe.read_bytes() == b"a\r\nb\r\n\xa9"
+        assert probe.read_bytes() == b"a\r\nb\r\n\xc2\xa9"
         probe.unlink()
         assert Path.write_text is not original_write_text
     if tool == "vendor_template.py":

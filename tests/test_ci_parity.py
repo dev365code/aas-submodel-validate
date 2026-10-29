@@ -1223,9 +1223,9 @@ def _dist(tmp_path, names, records=None, sums_lists_itself=False):
         lines = ["%064d  %s" % (0, n) for n in records]
         if sums_lists_itself:
             lines.append("%064d  SHA256SUMS" % 0)
-        (dist / "SHA256SUMS").write_text("\n".join(lines) + "\n")
+        (dist / "SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="utf-8")
     script = root / "step.sh"
-    script.write_text(_dist_manifest_script())
+    script.write_text(_dist_manifest_script(), encoding="utf-8")
     return subprocess.run(["sh", str(script)], cwd=str(root),
                           capture_output=True, text=True)
 

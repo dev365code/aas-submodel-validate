@@ -168,7 +168,7 @@ def test_a_profile_that_only_settles_a_collision_is_not_reported_as_idle(tmp_pat
                              "CarbonFootprint/1/0"}]},
                "submodelElements": []}]}
     path = tmp_path / "cf.json"
-    path.write_text(json.dumps(env))
+    path.write_text(json.dumps(env), encoding="utf-8")
     assert main([str(path), "--profile", "02035-3"]) in (0, 1)
     printed = capsys.readouterr().out
     assert "chose nothing" not in printed, "a settle-only key is not idle"
@@ -314,7 +314,7 @@ def test_allow_unmatched_forgives_only_the_presence_rule(tmp_path, capsys):
 
     poison(env)
     path = tmp_path / "unmatched-strict.json"
-    path.write_text(json.dumps(env))
+    path.write_text(json.dumps(env), encoding="utf-8")
     assert main([str(path), "--allow-unmatched", "--strict-meta"]) == 1
     out = capsys.readouterr().out
     assert "error   META" in out, "the real error went with the forgiven one"
@@ -339,7 +339,7 @@ def test_the_json_report_is_indented_for_a_human_holding_a_pager(tmp_path, capsy
     Nothing structural reads the whitespace, which is exactly why nothing
     else would notice it going."""
     path = tmp_path / "ok.json"
-    path.write_text(json.dumps(hd_env()))
+    path.write_text(json.dumps(hd_env()), encoding="utf-8")
     main([str(path), "-f", "json"])
     assert capsys.readouterr().out.startswith('{\n  "')
 
@@ -350,7 +350,7 @@ def test_warnings_as_errors_needs_a_warning_not_a_vibe(tmp_path):
     drift to `>= 0` (every clean run fails) or `> -1` (same) and only
     the clean edge notices."""
     clean = tmp_path / "clean.json"
-    clean.write_text(json.dumps(hd_env()))
+    clean.write_text(json.dumps(hd_env()), encoding="utf-8")
     assert main([str(clean), "--warnings-as-errors"]) == 0
 
     warned = copy.deepcopy(hd_env())
@@ -367,7 +367,7 @@ def test_warnings_as_errors_needs_a_warning_not_a_vibe(tmp_path):
 
     lowercase_status(warned)
     warmed = tmp_path / "warned.json"
-    warmed.write_text(json.dumps(warned))
+    warmed.write_text(json.dumps(warned), encoding="utf-8")
     assert main([str(warmed)]) == 0
     assert main([str(warmed), "--warnings-as-errors"]) == 1
 

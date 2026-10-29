@@ -431,7 +431,7 @@ def test_a_container_rule_says_whether_it_named_the_file_or_a_part(tmp_path):
     assert _only(json.loads(json.dumps(runner.run(str(missing_package)).as_dict())),
                  "X6")["path"] == ["container"]
     broken = tmp_path / "broken.json"
-    broken.write_text("{")
+    broken.write_text("{", encoding="utf-8")
     finding = _only(json.loads(json.dumps(runner.run(str(broken)).as_dict())), "X3")
     assert finding["subject"] == str(broken) and finding["path"] == ["document"]
     package = tmp_path / "part.aasx"
