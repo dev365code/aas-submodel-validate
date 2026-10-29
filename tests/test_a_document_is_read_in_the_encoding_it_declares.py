@@ -749,6 +749,26 @@ def test_a_line_ended_by_a_carriage_return_alone_is_a_line(tmp_path, capsys):
     assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
 
 
+def test_a_carriage_return_and_line_feed_end_one_line(tmp_path, capsys):
+    """XML 1.0 (2.11) ends one line at a carriage return and line feed
+    together: the byte on line 3 is refused on line 3, rather than line 5
+    from counting both characters as separate line ends."""
+    def make(root):
+        return ('<?xml version="1.0" encoding="windows-1252"?>\r\n%s\r\n' % root).encode("ascii") + b"\x81"
+
+    assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
+
+
+def test_a_utf7_half_before_the_encoding_keeps_its_line(tmp_path, capsys):
+    """A half on line 3 before the encoding in a declaration is already
+    before the text removed from it: restoring that text's positions
+    must not move the half to line 4."""
+    def make(root):
+        return ('<?xml\nversion="1.0"\n+2AA-\nencoding="UTF-7"?>\n%s\n' % root).encode("ascii")
+
+    assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
+
+
 @pytest.mark.parametrize("declared,codec,value", [
     ("KS_C_5601-1987", "cp949", "똠"),
     ("EUC-KR", "cp949", "똠"),
