@@ -67,8 +67,8 @@ ROOT = Path(__file__).resolve().parent.parent
 TABLE = [
     ("loader/relationships-refusal-keeps-the-line",
      "src/aas_submodel_validate/loader.py",
-     'LoadError("chain", str(exc), line=exc.line, detail=exc.detail, fix=encoding_remedy(exc))',
-     'LoadError("chain", str(exc), detail=exc.detail, fix=encoding_remedy(exc))',
+     'LoadError("chain", str(exc), line=exc.line, part=rels, detail=exc.detail, fix=encoding_remedy(exc))',
+     'LoadError("chain", str(exc), part=rels, detail=exc.detail, fix=encoding_remedy(exc))',
      ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_relationships_refusal_keeps_its_message_line'],
      "an encoding refusal in the relationships chain named the line in its "
      "message while X2 reported null; carrying the exception line makes "
@@ -1020,9 +1020,7 @@ TABLE = [
 
     ("container/an-encoding-the-parser-cannot-honour-is-caught",
      "src/aas_submodel_validate/loader.py",
-     '    except EncodingNotRead as exc:\n'
-     '        loaded.errors.append(LoadError("chain", str(exc), line=exc.line, detail=exc.detail, fix=encoding_remedy(exc)))\n'
-     '        return loaded\n',
+     '    except EncodingNotRead as exc:\n        try:\n            source = package.origin\n        except EncodingNotRead:\n            source = ""\n        rels = container.relationships_part_name(source)\n        loaded.errors.append(LoadError("chain", str(exc), line=exc.line, part=rels, detail=exc.detail, fix=encoding_remedy(exc)))\n        return loaded\n',
      "",
      ["tests/test_a_document_is_read_in_the_encoding_it_declares.py::"
       "test_a_relationships_part_in_a_name_this_reader_does_not_read_is_filed_with_its_remedy",

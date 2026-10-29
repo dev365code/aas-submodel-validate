@@ -770,3 +770,39 @@ def test_declared_byte_refusal_offers_utf8_first(tmp_path, declared, codec, valu
     assert error.fix == ("Save the document as UTF-8 and drop the declaration, or declare the "
                          "encoding the file is in, by the name the IANA charset registry gives "
                          "it. %s" % loader.REFUSED_NOT_JUDGED)
+
+
+@pytest.mark.parametrize("source", ["", "aasx/aasx-origin"], ids=["package", "origin"])
+@pytest.mark.parametrize("declared,codec,mark,ending,lines", [
+    ("UTF-16", "utf-16-le", b"\xff\xfe", b"\x00\xd8", 1),
+    ("csUTF16LE", "utf-16-le", b"", b"\x00", 2),
+    ("windows-1252", "cp1252", b"", b"\x81", 3),
+], ids=["surrogate", "odd-byte", "charset-byte"])
+def test_chain_encoding_refusal_names_its_relationships_part(
+        tmp_path, capsys, source, declared, codec, mark, ending, lines):
+    """The line is in the relationships part whose bytes were refused:
+    X2 names that part for the package and for its origin, while keeping
+    the same refusal, line, remedy and exit, with no subject."""
+    text = _rels(declared).replace('Target="/aasx/', 'Target="aasx/')
+    raw = mark + (text + "\n" * lines).encode(codec) + ending
+    rels = container.relationships_part_name(source)
+    path = tmp_path / "input.aasx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+        if source:
+            archive.writestr("_rels/.rels", _rels("UTF-8").replace('Target="/aasx/', 'Target="aasx/'))
+        archive.writestr(rels, raw)
+        archive.writestr("aasx/aasx-origin", b"")
+    with pytest.raises(EncodingNotRead) as stopped:
+        xml_as_utf8(raw)
+    refusal = stopped.value
+    assert main(["-f", "json", "--allow-unmatched", str(path)]) == 2
+    report = json.loads(capsys.readouterr().out)
+    (finding,) = report["findings"]
+    assert finding["rule"] == "X2"
+    assert finding["message"] == str(refusal)
+    assert finding["line"] == refusal.line == lines + 1
+    assert finding["detail"] == refusal.detail
+    assert finding["fix"] == loader.encoding_remedy(refusal)
+    assert finding["subject"] is None
+    assert finding["part"] == rels

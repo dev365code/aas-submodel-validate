@@ -1118,7 +1118,12 @@ def _load_aasx(path: Path) -> Loaded:
         loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail, fix=FOREIGN_ORIGIN_REMEDY))
         return loaded
     except EncodingNotRead as exc:
-        loaded.errors.append(LoadError("chain", str(exc), line=exc.line, detail=exc.detail, fix=encoding_remedy(exc)))
+        try:
+            source = package.origin
+        except EncodingNotRead:
+            source = ""
+        rels = container.relationships_part_name(source)
+        loaded.errors.append(LoadError("chain", str(exc), line=exc.line, part=rels, detail=exc.detail, fix=encoding_remedy(exc)))
         return loaded
     except ContainerError as exc:
         loaded.errors.append(LoadError("chain", str(exc), detail=exc.detail))
