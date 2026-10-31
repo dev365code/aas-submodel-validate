@@ -15,6 +15,8 @@
 
 Two refusals of the same bytes keep their verdict and exit code and change what they say. A relationships part -- the package's own, its origin's or an aas-spec part's -- declaring `US-ASCII` with a byte outside ASCII was an X2 the parser refused, "does not parse: not well-formed (invalid token)", with no `line` or `part` and the remedy to repair the chain; it is now the refusal of those bytes, naming them and their line, with that line in `line`, the relationships part in `part` and the remedy above. An environment document declaring `US-ASCII` whose byte outside ASCII is not UTF-8 either was an X3 saying the document could not be read as an AAS environment; it is now the same refusal of those bytes. 1.0.1 said that a document declaring `UTF-8` or `US-ASCII` by those names, whose bytes are refused, keeps the standing advice of the rule that refuses it; from 1.1.0 that holds for `UTF-8` alone.
 
+An `X2` finding refusing the package's own relationships part or its origin's for its encoding now names that part as its `subject` too, as one refusing an aas-spec part's own relationships part already did: `subject` holds the relationships part where it was null, `path` is `["container", "part"]` where it was `["container"]`, and the text report's `at` line names the part before the line. The verdict and exit code are unchanged.
+
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
 ## 1.0.2 — 2026-11-01
