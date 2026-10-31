@@ -2,6 +2,8 @@
 
 ## 1.0.2 — unreleased
 
+Who should take this release: anyone who reads `part` on an X2 finding that refuses the package's own relationships part or its origin's for its encoding, or groups findings by `part`, as the paragraph below sets out; no verdict or exit code changes.
+
 An `X2` finding refusing the package's own relationships part or its origin's for its encoding now names the refused relationships part in `part`, where 1.0.1 left `part` null on the package's `.rels` and its origin's. The verdict and exit code are unchanged.
 
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
