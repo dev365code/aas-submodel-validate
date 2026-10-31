@@ -2,6 +2,19 @@
 
 ## 1.1.0 — unreleased
 
+**A document that declares `US-ASCII` and holds a byte outside ASCII is refused, and when it is the environment document itself, bare or as an AASX's aas-spec XML part, that moves it from judged to refused against 1.0.2.** 1.0.2 handed a declaration of `US-ASCII` on as it came, in any letter case: the parser held a relationships part to it and refused the part, while the environment document, decoded here past its declaration, was read as UTF-8 and judged. The registry's other names for US-ASCII were refused already. A byte outside the declared encoding is now refused at the line it is on under every one of them, as under any other declared charset, with the remedy a byte refusal carries: "Save the document as UTF-8 and drop the declaration, or declare the encoding the file is in, by the name the IANA charset registry gives it."
+
+**Who gates a build on the exit code**: the inputs below move from judged to refused against 1.0.2, and every one measured is listed. None of the inputs this repository measures every release moves.
+
+| input | 1.0.2 | 1.1.0 |
+|---|---|---|
+| an environment document declaring `US-ASCII`, `us-ascii` or `Us-Ascii`, holding a UTF-8 character outside ASCII | judged, exit 0 or 1 | exit 2, X3 |
+| the same after a UTF-8 byte order mark | judged, exit 0 or 1 | exit 2, X3 |
+| an AASX whose aas-spec XML part declares `US-ASCII`, `us-ascii` or `Us-Ascii` and holds a UTF-8 character outside ASCII | judged, exit 0 or 1 | exit 2, X3 |
+| the same after a UTF-8 byte order mark | judged, exit 0 or 1 | exit 2, X3 |
+
+Two refusals of the same bytes keep their verdict and exit code and change what they say. A relationships part -- the package's own, its origin's or an aas-spec part's -- declaring `US-ASCII` with a byte outside ASCII was an X2 the parser refused, "does not parse: not well-formed (invalid token)", with no `line` or `part` and the remedy to repair the chain; it is now the refusal of those bytes, naming them and their line, with that line in `line`, the relationships part in `part` and the remedy above. An environment document declaring `US-ASCII` whose byte outside ASCII is not UTF-8 either was an X3 saying the document could not be read as an AAS environment; it is now the same refusal of those bytes. 1.0.1 said that a document declaring `UTF-8` or `US-ASCII` by those names, whose bytes are refused, keeps the standing advice of the rule that refuses it; from 1.1.0 that holds for `UTF-8` alone.
+
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
 ## 1.0.2 — 2026-11-01
