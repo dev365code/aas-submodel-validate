@@ -833,7 +833,8 @@ def test_declared_byte_refusal_offers_utf8_first(tmp_path, declared, codec, valu
                          "it. %s" % loader.REFUSED_NOT_JUDGED)
 
 
-@pytest.mark.parametrize("source", ["", "aasx/aasx-origin"], ids=["package", "origin"])
+@pytest.mark.parametrize("source,code", [("", 2), ("aasx/aasx-origin", 2), ("aasx/env.json", 1)],
+                         ids=["package", "origin", "part"])
 @pytest.mark.parametrize("declared,codec,mark,ending,lines", [
     ("UTF-16", "utf-16-le", b"\xff\xfe", b"\x00\xd8", 1),
     ("csUTF16LE", "utf-16-le", b"", b"\x00", 2),
@@ -841,30 +842,34 @@ def test_declared_byte_refusal_offers_utf8_first(tmp_path, declared, codec, valu
     ("US-ASCII", "ascii", b"", b"\xc3\xa9", 2),
 ], ids=["surrogate", "odd-byte", "charset-byte", "ascii-byte"])
 def test_chain_encoding_refusal_names_its_relationships_part(
-        tmp_path, capsys, source, declared, codec, mark, ending, lines):
+        tmp_path, capsys, source, code, declared, codec, mark, ending, lines):
     """The line is in the relationships part whose bytes were refused:
-    X2 names that part for the package and for its origin, while keeping
-    the same refusal, line, remedy and exit, with no subject."""
+    X2 names that part, in `part` and as its subject, for the package, for
+    its origin and for an aas-spec part's own -- the same refusal, line and
+    remedy at each, and the exit each place has: the package and its origin
+    stop the read, an aas-spec part's own relationships part does not."""
     text = _rels(declared).replace('Target="/aasx/', 'Target="aasx/')
     raw = mark + (text + "\n" * lines).encode(codec) + ending
     rels = container.relationships_part_name(source)
     path = tmp_path / "input.aasx"
-    with zipfile.ZipFile(path, "w") as archive:
-        archive.writestr("[Content_Types].xml", CONTENT_TYPES)
-        if source:
-            archive.writestr("_rels/.rels", _rels("UTF-8").replace('Target="/aasx/', 'Target="aasx/'))
-        archive.writestr(rels, raw)
-        archive.writestr("aasx/aasx-origin", b"")
+    if source == "aasx/env.json":
+        build_aasx(path, env_json(), files=[(rels, raw)], suppl_targets=[])
+    else:
+        with zipfile.ZipFile(path, "w") as archive:
+            archive.writestr("[Content_Types].xml", CONTENT_TYPES)
+            if source:
+                archive.writestr("_rels/.rels", _rels("UTF-8").replace('Target="/aasx/', 'Target="aasx/'))
+            archive.writestr(rels, raw)
+            archive.writestr("aasx/aasx-origin", b"")
     with pytest.raises(EncodingNotRead) as stopped:
         xml_as_utf8(raw)
     refusal = stopped.value
-    assert main(["-f", "json", "--allow-unmatched", str(path)]) == 2
+    assert main(["-f", "json", "--allow-unmatched", str(path)]) == code
     report = json.loads(capsys.readouterr().out)
-    (finding,) = report["findings"]
-    assert finding["rule"] == "X2"
+    (finding,) = [f for f in report["findings"] if f["rule"] == "X2"]
     assert finding["message"] == str(refusal)
     assert finding["line"] == refusal.line == lines + 1
     assert finding["detail"] == refusal.detail
     assert finding["fix"] == loader.encoding_remedy(refusal)
-    assert finding["subject"] is None
-    assert finding["part"] == rels
+    assert finding["subject"] == finding["part"] == rels
+    assert finding["path"] == ["container", "part"]
