@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "31cc307be62a2c844342266d1588d248c508f2ba",
+ "commit": "fc75471743b590143f6df576010e0cee9ffea7ce",
  "python": "3.13.2",
  "rows": [
   "loader/relationships-refusal-keeps-the-line",
@@ -390,7 +390,16 @@
   "loader/chain-encoding-refusal-names-the-relationships-part",
   "container/a-paired-carriage-return-ends-one-line",
   "container/a-utf7-half-before-the-encoding-keeps-its-line",
-  "tools/capability-data-directory-is-the-same-folder"
+  "tools/capability-data-directory-is-the-same-folder",
+  "container/us-ascii-is-held-to-its-bytes",
+  "container/us-ascii-is-named-in-any-letter-case",
+  "loader/chain-encoding-refusal-names-the-part-as-its-subject",
+  "tools/tracked-paths-are-read-as-utf-8",
+  "container/the-origin-is-read-under-the-deprecated-path",
+  "container/aas-spec-is-read-under-the-deprecated-path",
+  "container/aas-suppl-is-read-under-the-deprecated-path",
+  "rules/the-packaging-citation-names-its-edition",
+  "rules/the-metamodel-citation-names-its-edition"
  ],
  "killed": [
   "loader/relationships-refusal-keeps-the-line",
@@ -779,7 +788,16 @@
   "loader/chain-encoding-refusal-names-the-relationships-part",
   "container/a-paired-carriage-return-ends-one-line",
   "container/a-utf7-half-before-the-encoding-keeps-its-line",
-  "tools/capability-data-directory-is-the-same-folder"
+  "tools/capability-data-directory-is-the-same-folder",
+  "container/us-ascii-is-held-to-its-bytes",
+  "container/us-ascii-is-named-in-any-letter-case",
+  "loader/chain-encoding-refusal-names-the-part-as-its-subject",
+  "tools/tracked-paths-are-read-as-utf-8",
+  "container/the-origin-is-read-under-the-deprecated-path",
+  "container/aas-spec-is-read-under-the-deprecated-path",
+  "container/aas-suppl-is-read-under-the-deprecated-path",
+  "rules/the-packaging-citation-names-its-edition",
+  "rules/the-metamodel-citation-names-its-edition"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
