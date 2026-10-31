@@ -152,7 +152,7 @@ Each of those five carries an `at`, a `saw` where there is evidence to show, the
 ## Where it stands
 
 <a href="https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md">
-<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=3ca5d5a1" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, evidence, remedy, requirement, line; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, library, single file, Action, browser; Input safety: read budgets, advisory, own mutations, encodings; Upstream: pinned, checked for upstream change, pin move shipped" width="100%">
+<img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/capabilities.svg?v=2a6ef088" alt="Coverage: 2002, 03, 04, 06, 07, 11, 23, 35-1, -2, -4, -5, -7; Explanation: what is wrong, evidence, remedy, requirement, line; Report contract: schemaVersion, golden report, exit codes, schema page; Entrances: command line, library, single file, Action, browser; Input safety: read budgets, advisory, own mutations, encodings; Upstream: pinned, checked for upstream change, pin move shipped" width="100%">
 </a>
 
 *Six things this tool holds itself to, as they stand on the main branch, against the conditions 1.0 was held to. The picture is drawn from [`docs/capabilities.json`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/capabilities.json), and every item it marks done names a file in this repository that says so; the cases behind each axis are in [`docs/what-it-catches.md`](https://github.com/dev365code/aas-submodel-validate/blob/main/docs/what-it-catches.md).*
@@ -463,7 +463,7 @@ even that.
 command as a step:
 
 ```yaml
-- uses: dev365code/aas-submodel-validate@v1.0.2
+- uses: dev365code/aas-submodel-validate@v1.1.0
   with:
     paths: |
       submodels/nameplate.aasx
