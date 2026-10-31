@@ -177,7 +177,7 @@ def test_the_ruff_version_is_pinned_the_same_everywhere():
 #: measures each. The page claims all three in its first four lines; two
 #: of them were measured, and what protected the third was a YAML
 #: comment saying why the row was added.
-RUNNERS = {"Linux": "ubuntu-latest",
+RUNNERS = {"Linux": "ubuntu-24.04",
            "macOS": "macos-latest",
            "Windows": "windows-latest"}
 
@@ -195,7 +195,7 @@ def test_the_matrix_measures_every_platform_the_page_claims():
     measured. Dropping the claim and keeping the row is allowed -- a
     runner nobody advertises is a runner doing extra work, not a lie."""
     readme = (ROOT / "README.md").read_text("utf-8")
-    runners = set(re.findall(r"os:\s*([a-z0-9-]+)", WORKFLOW))
+    runners = set(re.findall(r"os:\s*([a-z0-9.-]+)", WORKFLOW))
     assert runners, "no runners in the matrix at all"
     for platform, runner in RUNNERS.items():
         if re.search(r"(?<![\w-])%s(?![\w-])" % platform, readme):
@@ -650,7 +650,7 @@ def test_a_tag_only_releases_a_commit_ci_has_judged():
     push already survived, and it is the only one standing between a tag
     and PyPI.
 
-    The release job runs on `ubuntu-latest` at one Python. CI runs ten
+    The release job runs on `ubuntu-24.04` at one Python. CI runs ten
     rows, and the difference is not decorative: a change green locally
     and green on every ubuntu row has broken `windows-latest` alone. A
     tag pushed at that commit would have found `make check` green here
