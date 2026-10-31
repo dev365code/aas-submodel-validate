@@ -299,7 +299,7 @@ def install_file_rule(rule_id: str, tables, citation: str, only=None):
           # so the reading is cited where this project keeps its
           # readings. `spec` promises "where the requirement lives", and
           # a template file alone does not say where this one lives.
-          spec="%s; IDTA 01005 (AASX); docs/divergences.md #55" % citation,
+          spec="%s; IDTA 01005-3-0-1 (AASX); docs/divergences.md #55" % citation,
           fix="Add the file to the .aasx under the name this File value "
               "gives, or correct the value's path. (Declaring an aas-suppl "
               "relationship for it is X4's question, not this one's.)",

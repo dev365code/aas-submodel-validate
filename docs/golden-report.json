@@ -38,7 +38,7 @@
    "priority": "MUST",
    "rule": "HD-D7",
    "severity": "error",
-   "spec": "IDTA 02004-2-0 \u00a72.8; IDTA 01005 (AASX)",
+   "spec": "IDTA 02004-2-0 \u00a72.8; IDTA 01005-3-0-1 (AASX)",
    "subject": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]/DigitalFiles/[0]",
    "title": "files named by DigitalFile/PreviewFile exist in the container"
   },

@@ -156,7 +156,7 @@ def _meta_rule(strict: bool) -> Rule:
     return Rule(
         id="META", kind=META_KIND, prio=META_PRIO[_meta_level(strict)],
         title="the AAS metamodel, verified by aas-core3.0",
-        spec="IDTA 01001 (metamodel constraints)",
+        spec="IDTA 01001 (metamodel 3.0 constraints)",
         fn=lambda ctx: (),
         # No route. The subject is the upstream reader's own expression
         # -- `.concept_descriptions[10]`, `.asset_administration_shells[0]

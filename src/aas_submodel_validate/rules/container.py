@@ -82,7 +82,7 @@ def x1_is_a_zip(ctx):
 @rule("X2", kind="container", prio="MUST",
      path=("container", "part"),
       title="the OPC relationship chain must reach an aas-spec payload",
-      spec="IDTA 01005 (AASX); ISO/IEC 29500-2 (OPC)",
+      spec="IDTA 01005-3-0-1 (AASX); ISO/IEC 29500-2 (OPC)",
       fix="Repair the chain: _rels/.rels names an aasx-origin part, whose own "
           ".rels names the aas-spec payload. AAS packaging tools write this "
           "automatically; hand-built ZIPs almost never do.")
@@ -103,7 +103,7 @@ def x2_chain_resolves(ctx):
 @rule("X3", kind="container", prio="MUST",
      path=("container", "part"),
       title="the payload must parse as an AAS environment",
-      spec="IDTA 01001 (metamodel) and its published JSON/XML schemas",
+      spec="IDTA 01001 (metamodel 3.0) and its published JSON/XML schemas",
       fix="Open the named document and fix the syntax its parser rejects; "
           "the extension decides the format (.json as AAS JSON, otherwise "
           "AAS XML).")
@@ -206,7 +206,7 @@ def x6_the_path_can_be_opened(ctx):
 @rule("X4", kind="container", prio="SHOULD",
      path=("container", "part"),
       title="declared supplementary parts exist",
-      spec="IDTA 01005 (AASX, aas-suppl relationships)",
+      spec="IDTA 01005-3-0-1 (AASX, aas-suppl relationships)",
       # Deleting the relationship was offered as an equal way out, and
       # where a File value names the same part it leaves the part missing.
       # The next wording asserted the File rule always says so and that the

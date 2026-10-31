@@ -462,7 +462,7 @@ ROSTER = (
      "says they 'should be used' -- which is why this is a warning.",
      ("DocumentVersion", "StatusValue"), _d6),
     ("-D7", "template", "MUST", "files named by %s exist in the container",
-     "IDTA 02004-2-0 §2.8; IDTA 01005 (AASX)",
+     "IDTA 02004-2-0 §2.8; IDTA 01005-3-0-1 (AASX)",
      "Add the file to the .aasx under the name this File value gives, or "
      "correct the value's path. (Declaring an aas-suppl relationship for "
      "it is X4's question, not this one's.)",

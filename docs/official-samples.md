@@ -36,7 +36,7 @@ Every sample IDTA publishes that this repository vendors, with the verdict this 
 
 | Rule | Severity | Reads from | Findings |
 |---|---|---|---|
-| X3 | error | IDTA 01001 (metamodel) and its published JSON/XML schemas | 1 |
+| X3 | error | IDTA 01001 (metamodel 3.0) and its published JSON/XML schemas | 1 |
 
 ## `tests/corpus/idta/02003/sample-2.0.1.aasx`
 
@@ -88,7 +88,7 @@ No rule of this project fires.
 
 | Rule | Severity | Reads from | Findings |
 |---|---|---|---|
-| X3 | error | IDTA 01001 (metamodel) and its published JSON/XML schemas | 1 |
+| X3 | error | IDTA 01001 (metamodel 3.0) and its published JSON/XML schemas | 1 |
 
 ## `tests/corpus/idta/02006/sample-2.0.aasx`
 
@@ -99,4 +99,4 @@ No rule of this project fires.
 
 | Rule | Severity | Reads from | Findings |
 |---|---|---|---|
-| X3 | error | IDTA 01001 (metamodel) and its published JSON/XML schemas | 1 |
+| X3 | error | IDTA 01001 (metamodel 3.0) and its published JSON/XML schemas | 1 |

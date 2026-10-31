@@ -86,7 +86,7 @@ def td_d1_valid_date(ctx):
      # The File element; the part it names is in `detail`.
      path=("document", "submodel", "element"),
       title="files named by CompanyLogo/ImageFile exist in the container",
-      spec="IDTA 02003-2-0-1 §3.2, §3.3; IDTA 01005 (AASX)",
+      spec="IDTA 02003-2-0-1 §3.2, §3.3; IDTA 01005-3-0-1 (AASX)",
       fix="Add the file to the .aasx under the name this File value "
           "gives, or correct the value's path. (Declaring an aas-suppl "
           "relationship for it is X4's question, not this one's.)")
