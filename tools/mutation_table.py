@@ -3951,6 +3951,74 @@ TABLE.extend([
 ])
 
 
+TABLE.extend([
+    ('container/us-ascii-is-held-to-its-bytes',
+     'src/aas_submodel_validate/container.py',
+     '        if name.lower() == "us-ascii" and not raw.isascii():\n            _as_utf8(raw, "ascii", declared=name)   # refuses at the first byte outside ASCII\n',
+     '',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_document_declaring_us_ascii_is_held_to_ascii',
+      'tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_byte_outside_ascii_under_us_ascii_is_refused_on_its_line'],
+     'a UTF-8 character under a US-ASCII declaration in an environment document was read as UTF-8 and judged, exit 0, while the parser refused the same bytes in a relationships part'),
+
+    ('container/us-ascii-is-named-in-any-letter-case',
+     'src/aas_submodel_validate/container.py',
+     '        if name.lower() == "us-ascii" and not raw.isascii():\n',
+     '        if name == "us-ascii" and not raw.isascii():\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_document_declaring_us_ascii_is_held_to_ascii'],
+     'declared as US-ASCII or Us-Ascii, a byte outside ASCII went unrefused when the name was compared in one letter case'),
+
+    ('loader/chain-encoding-refusal-names-the-part-as-its-subject',
+     'src/aas_submodel_validate/loader.py',
+     'LoadError("chain", str(exc), line=exc.line, part=rels, subject=rels, detail=exc.detail, fix=encoding_remedy(exc))',
+     'LoadError("chain", str(exc), line=exc.line, part=rels, detail=exc.detail, fix=encoding_remedy(exc))',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_chain_encoding_refusal_names_its_relationships_part'],
+     "an X2 refusing the package's own relationships part or its origin's for its encoding left subject null while one refusing an aas-spec part's own named the part"),
+
+    ('tools/tracked-paths-are-read-as-utf-8',
+     'tools/check_distributions.py',
+     '                                capture_output=True, text=True, encoding="utf-8")\n',
+     '                                capture_output=True, text=True)\n',
+     ['tests/test_check_distributions.py::test_a_tracked_name_outside_ascii_is_read_as_the_index_writes_it'],
+     'a tracked file named with an e-acute came back from the index listing as other characters under a cp1252 default and counted as untracked'),
+
+    ('container/the-origin-is-read-under-the-deprecated-path',
+     'src/aas_submodel_validate/container.py',
+     '            if rel_type in ORIGIN_RELS:\n',
+     '            if rel_type == ORIGIN_REL:\n',
+     ['tests/test_the_deprecated_relationship_path_is_read.py::test_a_relationship_under_the_deprecated_path_is_followed'],
+     'an AASX of metamodel 3.0 declaring its aasx-origin relationship under the path IDTA 01005-3-0-1 deprecates and still reads was refused at it (X2)'),
+
+    ('container/aas-spec-is-read-under-the-deprecated-path',
+     'src/aas_submodel_validate/container.py',
+     'target for rel_type, target, _external in declared if rel_type in SPEC_RELS))',
+     'target for rel_type, target, _external in declared if rel_type == SPEC_REL))',
+     ['tests/test_the_deprecated_relationship_path_is_read.py::test_a_relationship_under_the_deprecated_path_is_followed'],
+     'an AASX declaring its aas-spec relationships under the deprecated path was told its origin declares none (X2)'),
+
+    ('container/aas-suppl-is-read-under-the-deprecated-path',
+     'src/aas_submodel_validate/rules/container.py',
+     '            if rel_type not in SUPPL_RELS:\n',
+     '            if rel_type not in SUPPL_RELS[:1]:\n',
+     ['tests/test_the_deprecated_relationship_path_is_read.py::test_a_relationship_under_the_deprecated_path_is_followed'],
+     'an aas-suppl relationship under the deprecated path to a part the archive does not hold was not followed, so X4 never said so'),
+
+    ('rules/the-packaging-citation-names-its-edition',
+     'src/aas_submodel_validate/rules/container.py',
+     'spec="IDTA 01005-3-0-1 (AASX); ISO/IEC 29500-2 (OPC)",',
+     'spec="IDTA 01005 (AASX); ISO/IEC 29500-2 (OPC)",',
+     ['tests/test_a_citation_names_the_edition_it_reads.py::test_every_citation_of_the_packaging_names_01005_3_0_1'],
+     'X2 cited IDTA 01005 with no edition while the reader follows the two relationship paths of 01005-3-0-1'),
+
+    ('rules/the-metamodel-citation-names-its-edition',
+     'src/aas_submodel_validate/rules/container.py',
+     'spec="IDTA 01001 (metamodel 3.0) and its published JSON/XML schemas",',
+     'spec="IDTA 01001 (metamodel) and its published JSON/XML schemas",',
+     ['tests/test_a_citation_names_the_edition_it_reads.py::test_every_citation_of_the_metamodel_names_3_0'],
+     'X3 cited IDTA 01001 with no edition while the reader reads metamodel 3.0 alone'),
+
+])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", action="store_true")
