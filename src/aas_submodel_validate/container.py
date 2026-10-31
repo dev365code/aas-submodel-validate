@@ -644,8 +644,12 @@ def _as_declared(raw: bytes) -> bytes:
     above, compared without regard to case (XML 1.0, 4.3.3); a name it
     does not give a charset this reader decodes is refused, naming the
     registered one where one can be named. The two names the parser reads
-    by itself, `utf-8` and `us-ascii`, are handed to it as they are; a name
-    of UTF-16's, on bytes whose shape is not UTF-16's, is refused.
+    by itself, `utf-8` and `us-ascii`, are handed to it as they are --
+    `us-ascii` only while its bytes are ASCII, since the environment
+    document is decoded past its declaration and a byte outside ASCII under
+    US-ASCII is the fatal error XML 1.0 (4.3.3) makes it, as it is under the
+    registry's other names for US-ASCII; a name of UTF-16's, on bytes whose
+    shape is not UTF-16's, is refused.
 
     Only the prolog is consulted, and only when it is ASCII -- which it
     must be, since a parser has to read the declaration before it knows
@@ -663,6 +667,8 @@ def _as_declared(raw: bytes) -> bytes:
             "the document declares %s, and its first bytes are not UTF-16" % _shown(name),
             what=name, kind="bytes", detail="it begins %s" % raw[:4].hex(" "))
     if name.lower() in _PARSER_READS:
+        if name.lower() == "us-ascii" and not raw.isascii():
+            _as_utf8(raw, "ascii", declared=name)   # refuses at the first byte outside ASCII
         return raw
     codec = _CODEC_OF.get(name.lower())
     if codec is None:

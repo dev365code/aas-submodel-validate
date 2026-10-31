@@ -167,6 +167,34 @@ def test_bytes_that_are_not_the_declared_charset_are_refused_where_they_are(tmp_
                          "it. %s" % loader.REFUSED_NOT_JUDGED)
 
 
+@pytest.mark.parametrize("declared", ["US-ASCII", "us-ascii", "Us-Ascii"])
+def test_a_document_declaring_us_ascii_is_held_to_ascii(tmp_path, capsys, declared):
+    """`us-ascii` is one of the two names handed on as they came, which is
+    right for bytes that are ASCII and was wrong for the rest: the
+    environment document is decoded here, as UTF-8 past its declaration, so
+    a UTF-8 idShort under US-ASCII was judged as though the file said UTF-8
+    -- while a relationships part with the same bytes, which the parser
+    reads, was refused, and so was every other name the registry gives
+    US-ASCII. Bytes outside the declared encoding are the fatal error XML
+    1.0 (4.3.3) says they are: refused where they are, bare and in a
+    package alike."""
+    raw = _environment(declared, "Größe").encode("utf-8")
+    path = tmp_path / "declared.xml"
+    path.write_bytes(raw)
+    (error,) = loader.load(path).errors
+    assert error.message == ("the document declares %s, and the bytes on line 4 are not %s: c3"
+                             % (declared, declared))
+    assert error.line == 4
+    assert error.fix == ("Save the document as UTF-8 and drop the declaration, or declare the "
+                         "encoding the file is in, by the name the IANA charset registry gives "
+                         "it. %s" % loader.REFUSED_NOT_JUDGED)
+    package = build_aasx(tmp_path / "declared.aasx", raw, "aasx/env.xml")
+    code, findings = _judged(package, capsys)
+    (finding,) = [f for f in findings if f["rule"] == "X3"]
+    assert (code, finding["message"], finding["line"], finding["part"]) == (
+        2, error.message, 4, "aasx/env.xml")
+
+
 #: A name a Python may know and the registry does not give, and the
 #: registered name the remedy asks for instead.
 UNREGISTERED = [("UTF8", "UTF-8"), ("utf8", "UTF-8"), ("utf_8", "UTF-8"), ("ascii", "US-ASCII"),
@@ -769,10 +797,23 @@ def test_a_utf7_half_before_the_encoding_keeps_its_line(tmp_path, capsys):
     assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
 
 
+def test_a_byte_outside_ascii_under_us_ascii_is_refused_on_its_line(tmp_path, capsys):
+    """US-ASCII is held to its bytes like every other declared charset: a
+    byte outside ASCII is refused on the line it is on, in a bare document
+    and in a relationships part -- which the parser refused as not
+    well-formed, with the line the parser stopped on."""
+    def make(root):
+        return ('<?xml version="1.0" encoding="US-ASCII"?>\n%s\n<!--\u00e9-->\n' % root).encode("utf-8")
+
+    assert _lines_named(tmp_path, capsys, make) == [("X3", 2, 3, 3), ("X2", 2, 3, 3)]
+
+
 @pytest.mark.parametrize("declared,codec,value", [
     ("KS_C_5601-1987", "cp949", "똠"),
     ("EUC-KR", "cp949", "똠"),
     ("csASCII", "utf-8", "é"),
+    ("US-ASCII", "utf-8", "é"),
+    ("us-ascii", "utf-8", "é"),
     ("Shift_JIS", "latin-1", "ÿ"),
     ("csUTF8", "latin-1", "ÿ"),
     ("windows-1252", "latin-1", "\x81"),
@@ -797,7 +838,8 @@ def test_declared_byte_refusal_offers_utf8_first(tmp_path, declared, codec, valu
     ("UTF-16", "utf-16-le", b"\xff\xfe", b"\x00\xd8", 1),
     ("csUTF16LE", "utf-16-le", b"", b"\x00", 2),
     ("windows-1252", "cp1252", b"", b"\x81", 3),
-], ids=["surrogate", "odd-byte", "charset-byte"])
+    ("US-ASCII", "ascii", b"", b"\xc3\xa9", 2),
+], ids=["surrogate", "odd-byte", "charset-byte", "ascii-byte"])
 def test_chain_encoding_refusal_names_its_relationships_part(
         tmp_path, capsys, source, declared, codec, mark, ending, lines):
     """The line is in the relationships part whose bytes were refused:
