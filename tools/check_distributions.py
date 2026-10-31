@@ -328,8 +328,10 @@ def tracked():
     so rather than answer.
     """
     try:
+        # -z writes each path as the index holds it, unquoted: UTF-8 for a
+        # name outside ASCII, whatever the platform's default encoding is.
         result = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, encoding="utf-8")
     except OSError as error:                     # git is not installed
         print("distribution: git could not be run (%s)" % error, file=sys.stderr)
         return None

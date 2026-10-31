@@ -328,6 +328,36 @@ def test_an_empty_index_is_not_an_answer(tmp_path, monkeypatch, capsys):
     assert "nothing was concluded" in capsys.readouterr().err
 
 
+def test_a_tracked_name_outside_ascii_is_read_as_the_index_writes_it(tmp_path, monkeypatch):
+    """`git ls-files -z` writes each path as the bytes the index holds,
+    unquoted -- UTF-8 for a name outside ASCII -- and the listing was read
+    in the platform's default encoding. Where that is cp1252 the name came
+    back as other characters, and the file it names counted as untracked.
+    The default is set to cp1252 here the way the generator test sets it:
+    text read with no encoding named is read as cp1252."""
+    import subprocess
+    gate = _gate()
+    try:
+        subprocess.run(["git", "init", "-q", str(tmp_path)], check=False)
+    except OSError:                              # git is not installed
+        pytest.skip("git is not available")
+    if not (tmp_path / ".git").is_dir():
+        pytest.skip("git is not available")
+    name = "caf\u00e9.txt"
+    (tmp_path / name).write_bytes(b"")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "--", name], check=True)
+    run = subprocess.run
+
+    def run_with_cp1252_default(args, **kwargs):
+        if kwargs.get("text") and kwargs.get("encoding") is None:
+            kwargs["encoding"] = "cp1252"
+        return run(args, **kwargs)
+
+    monkeypatch.setattr(gate.subprocess, "run", run_with_cp1252_default)
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    assert gate.tracked() == {name}
+
+
 def test_a_note_planted_inside_a_metadata_directory_is_not_exempt():
     assert not _gate().is_build_metadata(DIST_INFO + "/notes.md")
 
