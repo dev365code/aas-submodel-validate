@@ -2,9 +2,13 @@
 
 ## 1.1.0 — unreleased
 
+**Two kinds of input move against 1.0.2, in opposite directions, and every one measured is listed below: a document that declares `US-ASCII` and holds a byte outside ASCII, from judged to refused, and an AASX whose relationship types are declared under the path IDTA 01005-3-0-1 deprecates, from refused to judged.**
+
 **A document that declares `US-ASCII` and holds a byte outside ASCII is refused, and when it is the environment document itself, bare or as an AASX's aas-spec XML part, that moves it from judged to refused against 1.0.2.** 1.0.2 handed a declaration of `US-ASCII` on as it came, in any letter case: the parser held a relationships part to it and refused the part, while the environment document, decoded here past its declaration, was read as UTF-8 and judged. The registry's other names for US-ASCII were refused already. A byte outside the declared encoding is now refused at the line it is on under every one of them, as under any other declared charset, with the remedy a byte refusal carries: "Save the document as UTF-8 and drop the declaration, or declare the encoding the file is in, by the name the IANA charset registry gives it."
 
-**Who gates a build on the exit code**: the inputs below move from judged to refused against 1.0.2, and every one measured is listed. None of the inputs this repository measures every release moves.
+**An AASX whose relationship types are declared under `http://www.admin-shell.io/aasx/relationships/` is read as one declaring them under `http://admin-shell.io/aasx/relationships/`.** Section 5.2 of IDTA 01005-3-0-1 ends "The following relationship path is deprecated: http://www.admin-shell.io/aasx/relationships.", and its list of changes from V3.0 says to support both paths. 1.0.2 followed the recommended path alone: an origin or aas-spec relationship under the other was refused (`X2`), and an aas-suppl relationship under it was not followed. A report and a remedy still name the recommended path, and a relationship type of the same name under any other path is still refused at it and told which type it declared.
+
+**Who gates a build on the exit code**: the inputs below move against 1.0.2, and every one measured is listed. None of the inputs this repository measures every release moves.
 
 | input | 1.0.2 | 1.1.0 |
 |---|---|---|
@@ -12,8 +16,15 @@
 | the same after a UTF-8 byte order mark | judged, exit 0 or 1 | exit 2, X3 |
 | an AASX whose aas-spec XML part declares `US-ASCII`, `us-ascii` or `Us-Ascii` and holds a UTF-8 character outside ASCII | judged, exit 0 or 1 | exit 2, X3 |
 | the same after a UTF-8 byte order mark | judged, exit 0 or 1 | exit 2, X3 |
+| an AASX of metamodel 3.0 declaring its aasx-origin relationship under the deprecated path | exit 2, X2 | judged, exit 0 or 1 |
+| an AASX of metamodel 3.0 declaring its aas-spec relationships under the deprecated path | exit 2, X2 | judged, exit 0 or 1 |
+| an AASX of metamodel 3.0 declaring all three relationship types under the deprecated path | exit 2, X2 | judged, exit 0 or 1 |
+| an AASX of metamodel 3.0 declaring, under the deprecated path, an aas-suppl relationship to a part it does not hold | judged, no X4 | exit 1, X4 |
+| IDTA's 02006 2.0 sample, an AAS 2.0 package whose relationships are under the deprecated path | exit 2, X2 | exit 2, X3 |
 
 Two refusals of the same bytes keep their verdict and exit code and change what they say. A relationships part -- the package's own, its origin's or an aas-spec part's -- declaring `US-ASCII` with a byte outside ASCII was an X2 the parser refused, "does not parse: not well-formed (invalid token)", with no `line` or `part` and the remedy to repair the chain; it is now the refusal of those bytes, naming them and their line, with that line in `line`, the relationships part in `part` and the remedy above. An environment document declaring `US-ASCII` whose byte outside ASCII is not UTF-8 either was an X3 saying the document could not be read as an AAS environment; it is now the same refusal of those bytes. 1.0.1 said that a document declaring `UTF-8` or `US-ASCII` by those names, whose bytes are refused, keeps the standing advice of the rule that refuses it; from 1.1.0 that holds for `UTF-8` alone.
+
+The remedy an `X2` gives a package that declares its origin with a type this reader does not follow names the edition and both paths: "This reader follows the AASX relationship types of IDTA 01005-3-0-1, the packaging of metamodel 3.0, under the path it recommends and the one it deprecates, and this package declares its origin with another type, ..." where it named IDTA 01005 and 3.0's relationship types.
 
 An `X2` finding refusing the package's own relationships part or its origin's for its encoding now names that part as its `subject` too, as one refusing an aas-spec part's own relationships part already did: `subject` holds the relationships part where it was null, `path` is `["container", "part"]` where it was `["container"]`, and the text report's `at` line names the part before the line. The verdict and exit code are unchanged.
 
