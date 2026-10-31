@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.2 — unreleased
+## 1.0.2 — 2026-11-01
 
 Who should take this release: anyone who reads `part` on an X2 finding that refuses the package's own relationships part or its origin's for its encoding, or groups findings by `part`, as the paragraph below sets out; no verdict or exit code changes.
 
