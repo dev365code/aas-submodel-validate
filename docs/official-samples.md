@@ -99,4 +99,4 @@ No rule of this project fires.
 
 | Rule | Severity | Reads from | Findings |
 |---|---|---|---|
-| X2 | error | IDTA 01005 (AASX); ISO/IEC 29500-2 (OPC) | 1 |
+| X3 | error | IDTA 01001 (metamodel) and its published JSON/XML schemas | 1 |

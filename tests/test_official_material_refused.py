@@ -50,19 +50,20 @@ def _own(report):
     return sorted(f.id for f in report.findings if f.rule.kind != "meta")
 
 
-def test_the_aas_2_sample_is_refused_at_its_relationships():
-    """Its relationship types are AAS 2.0's, `http://www.admin-shell.io/
-    aasx/relationships/...`, and this reader follows 3.0's: the chain is
-    not followed (`X2`), nothing is judged, and the report says which type
-    the package declared -- not that it declares none, and not to repair a
-    chain that may be whole in its own vocabulary."""
+def test_the_aas_2_sample_is_refused_for_its_environment():
+    """Its relationship types are declared under `http://www.admin-shell.io/
+    aasx/relationships/...`, the path IDTA 01005-3-0-1 deprecates and still
+    reads (section 5.2), so the chain is followed -- and what it reaches is
+    an AAS 2.0 environment, which does not parse (`X3`): nothing is judged,
+    and the report names the namespace the document is in. It was refused
+    at its relationships (`X2`) while this reader followed the recommended
+    path alone."""
     report = runner.run(DN_AAS2)
-    assert _own(report) == ["X2"], _own(report)
+    assert _own(report) == ["X3"], _own(report)
     assert (report.ok, report.submodels_seen) == (False, 0)
     [finding] = report.findings
-    assert ORIGIN_2.decode() in finding.violation.message, finding.violation.message
-    assert "declares no aasx-origin relationship" not in finding.violation.message
-    assert finding.fix != finding.rule.fix, finding.fix
+    assert "http://www.admin-shell.io/aas/2/0" in finding.violation.detail, \
+        finding.violation.detail
 
 
 def test_with_no_origin_relationship_at_all_the_chain_is_to_be_repaired(tmp_path):
@@ -76,18 +77,21 @@ def test_with_no_origin_relationship_at_all_the_chain_is_to_be_repaired(tmp_path
     assert "declares no aasx-origin relationship" in finding.violation.message
 
 
-def test_given_3_0_relationships_the_aas_2_payload_is_refused_in_turn(tmp_path):
-    """The mutation that isolates it: with 3.0's relationship types the
-    chain resolves, and the payload -- an AAS 2.0 environment -- does not
-    parse (`X3`)."""
+def test_an_origin_declared_in_another_vocabulary_is_named(tmp_path):
+    """The mutation that isolates an X2 of this kind: the same package with
+    its relationship types under a path neither IDTA 01005-3-0-1 nor the one
+    it deprecates uses still calls its origin `aasx-origin`, and is told
+    which type it declared -- not that it declares none, and not to repair
+    a chain that may be whole in its own vocabulary."""
+    foreign = b"http://example.com/aasx/relationships/"
     path = _rewritten(DN_AAS2, tmp_path, lambda name, data: data.replace(
-        b"http://www.admin-shell.io/aasx/relationships/",
-        b"http://admin-shell.io/aasx/relationships/") if name.endswith(".rels") else data)
+        b"http://www.admin-shell.io/aasx/relationships/", foreign) if name.endswith(".rels") else data)
     report = runner.run(path)
-    assert _own(report) == ["X3"], _own(report)
+    assert _own(report) == ["X2"], _own(report)
     [finding] = report.findings
-    assert "http://www.admin-shell.io/aas/2/0" in finding.violation.detail, \
-        finding.violation.detail
+    assert (foreign + b"aasx-origin").decode() in finding.violation.message, finding.violation.message
+    assert "declares no aasx-origin relationship" not in finding.violation.message
+    assert finding.fix != finding.rule.fix, finding.fix
 
 
 @pytest.mark.parametrize("path", [HD_AAS31, TD_AAS31], ids=["02004", "02003"])
@@ -129,7 +133,8 @@ def test_the_scope_page_says_which_metamodel_is_read():
     says."""
     scope = " ".join((ROOT / "docs" / "scope.md").read_text("utf-8").split())
     assert "an XML document in the 3.1 namespace (`https://admin-shell.io/aas/3/1`) is refused (`X3`)" in scope
-    assert "an AAS 2.0 package, whose relationships are declared in 2.0's vocabulary, is refused at them (`X2`)" in scope
+    assert ("and so is the environment of an AAS 2.0 package, whose relationships are declared under "
+            "the path IDTA 01005-3-0-1 deprecates and still reads") in scope
 
 
 

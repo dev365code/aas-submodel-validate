@@ -667,12 +667,13 @@ SHIPPED_REMEDIES = {
         "judged here it has to be written in metamodel 3.0. Nothing here is a "
         "verdict on the document -- it was refused, not judged.",
     "loader/foreign-origin":
-        "This reader follows the AASX relationship types of IDTA 01005, the "
-        "packaging of metamodel 3.0, and this package declares its origin with "
-        "another type, so its chain was not followed and none of its parts was "
-        "read. The chain may be whole in the vocabulary it uses. To be judged "
-        "here the package has to use 3.0's relationship types. Nothing here is "
-        "a verdict on the document -- it was refused, not judged.",
+        "This reader follows the AASX relationship types of IDTA 01005-3-0-1, the "
+        "packaging of metamodel 3.0, under the path it recommends and the one it "
+        "deprecates, and this package declares its origin with another type, so "
+        "its chain was not followed and none of its parts was read. The chain may "
+        "be whole in the vocabulary it uses. To be judged here the package has to "
+        "use those relationship types. Nothing here is a verdict on the document "
+        "-- it was refused, not judged.",
     "runner/the-metamodel-channel-stopped":
         "The metamodel channel stopped, so this report does not say "
         "whether the metamodel is satisfied; the rest of the verdict "

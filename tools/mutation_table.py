@@ -2230,7 +2230,7 @@ TABLE = [
      "            if rel_type.rsplit(\"/\", 1)[-1] == ORIGIN_REL.rsplit(\"/\", 1)[-1]:\n",
      "            if False:\n",
      ["tests/test_official_material_refused.py::"
-      "test_the_aas_2_sample_is_refused_at_its_relationships"],
+      "test_an_origin_declared_in_another_vocabulary_is_named"],
      "an AAS 2.0 package was told it declares no aasx-origin relationship, "
      "and to repair a chain that may be whole in its own vocabulary"),
 

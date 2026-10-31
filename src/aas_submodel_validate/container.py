@@ -35,6 +35,15 @@ ORIGIN_REL = "http://admin-shell.io/aasx/relationships/aasx-origin"
 SPEC_REL = "http://admin-shell.io/aasx/relationships/aas-spec"
 SUPPL_REL = "http://admin-shell.io/aasx/relationships/aas-suppl"
 
+#: IDTA 01005-3-0-1 reads the same three types under one more path, the one
+#: it deprecates -- section 5.2: "The following relationship path is
+#: deprecated: http://www.admin-shell.io/aasx/relationships." -- so each is
+#: followed under either. What a report or a remedy names is the type above.
+DEPRECATED_RELATIONSHIPS = "http://www.admin-shell.io/aasx/relationships/"
+ORIGIN_RELS = (ORIGIN_REL, DEPRECATED_RELATIONSHIPS + "aasx-origin")
+SPEC_RELS = (SPEC_REL, DEPRECATED_RELATIONSHIPS + "aas-spec")
+SUPPL_RELS = (SUPPL_REL, DEPRECATED_RELATIONSHIPS + "aas-suppl")
+
 #: A package arrives from a supplier, so what it decompresses to is
 #: untrusted. 64 MiB is far above any real AAS metadata document and far
 #: below what exhausts an air-gapped machine.
@@ -999,9 +1008,9 @@ class ForeignOrigin(ContainerError):
 
     Kept apart from "declares no aasx-origin relationship", which is what it
     was told: it declares one, named `aasx-origin` like 3.0's, of another
-    type -- AAS 2.0's `http://www.admin-shell.io/aasx/relationships/...`
-    for the 2.0 sample in the test corpus -- and the chain may be whole in
-    the vocabulary it uses, so "repair the chain" is not its remedy.
+    type -- under neither the path IDTA 01005-3-0-1 recommends nor the one
+    it deprecates and still reads -- and the chain may be whole in the
+    vocabulary it uses, so "repair the chain" is not its remedy.
     """
 
     def __init__(self, message, declared, *, detail=None):
@@ -1803,7 +1812,7 @@ class AasxPackage:
         """The aasx-origin part the package-level relationships name."""
         declared = self.relationships("")
         for rel_type, target, _external in declared:
-            if rel_type == ORIGIN_REL:
+            if rel_type in ORIGIN_RELS:
                 return target
         # One of another type, named as 3.0's is: said as what it is. The
         # name is the relationship's last path segment, the only part the
@@ -1830,7 +1839,7 @@ class AasxPackage:
         # total from an archive of two kilobytes.
         declared = self.relationships(self.origin)
         targets = list(dict.fromkeys(
-            target for rel_type, target, _external in declared if rel_type == SPEC_REL))
+            target for rel_type, target, _external in declared if rel_type in SPEC_RELS))
         if not targets:
             raise ContainerError("%s declares no aas-spec relationship on its origin"
                                  % self.path,

@@ -220,7 +220,7 @@ def x6_the_path_can_be_opened(ctx):
           "relationship removes only the declaration: if a File value in "
           "the model names the same part, the part is still missing.")
 def x4_supplementary_parts_exist(ctx):
-    from ..container import SUPPL_REL, ContainerError, relationships_part_name
+    from ..container import SUPPL_RELS, ContainerError, relationships_part_name
     container = ctx.loaded.container
     if container is None:
         return
@@ -241,7 +241,7 @@ def x4_supplementary_parts_exist(ctx):
             # `target` came back from the container already normalised;
             # asking through the same entry point as HD-D7 keeps the two
             # rules from ever disagreeing about what a name means.
-            if rel_type != SUPPL_REL:
+            if rel_type not in SUPPL_RELS:
                 continue
             # OPC's own answer, carried out from the relationships part
             # rather than inferred here. This rule asks whether the

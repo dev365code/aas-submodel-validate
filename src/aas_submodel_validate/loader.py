@@ -499,11 +499,12 @@ OTHER_EDITION_REMEDY = (
 
 
 FOREIGN_ORIGIN_REMEDY = (
-    "This reader follows the AASX relationship types of IDTA 01005, the "
-    "packaging of metamodel 3.0, and this package declares its origin with "
-    "another type, so its chain was not followed and none of its parts was "
-    "read. The chain may be whole in the vocabulary it uses. To be judged "
-    "here the package has to use 3.0's relationship types. %s"
+    "This reader follows the AASX relationship types of IDTA 01005-3-0-1, the "
+    "packaging of metamodel 3.0, under the path it recommends and the one it "
+    "deprecates, and this package declares its origin with another type, so "
+    "its chain was not followed and none of its parts was read. The chain may "
+    "be whole in the vocabulary it uses. To be judged here the package has to "
+    "use those relationship types. %s"
     % REFUSED_NOT_JUDGED)
 
 
