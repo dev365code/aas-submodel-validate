@@ -28,6 +28,8 @@ The remedy an `X2` gives a package that declares its origin with a type this rea
 
 An `X2` finding refusing the package's own relationships part or its origin's for its encoding now names that part as its `subject` too, as one refusing an aas-spec part's own relationships part already did: `subject` holds the relationships part where it was null, `path` is `["container", "part"]` where it was `["container"]`, and the text report's `at` line names the part before the line. The verdict and exit code are unchanged.
 
+A rule that cites IDTA 01005 now names the edition this reader follows, IDTA 01005-3-0-1, and one that cites IDTA 01001 names metamodel 3.0, in `spec` and in the text report's `per` line: X2, X3, X4, DBP1-D1, DBP2-D7, DBP4-D1, DN-D2, HD-D7, PCF-D1 and TD-D2, and the metamodel channel's META. The verdict and exit code are unchanged.
+
 It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
 
 ## 1.0.2 — 2026-11-01
