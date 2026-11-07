@@ -167,8 +167,9 @@ def test_bytes_that_are_not_the_declared_charset_are_refused_where_they_are(tmp_
                          "it. %s" % loader.REFUSED_NOT_JUDGED)
 
 
+@pytest.mark.parametrize("mark", ["", "\ufeff"], ids=["unmarked", "utf-8-mark"])
 @pytest.mark.parametrize("declared", ["US-ASCII", "us-ascii", "Us-Ascii"])
-def test_a_document_declaring_us_ascii_is_held_to_ascii(tmp_path, capsys, declared):
+def test_a_document_declaring_us_ascii_is_held_to_ascii(tmp_path, capsys, declared, mark):
     """`us-ascii` is one of the two names handed on as they came, which is
     right for bytes that are ASCII and was wrong for the rest: the
     environment document is decoded here, as UTF-8 past its declaration, so
@@ -177,8 +178,13 @@ def test_a_document_declaring_us_ascii_is_held_to_ascii(tmp_path, capsys, declar
     reads, was refused, and so was every other name the registry gives
     US-ASCII. Bytes outside the declared encoding are the fatal error XML
     1.0 (4.3.3) says they are: refused where they are, bare and in a
-    package alike."""
-    raw = _environment(declared, "Größe").encode("utf-8")
+    package alike.
+
+    And after a UTF-8 byte order mark, which comes off before the
+    declaration is read and goes down a branch of its own: the entry's
+    table names that shape in rows of their own, and a check skipped on
+    that branch alone lived through every case without one."""
+    raw = (mark + _environment(declared, "Größe")).encode("utf-8")
     path = tmp_path / "declared.xml"
     path.write_bytes(raw)
     (error,) = loader.load(path).errors
@@ -193,6 +199,22 @@ def test_a_document_declaring_us_ascii_is_held_to_ascii(tmp_path, capsys, declar
     (finding,) = [f for f in findings if f["rule"] == "X3"]
     assert (code, finding["message"], finding["line"], finding["part"]) == (
         2, error.message, 4, "aasx/env.xml")
+
+
+def test_a_byte_outside_ascii_past_the_first_4096_is_refused_where_it_is(tmp_path):
+    """The declaration is looked for in the first 4096 bytes; the bytes it
+    governs are not bounded by that window. A UTF-8 character under
+    US-ASCII on a line past it is refused at its own line, as one near the
+    top is -- holding the whole document to ASCII and not the window the
+    declaration was read from."""
+    padding = "<!--%s-->\n" % ("x" * 4200)
+    raw = _environment("US-ASCII", "Größe").replace("<environment", padding + "<environment", 1).encode("utf-8")
+    assert raw.index(b"\xc3\xb6") > 4096                  # the o-umlaut, in UTF-8
+    path = tmp_path / "late.xml"
+    path.write_bytes(raw)
+    (error,) = loader.load(path).errors
+    assert error.message == "the document declares US-ASCII, and the bytes on line 5 are not US-ASCII: c3"
+    assert error.line == 5
 
 
 #: A name a Python may know and the registry does not give, and the
