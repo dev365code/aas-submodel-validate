@@ -2,6 +2,8 @@
 
 ## 1.1.0 — unreleased
 
+Who should take this release: anyone who checks documents that declare `US-ASCII` or AASX packages that declare their relationship types under the path IDTA 01005-3-0-1 deprecates, some of which move against 1.0.2 as the paragraphs below set out, and anyone who parses the findings the later paragraphs name, which keep their verdicts and change what they say; of the inputs this repository measures on every release, one moves, IDTA's 02006 2.0 sample, and its exit code does not.
+
 **Two kinds of input move against 1.0.2, and every one measured is listed below: a document that declares `US-ASCII` and holds a UTF-8 character outside ASCII, from judged to refused, and an AASX whose relationship types are declared under the path IDTA 01005-3-0-1 deprecates, most of them from refused to judged.**
 
 **A document that declares `US-ASCII` and holds a byte outside ASCII is refused, and when it is a document judged here -- an environment document, bare or as an AASX's aas-spec XML part, or a bare Submodel document -- and the byte is part of a UTF-8 character, that moves it from judged to refused against 1.0.2.** 1.0.2 handed a declaration of `US-ASCII` on as it came, in any letter case: the parser held a relationships part to it and refused the part, while a document judged here, decoded past its declaration, was read as UTF-8 and judged. The registry's other names for US-ASCII were refused already. A byte outside the declared encoding is now refused at the line it is on under every one of them, as under any other declared charset, with the remedy a byte refusal carries: "Save the document as UTF-8 and drop the declaration, or declare the encoding the file is in, by the name the IANA charset registry gives it."
