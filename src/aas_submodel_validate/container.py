@@ -1821,7 +1821,7 @@ class AasxPackage:
             if rel_type.rsplit("/", 1)[-1] == ORIGIN_REL.rsplit("/", 1)[-1]:
                 raise ForeignOrigin(
                     "%s declares its aasx-origin relationship with the type `%s`, "
-                    "not the one this reader follows (`%s`)"
+                    "not the one IDTA 01005-3-0-1 recommends (`%s`)"
                     % (self.path, rel_type, ORIGIN_REL), rel_type,
                     detail=_declares(_rels_name(""), declared))
         raise ContainerError("%s declares no aasx-origin relationship" % self.path,

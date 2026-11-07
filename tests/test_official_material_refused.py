@@ -82,15 +82,23 @@ def test_an_origin_declared_in_another_vocabulary_is_named(tmp_path):
     its relationship types under a path neither IDTA 01005-3-0-1 nor the one
     it deprecates uses still calls its origin `aasx-origin`, and is told
     which type it declared -- not that it declares none, and not to repair
-    a chain that may be whole in its own vocabulary."""
+    a chain that may be whole in its own vocabulary.
+
+    And which one it was compared with, by the name that is true of it: this
+    reader follows two aasx-origin types, so the one the message gives is the
+    one IDTA 01005-3-0-1 recommends, not "the one this reader follows"."""
     foreign = b"http://example.com/aasx/relationships/"
     path = _rewritten(DN_AAS2, tmp_path, lambda name, data: data.replace(
         b"http://www.admin-shell.io/aasx/relationships/", foreign) if name.endswith(".rels") else data)
     report = runner.run(path)
     assert _own(report) == ["X2"], _own(report)
     [finding] = report.findings
-    assert (foreign + b"aasx-origin").decode() in finding.violation.message, finding.violation.message
-    assert "declares no aasx-origin relationship" not in finding.violation.message
+    message = finding.violation.message
+    assert (foreign + b"aasx-origin").decode() in message, message
+    assert "declares no aasx-origin relationship" not in message
+    assert ("not the one IDTA 01005-3-0-1 recommends "
+            "(`http://admin-shell.io/aasx/relationships/aasx-origin`)") in message, message
+    assert "the one this reader follows" not in message, message
     assert finding.fix != finding.rule.fix, finding.fix
 
 
