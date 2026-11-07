@@ -4018,6 +4018,51 @@ TABLE.extend([
 
 ])
 
+TABLE.extend([
+    ('container/us-ascii-is-held-after-a-utf-8-mark',
+     'src/aas_submodel_validate/container.py',
+     '            body = raw[len(bom):]\n            converted = _as_declared(body)\n',
+     '            body = raw[len(bom):]\n            named = _ENCODING_NAME.match(body[:4096].decode("ascii", "ignore"))\n            if named is not None and named.group("name").lower() == "us-ascii":\n                return raw\n            converted = _as_declared(body)\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_document_declaring_us_ascii_is_held_to_ascii'],
+     'a document declaring US-ASCII after a UTF-8 byte order mark, holding a UTF-8 character outside ASCII, was judged, exit 0, with the check skipped on the branch the mark takes, and no test said so'),
+
+    ('container/us-ascii-is-held-past-the-first-4096-bytes',
+     'src/aas_submodel_validate/container.py',
+     '        if name.lower() == "us-ascii" and not raw.isascii():\n',
+     '        if name.lower() == "us-ascii" and not raw[:4096].isascii():\n',
+     ['tests/test_a_document_is_read_in_the_encoding_it_declares.py::test_a_byte_outside_ascii_past_the_first_4096_is_refused_where_it_is'],
+     'a UTF-8 character under US-ASCII past the 4096 bytes the declaration is read from went unrefused with only that window held to ASCII, and no test said so'),
+
+    ('container/the-foreign-origin-names-the-recommended-type',
+     'src/aas_submodel_validate/container.py',
+     '                    % (self.path, rel_type, ORIGIN_REL), rel_type,\n',
+     '                    % (self.path, rel_type, ORIGIN_RELS[1]), rel_type,\n',
+     ['tests/test_official_material_refused.py::test_an_origin_declared_in_another_vocabulary_is_named'],
+     'the X2 for an origin of another type could name the type under the deprecated path as the one IDTA 01005-3-0-1 recommends, and no test said so'),
+
+    ('container/aas-spec-under-another-path-is-not-read',
+     'src/aas_submodel_validate/container.py',
+     'target for rel_type, target, _external in declared if rel_type in SPEC_RELS))',
+     'target for rel_type, target, _external in declared if rel_type.endswith("/aas-spec")))',
+     ['tests/test_the_deprecated_relationship_path_is_read.py::test_an_aas_spec_relationship_under_another_path_alone_is_refused',
+      'tests/test_the_deprecated_relationship_path_is_read.py::test_an_aas_spec_relationship_under_another_path_beside_a_followed_one_is_passed_over'],
+     'an aas-spec relationship under a path neither IDTA 01005-3-0-1 nor the one it deprecates names was read for its last word, and no test said so'),
+
+    ('rules/aas-suppl-under-another-path-is-not-followed',
+     'src/aas_submodel_validate/rules/container.py',
+     '            if rel_type not in SUPPL_RELS:\n',
+     '            if not rel_type.endswith("/aas-suppl"):\n',
+     ['tests/test_the_deprecated_relationship_path_is_read.py::test_an_aas_suppl_relationship_under_another_path_is_not_followed'],
+     'an aas-suppl relationship under a third path was followed for its last word and its absent part reported (X4), and no test said so'),
+
+    ('container/an-origin-under-both-paths-is-read-by-the-first',
+     'src/aas_submodel_validate/container.py',
+     '        for rel_type, target, _external in declared:\n            if rel_type in ORIGIN_RELS:\n                return target\n',
+     '        for wanted in ORIGIN_RELS:\n            for rel_type, target, _external in declared:\n                if rel_type == wanted:\n                    return target\n',
+     ['tests/test_the_deprecated_relationship_path_is_read.py::test_an_origin_declared_under_both_paths_is_read_by_the_first'],
+     'a package declaring its aasx-origin under both paths, the deprecated one first, moved from refused to judged against 1.0.2, and nothing held which of the two is read'),
+])
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
