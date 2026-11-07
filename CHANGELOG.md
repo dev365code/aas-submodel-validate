@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 — unreleased
+## 1.1.0 — 2026-11-08
 
 Who should take this release: anyone who checks documents that declare `US-ASCII` or AASX packages that declare their relationship types under the path IDTA 01005-3-0-1 deprecates, some of which move against 1.0.2 as the paragraphs below set out, and anyone who parses the findings the later paragraphs name, which keep their verdicts and change what they say; of the inputs this repository measures on every release, one moves, IDTA's 02006 2.0 sample, and its exit code does not.
 
