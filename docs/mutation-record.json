@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "fc75471743b590143f6df576010e0cee9ffea7ce",
+ "commit": "65f92aec4135b63bb909e08fefab6211fe5c5e45",
  "python": "3.13.2",
  "rows": [
   "loader/relationships-refusal-keeps-the-line",
@@ -399,7 +399,13 @@
   "container/aas-spec-is-read-under-the-deprecated-path",
   "container/aas-suppl-is-read-under-the-deprecated-path",
   "rules/the-packaging-citation-names-its-edition",
-  "rules/the-metamodel-citation-names-its-edition"
+  "rules/the-metamodel-citation-names-its-edition",
+  "container/us-ascii-is-held-after-a-utf-8-mark",
+  "container/us-ascii-is-held-past-the-first-4096-bytes",
+  "container/the-foreign-origin-names-the-recommended-type",
+  "container/aas-spec-under-another-path-is-not-read",
+  "rules/aas-suppl-under-another-path-is-not-followed",
+  "container/an-origin-under-both-paths-is-read-by-the-first"
  ],
  "killed": [
   "loader/relationships-refusal-keeps-the-line",
@@ -797,7 +803,13 @@
   "container/aas-spec-is-read-under-the-deprecated-path",
   "container/aas-suppl-is-read-under-the-deprecated-path",
   "rules/the-packaging-citation-names-its-edition",
-  "rules/the-metamodel-citation-names-its-edition"
+  "rules/the-metamodel-citation-names-its-edition",
+  "container/us-ascii-is-held-after-a-utf-8-mark",
+  "container/us-ascii-is-held-past-the-first-4096-bytes",
+  "container/the-foreign-origin-names-the-recommended-type",
+  "container/aas-spec-under-another-path-is-not-read",
+  "rules/aas-suppl-under-another-path-is-not-followed",
+  "container/an-origin-under-both-paths-is-read-by-the-first"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
