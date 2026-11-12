@@ -1,6 +1,6 @@
 {
  "_about": "The last full run of tools/mutation_table.py --run kept by the run itself: every row it applied, which died and which survived, the commit it measured and the Python it ran under. CI runs the table on every commit; this is the run a reader can see without CI.",
- "commit": "65f92aec4135b63bb909e08fefab6211fe5c5e45",
+ "commit": "5252b513bd2bc974b130c02708e22c1f75b90d51",
  "python": "3.13.2",
  "rows": [
   "loader/relationships-refusal-keeps-the-line",
@@ -405,7 +405,21 @@
   "container/the-foreign-origin-names-the-recommended-type",
   "container/aas-spec-under-another-path-is-not-read",
   "rules/aas-suppl-under-another-path-is-not-followed",
-  "container/an-origin-under-both-paths-is-read-by-the-first"
+  "container/an-origin-under-both-paths-is-read-by-the-first",
+  "template/an-expression-is-read-as-written",
+  "template/the-template-s-own-name-passes-its-own-qualifier",
+  "template/a-vendored-value-that-runs-only-with-a-warning-is-unreadable",
+  "template/a-supplied-value-is-the-name-it-spells",
+  "template/a-value-python-cannot-build-is-not-a-traceback",
+  "template/a-vendored-value-python-will-not-run-is-unreadable",
+  "template/a-vendored-pack-reads-expressions",
+  "template/example-values-a-bar-separates-are-several",
+  "container/xml-past-its-root-element-is-refused",
+  "container/a-comment-or-instruction-after-the-root-is-read",
+  "container/the-refusal-names-the-line-the-document-goes-on",
+  "rules/a-footprint-holds-one-pcf-calculation-methods-list",
+  "rules/a-required-list-holds-any-number-of-entries",
+  "rules/the-handover-table-expects-the-template-s-reference-type"
  ],
  "killed": [
   "loader/relationships-refusal-keeps-the-line",
@@ -809,7 +823,21 @@
   "container/the-foreign-origin-names-the-recommended-type",
   "container/aas-spec-under-another-path-is-not-read",
   "rules/aas-suppl-under-another-path-is-not-followed",
-  "container/an-origin-under-both-paths-is-read-by-the-first"
+  "container/an-origin-under-both-paths-is-read-by-the-first",
+  "template/an-expression-is-read-as-written",
+  "template/the-template-s-own-name-passes-its-own-qualifier",
+  "template/a-vendored-value-that-runs-only-with-a-warning-is-unreadable",
+  "template/a-supplied-value-is-the-name-it-spells",
+  "template/a-value-python-cannot-build-is-not-a-traceback",
+  "template/a-vendored-value-python-will-not-run-is-unreadable",
+  "template/a-vendored-pack-reads-expressions",
+  "template/example-values-a-bar-separates-are-several",
+  "container/xml-past-its-root-element-is-refused",
+  "container/a-comment-or-instruction-after-the-root-is-read",
+  "container/the-refusal-names-the-line-the-document-goes-on",
+  "rules/a-footprint-holds-one-pcf-calculation-methods-list",
+  "rules/a-required-list-holds-any-number-of-entries",
+  "rules/the-handover-table-expects-the-template-s-reference-type"
  ],
  "survived": [
   "canary/a-comment-nobody-reads"
