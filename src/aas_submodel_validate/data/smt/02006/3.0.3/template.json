@@ -908,6 +908,7 @@
               "value": "ZeroToOne"
             }
           ],
+          "orderRelevant": false,
           "typeValueListElement": "SubmodelElementCollection",
           "value": [
             {

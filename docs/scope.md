@@ -210,9 +210,9 @@ bare `Cardinality`, the same vocabulary (`One`, `ZeroToOne`, `OneToMany`,
 carrying none of them as `0..*` (#20). So a template that states its
 obligations in any of the three is judgeable once its table is vendored.
 IDTA 02002 Contact Information, first vendored at 1.0.1 and now read at
-1.0.2, is one such template: all thirty-six of its elements state their cardinality in
+1.0.4, is one such template: all thirty-six of its elements state their cardinality in
 `Multiplicity` and none in `SMT/Cardinality`. IDTA 02007 Software
-Nameplate 1.0.2 is another, all seventy-three of its elements in the
+Nameplate 1.0.3 is another, all seventy-three of its elements in the
 same spelling.
 
 IDTA 02002's pack is generated rows only, and what that leaves unchecked
@@ -241,7 +241,7 @@ unasked mandatory row to a finding. That is not specific to one edition of
 the template -- it is the shape of 02002, and `docs/divergences.md` #51 and
 #23 record it.
 
-IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.2 is a
+IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.4 is a
 tree: a `Node` holds `Node`s of its own identifier, to any depth, and the
 pack judges every level of it -- the entry node and its nodes by count
 and kind, the three relationships by kind, `BulkCount` and `ArcheType`
@@ -257,7 +257,7 @@ editor's convenience and not a stated constraint. And whether the tree the
 relationships draw agrees with the tree the nodes nest is a question this
 pack does not ask.
 
-IDTA 02007 Software Nameplate 1.0.2 describes software twice over: one
+IDTA 02007 Software Nameplate 1.0.3 describes software twice over: one
 collection for the software as a type, one for an installed instance.
 The template makes both optional, and every one of its fourteen mandatory
 elements sits beneath one of them, so a Software Nameplate holding
@@ -308,7 +308,7 @@ beside their own matches it first. `docs/divergences.md` #58 records
 that, a misspelt supplemental identifier the rows match as written, and
 the template's other disagreements with its specification.
 
-IDTA 02035-1 Digital Nameplate 1.1, the Digital Battery Passport's part
+IDTA 02035-1 Digital Nameplate 1.0.1, the Digital Battery Passport's part
 1, names the battery: its product URI, manufacturer, address, serial
 number, dates of manufacture and of putting into service, facility,
 life-cycle stage, operator and manufacturer identifiers, markings, and

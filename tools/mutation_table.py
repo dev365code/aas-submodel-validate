@@ -260,7 +260,7 @@ TABLE = [
      "why it can be a row at all -- measured"),
 
     ("rules/vendored-bytes-are-the-bytes-we-recorded",
-     "src/aas_submodel_validate/data/smt/02004/2.0.2/template.json",
+     "src/aas_submodel_validate/data/smt/02004/2.0.4/template.json",
      "Name der spezifischen digitalen Datei@de",
      "Name der spezifischen digitalen Datei@dx",
      ["tools/vendor_template.py --check"],
@@ -2896,8 +2896,8 @@ TABLE.extend([
 TABLE.extend([
     ("pages/an-edition-a-page-names-is-the-one-vendored",
      "docs/scope.md",
+     "IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.4 is a\n",
      "IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.2 is a\n",
-     "IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.1 is a\n",
      ["tests/test_pages_name_the_editions_read.py::"
       "test_a_page_naming_a_pack_with_an_edition_names_the_one_vendored"],
      "the scope page went on calling 02011 1.1.1 after 0.12.0 vendored "
@@ -2916,7 +2916,7 @@ TABLE.extend([
 
     ("divergences/row-38-counts-references-in-this-tree",
      "docs/divergences.md",
-     "**44 of the 2,074 references stack more than one key**",
+     "**40 of the 2,067 references stack more than one key**",
      "**48 of the 935 references stack more than one key**",
      ["tests/test_divergence_counts_are_this_trees.py::"
       "test_row_38_counts_the_references_of_the_files_it_names"],

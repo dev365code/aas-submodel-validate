@@ -45,10 +45,10 @@
       "id": "https://admin-shell.io/idta/SubmodelTemplate/DigitalBatteryPassport/HandoverDocumentation/1/0",
       "kind": "Template",
       "semanticId": {
-        "type": "ModelReference",
+        "type": "ExternalReference",
         "keys": [
           {
-            "type": "Submodel",
+            "type": "GlobalReference",
             "value": "0173-1#01-AHF578#003"
           }
         ]

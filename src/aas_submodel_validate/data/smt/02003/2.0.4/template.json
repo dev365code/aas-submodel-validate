@@ -56,10 +56,10 @@
       "id": "https://admin-shell.io/idta/SubmodelTemplate/TechnicalData/2/0",
       "kind": "Template",
       "semanticId": {
-        "type": "ModelReference",
+        "type": "ExternalReference",
         "keys": [
           {
-            "type": "Submodel",
+            "type": "GlobalReference",
             "value": "0173-1#01-AHX837#002"
           }
         ]
@@ -127,7 +127,6 @@
           ],
           "value": [
             {
-              "category": "PARAMETER",
               "idShort": "ManufacturerName",
               "displayName": [
                 {
@@ -232,7 +231,6 @@
               "modelType": "File"
             },
             {
-              "category": "PARAMETER",
               "idShort": "ManufacturerProductDesignation",
               "displayName": [
                 {
@@ -284,7 +282,6 @@
               "modelType": "MultiLanguageProperty"
             },
             {
-              "category": "PARAMETER",
               "idShort": "ManufacturerArticleNumber",
               "displayName": [
                 {
@@ -337,7 +334,6 @@
               "modelType": "Property"
             },
             {
-              "category": "PARAMETER",
               "idShort": "ManufacturerOrderCode",
               "displayName": [
                 {
@@ -690,7 +686,6 @@
               ],
               "value": [
                 {
-                  "category": "PARAMETER",
                   "idShort": "ClassificationSystem",
                   "displayName": [
                     {
@@ -744,115 +739,20 @@
                         "keys": [
                           {
                             "type": "GlobalReference",
-                            "value": "https://admin-shell.io/SubmodelTemplates/AllowedValue/1/0"
+                            "value": "https://admin-shell.io/SubmodelTemplates/ExampleValue/1/0"
                           }
                         ]
                       },
-                      "type": "SMT/ExampleValue/ECLASS",
+                      "kind": "TemplateQualifier",
+                      "type": "SMT/ExampleValue",
                       "valueType": "xs:string",
-                      "value": "ECLASS",
-                      "valueId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "GlobalReference",
-                            "value": "0173-1#07-ABB367#003"
-                          },
-                          {
-                            "type": "GlobalReference",
-                            "value": "https://api.eclass-cdp.com/0173-1-07-ABB367-003"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "semanticId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "GlobalReference",
-                            "value": "https://admin-shell.io/SubmodelTemplates/AllowedValue/1/0"
-                          }
-                        ]
-                      },
-                      "kind": "ConceptQualifier",
-                      "type": "SMT/ExampleValue/CDD",
-                      "valueType": "xs:string",
-                      "value": "IEC CDD",
-                      "valueId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "GlobalReference",
-                            "value": "0173-1#07-ACB994#001"
-                          },
-                          {
-                            "type": "GlobalReference",
-                            "value": "https://api.eclass-cdp.com/0173-1-07-ACB994-001"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "semanticId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "GlobalReference",
-                            "value": "https://admin-shell.io/SubmodelTemplates/AllowedValue/1/0"
-                          }
-                        ]
-                      },
-                      "type": "SMT/ExampleValue/UNSPSC",
-                      "valueType": "xs:string",
-                      "value": "UNSPSC",
-                      "valueId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "GlobalReference",
-                            "value": "0173-1#07-ABB368#003"
-                          },
-                          {
-                            "type": "GlobalReference",
-                            "value": "https://api.eclass-cdp.com/0173-1-07-ABB368-003"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "semanticId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "GlobalReference",
-                            "value": "https://admin-shell.io/SubmodelTemplates/AllowedValue/1/0"
-                          }
-                        ]
-                      },
-                      "type": "SMT/ExampleValue/CustomerSpecific",
-                      "valueType": "xs:string",
-                      "value": "customer specific",
-                      "valueId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "GlobalReference",
-                            "value": "0173-1#07-ACB894#001"
-                          },
-                          {
-                            "type": "GlobalReference",
-                            "value": "https://api.eclass-cdp.com/0173-1-07-ACB894-001"
-                          }
-                        ]
-                      }
+                      "value": "ECLASS|IEC CDD|UNSPSC|customer specific"
                     }
                   ],
                   "valueType": "xs:string",
                   "modelType": "Property"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ClassificationSystemVersion",
                   "displayName": [
                     {
@@ -946,7 +846,6 @@
                   "modelType": "Property"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ProductClassId",
                   "displayName": [
                     {
@@ -999,7 +898,6 @@
                   "modelType": "Property"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ProductClassCodedName",
                   "displayName": [
                     {
@@ -1191,7 +1089,7 @@
             },
             {
               "language": "de",
-              "text": "Technsiche Merkmalsbereiche"
+              "text": "Technische Merkmalsbereiche"
             }
           ],
           "semanticId": {
@@ -1417,7 +1315,6 @@
                       "modelType": "SubmodelElementList"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryProperty",
                       "semanticId": {
                         "type": "ExternalReference",
@@ -1449,7 +1346,6 @@
                       "modelType": "Property"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryMLP",
                       "semanticId": {
                         "type": "ExternalReference",
@@ -1480,7 +1376,6 @@
                       "modelType": "MultiLanguageProperty"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryRange",
                       "semanticId": {
                         "type": "ExternalReference",
@@ -1653,7 +1548,6 @@
                       "modelType": "SubmodelElementList"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryProperty",
                       "semanticId": {
                         "type": "ExternalReference",
@@ -1685,7 +1579,6 @@
                       "modelType": "Property"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryMLP",
                       "semanticId": {
                         "type": "ExternalReference",
@@ -1716,7 +1609,6 @@
                       "modelType": "MultiLanguageProperty"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryRange",
                       "semanticId": {
                         "type": "ExternalReference",
@@ -1790,7 +1682,6 @@
                   "modelType": "SubmodelElementList"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ArbitraryProperty",
                   "description": [
                     {
@@ -1828,7 +1719,6 @@
                   "modelType": "Property"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ArbitraryMLP",
                   "description": [
                     {
@@ -1871,7 +1761,6 @@
                   "modelType": "MultiLanguageProperty"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ArbitraryRange",
                   "description": [
                     {
@@ -1965,7 +1854,6 @@
           ],
           "value": [
             {
-              "category": "PARAMETER",
               "idShort": "TextStatement",
               "displayName": [
                 {
@@ -2023,7 +1911,6 @@
               "modelType": "MultiLanguageProperty"
             },
             {
-              "category": "PARAMETER",
               "idShort": "ValidDate",
               "displayName": [
                 {
@@ -2335,7 +2222,6 @@
                       "modelType": "SubmodelElementList"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryProperty",
                       "description": [
                         {
@@ -2373,7 +2259,6 @@
                       "modelType": "Property"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryMLP",
                       "description": [
                         {
@@ -2410,7 +2295,6 @@
                       "modelType": "MultiLanguageProperty"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryRange",
                       "description": [
                         {
@@ -2595,7 +2479,6 @@
                       "modelType": "SubmodelElementList"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryProperty",
                       "description": [
                         {
@@ -2633,7 +2516,6 @@
                       "modelType": "Property"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryMLP",
                       "description": [
                         {
@@ -2680,7 +2562,6 @@
                       "modelType": "MultiLanguageProperty"
                     },
                     {
-                      "category": "PARAMETER",
                       "idShort": "ArbitraryRange",
                       "description": [
                         {
@@ -2760,7 +2641,6 @@
                   "modelType": "SubmodelElementList"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ArbitraryProperty",
                   "description": [
                     {
@@ -2798,7 +2678,6 @@
                   "modelType": "Property"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ArbitraryMLP",
                   "description": [
                     {
@@ -2841,7 +2720,6 @@
                   "modelType": "MultiLanguageProperty"
                 },
                 {
-                  "category": "PARAMETER",
                   "idShort": "ArbitraryRange",
                   "description": [
                     {
@@ -3928,7 +3806,7 @@
               },
               {
                 "language": "de",
-                "text": "Technsiche Merkmalsbereiche"
+                "text": "Technische Merkmalsbereiche"
               }
             ],
             "shortName": [

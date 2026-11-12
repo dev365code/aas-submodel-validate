@@ -73,7 +73,8 @@ def test_each_pack_s_rules_name_the_qualifier_as_its_template_wrote_it():
     assert _said(contact_tables) == {"Multiplicity": 36}
     assert _said(sn_tables) == {"Multiplicity": 73}
     assert _said(td_tables) == {"SMT/Cardinality": 22, None: 4}
-    assert _said(pcf_tables) == {"SMT/Cardinality": 24, None: 2}
+    # 1.0.3 took the qualifier off the entries of its three lists (#124).
+    assert _said(pcf_tables) == {"SMT/Cardinality": 21, None: 5}
     assert _said(hd_tables) == {"SMT/Cardinality": 38}
     assert _said(dn_tables) == {"SMT/Cardinality": 30}
     assert _said(hs_tables) == {"SMT/Cardinality": 11}

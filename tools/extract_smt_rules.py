@@ -45,14 +45,17 @@ What is deliberately interpreted rather than copied:
   qualified every element; 02003 leaves four list items unqualified, and
   its PDF element tables give each of them 0..*. Assuming One there would
   invent an obligation the standard does not state.
-- **Several example values, one remedy.** 02003 gives one element four
-  ExampleValue qualifiers, one per classification system. Keeping the
-  first would tell a reader ECLASS is the answer when the template offers
-  four, so they are joined in template order.
+- **Several example values, one remedy.** 02003 offers one element four
+  example values, one per classification system -- through 2.0.2 as four
+  qualifiers, and from 2.0.3 as one `SMT/ExampleValue` that separates them
+  with "|", as its Annex B says. Keeping the first would tell a reader
+  ECLASS is the answer when the template offers four, so they are joined
+  in template order, and the same way whichever spelling carries them.
 - **A list child that carries an idShort.** AASd-120 forbids one on a
   direct child of a SubmodelElementList, which is the whole reason
   `item_names` exists. 02035-2 1.0 gave four of its six list children
-  an idShort; upstream repaired those four in 1.1. Each pack still names
+  an idShort; upstream repaired those four in the edition it first
+  published as 1.1 and now calls 1.0.1. Each pack still names
   all of its list items, using 02004's word where the element is 02004's.
   The repair keeps these generated labels and their obligations stable;
   a row suddenly called "DocumentsItem" would announce a divergence
@@ -120,9 +123,9 @@ TD_ITEM_NAMES = {
 #: 02035-2's six list items, in 02004's words -- it is a profile of that
 #: template and every one of its elements is one of 02004's. 1.0 gave four
 #: of them an idShort, which AASd-120 forbids and which the generator
-#: takes first, so two of these were read then; 1.1 repaired the four, and
-#: all six are the labels the rows carry now. They were named before the
-#: repair so that it renamed nothing here.
+#: takes first, so two of these were read then; 1.1 (upstream's 1.0.1
+#: now) repaired the four, and all six are the labels the rows carry now.
+#: They were named before the repair so that it renamed nothing here.
 DBP_ITEM_NAMES = {
     "Documents": "Document",
     "DocumentClassifications": "DocumentClassification",
@@ -174,9 +177,9 @@ DN_ARBITRARY = ARBITRARY
 #: 02035-1's list items: the markings, and the document identifiers of
 #: its two reference lists. 1.0 gave every item an idShort
 #: (`Markings__00__`, `DocumentIdentifier` -- AASd-120), which the
-#: generator takes first; 1.1 gives none, so these are the labels the rows
-#: carry now. They were named before that repair so that it renamed no
-#: row, as 02035-5's are.
+#: generator takes first; 1.1 (upstream's 1.0.1 now) gives none, so these
+#: are the labels the rows carry now. They were named before that repair
+#: so that it renamed no row, as 02035-5's are.
 DBP1_ITEM_NAMES = {
     "Markings": "Marking",
     "EUDeclarationOfConformity": "DocumentIdentifier",
@@ -229,24 +232,23 @@ DBP5_ITEM_NAMES = {
 #: chances to cite different documents for one reading.
 PACKS = (
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02004/2.0.2/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02004/2.0.4/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/hd_tables.py",
         "prefix": "HD-E",
-        "source": "IDTA 02004-2-0-2 template.json",
-        "citation": "IDTA 02004-2-0-2 template",
+        "source": "IDTA 02004-2-0-4 template.json",
+        "citation": "IDTA 02004-2-0-4 template",
         "item_names": HD_ITEM_NAMES,
         "example_types": ("ExampleValue",),
         "skip_sids": ARBITRARY,
     },
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02003/2.0.2/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02003/2.0.4/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/td_tables.py",
         "prefix": "TD-E",
-        "source": "IDTA 02003_2-0-2 template.json",
-        "citation": "IDTA 02003-2-0-2 template",
+        "source": "IDTA 02003_2-0-4 template.json",
+        "citation": "IDTA 02003-2-0-4 template",
         "item_names": TD_ITEM_NAMES,
-        "example_types": ("SMT/ExampleValue/ECLASS", "SMT/ExampleValue/CDD",
-                          "SMT/ExampleValue/UNSPSC", "SMT/ExampleValue/CustomerSpecific"),
+        "example_types": ("SMT/ExampleValue",),
         "skip_sids": ARBITRARY,
     },
     # The Digital Battery Passport's part 2 is a second Handover
@@ -257,31 +259,31 @@ PACKS = (
     # every element, no open content -- so none of the readings 02003
     # forced apply here.
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.1/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.0.2/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/dbp_tables.py",
         "prefix": "DBP2-E",
         "source": "IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json",
-        "citation": "IDTA 02035-2 1.1 template",
+        "citation": "IDTA 02035-2 1.0.2 template",
         "item_names": DBP_ITEM_NAMES,
         "example_types": ("ExampleValue",),
         "skip_sids": ARBITRARY,
     },
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02006/3.0.2/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02006/3.0.3/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/dn_tables.py",
         "prefix": "DN-E",
-        "source": "IDTA 02006-3-0-2_Template_Digital Nameplate.json",
-        "citation": "IDTA 02006-3-0-2 template",
+        "source": "IDTA 02006-3-0-3_Template_Digital Nameplate.json",
+        "citation": "IDTA 02006-3-0-3 template",
         "item_names": DN_ITEM_NAMES,
         "example_types": (),
         "skip_sids": DN_ARBITRARY,
     },
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02023/1.0.2/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02023/1.0.3/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/pcf_tables.py",
         "prefix": "PCF-E",
-        "source": "IDTA 02023-1-0-2 _Template_CarbonFootprint.json",
-        "citation": "IDTA 02023 1.0.2 template",
+        "source": "IDTA 02023-1-0-3 _Template_CarbonFootprint.json",
+        "citation": "IDTA 02023 1.0.3 template",
         "item_names": PCF_ITEM_NAMES,
         "example_types": (),
         "skip_sids": PCF_SKIP,
@@ -294,7 +296,7 @@ PACKS = (
     # a collection's own cardinality instead, so there are no item names to
     # supply and nothing to skip.
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02002/1.0.2/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02002/1.0.4/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/contact_tables.py",
         "prefix": "CI-E",
         # Identifiers published before the upstream repair (#51, #57):
@@ -305,29 +307,29 @@ PACKS = (
                                                                                                               'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/IPCommunication/'),
          'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication': ('https://admin-shell.io/zvei/nameplate/1/0/ '
                                                                                                                                   'ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication',)},
-        "source": "IDTA 02002-1-0-2_Template_ContactInformation.json",
-        "citation": "IDTA 02002-1-0-2 template",
+        "source": "IDTA 02002-1-0-4_Template_ContactInformation.json",
+        "citation": "IDTA 02002-1-0-4 template",
         "item_names": {},
         "example_types": (),
         "skip_sids": ARBITRARY,
     },
-    # IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.2:
+    # IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.4:
     # eleven elements -- three Entities, six RelationshipElements, two
     # Properties -- each with `SMT/Cardinality`. `Node` holds a `Node` of
     # its own identifier, which the template writes out one level and the
     # generator marks rather than expands again (#48). No list, so no item
     # names; no open content.
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02011/1.1.2/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02011/1.1.4/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/hs_tables.py",
         "prefix": "HS-E",
-        "source": "IDTA 02011-1-1-2_Template_HSEBoM.json",
-        "citation": "IDTA 02011-1-1-2 template",
+        "source": "IDTA 02011-1-1-4_Template_HSEBoM.json",
+        "citation": "IDTA 02011-1-1-4 template",
         "item_names": {},
         "example_types": (),
         "skip_sids": ARBITRARY,
     },
-    # IDTA 02007 Software Nameplate 1.0.2: seventy-three elements -- 34
+    # IDTA 02007 Software Nameplate 1.0.3: seventy-three elements -- 34
     # Properties, 29 MultiLanguageProperties, 10 collections -- each with
     # the older `Multiplicity` qualifier (#50). Both top-level collections
     # are 0..1, so every mandatory row sits beneath an optional one. Its
@@ -335,7 +337,7 @@ PACKS = (
     # ConfigurationURI and ConfigurationType (#57). Previous identifier
     # spellings are kept below. No list, so no item names; no open content.
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02007/1.0.2/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02007/1.0.3/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/sn_tables.py",
         "prefix": "SN-E",
         # IPCommunication as 02002 1.0.1 and 1.0.2 spell it, beside the 1.0
@@ -346,21 +348,21 @@ PACKS = (
          'https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication': ('https://admin-shell.io/zvei/nameplate/1/0/ '
                                                                                                                                   'ContactInformations/ContactInformation/IPCommunication/TypeOfCommunication',),
          'https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/ConfigurationURI': ('https://admin-shell.io/idta/SoftwareNameplate/1/0/SoftwareNameplate/SoftwareNameplateInstance/ConfigurationPath',)},
-        "source": "IDTA 02007-1-0-2_Template_Software Nameplate.json",
-        "citation": "IDTA 02007-1-0-2 template",
+        "source": "IDTA 02007-1-0-3_Template_Software Nameplate.json",
+        "citation": "IDTA 02007-1-0-3 template",
         "item_names": {},
         "example_types": (),
         "skip_sids": ARBITRARY,
     },
-    # IDTA 02035-1 Digital Nameplate 1.1, the Digital Battery Passport's
+    # IDTA 02035-1 Digital Nameplate 1.0.1, the Digital Battery Passport's
     # part 1: twenty-two elements, each with the `SMT/Cardinality`
     # qualifier but one. Identifiers mix IEC CDD, ECLASS, IRI and SAMM.
     {
-        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-1/1.1/template.json",
+        "template": ROOT / "src/aas_submodel_validate/data/smt/02035-1/1.0.1/template.json",
         "output": ROOT / "src/aas_submodel_validate/rules/dbp1_tables.py",
         "prefix": "DBP1-E",
         "source": "IDTA 02035-1_DBP-Part-1_Digital Nameplate.json",
-        "citation": "IDTA 02035-1 1.1 template",
+        "citation": "IDTA 02035-1 1.0.1 template",
         "item_names": DBP1_ITEM_NAMES,
         "example_types": (),
         "skip_sids": ARBITRARY,

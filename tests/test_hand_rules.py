@@ -227,6 +227,23 @@ def test_the_templates_own_singular_spelling_is_not_flagged(tmp_path):
     assert "HDL1" not in _findings(tmp_path, env)
 
 
+@pytest.mark.parametrize("name, flagged", [
+    ("PreviewFile01", False), ("PreviewFile123", False),
+    ("PreviewFileX", True), ("PreviewFile1", True), ("PreviewFile1234", True)])
+def test_the_expression_the_template_writes_is_read_as_written(tmp_path, name, flagged):
+    """2.0.4 writes PreviewFile's AllowedIdShort as `PreviewFile\\d{2,3}`
+    (upstream #151): two or three digits pass, beside the template's own
+    name above, and any other name is the lint's."""
+    env = copy.deepcopy(hd_env())
+    _document_version(env)["value"].append({
+        "idShort": name, "modelType": "File",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
+                                 "value": "0173-1#02-ABK127#002"}]},
+        "contentType": "image/jpeg", "value": "/aasx/files/preview.jpg"})
+    assert ("HDL1" in _findings(tmp_path, env)) is flagged
+
+
 def test_an_iri_near_miss_is_diagnosed(tmp_path):
     """The official example's own defect: the Entities list carries the
     child's singular IRI. It must not silently not-match."""
@@ -253,17 +270,19 @@ def test_an_eclass_version_drift_is_diagnosed(tmp_path):
     assert "HDL2" in _findings(tmp_path, env)
 
 
-def test_an_external_reference_where_the_template_says_model_is_information(tmp_path):
-    """The template's submodel semanticId is a ModelReference; an instance
-    that uses ExternalReference instead identifies the same template, so
-    it is an information lint (HDL3), not a failure."""
+def test_a_model_reference_where_the_template_says_external_is_information(tmp_path):
+    """The template's submodel semanticId is an ExternalReference from
+    2.0.4 and was a ModelReference before it (upstream #224); an instance
+    that keeps the ModelReference an earlier edition gave identifies the
+    same template, so it is an information lint (HDL3), not a failure."""
     env = copy.deepcopy(hd_env())
     submodel = env["submodels"][0]
-    submodel["semanticId"] = {"type": "ExternalReference",
-                              "keys": [{"type": "GlobalReference",
+    submodel["semanticId"] = {"type": "ModelReference",
+                              "keys": [{"type": "Submodel",
                                         "value": "0173-1#01-AHF578#003"}]}
     finding = _findings(tmp_path, env)["HDL3"]
     assert str(finding.severity) == "info"
+    assert "the template uses ExternalReference" in (finding.violation.detail or "")
 
 
 def test_a_duplicate_document_id_pair_warns(tmp_path):

@@ -48,10 +48,10 @@
       "id": "https://admin-shell.io/idta/SubmodelTemplate/SoftwareNameplate/1/0",
       "kind": "Template",
       "semanticId": {
-        "type": "ModelReference",
+        "type": "ExternalReference",
         "keys": [
           {
-            "type": "Submodel",
+            "type": "GlobalReference",
             "value": "https://admin-shell.io/idta/SoftwareNameplate/1/0"
           }
         ]

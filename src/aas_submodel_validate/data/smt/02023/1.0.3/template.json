@@ -171,7 +171,7 @@
                       "kind": "TemplateQualifier",
                       "type": "SMT/Cardinality",
                       "valueType": "xs:string",
-                      "value": "OneToMany"
+                      "value": "One"
                     }
                   ],
                   "semanticIdListElement": {
@@ -217,14 +217,6 @@
                           }
                         ]
                       },
-                      "qualifiers": [
-                        {
-                          "kind": "TemplateQualifier",
-                          "type": "SMT/Cardinality",
-                          "valueType": "xs:string",
-                          "value": "One"
-                        }
-                      ],
                       "valueType": "xs:string",
                       "modelType": "Property"
                     }
@@ -380,7 +372,7 @@
                       "kind": "TemplateQualifier",
                       "type": "SMT/Cardinality",
                       "valueType": "xs:string",
-                      "value": "OneToMany"
+                      "value": "One"
                     }
                   ],
                   "semanticIdListElement": {
@@ -422,14 +414,6 @@
                           }
                         ]
                       },
-                      "qualifiers": [
-                        {
-                          "kind": "TemplateQualifier",
-                          "type": "SMT/Cardinality",
-                          "valueType": "xs:string",
-                          "value": "One"
-                        }
-                      ],
                       "valueType": "xs:string",
                       "modelType": "Property"
                     }
@@ -720,7 +704,7 @@
                       "kind": "TemplateQualifier",
                       "type": "SMT/Cardinality",
                       "valueType": "xs:string",
-                      "value": "OneToMany"
+                      "value": "One"
                     }
                   ],
                   "semanticIdListElement": {
@@ -766,14 +750,6 @@
                           }
                         ]
                       },
-                      "qualifiers": [
-                        {
-                          "kind": "TemplateQualifier",
-                          "type": "SMT/Cardinality",
-                          "valueType": "xs:string",
-                          "value": "One"
-                        }
-                      ],
                       "valueType": "xs:string",
                       "modelType": "Property"
                     }
@@ -1923,7 +1899,7 @@
                     "keys": [
                       {
                         "type": "GlobalReference",
-                        "value": "0173-1#07-ABZ789#003 "
+                        "value": "0173-1#07-ABZ789#003"
                       }
                     ]
                   }

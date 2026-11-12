@@ -30,6 +30,8 @@ _L5_FIX = ("Write ClassificationSystem exactly as 'VDI 2770 Blatt 1:2020' -- "
            "the value \u00a72.3 says identifies the mandatory system. "
            "'VDI2770:2020' is the template's example artefact and other tools "
            "matching on the specified string will not recognise it.")
+_L3_FIX = ("Use an ExternalReference here, as the template does; the value "
+           "matched, so this is interoperability polish, not a failure.")
 _D10_FIX = ("Add a DigitalFile with contentType application/pdf (a PDF/A file, "
             "per VDI 2770) to this DocumentVersion. A content type cannot "
             "prove PDF/A conformance, so this is a warning, not an error.")
@@ -58,11 +60,14 @@ def test_the_official_example_by_name():
         # the CAD-model versions ship STEP only -- no PDF/A rendition (§2.1)
         ("HD-D10", "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_file"),
         ("HD-D10", "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL"),
+        # the submodel semanticId is the ModelReference of the example's
+        # day; the 2.0.4 template gives an ExternalReference (divergence #12)
+        ("HDL3", "HandoverDocumentation"),
     ])
 
 
 def test_every_word_of_the_official_verdict():
-    """The same ten findings, whole: severity, message, detail and the
+    """The same eleven findings, whole: severity, message, detail and the
     remedy sentence, not only the id and the subject.
 
     The pair above is what a reader of the *set* needs; this is what a
@@ -112,6 +117,9 @@ def test_every_word_of_the_official_verdict():
          "HandoverDocumentation/Documents/CADmodel/DocumentVersions/DocumentVersion_URL",
          "no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition",
          "content types present: application/step", _D10_FIX),
+        ("HDL3", "info", "HandoverDocumentation",
+         "the reference type differs from the template's",
+         "ModelReference, where the template uses ExternalReference", _L3_FIX),
     }
 
 
@@ -140,6 +148,9 @@ def test_a_repaired_copy_comes_back_clean(tmp_path):
     from pathlib import Path
     document = json.loads(Path(JSON_EXAMPLE).read_text("utf-8-sig"))
     submodel = document["submodels"][0]
+    submodel["semanticId"] = {"type": "ExternalReference",               # HDL3
+                              "keys": [{"type": "GlobalReference",
+                                        "value": submodel["semanticId"]["keys"][0]["value"]}]}
     for element in submodel["submodelElements"]:
         if element.get("idShort") == "Entites":                    # HDL2
             element["semanticId"]["keys"][0]["value"] = \

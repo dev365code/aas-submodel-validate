@@ -39,10 +39,10 @@
       "id": "https://admin-shell.io/idta/SubmodelTemplate/HandoverDocumentation/2/0",
       "kind": "Template",
       "semanticId": {
-        "type": "ModelReference",
+        "type": "ExternalReference",
         "keys": [
           {
-            "type": "Submodel",
+            "type": "GlobalReference",
             "value": "0173-1#01-AHF578#003"
           }
         ]
@@ -298,7 +298,6 @@
                       ],
                       "value": [
                         {
-                          "category": "PARAMETER",
                           "idShort": "DocumentDomainId",
                           "displayName": [
                             {
@@ -365,12 +364,11 @@
                           "modelType": "Property"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "DocumentIdentifier",
                           "displayName": [
                             {
                               "language": "en",
-                              "text": "Document Identifyer"
+                              "text": "Document Identifier"
                             },
                             {
                               "language": "de",
@@ -432,7 +430,6 @@
                           "modelType": "Property"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "DocumentIsPrimary",
                           "displayName": [
                             {
@@ -629,7 +626,6 @@
                       ],
                       "value": [
                         {
-                          "category": "PARAMETER",
                           "idShort": "ClassId",
                           "displayName": [
                             {
@@ -696,7 +692,6 @@
                           "modelType": "Property"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "ClassName",
                           "displayName": [
                             {
@@ -762,7 +757,6 @@
                           "modelType": "MultiLanguageProperty"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "ClassificationSystem",
                           "displayName": [
                             {
@@ -1072,7 +1066,6 @@
                           "modelType": "SubmodelElementList"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "Version",
                           "displayName": [
                             {
@@ -1139,7 +1132,6 @@
                           "modelType": "Property"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "Title",
                           "displayName": [
                             {
@@ -1205,7 +1197,6 @@
                           "modelType": "MultiLanguageProperty"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "Subtitle",
                           "displayName": [
                             {
@@ -1271,7 +1262,6 @@
                           "modelType": "MultiLanguageProperty"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "Description",
                           "displayName": [
                             {
@@ -1337,7 +1327,6 @@
                           "modelType": "MultiLanguageProperty"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "KeyWords",
                           "displayName": [
                             {
@@ -1403,7 +1392,6 @@
                           "modelType": "MultiLanguageProperty"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "StatusSetDate",
                           "displayName": [
                             {
@@ -1470,7 +1458,6 @@
                           "modelType": "Property"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "StatusValue",
                           "displayName": [
                             {
@@ -1537,7 +1524,6 @@
                           "modelType": "Property"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "OrganizationShortName",
                           "displayName": [
                             {
@@ -1593,7 +1579,6 @@
                           "modelType": "Property"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "OrganizationOfficialName",
                           "displayName": [
                             {
@@ -1711,7 +1696,6 @@
                           "typeValueListElement": "ReferenceElement",
                           "value": [
                             {
-                              "category": "PARAMETER",
                               "semanticId": {
                                 "type": "ExternalReference",
                                 "keys": [
@@ -1809,7 +1793,6 @@
                           "typeValueListElement": "ReferenceElement",
                           "value": [
                             {
-                              "category": "PARAMETER",
                               "semanticId": {
                                 "type": "ExternalReference",
                                 "keys": [
@@ -1907,7 +1890,6 @@
                           "typeValueListElement": "ReferenceElement",
                           "value": [
                             {
-                              "category": "PARAMETER",
                               "displayName": [
                                 {
                                   "language": "en",
@@ -2086,7 +2068,6 @@
                           "modelType": "SubmodelElementList"
                         },
                         {
-                          "category": "PARAMETER",
                           "idShort": "PreviewFile",
                           "displayName": [
                             {
@@ -2160,7 +2141,7 @@
                               },
                               "type": "AllowedIdShort",
                               "valueType": "xs:string",
-                              "value": "PreviewFile[\\d{2,3}]"
+                              "value": "PreviewFile\\d{2,3}"
                             }
                           ],
                           "contentType": "image/jpeg",
@@ -2203,7 +2184,6 @@
                   "typeValueListElement": "ReferenceElement",
                   "value": [
                     {
-                      "category": "PARAMETER",
                       "semanticId": {
                         "type": "ExternalReference",
                         "keys": [
@@ -2272,7 +2252,6 @@
           "typeValueListElement": "Entity",
           "value": [
             {
-              "category": "PARAMETER",
               "semanticId": {
                 "type": "ExternalReference",
                 "keys": [
@@ -2529,7 +2508,7 @@
               },
               {
                 "language": "de",
-                "text": "Satz von Dokument-IDs für das Dokument. Eine ID in dieser Sammlung sollte als bevorzugte ID verwendet werden "
+                "text": "Satz von Dokument-IDs für das Dokument. Eine ID in dieser Sammlung sollte als bevorzugte ID verwendet werden"
               }
             ],
             "modelType": "DataSpecificationIec61360"
@@ -2652,7 +2631,7 @@
               },
               {
                 "language": "de",
-                "text": "Identifikation der Domäne, in der die angegebene DocumentId eindeutig ist. Die Domain-ID kann z. B. der Name oder das Akronym der bereitstellenden Organisation sein "
+                "text": "Identifikation der Domäne, in der die angegebene DocumentId eindeutig ist. Die Domain-ID kann z. B. der Name oder das Akronym der bereitstellenden Organisation sein"
               }
             ],
             "modelType": "DataSpecificationIec61360"
@@ -2666,7 +2645,7 @@
       "displayName": [
         {
           "language": "en",
-          "text": "Document identifyer"
+          "text": "Document identifier"
         }
       ],
       "id": "0173-1#02-AAO099#004",
@@ -2710,7 +2689,7 @@
               },
               {
                 "language": "de",
-                "text": "alphanumerische Zeichenfolge, die ein Dokument eindeutig identifiziert "
+                "text": "alphanumerische Zeichenfolge, die ein Dokument eindeutig identifiziert"
               }
             ],
             "modelType": "DataSpecificationIec61360"
@@ -2772,7 +2751,7 @@
               },
               {
                 "language": "de",
-                "text": "Flag, das angibt, dass eine DocumentId innerhalb einer Sammlung von mindestens zwei DocumentIds die „primäre“ Kennung für das Dokument ist. Dies ist die bevorzugte ID des Dokuments (üblicherweise aus Sicht des Eigentümers des Assets) "
+                "text": "Flag, das angibt, dass eine DocumentId innerhalb einer Sammlung von mindestens zwei DocumentIds die „primäre“ Kennung für das Dokument ist. Dies ist die bevorzugte ID des Dokuments (üblicherweise aus Sicht des Eigentümers des Assets)"
               }
             ],
             "modelType": "DataSpecificationIec61360"
@@ -2833,7 +2812,7 @@
               },
               {
                 "language": "de",
-                "text": "Satz von Informationen zur Beschreibung der Klassifizierung des Dokuments gemäß Klassifizierungssystemen "
+                "text": "Satz von Informationen zur Beschreibung der Klassifizierung des Dokuments gemäß Klassifizierungssystemen"
               }
             ],
             "modelType": "DataSpecificationIec61360"
@@ -2931,7 +2910,7 @@
             "preferredName": [
               {
                 "language": "en",
-                "text": "Class identifyer"
+                "text": "Class identifier"
               },
               {
                 "language": "de",
@@ -3080,7 +3059,7 @@
               },
               {
                 "language": "de",
-                "text": "Identifikation des Klassifikationssystems "
+                "text": "Identifikation des Klassifikationssystems"
               }
             ],
             "modelType": "DataSpecificationIec61360"
@@ -3127,7 +3106,7 @@
               },
               {
                 "language": "de",
-                "text": "Informationselemente einzelner VDI 2770 DocumentVersion Entitäten "
+                "text": "Informationselemente einzelner VDI 2770 DocumentVersion Entitäten"
               }
             ],
             "modelType": "DataSpecificationIec61360"
@@ -3145,7 +3124,7 @@
         },
         {
           "language": "de",
-          "text": "Document version"
+          "text": "Dokumentenversion"
         }
       ],
       "id": "0173-1#02-ABI503#003/0173-1#01-AHF582#003",
@@ -3167,8 +3146,8 @@
                 "text": "Document version"
               },
               {
-                "language": "az",
-                "text": "Document version"
+                "language": "de",
+                "text": "Dokumentenversion"
               }
             ],
             "shortName": [
@@ -3576,7 +3555,7 @@
               },
               {
                 "language": "de",
-                "text": "Liste der sprachabhängigen Schlüsselwörter des Dokuments "
+                "text": "Liste der sprachabhängigen Schlüsselwörter des Dokuments"
               }
             ],
             "modelType": "DataSpecificationIec61360"

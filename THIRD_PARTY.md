@@ -4,16 +4,16 @@
 
 | file | what it is | modified? |
 |---|---|---|
-| `aas_submodel_validate/data/smt/02004/2.0.2/template.json` | IDTA 02004-2-0-2 *Handover Documentation* template | no |
-| `aas_submodel_validate/data/smt/02003/2.0.2/template.json` | IDTA 02003 2.0.2 *Technical Data* template | no |
-| `aas_submodel_validate/data/smt/02035-2/1.1/template.json` | IDTA 02035-2 1.1 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
-| `aas_submodel_validate/data/smt/02006/3.0.2/template.json` | IDTA 02006-3-0-2 *Digital Nameplate* template | no |
-| `aas_submodel_validate/data/smt/02023/1.0.2/template.json` | IDTA 02023 1.0.2 *Carbon Footprint* template | no |
-| `aas_submodel_validate/data/smt/02002/1.0.2/template.json` | IDTA 02002-1-0-2 *Contact Information* template | no |
-| `aas_submodel_validate/data/smt/02011/1.1.2/template.json` | IDTA 02011-1-1-2 *Hierarchical Structures enabling Bills of Material* template | no |
-| `aas_submodel_validate/data/smt/02007/1.0.2/template.json` | IDTA 02007-1-0-2 *Software Nameplate* template | no |
+| `aas_submodel_validate/data/smt/02004/2.0.4/template.json` | IDTA 02004-2-0-4 *Handover Documentation* template | no |
+| `aas_submodel_validate/data/smt/02003/2.0.4/template.json` | IDTA 02003 2.0.4 *Technical Data* template | no |
+| `aas_submodel_validate/data/smt/02035-2/1.0.2/template.json` | IDTA 02035-2 1.0.2 *Digital Battery Passport, part 2 — Handover Documentation* template | no |
+| `aas_submodel_validate/data/smt/02006/3.0.3/template.json` | IDTA 02006-3-0-3 *Digital Nameplate* template | no |
+| `aas_submodel_validate/data/smt/02023/1.0.3/template.json` | IDTA 02023 1.0.3 *Carbon Footprint* template | no |
+| `aas_submodel_validate/data/smt/02002/1.0.4/template.json` | IDTA 02002-1-0-4 *Contact Information* template | no |
+| `aas_submodel_validate/data/smt/02011/1.1.4/template.json` | IDTA 02011-1-1-4 *Hierarchical Structures enabling Bills of Material* template | no |
+| `aas_submodel_validate/data/smt/02007/1.0.3/template.json` | IDTA 02007-1-0-3 *Software Nameplate* template | no |
 | `aas_submodel_validate/data/smt/02035-5/1.0.2/template.json` | IDTA 02035-5 *Digital Battery Passport, Part 5: Product Condition* template, V1.0.2 | no |
-| `aas_submodel_validate/data/smt/02035-1/1.1/template.json` | IDTA 02035-1 *Digital Battery Passport, Part 1: Digital Nameplate* template, V1.1 | no |
+| `aas_submodel_validate/data/smt/02035-1/1.0.1/template.json` | IDTA 02035-1 *Digital Battery Passport, Part 1: Digital Nameplate* template, V1.0.1 | no |
 | `aas_submodel_validate/data/smt/02035-4/1.0.2/template.json` | IDTA 02035-4 *Digital Battery Passport, Part 4: Technical Data* template, V1.0.2 | no |
 | `aas_submodel_validate/data/smt/02035-7/1.0.2/template.json` | IDTA 02035-7 *Digital Battery Passport, Part 7: Circularity* template, V1.0.2 | no |
 | `tests/corpus/idta/02004/example.json` | official 02004 2.0 example (environment JSON) | no |
@@ -27,7 +27,7 @@
 
 Source: [admin-shell-io/submodel-templates](https://github.com/admin-shell-io/submodel-templates),
 licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), © IDTA
-and contributors. Taken from commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (commit date 2026-10-05T14:26:16Z) and
+and contributors. Taken from commit `5285185b1ef9425fe45068bcbda8faaf74f3eb89` (commit date 2026-10-29T14:51:09Z) and
 hash-verified on every CI run by `tools/vendor_template.py --check`,
 which also sweeps those trees for anything this table does not list. The
 SHA-256 digest of each file is recorded in a `sha256sums.txt` in its own
@@ -107,7 +107,7 @@ that is not there is worse than one that says nothing.
 
 Two pins of IDTA 02004 live in this repository and they are different
 files on purpose: this tool vendors and validates against **02004
-version 2.0.2** (the table above), while the battery bundle indexes
+version 2.0.4** (the table above), while the battery bundle indexes
 **02004 V2.0** -- the edition the battery-passport template series
 references. Same document family, different editions, legitimately
 different hashes.

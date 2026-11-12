@@ -25,13 +25,17 @@
   "submodels": [
     {
       "idShort": "ContactInformations",
+      "administration": {
+        "version": "1",
+        "revision": "0"
+      },
       "id": "https://admin-shell.io/idta/SubmodelTemplate/ContactInformation/1/0",
       "kind": "Template",
       "semanticId": {
-        "type": "ModelReference",
+        "type": "ExternalReference",
         "keys": [
           {
-            "type": "Submodel",
+            "type": "GlobalReference",
             "value": "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations"
           }
         ]

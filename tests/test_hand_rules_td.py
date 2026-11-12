@@ -148,10 +148,10 @@ def test_a_version_drifted_identifier_is_diagnosed(tmp_path):
 
 def test_a_reference_type_that_differs_from_the_template_is_noted(tmp_path):
     env = copy.deepcopy(td_env())
-    env["submodels"][0]["semanticId"]["type"] = "ExternalReference"
-    env["submodels"][0]["semanticId"]["keys"][0]["type"] = "GlobalReference"
+    env["submodels"][0]["semanticId"]["type"] = "ModelReference"
+    env["submodels"][0]["semanticId"]["keys"][0]["type"] = "Submodel"
     finding = _ids(tmp_path, env)["TDL2"]
-    assert "ModelReference" in (finding.violation.detail or "")
+    assert "the template uses ExternalReference" in (finding.violation.detail or "")
 
 
 def test_the_golden_environment_draws_no_lint(tmp_path):

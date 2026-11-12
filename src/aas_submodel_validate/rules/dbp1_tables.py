@@ -4,7 +4,7 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02035-1_DBP-Part-1_Digital Nameplate.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
-TEMPLATE_CITATION = 'IDTA 02035-1 1.1 template'
+TEMPLATE_CITATION = 'IDTA 02035-1 1.0.1 template'
 TEMPLATE_SEMANTIC_ID = 'https://admin-shell.io/idta/digitalbatterypassport/nameplate/1/0/Nameplate'
 TEMPLATE_SUBMODEL_SID_TYPE = 'ExternalReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('https://admin-shell.io/idta/nameplate/3/0/Nameplate', 'urn:samm:io.admin-shell.idta.batterypass.digital_nameplate:1.0.0', 'urn:samm:io.admin-shell.idta.digital_nameplate:3.0.0')

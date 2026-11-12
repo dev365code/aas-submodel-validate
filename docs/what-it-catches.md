@@ -20,18 +20,18 @@ package (`src/aas_submodel_validate/data/example/idta-02004-2.0.aasx`),
 unmodified, defects and all:
 
 ```
-ok -- 0 error(s), 87 warning(s), 0 info -- idta-02004-2.0.aasx; judged 1 of 1 submodel; 1 rule not asked (HD-E38): HandoverDocumentation/Entites is not one the template describes, so this run did not look inside it
+ok -- 0 error(s), 87 warning(s), 1 info -- idta-02004-2.0.aasx; judged 1 of 1 submodel; 1 rule not asked (HD-E38): HandoverDocumentation/Entites is not one the template describes, so this run did not look inside it
 ```
 
 The rules come from the IDTA 02004 Handover Documentation template,
-version 2.0.2, vendored from the commit `THIRD_PARTY.md` names. Reproduce:
+version 2.0.4, vendored from the commit `THIRD_PARTY.md` names. Reproduce:
 `smtv --example` (exit 0).
 
 **The official IDTA 02003 sample.** Committed at
 `tests/corpus/idta/02003/sample-2.0.1.aasx`:
 
 ```
-ok -- 0 error(s), 9 warning(s), 0 info -- tests/corpus/idta/02003/sample-2.0.1.aasx; judged 1 of 1 submodel
+ok -- 0 error(s), 9 warning(s), 1 info -- tests/corpus/idta/02003/sample-2.0.1.aasx; judged 1 of 1 submodel
 ```
 
 Reproduce: `smtv tests/corpus/idta/02003/sample-2.0.1.aasx` from a clone.
@@ -235,7 +235,7 @@ Since 1.0: every row of the mutation table killed on the tree it ships with, and
 **The vendored templates are pinned and hash-checked.**
 
 ```
-vendored material matches its recorded hashes, and the trees hold nothing else (20 files, pin f3790038b6c9)
+vendored material matches its recorded hashes, and the trees hold nothing else (20 files, pin 5285185b1ef9)
 ```
 
 Reproduce: `python3 tools/vendor_template.py --check` in a clone; CI runs it
@@ -245,9 +245,9 @@ on every change.
 - checked for upstream change — done
 - one pin move shipped — done
 
-The pin has moved once: 0.12.0 moved it from `11ef3353`, where it had
-stood since 0.1.0, to `f3790038`, and its CHANGELOG entry names every
-verdict the move changed.
+The pin has moved twice: 0.12.0 moved it from `11ef3353`, where it had
+stood since 0.1.0, to `f3790038`, and it now stands at `5285185b`; the
+CHANGELOG names every verdict each move changed.
 
 Whether upstream has moved since is asked every Monday -- on the default
 branch, the only one GitHub runs a schedule on, and only while the

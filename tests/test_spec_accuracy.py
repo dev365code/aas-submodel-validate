@@ -102,13 +102,22 @@ def test_a_normal_offset_is_accepted(tmp_path):
 
 # -- HDL3 / HD-D1: name the template's real reference type -------------------
 
-def test_the_official_example_no_longer_gets_a_false_hdl3():
-    """The example's submodel semanticId is a ModelReference -- and so is
-    the template's. Once the expected type is read from the template
-    instead of hardcoded to ExternalReference, the drift lint stops firing
-    a finding that was never real."""
+def test_the_official_example_is_held_to_the_reference_type_its_template_gives():
+    """The example's submodel semanticId is a ModelReference. The expected
+    type is read from the template rather than hardcoded: hardcoded to
+    ExternalReference, the drift lint fired against the example while the
+    template said ModelReference too, a finding that was never real.
+    Through 2.0.2 the template said ModelReference and the example drew no
+    HDL3; 2.0.4 says ExternalReference (upstream #224), and the example
+    draws one, at info, naming the type the template gives."""
+    from aas_submodel_validate.rules import hd_tables
+
     report = runner.run("tests/corpus/idta/02004/example.json")
-    assert [f for f in report.findings if f.id == "HDL3"] == []
+    [finding] = [f for f in report.findings if f.id == "HDL3"]
+    assert str(finding.severity) == "info"
+    assert finding.violation.detail == "ModelReference, where the template uses %s" % (
+        hd_tables.TEMPLATE_SUBMODEL_SID_TYPE)
+    assert hd_tables.TEMPLATE_SUBMODEL_SID_TYPE == "ExternalReference"
 
 
 def test_the_presence_fix_does_not_claim_an_externalreference():

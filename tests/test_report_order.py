@@ -230,8 +230,8 @@ def test_errors_lead_and_meta_trails(tmp_path):
     for child in version["value"]:
         if child.get("idShort") == "StatusSetDate":
             child["value"] = "not-a-date"
-    submodel["semanticId"] = {"type": "ModelReference",
-                              "keys": [{"type": "Submodel",
+    submodel["semanticId"] = {"type": "ExternalReference",
+                              "keys": [{"type": "GlobalReference",
                                         "value": "0173-1#01-AHF578#003"}]}
     path = tmp_path / "env.json"
     path.write_bytes(json.dumps(env).encode("utf-8"))

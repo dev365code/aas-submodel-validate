@@ -327,7 +327,7 @@ def test_an_element_two_tables_walked_is_charged_with_both(tmp_path):
     import glob
 
     source = glob.glob(str(ROOT / "src" / "aas_submodel_validate" / "data"
-                           / "smt" / "02006" / "3.0.2" / "*.json"))[0]
+                           / "smt" / "02006" / "3.0.3" / "*.json"))[0]
     template = json.loads(Path(source).read_text(encoding="utf-8-sig"))
     template["submodels"][0]["semanticId"]["keys"][0]["value"] = "urn:x:dn-copy"
     supplied = tmp_path / "copy.json"

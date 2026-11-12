@@ -114,11 +114,14 @@ def test_a_sample_for_metamodel_3_1_is_refused_for_its_namespace(path):
 def test_in_the_3_0_namespace_the_technical_data_sample_is_judged_and_passes(tmp_path):
     """The mutation that isolates the 02003 one: the same bytes in the 3.0
     namespace parse, are judged against 02003's table, and draw no rule of
-    this project's -- the refusal is the namespace and nothing else."""
+    this project's above info -- the refusal is the namespace and nothing
+    else. The info is `TDL2`: the sample's submodel semanticId is the
+    ModelReference of its day, and 02003 2.0.4 gives an ExternalReference
+    (docs/divergences.md #12)."""
     path = _rewritten(TD_AAS31, tmp_path, lambda name, data: data.replace(AAS31, AAS30)
                       if name.endswith(".aas.xml") else data)
     report = runner.run(path)
-    assert _own(report) == [], _own(report)
+    assert _own(report) == ["TDL2"], _own(report)
     assert (report.submodels_seen, report.submodels_judged) == (1, 1)
     assert report.ok
 
