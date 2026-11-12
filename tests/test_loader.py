@@ -298,20 +298,22 @@ def test_a_bare_submodel_too_deep_to_build_is_told_the_reader_stopped(tmp_path, 
     _stopped(error, "nesting", building=True)
 
 
-def _collection_chain_xml(depth, tail=""):
-    """The same chain written as AAS XML, with `tail` after the root.
+def _collection_chain_xml(depth, tail="", inside=""):
+    """The same chain written as AAS XML, with `inside` after its deepest
+    element and `tail` after the root.
 
     aas-core3.0 builds XML as the parser streams it -- each element as it
     is reached -- so a document it runs out of stack on was stopped before
-    its end, and whatever comes after, a syntax error included, was never
-    looked at."""
+    its end, and a syntax error in what it never reached was never looked
+    at. What follows the root element is read before anything is built: XML
+    allows only comments, processing instructions and whitespace there."""
     opened = "".join("<submodelElementCollection><idShort>c%d</idShort><value>" % level
                      for level in range(depth))
     closed = "</value></submodelElementCollection>" * depth
     leaf = "<property><idShort>leaf</idShort><valueType>xs:string</valueType></property>"
     return ('<environment xmlns="https://admin-shell.io/aas/3/0"><submodels><submodel>'
-            "<id>urn:test:deep</id><submodelElements>%s%s%s</submodelElements>"
-            "</submodel></submodels></environment>%s" % (opened, leaf, closed, tail))
+            "<id>urn:test:deep</id><submodelElements>%s%s%s%s</submodelElements>"
+            "</submodel></submodels></environment>%s" % (opened, leaf, inside, closed, tail))
 
 
 def _xml_at(tmp_path, name, text, zipped):
@@ -333,7 +335,7 @@ def test_xml_too_deep_to_follow_is_told_the_reader_stopped(tmp_path, zipped, mon
     reader stopped and why, and nothing about the rest. The same answer
     zipped or not."""
     _lift_the_bound(monkeypatch)
-    text = _collection_chain_xml(350, tail="<<< this is not XML")
+    text = _collection_chain_xml(350, inside="<<< this is not XML")
     bare = [e for e in load(_xml_at(tmp_path, "bare", text, False)).errors
             if e.stage == "payload"]
     (error,) = [e for e in load(_xml_at(tmp_path, "probe", text, zipped)).errors
@@ -342,6 +344,21 @@ def test_xml_too_deep_to_follow_is_told_the_reader_stopped(tmp_path, zipped, mon
     assert "RecursionError" in error.detail, error.detail
     assert (error.message, error.fix) == (bare[0].message, bare[0].fix)
     assert error.subject == ("aasx/env.xml" if zipped else str(tmp_path / "probe.xml"))
+
+
+@pytest.mark.parametrize("zipped", [False, True], ids=["bare", "packaged"])
+def test_xml_too_deep_to_build_that_goes_on_after_its_root_is_refused_for_that(
+        tmp_path, zipped, monkeypatch):
+    """What follows the root element is read before anything is built, and
+    without a stack to run out of: the same chain, too deep to build, with
+    text after its root is refused for the text -- on the line it is on --
+    and not for the depth the build would have stopped at."""
+    _lift_the_bound(monkeypatch)
+    text = _collection_chain_xml(350, tail="\n<<< this is not XML")
+    (error,) = [e for e in load(_xml_at(tmp_path, "probe", text, zipped)).errors
+                if e.stage == "payload"]
+    assert error.message == "the XML goes on after its root element", error.message
+    assert error.line == 2, error.line
 
 
 def test_the_deepest_xml_this_reader_builds_is_read_and_one_more_level_is_not(tmp_path,
