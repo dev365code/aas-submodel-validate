@@ -1864,8 +1864,9 @@ def test_a_vendored_template_supplied_builds_the_table_its_pack_did(tmp_path):
         % (seen, len(packs)))
 
 
-def _template_with_idshort_rule(tmp_path, pattern, name="t.json"):
-    """A one-row template whose only row carries `AllowedIdShort`."""
+def _template_with_idshort_rule(tmp_path, pattern, name="t.json", own="A"):
+    """A one-row template whose only row carries `AllowedIdShort`, on an
+    element the template itself names `own`."""
     def sid(value):
         return {"type": "ExternalReference",
                 "keys": [{"type": "GlobalReference", "value": value}]}
@@ -1879,7 +1880,7 @@ def _template_with_idshort_rule(tmp_path, pattern, name="t.json"):
         "modelType": "Submodel", "id": "urn:test:tpl", "idShort": "Mine",
         "kind": "Template", "semanticId": sid("urn:test:mine"),
         "submodelElements": [{
-            "modelType": "Property", "idShort": "A",
+            "modelType": "Property", "idShort": own,
             "semanticId": sid("urn:test:a"), "valueType": "xs:string",
             "qualifiers": [
                 qualifier("SMT/Cardinality", "One",
@@ -1920,9 +1921,9 @@ def test_an_allowed_idshort_that_is_not_a_regex_does_not_blame_this_tool(tmp_pat
     could not be judged, and the report said `judged 1 of 1` over a run
     in which no row was evaluated.
 
-    Measured on every `AllowedIdShort` in all six vendored templates:
-    each one uses the bracket spelling, so reading anything else as a
-    literal moves no pack.
+    Measured on every `AllowedIdShort` the vendored templates write:
+    each is the bracket spelling or an expression Python runs, so reading
+    a value Python will not run as a name moves no pack.
     """
     template = _template_with_idshort_rule(tmp_path, "A[")
     report = runner.run(_instance_named(tmp_path, "A["), template=template)
@@ -1935,13 +1936,17 @@ def test_an_allowed_idshort_that_is_not_a_regex_does_not_blame_this_tool(tmp_pat
 
 
 def test_an_allowed_idshort_is_read_as_written(tmp_path):
-    """`Doc(1)` names an element called `Doc(1)`.
+    """`Doc(1)` is an expression, and is read as the one it is.
 
-    Unescaped, the parentheses were a regex group and the qualifier
-    matched `Doc1` -- so a file that carries the element the template
-    asks for by name was told it does not, and one that does not was
-    told it does. IDTA's own spelling for a numbering suffix is the
-    bracket form, which `_intended_pattern` still translates."""
+    It was once read as the name of an element called `Doc(1)`, because
+    unescaped the qualifier matched `Doc1` and a file carrying the
+    element the template asks for by name was told it does not. That
+    half is now the template's own name, which passes beside any value.
+    The other half is what an expression says, and IDTA writes the
+    qualifier as one (02004 2.0.4, upstream #151): this one asks for
+    `Doc1`. IDTA's older spelling for a numbering suffix is the bracket
+    form, which `_intended_pattern` still translates, and a value Python
+    will not run is still the name it spells."""
     from aas_submodel_validate import tablegen
 
     assert tablegen._intended_pattern("RefersTo[\\d{2,3}]") == \
@@ -1960,12 +1965,59 @@ def test_an_allowed_idshort_is_read_as_written(tmp_path):
     assert re.match(numbered, "Doc(1)") and re.match(numbered, "Doc(1)07"), numbered
     assert not re.match(numbered, "Doc1"), numbered
 
-    literal = tablegen._intended_pattern("Doc(1)")
-    assert re.match(literal, "Doc(1)"), (
+    expression = tablegen._intended_pattern("Doc(1)")
+    assert re.match(expression, "Doc1"), expression
+    assert not re.match(expression, "Doc(1)"), (
+        "%r matched a name the expression does not" % expression)
+    own = tablegen._intended_pattern("Doc(1)", own="Doc(1)")
+    assert re.match(own, "Doc(1)") and re.match(own, "Doc1"), (
         "the element the template names does not match its own qualifier: %r"
-        % literal)
-    assert not re.match(literal, "Doc1"), (
-        "%r matched an element the template did not name" % literal)
+        % own)
+    name = tablegen._intended_pattern("A[")
+    assert re.match(name, "A[") and not re.match(name, "A"), name
+
+
+def _pattern_built_from(tmp_path, value, own):
+    """The pattern the generator writes for a one-row template whose
+    element is named `own` and carries `AllowedIdShort` = `value`."""
+    from aas_submodel_validate import tablegen
+
+    document = json.loads(_template_with_idshort_rule(
+        tmp_path, value, own=own).read_text(encoding="utf-8"))
+    (row,) = tablegen.build(document, {
+        "prefix": "TPL-E", "citation": "c", "skip_sids": frozenset(),
+        "item_names": {}, "example_types": ()})["tree"]
+    return row["allowed_idshort"]
+
+
+def test_an_expression_is_read_as_the_expression_it_is(tmp_path):
+    """IDTA 02004 2.0.4 rewrote PreviewFile's `AllowedIdShort` as
+    `PreviewFile\\d{2,3}` and calls it a valid regular expression
+    (upstream #151), while the element it qualifies is still named
+    `PreviewFile`. Read as a name, the value matched only the string
+    `PreviewFile\\d{2,3}`, so every preview file in every file drew the
+    lint. It is read as written, and the template's own idShort for the
+    element passes beside it: the template's single `PreviewFile` must
+    not fail the template's own qualifier (#5)."""
+    pattern = _pattern_built_from(tmp_path, "PreviewFile\\d{2,3}",
+                                  own="PreviewFile")
+    for name in ("PreviewFile", "PreviewFile01", "PreviewFile123"):
+        assert re.match(pattern, name), (name, pattern)
+    for name in ("PreviewFileX", "PreviewFile1", "PreviewFile1234"):
+        assert not re.match(pattern, name), (name, pattern)
+
+
+def test_the_digits_an_expression_asks_for_are_not_made_optional(tmp_path):
+    """What tells reading the expression apart from reading its shape.
+
+    A template that writes `Name\\d{2}` and names its own element
+    `Name01` shows the two digits it asks for. `Name` alone matches
+    neither the expression nor the template's own name, and is told so;
+    reading every trailing `\\d{m,n}` as an optional numbering suffix,
+    which is what the bracket spelling means (#5), would let it pass."""
+    pattern = _pattern_built_from(tmp_path, "Name\\d{2}", own="Name01")
+    assert re.match(pattern, "Name01") and re.match(pattern, "Name07"), pattern
+    assert not re.match(pattern, "Name"), pattern
 
 
 def test_a_numbering_suffix_that_is_not_a_repeat_is_read_as_unreadable():

@@ -80,6 +80,48 @@ def test_the_four_example_systems_all_reach_the_remedy():
     assert "customer specific" in row["fix"]
 
 
+def test_example_values_a_bar_separates_are_several_values():
+    """02003's Annex B (Issue #190): "Example values are now separated by
+    '|' characters". 2.0.3 merged ClassificationSystem's four
+    `SMT/ExampleValue/<system>` qualifiers into one `SMT/ExampleValue`
+    written that way. The remedy names each value once and joins them as
+    it joins several qualifiers', so a reader is told the same four
+    systems whichever spelling the template used."""
+    from aas_submodel_validate import tablegen
+
+    def template(qualifiers):
+        return {"submodels": [{
+            "modelType": "Submodel", "id": "urn:test:tpl", "idShort": "T",
+            "kind": "Template",
+            "semanticId": {"type": "ExternalReference", "keys": [
+                {"type": "GlobalReference", "value": "urn:test:t"}]},
+            "submodelElements": [{
+                "modelType": "Property", "idShort": "System",
+                "valueType": "xs:string",
+                "semanticId": {"type": "ExternalReference", "keys": [
+                    {"type": "GlobalReference", "value": "urn:test:s"}]},
+                "qualifiers": [{"type": kind, "valueType": "xs:string",
+                                "value": value}
+                               for kind, value in qualifiers]}]}]}
+
+    def example(qualifiers, types):
+        (row,) = tablegen.build(template(qualifiers), {
+            "prefix": "X-E", "citation": "c", "skip_sids": frozenset(),
+            "item_names": {}, "example_types": types})["tree"]
+        return row["example"]
+
+    merged = example([("SMT/ExampleValue", "ECLASS|IEC CDD|UNSPSC|customer specific")],
+                     ("SMT/ExampleValue",))
+    several = example([("SMT/ExampleValue/ECLASS", "ECLASS"),
+                       ("SMT/ExampleValue/CDD", "IEC CDD"),
+                       ("SMT/ExampleValue/UNSPSC", "UNSPSC"),
+                       ("SMT/ExampleValue/CustomerSpecific", "customer specific")],
+                      ("SMT/ExampleValue/ECLASS", "SMT/ExampleValue/CDD",
+                       "SMT/ExampleValue/UNSPSC", "SMT/ExampleValue/CustomerSpecific"))
+    assert merged == several == "ECLASS | IEC CDD | UNSPSC | customer specific", \
+        (merged, several)
+
+
 def test_the_handover_table_is_untouched():
     """Both tables come out of one generator now. 02004's rows are the
     regression surface for that change: they are what the whole suite,

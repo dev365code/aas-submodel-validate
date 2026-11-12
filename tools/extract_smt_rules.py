@@ -30,7 +30,10 @@ What is deliberately interpreted rather than copied:
   character. The evident intent `^RefersTo(?:\\d{2,3})?$` is what lands in
   the table -- the digits are the multiple-instance suffix and so optional
   (docs/divergences.md #5) -- and it is only ever an informational lint
-  (Annex A lets any unique idShort stand).
+  (Annex A lets any unique idShort stand). A value written as the
+  expression it means, as 02004 2.0.4 writes `PreviewFile\\d{2,3}`, is read
+  as written, and the idShort the template gives the element passes
+  beside it, so a template's element never fails its own qualifier.
 - **Open content is not a rule.** 02003 §3.5 says "the set of suitable
   semanticIds is not restricted": its thirty-six placeholder elements
   describe what a manufacturer *may* add. Generating rules from them would

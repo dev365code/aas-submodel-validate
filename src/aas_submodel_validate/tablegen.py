@@ -119,22 +119,30 @@ _CARDINALITY_TYPES = ("SMT/Cardinality", "Multiplicity", "Cardinality")
 _ALLOWED = re.compile(r"^(.*)\[(\\d\{\d(?:,\d)?\})\]$")
 
 
-def _intended_pattern(raw):
-    """`RefersTo[\\d{2,3}]` -> `^RefersTo(?:\\d{2,3})?$`, and anything
-    else the name it spells.
+def _intended_pattern(raw, own=None):
+    """`RefersTo[\\d{2,3}]` -> `^RefersTo(?:\\d{2,3})?$`, an expression
+    as written, and anything else the name it spells -- with `own`, the
+    idShort the template itself gives the element, passing beside each.
 
-    The digits are the numbering suffix for multiple instances, so they
-    are optional: the template's *own* idShort for the single case
-    ("PreviewFile") must not fail the template's own qualifier.
+    IDTA writes the qualifier two ways. The bracket spelling is, as a
+    regular expression, a character class matching one character; what
+    it means is the numbering suffix for multiple instances, so the
+    digits are optional (docs/divergences.md #5). 02004 2.0.4 rewrote one
+    of its five values as the expression upstream calls valid (#151),
+    `PreviewFile\\d{2,3}`, and an expression is read as written: two or
+    three digits. The element that one qualifies is still named
+    `PreviewFile`, which the expression does not match, and a template's
+    own element must not fail the template's own qualifier -- so the
+    name the template gives the element passes beside any value. It is
+    added only where the value does not already admit it, so a table
+    whose names already pass is the table it was.
 
-    Everything else is a name, not a program. Passed through as a
-    pattern, a qualifier reading `Doc(1)` matched `Doc1` and not the
-    element the template names, and one reading `A[` did not compile at
-    all -- so every row of that table raised at walk time and the funnel
-    reported each as "the rule itself could not run", under a remedy
-    saying the defect is this validator's. Measured across the six
-    vendored templates, every `AllowedIdShort` uses the bracket
-    spelling above, so escaping the rest moves no pack.
+    A value Python will not run as an expression is a name. One reading
+    `A[` did not compile, so every row of that table raised at walk time
+    and the funnel reported each as "the rule itself could not run",
+    under a remedy saying the defect is this validator's. One that runs
+    only with a warning is a name too, because whether it runs at all
+    differs between interpreters and a table must not.
 
     Returns `None` where the value cannot be read at all: one that
     claims the bracket spelling and gets it wrong (`A[\\d{3,2}]` asks for
@@ -163,8 +171,8 @@ def _intended_pattern(raw):
         # does not compile, so every row of that table raised and the
         # funnel reported each as a defect in this validator. Both
         # halves of the defect lived on in one of its two branches.
-        pattern = "^%s(?:%s)?$" % (re.escape(matched.group(1)),
-                                   matched.group(2))
+        inner = "%s(?:%s)?" % (re.escape(matched.group(1)), matched.group(2))
+        pattern = "^%s$" % inner
         try:
             # What the walk does, brought forward to where the value is
             # still identifiable. Escaping cannot reach the suffix --
@@ -177,8 +185,31 @@ def _intended_pattern(raw):
             re.compile(pattern)
         except re.error:
             return None
-        return pattern
-    return "^%s$" % re.escape(raw)
+        return _admitting(inner, own)
+    inner = "(?:%s)" % raw if _runs("^(?:%s)$" % raw) else re.escape(raw)
+    return _admitting(inner, own)
+
+
+def _runs(pattern):
+    """Whether `pattern` is an expression Python runs without a word."""
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        try:
+            re.compile(pattern)
+        except (re.error, Warning):
+            return False
+    return True
+
+
+def _admitting(inner, own):
+    """`^inner$`, and the template's own name for the element beside it
+    where `inner` does not already admit that name."""
+    pattern = "^%s$" % inner
+    if isinstance(own, str) and own and not re.match(pattern, own):
+        pattern = "^(?:%s|%s)$" % (inner, re.escape(own))
+    return pattern
 
 
 def _values_of(reference):
@@ -358,8 +389,12 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
     endless = card[0] if repeats and card[0] > 0 else None
     if endless:
         card = (0, card[1])
-    examples = [value for key, value in qualifiers.items()
-                if key in pack["example_types"]]
+    # A bar separates several values in one qualifier: 02003's Annex B
+    # (Issue #190), "Example values are now separated by '|' characters",
+    # and its 2.0.3 merged the four qualifiers ClassificationSystem
+    # carried into one written that way.
+    examples = [part.strip() for key, value in qualifiers.items()
+                if key in pack["example_types"] for part in value.split("|")]
     example = " | ".join(examples) if examples else None
     fix = ("Provide %s '%s' element(s)%s with semanticId %s%s."
            % (_cardinality_words(card), label,
@@ -452,7 +487,8 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
     #: optional, so a qualifier of this type with no value at all is a
     #: legal file and is a value this cannot read, not an absence.
     declares_idshort = "AllowedIdShort" in qualifiers
-    allowed_idshort = (_intended_pattern(qualifiers["AllowedIdShort"])
+    allowed_idshort = (_intended_pattern(qualifiers["AllowedIdShort"],
+                                         element.get("idShort"))
                        if declares_idshort else None)
     row = {
         "id": row_id,
