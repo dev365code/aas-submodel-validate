@@ -31,13 +31,17 @@
           "text": "The Submodel HierarchicalStructures identified by its semanticId. The Submodel idShort can be picked freely."
         }
       ],
+      "administration": {
+        "version": "1",
+        "revision": "1"
+      },
       "id": "https://admin-shell.io/idta/SubmodelTemplate/HierarchicalStructuresBoM/1/1",
       "kind": "Template",
       "semanticId": {
-        "type": "ModelReference",
+        "type": "ExternalReference",
         "keys": [
           {
-            "type": "Submodel",
+            "type": "GlobalReference",
             "value": "https://admin-shell.io/idta/HierarchicalStructures/1/1/Submodel"
           }
         ]
@@ -112,7 +116,7 @@
               "description": [
                 {
                   "language": "en",
-                  "text": "Base entry point for the Entity tree in this Submodel, this must be a Self-managed Entity reflecting the Assets administrated in the Asset Administration Shell this Submodel is part of. The idShort of the EntryNode can be picked freely and may reflect a name of the asset."
+                  "text": "Can be a Co-managed or Self-managed entity. A Node reflects an element in the hierarchical model is set into relation with one or more defined relations. The name of a node can be picked freely but it must be unique in its hierarchical (sub-)level."
                 }
               ],
               "semanticId": {
@@ -189,7 +193,7 @@
                     }
                   ],
                   "entityType": "SelfManagedEntity",
-                  "globalAssetId": "https://admin-shell.io/idta/HierarchicalStructures/EntryNode/1/0",
+                  "globalAssetId": "https://example.com/ids/asset/SubNode",
                   "modelType": "Entity"
                 },
                 {
@@ -411,7 +415,7 @@
                 }
               ],
               "entityType": "SelfManagedEntity",
-              "globalAssetId": "https://admin-shell.io/idta/HierarchicalStructures/EntryNode/1/0",
+              "globalAssetId": "https://example.com/ids/asset/Node",
               "modelType": "Entity"
             },
             {
@@ -596,7 +600,7 @@
             }
           ],
           "entityType": "SelfManagedEntity",
-          "globalAssetId": "https://admin-shell.io/idta/HierarchicalStructures/EntryNode/1/0",
+          "globalAssetId": "https://example.com/ids/asset/EntryNode",
           "modelType": "Entity"
         },
         {

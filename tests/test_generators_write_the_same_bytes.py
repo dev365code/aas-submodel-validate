@@ -77,7 +77,7 @@ def archived_tree(tmp_path_factory):
     # reference before the same input is read under Windows defaults.
     source = tree / ".generator-idta" / "02035-1_v1.1" / "template.json"
     source.parent.mkdir(parents=True)
-    source.write_bytes((tree / "src/aas_submodel_validate/data/smt/02035-1/1.1/template.json")
+    source.write_bytes((tree / "src/aas_submodel_validate/data/smt/02035-1/1.0.1/template.json")
                        .read_bytes())
     tool, flags = next(g for g in GENERATORS if g[0].endswith("extract_idta_smt.py"))
     reference = _run(tree, tool, flags, windows=False)

@@ -21,7 +21,7 @@ from pathlib import Path
 from aas_submodel_validate.rules import dbp_tables, hd_tables, td_tables
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.1/template.json"
+TEMPLATE = ROOT / "src/aas_submodel_validate/data/smt/02035-2/1.0.2/template.json"
 
 #: 02004 rows that 02035-2 does not have. Named rather than counted: a
 #: count would survive the template swapping one for another.
@@ -45,7 +45,7 @@ def test_the_anchor_is_02004s_and_that_is_the_whole_problem():
     two tables that answer to one identifier."""
     assert dbp_tables.TEMPLATE_SEMANTIC_ID == hd_tables.TEMPLATE_SEMANTIC_ID
     assert dbp_tables.TEMPLATE_SEMANTIC_ID == "0173-1#01-AHF578#003"
-    assert dbp_tables.TEMPLATE_SUBMODEL_SID_TYPE == "ModelReference"
+    assert dbp_tables.TEMPLATE_SUBMODEL_SID_TYPE == "ExternalReference"
     assert dbp_tables.TEMPLATE_SEMANTIC_ID != td_tables.TEMPLATE_SEMANTIC_ID
 
 

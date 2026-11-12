@@ -48,7 +48,7 @@
 - declared encodings read without loss — done (`tests/test_a_document_is_read_in_the_encoding_it_declares.py`: "a document declared under any name the table in container.py holds is read")
 
 **Upstream** — 3 of 3:
-- upstream templates pinned by commit — done (`THIRD_PARTY.md`: "Taken from commit `f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (commit date 2026-10-05T14:26:16Z) and hash-verified")
+- upstream templates pinned by commit — done (`THIRD_PARTY.md`: "Taken from commit `5285185b1ef9425fe45068bcbda8faaf74f3eb89` (commit date 2026-10-29T14:51:09Z) and hash-verified")
 - checked for upstream change — done (`.github/workflows/upstream.yml`: "06:17 UTC every Monday")
 - one pin move shipped — done (`CHANGELOG.md`: "The template pin moves to upstream main commit")
 

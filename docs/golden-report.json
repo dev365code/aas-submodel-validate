@@ -59,7 +59,7 @@
    "priority": "MUST",
    "rule": "HD-E08",
    "severity": "error",
-   "spec": "IDTA 02004-2-0-2 template, SMT/Cardinality qualifier",
+   "spec": "IDTA 02004-2-0-4 template, SMT/Cardinality qualifier",
    "subject": "HandoverDocumentation/Documents/[0]",
    "title": "'DocumentClassifications' as the template declares it (0173-1#02-ABI502#003)"
   },
@@ -80,7 +80,7 @@
    "priority": "MUST",
    "rule": "HD-E17",
    "severity": "error",
-   "spec": "IDTA 02004-2-0-2 template, SMT/Cardinality qualifier",
+   "spec": "IDTA 02004-2-0-4 template, SMT/Cardinality qualifier",
    "subject": "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]",
    "title": "'Version' as the template declares it (0173-1#02-AAP003#005)"
   },
@@ -118,7 +118,7 @@
  "provenance": {
   "engine": null,
   "envelope": null,
-  "inputSha256": "7d8971398eb468a4ece9108222166afec2226b45854296355d24c8da4b553fc6"
+  "inputSha256": "42f326fcea809ee6c3598d8e80f51c2316d53dc441c3d2bc2ab1f31a5d10f878"
  },
  "schemaVersion": 1,
  "summary": {

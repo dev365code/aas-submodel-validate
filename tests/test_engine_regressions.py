@@ -658,7 +658,11 @@ def test_the_official_example_verdict_is_unchanged():
     non_meta = sorted((f.id, f.violation.subject or "")
                       for f in report.findings if f.id != "META")
     assert report.ok
-    assert {i for i, _ in non_meta} == {"HD-D6", "HDL2", "HDL5", "HD-D10"}
+    # HDL3 since the pin reads 2.0.4, which gives the submodel semanticId
+    # as an ExternalReference where the 2.0 example keeps the
+    # ModelReference of its day (docs/divergences.md #12) -- info, so the
+    # verdict stands.
+    assert {i for i, _ in non_meta} == {"HD-D6", "HDL2", "HDL3", "HDL5", "HD-D10"}
 
 
 def test_a_reference_piercing_a_leaf_is_a_finding_not_a_crash(tmp_path):
@@ -754,8 +758,9 @@ def test_a_submodel_with_no_elements_at_all_is_judged_not_crashed(tmp_path):
 #: `candidate_values(submodel.semantic_id)`, and that is the empty set for
 #: `None`, so a submodel with no semanticId never arrives. All three
 #: vendored tables declare `TEMPLATE_SUBMODEL_SID_TYPE =
-#: "ModelReference"` -- asserted for each of them now; two were pinned
-#: and the pack this file exercises was not.
+#: "ExternalReference"`, a ModelReference until upstream #224 -- asserted
+#: for each of them now; two were pinned and the pack this file exercises
+#: was not.
 #:
 #: *`row["sid_type"]`.* All 86 generated rows carry one, and all 86 say
 #: `ExternalReference`. Not "cannot be otherwise": the generator reads
@@ -792,13 +797,15 @@ def test_a_submodel_with_no_elements_at_all_is_judged_not_crashed(tmp_path):
 #: tables. Skipping it early is a saving, not a decision.
 
 
-def test_all_three_tables_expect_a_model_reference_to_the_template():
-    """The walk reports a submodel whose semanticId is an
-    ExternalReference where the table says ModelReference. Two packs
-    pinned the value they compare against and this one did not, in a note
-    that asserted it about all three."""
+def test_all_three_tables_expect_the_reference_type_their_template_gives():
+    """The walk reports a submodel whose semanticId is not of the type
+    the table says. Two packs pinned the value they compare against and
+    this one did not, in a note that asserted it about all three. The
+    value is the template's: a ModelReference through 02004 2.0.2, 02003
+    2.0.2 and 02035-2 1.0.1, and an ExternalReference in the editions
+    read now (upstream #224)."""
     for tables in (hd_tables, td_tables, dbp_tables):
-        assert tables.TEMPLATE_SUBMODEL_SID_TYPE == "ModelReference"
+        assert tables.TEMPLATE_SUBMODEL_SID_TYPE == "ExternalReference"
 
 
 def test_every_generated_row_says_which_reference_type_it_expects():

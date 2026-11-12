@@ -26,12 +26,12 @@ warning HD-D10   no DigitalFile is a PDF; VDI 2770 requires a PDF/A rendition
         per  IDTA 02004-2-0 §2.1 ("PDF/A files are required")
         fix: Add a DigitalFile with contentType application/pdf (a PDF/A file, per VDI 2770) to this DocumentVersion. A content type cannot prove PDF/A conformance, so this is a warning, not an error.
 …
-ok -- 0 error(s), 87 warning(s), 0 info -- idta-02004-2.0.aasx; judged 1 of 1 submodel; 1 rule not asked (HD-E38): HandoverDocumentation/Entites is not one the template describes, so this run did not look inside it
+ok -- 0 error(s), 87 warning(s), 1 info -- idta-02004-2.0.aasx; judged 1 of 1 submodel; 1 rule not asked (HD-E38): HandoverDocumentation/Entites is not one the template describes, so this run did not look inside it
 ```
 
 The first finding and final summary above come from `--example`; the intervening findings are omitted. To try a repair, copy `site-packages/aas_submodel_validate/data/example/idta-02004-2.0.aasx` to a writable directory and run `smtv` on the copy; `pip3 show aas-submodel-validate` prints that `site-packages` directory on its `Location:` line.
 
-**Every finding says what is wrong, where, and how to fix it — and shows what it read.** A rule without a remedy sentence does not ship. On the bundled official example all 87 findings carry a place and the line it begins on, a remedy and a `saw` line; on the 77 relayed metamodel findings it is what aas-core3.0's check read, such as `isCaseOf: []` or `value[*].idShort: 'Datasheet', 'CADmodel'`. Here is the one this project exists for — a battery passport whose template permits an element to be absent while a published reading of the regulation expects it. Those are two different questions and they get two different answers:
+**Every finding says what is wrong, where, and how to fix it — and shows what it read.** A rule without a remedy sentence does not ship. On the bundled official example all 88 findings carry a place and the line it begins on, a remedy and a `saw` line; on the 77 relayed metamodel findings it is what aas-core3.0's check read, such as `isCaseOf: []` or `value[*].idShort: 'Datasheet', 'CADmodel'`. Here is the one this project exists for — a battery passport whose template permits an element to be absent while a published reading of the regulation expects it. Those are two different questions and they get two different answers:
 
 <img src="https://raw.githubusercontent.com/dev365code/aas-submodel-validate/main/docs/assets/verdict.svg?v=93f71a70" alt="Real smtv output on an LMT battery passport: one warning, BAT-R8, the template permitting an element absent that a published reading of the regulation expects for LMT batteries, naming the element, citing the clause and saying what to change." width="100%">
 
@@ -110,7 +110,7 @@ key     at=where saw=what is there now per=the clause fix=what to change
 |---|---|
 | `at` | where in the submodel — the path of idShorts down to the element |
 | `saw` | what was actually there, so you can tell this finding from a similar one |
-| `per` | the clause this reading comes from, for when you have to cite it. A generated rule names the template file it comes from and that file's edition (`IDTA 02004-2-0-2 template`); a hand-written rule names a section of the specification (`IDTA 02004-2-0 §2.3`), which can carry an older number, because a bug-fix edition corrects a template's files and carries its specification over with its text unchanged. The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
+| `per` | the clause this reading comes from, for when you have to cite it. A generated rule names the template file it comes from and that file's edition (`IDTA 02004-2-0-4 template`); a hand-written rule names a section of the specification (`IDTA 02004-2-0 §2.3`), which can carry an older number, because a bug-fix edition corrects a template's files and carries its specification over with its text unchanged. The templates and their specification PDFs are in [the upstream repository](https://github.com/admin-shell-io/submodel-templates); THIRD_PARTY.md names the pin. |
 | `fix` | what to change. Every finding has one; a finding without a remedy is a complaint |
 | `note` | something this run did, not a defect in the file. Nothing to change — which is why a note has no `fix` |
 
@@ -529,15 +529,19 @@ says which template answered wherever two published templates share one
 submodel identifier and something had to choose.
 
 The editions below are the latest published at upstream commit
-`f3790038b6c9c2d7e5ebbb4609997468fadf3e85` (5 October 2026).
-Eleven replace the previous pin's editions. Repairs in three packs change
-required bounds, primary identifiers or value types:
-02023 1.0.2 permits several LifeCyclePhases/PcfCalculationMethods lists;
-02002 1.0.2 repairs IPCommunication; 02007 1.0.2 repairs ConfigurationURI
-and expects ConfigurationType as text. Compatibility for earlier identifiers
-is limited to the listed IPCommunication, TypeOfCommunication and
-ConfigurationURI spellings; it does not preserve earlier value types or
-every removed supplemental alias. Elements known only by removed Handover
+`5285185b1ef9425fe45068bcbda8faaf74f3eb89` (29 October 2026).
+Nine replace the previous pin's editions; one of the nine, 02035-1 1.0.1,
+is the previous pin's 1.1 under the name upstream now gives it. Two
+repairs reach a verdict: 02023 1.0.3 asks for exactly one LifeCyclePhases
+list and one PcfCalculationMethods list again, each holding any number of
+entries, and six templates now give their submodel `semanticId` as an
+ExternalReference, which three packs' reference-type lints compare a
+file's against, at info. 02002 1.0.2 repaired IPCommunication, and 02007
+1.0.2 repaired ConfigurationURI and expects ConfigurationType as text.
+Compatibility for earlier identifiers is limited to the listed
+IPCommunication, TypeOfCommunication and ConfigurationURI spellings; it
+does not preserve earlier value types or every removed supplemental alias.
+Elements known only by removed Handover
 joined aliases or Technical Data CDP spellings containing spaces may no
 longer reach their row. Other repaired supplemental identifiers and removed
 inclusion markers also change which rows are reached. Pin moves ship in a
@@ -546,16 +550,16 @@ minor release, and the CHANGELOG names every verdict that moves.
 
 | template | generated | hand-written |
 |---|---|---|
-| IDTA 02004 Handover Documentation 2.0.2 | 38 | the mandatory VDI 2770 classification and its twelve classes, English class names, the status vocabulary, dates that are dates, files that exist in the container, references that resolve |
-| IDTA 02003 Technical Data 2.0.2 | 26 | dates that are dates, files that exist in the container, references that resolve |
-| IDTA 02035-2 Digital Battery Passport part 2 1.1 | 22 | 02004's, minus the three whose elements this template drops |
-| IDTA 02006 Digital Nameplate 3.0.2 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value; files that exist in the container; the near-miss lint |
-| IDTA 02023 Carbon Footprint 1.0.2 | 26 | files that exist in the container; the near-miss lint (the open-content ArbitraryContent placeholder is left unjudged) |
-| IDTA 02002 Contact Information 1.0.2 | 36 | the near-miss lint only (no email, telephone, URL, time-zone or language-code shape is checked) |
-| IDTA 02011 Hierarchical Structures 1.1.2 | 11 | the near-miss lint only (a nested node is judged at any depth, and a relationship's two ends are not read) |
-| IDTA 02007 Software Nameplate 1.0.2 | 73 | the near-miss lint only (every row is read as the template writes it where the specification beside it disagrees: `docs/divergences.md` #57) |
+| IDTA 02004 Handover Documentation 2.0.4 | 38 | the mandatory VDI 2770 classification and its twelve classes, English class names, the status vocabulary, dates that are dates, files that exist in the container, references that resolve |
+| IDTA 02003 Technical Data 2.0.4 | 26 | dates that are dates, files that exist in the container, references that resolve |
+| IDTA 02035-2 Digital Battery Passport part 2 1.0.2 | 22 | 02004's, minus the three whose elements this template drops |
+| IDTA 02006 Digital Nameplate 3.0.3 | 30 | the product URI is an absolute one — an identification link, not a relative reference or an empty value; files that exist in the container; the near-miss lint |
+| IDTA 02023 Carbon Footprint 1.0.3 | 26 | files that exist in the container; the near-miss lint (the open-content ArbitraryContent placeholder is left unjudged) |
+| IDTA 02002 Contact Information 1.0.4 | 36 | the near-miss lint only (no email, telephone, URL, time-zone or language-code shape is checked) |
+| IDTA 02011 Hierarchical Structures 1.1.4 | 11 | the near-miss lint only (a nested node is judged at any depth, and a relationship's two ends are not read) |
+| IDTA 02007 Software Nameplate 1.0.3 | 73 | the near-miss lint only (every row is read as the template writes it where the specification beside it disagrees: `docs/divergences.md` #57) |
 | IDTA 02035-5 Digital Battery Passport part 5 1.0.2 | 49 | the near-miss lint only (its identifiers are SAMM ones whose version moved with each release; a submodel of an earlier release, alone in its file, is told so: `docs/divergences.md` #58) |
-| IDTA 02035-1 Digital Battery Passport part 1 1.1 | 22 | files that exist in the container; the near-miss lint (identifiers mix IEC CDD, ECLASS, IRI and SAMM; `AddressInformation` is dropped in empty and not looked inside, though its specification requires four address fields in it: `docs/divergences.md` #59) |
+| IDTA 02035-1 Digital Battery Passport part 1 1.0.1 | 22 | files that exist in the container; the near-miss lint (identifiers mix IEC CDD, ECLASS, IRI and SAMM; `AddressInformation` is dropped in empty and not looked inside, though its specification requires four address fields in it: `docs/divergences.md` #59) |
 | IDTA 02035-4 Digital Battery Passport part 4 1.0.2 | 46 | files that exist in the container; the near-miss lint (`WarrantyInformation` states no cardinality and reads optional; three identifiers belong to more than one sibling, and an element's own identifier settles which it is: `docs/divergences.md` #60) |
 | IDTA 02035-7 Digital Battery Passport part 7 1.0.2 | 37 | the near-miss lint only (its identifiers are SAMM ones; a supplier's contact elements carry their ECLASS identifiers under SAMM's `urn:irdi:` prefix, which is read as the IRDI, so a supplier identified the way 02002 identifies one answers the rows: `docs/divergences.md` #61, #62) |
 

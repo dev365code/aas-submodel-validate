@@ -189,8 +189,8 @@ def test_a_samm_version_is_a_number(tmp_path):
 
 def test_a_reference_type_that_differs_from_the_template_is_noted(tmp_path):
     env = copy.deepcopy(dbp_env())
-    env["submodels"][0]["semanticId"]["type"] = "ExternalReference"
-    env["submodels"][0]["semanticId"]["keys"][0]["type"] = "GlobalReference"
+    env["submodels"][0]["semanticId"]["type"] = "ModelReference"
+    env["submodels"][0]["semanticId"]["keys"][0]["type"] = "Submodel"
     assert "DBP2L3" in _findings(tmp_path, env)
 
 

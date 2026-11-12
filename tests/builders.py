@@ -345,7 +345,7 @@ def _smc(sid, children, id_short=None):
 
 def hd_env() -> dict:
     """The golden fixture: one Handover Documentation submodel satisfying
-    every required row of the 02004 2.0.2 template, written by hand so it
+    every required row of the 02004 2.0.4 template, written by hand so it
     is evidence about the template rather than an echo of it. Composite
     identifiers use the template's slash spelling; OrganizationShortName
     deliberately uses the IRDI spelling where the template writes the
@@ -385,10 +385,12 @@ def hd_env() -> dict:
     return {"submodels": [{
         "id": "urn:example:handover", "idShort": "HandoverDocumentation",
         "modelType": "Submodel",
-        # the template declares its own semanticId as a ModelReference with a
-        # Submodel key -- a faithful instance mirrors that (see divergences #12)
-        "semanticId": {"type": "ModelReference",
-                       "keys": [{"type": "Submodel", "value": "0173-1#01-AHF578#003"}]},
+        # the template declares its own semanticId as an ExternalReference
+        # with a GlobalReference key (2.0.4; through 2.0.2 a ModelReference
+        # with a Submodel key) -- a faithful instance mirrors that (see
+        # divergences #12)
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference", "value": "0173-1#01-AHF578#003"}]},
         "submodelElements": [
             _sml("Documents", "0173-1#02-ABI500#003",
                  "SubmodelElementCollection", [document]),
@@ -459,8 +461,8 @@ def td_env() -> dict:
     return {"submodels": [{
         "id": TD_SUBMODEL_ID, "idShort": "TechnicalData",
         "modelType": "Submodel",
-        "semanticId": {"type": "ModelReference",
-                       "keys": [{"type": "Submodel",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
                                  "value": "0173-1#01-AHX837#002"}]},
         "submodelElements": [
             general,
@@ -801,8 +803,9 @@ def contact_env() -> dict:
     convention is checked here, because the template carries no
     `AllowedIdShort` qualifier. The submodel id is deliberately not the
     template's identifier, and its reference *type* mirrors the template's
-    (`ModelReference` to a `Submodel`), so the fixture does not quietly
-    drift where no lint would catch it.
+    (an `ExternalReference` with a `GlobalReference` key from 1.0.4, a
+    `ModelReference` to a `Submodel` before it), so the fixture does not
+    quietly drift where no lint would catch it.
     """
     N = "https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/"
     available = N + "ContactInformation/AvailableTime/"
@@ -855,8 +858,8 @@ def contact_env() -> dict:
         "id": "urn:example:contactinformation",
         "idShort": "ContactInformations",
         "modelType": "Submodel",
-        "semanticId": {"type": "ModelReference",
-                       "keys": [{"type": "Submodel",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
                                  "value": "https://admin-shell.io/zvei/"
                                           "nameplate/1/0/ContactInformations"}]},
         "submodelElements": [contact],
@@ -914,8 +917,8 @@ def hs_env() -> dict:
     return {"submodels": [{
         "id": "urn:example:hierarchical-structures",
         "idShort": "HierarchicalStructures", "modelType": "Submodel",
-        "semanticId": {"type": "ModelReference",
-                       "keys": [{"type": "Submodel",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
                                  "value": HS + "1/1/Submodel"}]},
         "submodelElements": [
             entry,
@@ -1067,8 +1070,8 @@ def sn_env() -> dict:
     return {"submodels": [{
         "id": "urn:example:software-nameplate",
         "idShort": "SoftwareNameplate", "modelType": "Submodel",
-        "semanticId": {"type": "ModelReference",
-                       "keys": [{"type": "Submodel",
+        "semanticId": {"type": "ExternalReference",
+                       "keys": [{"type": "GlobalReference",
                                  "value": "https://admin-shell.io/idta/"
                                           "SoftwareNameplate/1/0"}]},
         "submodelElements": [kind, instance],

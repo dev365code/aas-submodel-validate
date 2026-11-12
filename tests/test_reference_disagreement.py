@@ -134,20 +134,33 @@ def _drop(env: dict, sid: str) -> dict:
 
 # -- the fourteen cases -------------------------------------------------------
 
+def _as_compared():
+    """`hd_env()` as both readers were given it. The fixture follows the
+    template, and since 2.0.4 the template gives its submodel semanticId as
+    an ExternalReference; the document compared carried the ModelReference
+    2.0.2 gave. Restored here rather than repinned, because a repin would
+    be a claim about a comparison nobody ran."""
+    env = copy.deepcopy(hd_env())
+    env["submodels"][0]["semanticId"] = {
+        "type": "ModelReference",
+        "keys": [{"type": "Submodel", "value": "0173-1#01-AHF578#003"}]}
+    return env
+
+
 def _case_hd_baseline():
-    return hd_env()
+    return _as_compared()
 
 
 def _case_hd_missing_document_identifier():
-    return _drop(copy.deepcopy(hd_env()), DOCUMENT_IDENTIFIER)
+    return _drop(_as_compared(), DOCUMENT_IDENTIFIER)
 
 
 def _case_hd_missing_class_id():
-    return _drop(copy.deepcopy(hd_env()), CLASS_ID)
+    return _drop(_as_compared(), CLASS_ID)
 
 
 def _case_hd_wrong_release_vocabulary():
-    env = copy.deepcopy(hd_env())
+    env = _as_compared()
     _find(env, STATUS_VALUE)["value"] = "released"
     return env
 
@@ -312,8 +325,11 @@ def _v(findings, ok, judged, kind, why, direction=""):
 #: reason from the standard, never "because the other one said so".
 VERDICTS = {
     "hd_baseline": _v(
-        [], True, 1, "control",
-        "a conformant instance draws nothing; both readers agree"),
+        [("HDL3", "info", "HandoverDocumentation")], True, 1, "control",
+        "a conformant instance draws nothing above info; both readers agree. "
+        "The info is the pin's: the instance carries the ModelReference "
+        "2.0.2 gave its submodel semanticId, and 2.0.4 gives an "
+        "ExternalReference (#12)"),
     "dn_baseline": _v(
         [], True, 1, "control",
         "a conformant instance draws nothing; both readers agree"),
@@ -346,18 +362,21 @@ VERDICTS = {
         "is still read and still reported on"),
     "hd_missing_document_identifier": _v(
         [("HD-E06", "error",
-          "HandoverDocumentation/Documents/[0]/DocumentIds/[0]")],
+          "HandoverDocumentation/Documents/[0]/DocumentIds/[0]"),
+         ("HDL3", "info", "HandoverDocumentation")],
         False, 1, "coverage",
         "a mandatory element nested under a list is asked for at its own "
         "depth, which is what the subject says", direction="ours"),
     "hd_missing_class_id": _v(
         [("HD-E10", "error",
-          "HandoverDocumentation/Documents/[0]/DocumentClassifications/[0]")],
+          "HandoverDocumentation/Documents/[0]/DocumentClassifications/[0]"),
+         ("HDL3", "info", "HandoverDocumentation")],
         False, 1, "coverage",
         "same, below a second list", direction="ours"),
     "hd_wrong_release_vocabulary": _v(
         [("HD-D6", "warning",
-          "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]")],
+          "HandoverDocumentation/Documents/[0]/DocumentVersions/[0]"),
+         ("HDL3", "info", "HandoverDocumentation")],
         True, 1, "coverage",
         "the template fixes a vocabulary for this value, which is a question "
         "about content rather than structure -- and this project says so at "

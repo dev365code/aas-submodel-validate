@@ -11,8 +11,9 @@ from __future__ import annotations
 
 from aas_submodel_validate.rules import hd_tables, td_tables
 
-#: The template's own anchor: §2 declares it as a ModelReference whose one
-#: key is the ECLASS IRDI, the same shape 02004 uses (divergences #12).
+#: The template's own anchor, whose one key is the ECLASS IRDI: a
+#: ModelReference through 2.0.2 and an ExternalReference from 2.0.4
+#: (upstream #224), the same shape 02004 uses (divergences #12).
 ANCHOR = "0173-1#01-AHX837#002"
 
 #: Elements whose semanticId is this are the standard's open-content
@@ -24,7 +25,7 @@ ARBITRARY = "https://admin-shell.io/SMT/General/Arbitrary"
 
 def test_the_anchor_and_its_reference_type():
     assert td_tables.TEMPLATE_SEMANTIC_ID == ANCHOR
-    assert td_tables.TEMPLATE_SUBMODEL_SID_TYPE == "ModelReference"
+    assert td_tables.TEMPLATE_SUBMODEL_SID_TYPE == "ExternalReference"
 
 
 def test_the_concrete_rows_are_twenty_six():
@@ -70,10 +71,11 @@ def test_a_declared_cardinality_still_wins():
 
 
 def test_the_four_example_systems_all_reach_the_remedy():
-    """02003 gives one element four ExampleValue qualifiers, one per
-    classification system, where 02004 had a single bare `ExampleValue`.
-    Keeping only one of them would tell a reader ECLASS is the answer when
-    the template offers four.
+    """02003 offers one element four example values, one per
+    classification system -- four qualifiers through 2.0.2 and one, the
+    four separated by "|", from 2.0.3 -- where 02004 had a single bare
+    `ExampleValue`. Keeping only one of them would tell a reader ECLASS is
+    the answer when the template offers four.
     """
     row = td_tables.BY_LABEL["ClassificationSystem"]
     assert row["example"] == "ECLASS | IEC CDD | UNSPSC | customer specific"

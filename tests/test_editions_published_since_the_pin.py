@@ -39,7 +39,16 @@ def _run(tmp_path, environment):
     return runner.run(path)
 
 
-def test_carbon_footprints_can_carry_several_of_each_required_list(tmp_path):
+def _template_errors(tmp_path, environment):
+    return {f.id for f in _run(tmp_path, environment).findings
+            if f.rule.kind == "template" and f.severity == Severity.ERROR}
+
+
+def test_a_carbon_footprint_carries_one_of_each_required_list(tmp_path):
+    """02023 1.0.3 asks for exactly one PcfCalculationMethods list and one
+    LifeCyclePhases list again, where 1.0.2 allowed one or more (upstream
+    #124), so a second of either is an error in each footprint that has
+    one."""
     environment = pcf_env()
     for element in list(_elements(environment)):
         if element.get("idShort") in ("PcfCalculationMethods", "LifeCyclePhases"):
@@ -49,9 +58,23 @@ def test_carbon_footprints_can_carry_several_of_each_required_list(tmp_path):
                           if isinstance(e.get("value"), list)
                           and any(child is element for child in e["value"]))
             parent["value"].append(second)
-    report = _run(tmp_path, environment)
-    assert not [f for f in report.findings if f.rule.kind == "template"
-                and f.severity == Severity.ERROR], report.as_dict()
+    assert _template_errors(tmp_path, environment) == \
+        {"PCF-E03", "PCF-E08", "PCF-E16"}
+
+
+@pytest.mark.parametrize("entries", ["several", "none"])
+def test_a_required_list_holds_any_number_of_entries(tmp_path, entries):
+    """1.0.3 also takes the cardinality off the entries those lists hold
+    (upstream #124): where 1.0.2 asked each list for exactly one entry,
+    several pass, and so does a list that holds none."""
+    environment = pcf_env()
+    for element in list(_elements(environment)):
+        if element.get("idShort") in ("PcfCalculationMethods", "LifeCyclePhases"):
+            if entries == "several":
+                element["value"] = element["value"] + copy.deepcopy(element["value"])
+            else:
+                del element["value"]
+    assert not _template_errors(tmp_path, environment)
 
 
 @pytest.mark.parametrize("identifier", [IP, CONTACT + "/IPCommunication/", CONTACT + "/"])

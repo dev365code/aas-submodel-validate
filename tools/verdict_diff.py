@@ -769,7 +769,7 @@ def build_corpus(into: Path):
     cases.append(Case(
         "a Digital Nameplate, judged by the vendored template handed in by hand",
         stand_down,
-        template=ROOT / "src/aas_submodel_validate/data/smt/02006/3.0.2/template.json"))
+        template=ROOT / "src/aas_submodel_validate/data/smt/02006/3.0.3/template.json"))
 
     # The mode's reason to exist: a table no pack has, over a file that
     # declares it. Without the table this is `SMT-D1`, "nothing here

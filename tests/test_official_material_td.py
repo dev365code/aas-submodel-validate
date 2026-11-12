@@ -30,13 +30,18 @@ def _split(path):
 
 
 @pytest.mark.parametrize("path", (FIRST, FIRST_AASX, REPAIRED))
-def test_no_rule_of_ours_fires_on_the_official_sample(path):
+def test_no_rule_of_ours_finds_fault_with_the_official_sample(path):
     """Both editions satisfy every template rule, generated and hand
     written, and the presence rule finds what it is looking for. That is
     the claim worth pinning: this tool does not call IDTA's own sample a
-    non-conformant Technical Data submodel."""
+    non-conformant Technical Data submodel.
+
+    What it says besides is one note at info, `TDL2`: the samples give
+    their submodel semanticId as the ModelReference of their day, and
+    02003 2.0.4 gives an ExternalReference (docs/divergences.md #12)."""
     _report, _meta, own = _split(path)
-    assert own == [], sorted(f.id for f in own)
+    assert [(f.id, str(f.severity)) for f in own] == [("TDL2", "info")], \
+        sorted((f.id, str(f.severity)) for f in own)
 
 
 def test_the_first_edition_carries_sixty_metamodel_findings():

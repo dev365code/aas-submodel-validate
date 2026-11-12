@@ -4,9 +4,9 @@ template -- edit the generator, regenerate, never this file.
 Source: IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json (CC BY 4.0, (c) IDTA and
 contributors; pin and hashes in THIRD_PARTY.md)."""
 
-TEMPLATE_CITATION = 'IDTA 02035-2 1.1 template'
+TEMPLATE_CITATION = 'IDTA 02035-2 1.0.2 template'
 TEMPLATE_SEMANTIC_ID = '0173-1#01-AHF578#003'
-TEMPLATE_SUBMODEL_SID_TYPE = 'ModelReference'
+TEMPLATE_SUBMODEL_SID_TYPE = 'ExternalReference'
 TEMPLATE_SUPPLEMENTAL_SEMANTIC_IDS = ('0173-1#01-AHF578#003', 'urn:samm:io.admin-shell.idta.batterypass.handover_documentation:1.0.0#HandoverDocumentation')
 
 TREE = (

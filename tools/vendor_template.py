@@ -37,8 +37,8 @@ from aas_submodel_validate._terminal import survive  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 
 REPO = "admin-shell-io/submodel-templates"
-# Upstream main at the pin: 2026-10-05T14:26:16Z (commit date).
-COMMIT = "f3790038b6c9c2d7e5ebbb4609997468fadf3e85"
+# Upstream main at the pin: 2026-10-29T14:51:09Z (commit date).
+COMMIT = "5285185b1ef9425fe45068bcbda8faaf74f3eb89"
 
 #: destination (repo-relative) -> source (repo-relative in the upstream repo)
 #:
@@ -49,24 +49,32 @@ COMMIT = "f3790038b6c9c2d7e5ebbb4609997468fadf3e85"
 #: spaces in a directory name. A prefix that fits both would hide exactly
 #: the detail somebody has to check against upstream.
 FILES = {
-    # 2.0.2 is the newest at the pin (same structural rows as 2.0.1).
-    "src/aas_submodel_validate/data/smt/02004/2.0.2/template.json":
-        "published/Handover Documentation/2/0/2/"
-        "IDTA 02004-2-0-2_Template_HandoverDocumentation.json",
-    # 2.0.2 is the newest at the pin; it repairs the CDP URL spaces (#24).
-    "src/aas_submodel_validate/data/smt/02003/2.0.2/template.json":
-        "published/Technical_Data/2/0/2/"
-        "IDTA 02003_2-0-2_Template_TechnicalData.json",
+    # 2.0.4 is the newest at the pin. Its rows are 2.0.2's; 2.0.4 made the
+    # submodel semanticId an ExternalReference (#12) and PreviewFile's
+    # AllowedIdShort an expression (#5).
+    "src/aas_submodel_validate/data/smt/02004/2.0.4/template.json":
+        "published/Handover Documentation/2/0/4/"
+        "IDTA 02004-2-0-4_Template_HandoverDocumentation.json",
+    # 2.0.4 is the newest at the pin. 2.0.2 repaired the CDP URL spaces
+    # (#24), 2.0.3 merged ClassificationSystem's four example qualifiers
+    # into one (#21), and 2.0.4 made the submodel semanticId an
+    # ExternalReference (#12).
+    "src/aas_submodel_validate/data/smt/02003/2.0.4/template.json":
+        "published/Technical_Data/2/0/4/"
+        "IDTA 02003_2-0-4_Template_TechnicalData.json",
     # 02035-2 is the Digital Battery Passport's part 2 and a *second*
     # Handover Documentation template: the same submodel semanticId as
     # 02004, different requirements. Upstream publishes it twice in this
     # directory and the "_without_examplevalues" twin is not what its name
     # says -- it keeps all twelve ExampleValue qualifiers and differs by one
-    # Property value; neither 1.1 twin has a final newline (#25). This is
+    # Property value; neither 1.0.2 twin has a final newline (#25). This is
     # the published file.
-    # 1.1 is the newest at the pin; its structural rows are unchanged.
-    "src/aas_submodel_validate/data/smt/02035-2/1.1/template.json":
-        "published/Digital Battery Passport/2_Handover Documentation/1/1/"
+    # 1.0.2 is the newest at the pin, and the edition before it is the one
+    # upstream published as 1.1 and has since renamed 1.0.1, the same
+    # bytes. Its rows are unchanged; 1.0.2 made the submodel semanticId an
+    # ExternalReference (#12).
+    "src/aas_submodel_validate/data/smt/02035-2/1.0.2/template.json":
+        "published/Digital Battery Passport/2_Handover Documentation/1/0/2/"
         "IDTA 02035-2_DBP-Part-2_HandoverDocumentation.json",
     "tests/corpus/idta/02004/example.json":
         "published/Handover Documentation/2/0/"
@@ -101,39 +109,48 @@ FILES = {
     "tests/corpus/idta/02006/sample-2.0.aasx":
         "deprecated/Digital nameplate/2/0/"
         "IDTA 02006-2-0_Sample Digital Nameplate.aasx",
-    # 3.0.2 is the newest at the pin; 3.0.1 repaired FirmwareVersion first.
-    "src/aas_submodel_validate/data/smt/02006/3.0.2/template.json":
-        "published/Digital nameplate/3/0/2/"
-        "IDTA 02006-3-0-2_Template_Digital Nameplate.json",
-    # 1.0.2 is the newest at the pin; three list rows now allow 1..*.
-    "src/aas_submodel_validate/data/smt/02023/1.0.2/template.json":
-        "published/Carbon Footprint/1/0/2/"
-        "IDTA 02023-1-0-2 _Template_CarbonFootprint.json",
-    # 1.0.2 is the newest at this pin. Upstream repaired IPCommunication
-    # and TypeOfCommunication; both JSON names (with and without the
-    # _forAASMetamodelV3.1 suffix) are byte-identical. This entry records
-    # the unsuffixed name from which the bytes were taken (#51).
-    "src/aas_submodel_validate/data/smt/02002/1.0.2/template.json":
-        "published/Contact Information/1/0/2/"
-        "IDTA 02002-1-0-2_Template_ContactInformation.json",
+    # 3.0.3 is the newest at the pin; 3.0.1 repaired FirmwareVersion first,
+    # and 3.0.3 marks Markings orderRelevant false, which no rule reads.
+    "src/aas_submodel_validate/data/smt/02006/3.0.3/template.json":
+        "published/Digital nameplate/3/0/3/"
+        "IDTA 02006-3-0-3_Template_Digital Nameplate.json",
+    # 1.0.3 is the newest at the pin. Its three list rows are One again,
+    # where 1.0.2 allowed 1..*, and the items they hold carry no
+    # cardinality (#20).
+    "src/aas_submodel_validate/data/smt/02023/1.0.3/template.json":
+        "published/Carbon Footprint/1/0/3/"
+        "IDTA 02023-1-0-3 _Template_CarbonFootprint.json",
+    # 1.0.4 is the newest at this pin. 1.0.2 repaired IPCommunication and
+    # TypeOfCommunication (#51); 1.0.3 gave the template an administration
+    # and 1.0.4 made its submodel semanticId an ExternalReference, which no
+    # rule of this pack reads. 1.0.4 is published as one JSON (#52).
+    "src/aas_submodel_validate/data/smt/02002/1.0.4/template.json":
+        "published/Contact Information/1/0/4/"
+        "IDTA 02002-1-0-4_Template_ContactInformation.json",
     # 02011's `Node` holds a `Node` of its own identifier, to any depth, and
     # the template writes that out one level down and stops
-    # (docs/divergences.md #48). 1.1.2 is the newest edition at the pin.
-    "src/aas_submodel_validate/data/smt/02011/1.1.2/template.json":
-        "published/Hierarchical Structures enabling Bills of Material/1/1/2/"
-        "IDTA 02011-1-1-2_Template_HSEBoM.json",
-    # 1.0.2 is the newest at this pin. ConfigurationURI, ConfigurationType
-    # and TypeOfCommunication were repaired upstream (#57). Its JSON twin
-    # with _forAASMetamodelV3.1 is byte-identical; we take the plain name.
-    "src/aas_submodel_validate/data/smt/02007/1.0.2/template.json":
-        "published/Software Nameplate/1/0/2/"
-        "IDTA 02007-1-0-2_Template_Software Nameplate.json",
+    # (docs/divergences.md #48). 1.1.4 is the newest edition at the pin;
+    # 1.1.3 and 1.1.4 changed its administration, its submodel
+    # semanticId's reference type and three example asset ids, none of
+    # which a rule reads.
+    "src/aas_submodel_validate/data/smt/02011/1.1.4/template.json":
+        "published/Hierarchical Structures enabling Bills of Material/1/1/4/"
+        "IDTA 02011-1-1-4_Template_HSEBoM.json",
+    # 1.0.3 is the newest at this pin. 1.0.2 repaired ConfigurationURI,
+    # ConfigurationType and TypeOfCommunication (#57); 1.0.3 made its
+    # submodel semanticId an ExternalReference, which no rule of this pack
+    # reads. 1.0.3 is published as one JSON.
+    "src/aas_submodel_validate/data/smt/02007/1.0.3/template.json":
+        "published/Software Nameplate/1/0/3/"
+        "IDTA 02007-1-0-3_Template_Software Nameplate.json",
     # 02035-1 is the Digital Battery Passport's part 1, Digital Nameplate,
-    # published at 1.0 and 1.1; 1.1 is the newest at the pin. Its identifiers mix IEC CDD, ECLASS,
+    # published at 1.0 and at 1.0.1 -- upstream's name, since a rename of
+    # the folder, for the bytes it first published as 1.1 -- which is the
+    # newest at the pin. Its identifiers mix IEC CDD, ECLASS,
     # IRI and SAMM ones, and seventeen of its twenty-two elements carry more
     # beside their own.
-    "src/aas_submodel_validate/data/smt/02035-1/1.1/template.json":
-        "published/Digital Battery Passport/1_Digital Nameplate/1/1/"
+    "src/aas_submodel_validate/data/smt/02035-1/1.0.1/template.json":
+        "published/Digital Battery Passport/1_Digital Nameplate/1/0/1/"
         "IDTA 02035-1_DBP-Part-1_Digital Nameplate.json",
     # 02035-4 is the Digital Battery Passport's part 4, Technical Data,
     # published through 1.0.2; 1.0.2, the bug-fix release, is the newest

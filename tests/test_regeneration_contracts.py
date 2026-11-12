@@ -87,7 +87,7 @@ def test_ledger_header_names_each_template_pin_and_only_its_templates():
 
 def test_divergence_59_describes_the_repaired_list_items_as_current():
     """All three lists omit item idShorts in 1.1; 1.0 is history."""
-    template = json.loads((ROOT / "src/aas_submodel_validate/data/smt/02035-1/1.1/template.json")
+    template = json.loads((ROOT / "src/aas_submodel_validate/data/smt/02035-1/1.0.1/template.json")
                           .read_text("utf-8"))
     lists = {}
 
