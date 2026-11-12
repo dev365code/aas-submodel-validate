@@ -1,5 +1,61 @@
 # Changelog
 
+## 1.2.0 — unreleased
+
+**The template pin moves to IDTA's current editions, and every verdict that moves with it is named below.**
+
+This release reads the newest published editions at the recorded template pin. A Carbon Footprint holding a second PcfCalculationMethods or LifeCyclePhases list fails again, as it did before 0.12.0, and a list holding several entries, or none, now passes. A submodel whose semanticId is a ModelReference -- as a file written to an earlier edition writes it, the official 02004 example and 02003 samples among them -- now draws the reference-type lint against 02004, 02003 and 02035-2, at info, and one written as an ExternalReference no longer does; no exit code moves on that. An XML document that goes on after its root element is refused.
+
+The template pin moves to upstream main commit `5285185b1ef9425fe45068bcbda8faaf74f3eb89` (2026-10-29), and each pack reads the newest published edition at that pin. This is a minor release under the template-pin policy.
+
+| Pack | Previous edition | Edition read now |
+|---|---|---|
+| 02004 | 2.0.2 | 2.0.4 |
+| 02003 | 2.0.2 | 2.0.4 |
+| 02006 | 3.0.2 | 3.0.3 |
+| 02023 | 1.0.2 | 1.0.3 |
+| 02002 | 1.0.2 | 1.0.4 |
+| 02011 | 1.1.2 | 1.1.4 |
+| 02007 | 1.0.2 | 1.0.3 |
+| 02035-1 | 1.1 | 1.0.1 |
+| 02035-2 | 1.1 | 1.0.2 |
+| 02035-4 | 1.0.2 | 1.0.2 |
+| 02035-7 | 1.0.2 | 1.0.2 |
+| 02035-5 | 1.0.2 | 1.0.2 |
+
+IDTA renamed the battery passport's edition 1.1 of parts 1 and 2 to 1.0.1, keeping the bytes: part 1 is read at 1.0.1 for that reason alone, and part 2 at 1.0.2, its newest.
+
+The structural changes are Carbon Footprint's three list rows (`PCF-E03`, `PCF-E08`, `PCF-E16`: OneToMany back to One) and the entries those lists hold (`PCF-E04`, `PCF-E09`, `PCF-E17`: One to any number, the template now stating no cardinality for them), and the reference type of the submodel's own semanticId in 02004, 02003, 02035-2, 02002, 02011 and 02007 (a ModelReference with a Submodel key, now an ExternalReference with a GlobalReference key), which the reference-type lints of the first three compare a file's against (`HDL3`, `TDL2`, `DBP2L3`, all info). 02004 2.0.4 writes PreviewFile's AllowedIdShort as the expression `PreviewFile\d{2,3}`; it is read as written, the template's own `PreviewFile` passes beside it, and `HDL1` answers as it did. A template supplied with `--template` is read as 1.1.0 read it: an AllowedIdShort there that is not the bracket spelling is the name it spells. 02003 2.0.3 merges ClassificationSystem's four example qualifiers into one; the remedy names the same four systems. 02006 3.0.3's orderRelevant on Markings, the administration 02002 1.0.3 and 02011 1.1.3 add, and 02011 1.1.4's example asset ids are read by no rule.
+
+Files written to the previous editions keep being judged. A ModelReference identifies the same template as the ExternalReference the editions read now give, and draws info, not a failure.
+
+**An XML document that goes on after its root element is refused (`X3`), on the line where it goes on.** XML 1.0 §2.1 lets only comments, processing instructions and whitespace follow the root element; aas-core3.0 reads as far as the root element's end tag and stops, so text, another element, a second document, a CDATA section, a character reference or a DOCTYPE after it went unread, and every release before this one judged such a file on what came first. That holds for an environment document, a bare Submodel document and an AASX's XML part alike. A comment, a processing instruction or whitespace after the root is read as before; JSON with anything after its root value was refused already.
+
+**Who gates a build on the exit code**: the inputs below move against 1.1.0, and every one measured is listed. Of the inputs this repository measures on every release, 51 of the 99 that `tools/verdict_diff.py` judges move, and 5 of IDTA's 8 official samples, and none of them moves its exit code: each gains or loses a reference-type lint, at info. The reference type moves no exit code under any flag: its lints are info, and `-W` fails on warnings.
+
+| input | 1.1.0 | 1.2.0 |
+|---|---|---|
+| a Carbon Footprint with a second PcfCalculationMethods list, or a second LifeCyclePhases list, in one footprint | judged, those rows pass | exit 1, `PCF-E03`, `PCF-E08` or `PCF-E16` |
+| a Carbon Footprint whose PcfCalculationMethods or LifeCyclePhases list holds two entries or more | exit 1, `PCF-E04`, `PCF-E09` or `PCF-E17` | judged, those rows pass |
+| the same list holding no entry, its `value` absent | exit 1, the same rows | judged, those rows pass |
+| the same list with `value: []` | exit 1, the same rows | judged, those rows pass; the relayed metamodel channel still says "Value must be either not set or have at least one item." |
+| a 02004, 02003 or 02035-2 submodel whose own semanticId is a ModelReference with a Submodel key -- IDTA's 02004 example and 02003 samples among them | judged | judged, with `HDL3`, `TDL2` or `DBP2L3` at info; no exit code moves |
+| the same submodel with an ExternalReference and a GlobalReference key | judged, with that lint at info | judged, without it |
+| an XML environment document, bare Submodel document or AASX XML part with text, an element, a second document, a CDATA section, a character reference or a DOCTYPE after its root element | judged on what came before it, exit 0 or 1 | exit 2, `X3`, on the line where it goes on |
+
+**Every verdict movement measured against 1.1.0 follows**, alike under the default flags, `--allow-unmatched` and `-W` -- the exit codes as the table gives them -- and alike on Python 3.9 and 3.13:
+
+- Of the 99 inputs `tools/verdict_diff.py` judges, 34 lose `HDL3` and 2 lose `TDL2`, their submodel's semanticId an ExternalReference, and 15 gain `HDL3`, theirs a ModelReference. No exit code moves.
+- IDTA's 02004 2.0 example, as environment JSON and as AASX, gains `HDL3`, and the 02003 2.0 sample, as JSON and as AASX, and its 2.0.1 repair gain `TDL2`. The three official samples this reader refuses are refused as before.
+- This repository's fixtures for 02004, 02003 and 02035-2 gain the lint as 1.1.0 built them, with a ModelReference, and lose it as 1.2.0 builds them, with an ExternalReference. Its other twelve fixtures do not move, built either way.
+- The Carbon Footprint inputs move as the table says, in both footprint scopes, and alike as a bare Submodel, as an environment in XML and as an AASX holding either: two or three PcfCalculationMethods or LifeCyclePhases lists draw `PCF-E03`, `PCF-E08` or `PCF-E16`, and those lists holding two entries, three, none or `value: []` pass `PCF-E04`, `PCF-E09` and `PCF-E17`. A file holding two submodels moves as each would alone.
+- A PreviewFile named `PreviewFile`, `PreviewFile01`, `PreviewFile123`, `PreviewFile1`, `PreviewFile1234`, `PreviewFileX` or `Preview` draws `HDL1` or does not, as it did.
+- Of 28 XML inputs that end at their root element or go on after it, the 16 with text, an element, a second document, a CDATA section, a character reference or a DOCTYPE after the root exit 2 with `X3` under every flag, and the 12 with nothing, a comment, a processing instruction or whitespace after it do not move.
+
+The relayed metamodel channel's remedy names the metamodel's edition, 3.0, and the remedies of `HD-D2`, `HDL5` and their part 2 counterparts no longer call `VDI2770:2020` the template's own spelling: 02004 has written §2.3's since 2.0.2, and the official 2.0 example and the 02035-2 template write the other.
+
+It is 470 rules, 416 generated from the vendored official template files, across twelve template packs. Input bounds remain one document at 64 MiB, a container's parts at 64 MiB each and 256 MiB together, and a container's directory of names at 16 MiB; the one that is not a size remains a document nested 200 levels deep. No released rule id is removed.
+
 ## 1.1.0 — 2026-11-08
 
 Who should take this release: anyone who checks documents that declare `US-ASCII` or AASX packages that declare their relationship types under the path IDTA 01005-3-0-1 deprecates, some of which move against 1.0.2 as the paragraphs below set out, and anyone who parses the findings the later paragraphs name, which keep their verdicts and change what they say; of the inputs this repository measures on every release, one moves, IDTA's 02006 2.0 sample, and its exit code does not.

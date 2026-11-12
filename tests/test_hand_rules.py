@@ -482,10 +482,11 @@ def test_an_empty_file_value_is_not_a_missing_part(tmp_path):
 
 
 def test_the_templates_example_spelling_counts_as_vdi_but_draws_the_lint(tmp_path):
-    """§2.3's identifying value is "VDI 2770 Blatt 1:2020"; the template's
-    own ExampleValue -- and therefore the official example -- writes
-    "VDI2770:2020". Both count as the mandatory system (failing the
-    official example on the template's own example spelling would be
+    """§2.3's identifying value is "VDI 2770 Blatt 1:2020"; the 2.0 and
+    2.0.1 templates' own ExampleValue -- and therefore the official 2.0
+    example -- write "VDI2770:2020", where from 2.0.2 the template writes
+    §2.3's string (#9). Both count as the mandatory system (failing the
+    official example on its template's own example spelling would be
     dogma), and the non-canonical spelling draws HDL5 instead."""
     env = copy.deepcopy(hd_env())
     _set_property(_classification(env), "ClassificationSystem", "VDI2770:2020")

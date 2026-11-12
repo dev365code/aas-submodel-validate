@@ -91,7 +91,8 @@ def test_a_version_without_a_pdf_rendition_warns(tmp_path):
 def test_the_non_canonical_vdi_spelling_draws_the_lint(tmp_path):
     """This template's own ExampleValue is the non-canonical spelling, so
     a battery passport written from it draws this lint on day one -- the
-    same divergence 02004 has (#9), inherited with the classification."""
+    divergence 02004's 2.0 and 2.0.1 templates had (#9), still in 02035-2's
+    classification through 1.0.2."""
     env = copy.deepcopy(dbp_env())
     _set(_classification(env), "ClassificationSystem", "VDI2770:2020")
     assert "DBP2L5" in _findings(tmp_path, env)
