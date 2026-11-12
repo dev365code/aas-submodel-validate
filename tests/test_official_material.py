@@ -28,8 +28,9 @@ _L2_FIX = ("Correct the semanticId to the template's spelling; a near-miss "
            "element silently stops applying.")
 _L5_FIX = ("Write ClassificationSystem exactly as 'VDI 2770 Blatt 1:2020' -- "
            "the value \u00a72.3 says identifies the mandatory system. "
-           "'VDI2770:2020' is the template's example artefact and other tools "
-           "matching on the specified string will not recognise it.")
+           "'VDI2770:2020' is an example artefact -- the official 2.0 "
+           "example's and the 02035-2 template's -- and other tools matching "
+           "on the specified string will not recognise it.")
 _L3_FIX = ("Use an ExternalReference here, as the template does; the value "
            "matched, so this is interoperability polish, not a failure.")
 _D10_FIX = ("Add a DigitalFile with contentType application/pdf (a PDF/A file, "
