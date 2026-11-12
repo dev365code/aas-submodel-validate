@@ -230,6 +230,11 @@ DBP5_ITEM_NAMES = {
 #: until a finding needed to cite the same template for something other
 #: than the cardinality qualifier, and two copies of a citation are two
 #: chances to cite different documents for one reading.
+#: `idshort_expressions` reads an AllowedIdShort that is not the bracket
+#: spelling as the expression it is. A vendored template asks for it,
+#: because the file is this project's and a value Python will not run
+#: stops this build; a template supplied at run time is a stranger's,
+#: and its pack leaves the key out, so such a value is the name it spells.
 PACKS = (
     {
         "template": ROOT / "src/aas_submodel_validate/data/smt/02004/2.0.4/template.json",
@@ -239,6 +244,7 @@ PACKS = (
         "citation": "IDTA 02004-2-0-4 template",
         "item_names": HD_ITEM_NAMES,
         "example_types": ("ExampleValue",),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     {
@@ -249,6 +255,7 @@ PACKS = (
         "citation": "IDTA 02003-2-0-4 template",
         "item_names": TD_ITEM_NAMES,
         "example_types": ("SMT/ExampleValue",),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     # The Digital Battery Passport's part 2 is a second Handover
@@ -266,6 +273,7 @@ PACKS = (
         "citation": "IDTA 02035-2 1.0.2 template",
         "item_names": DBP_ITEM_NAMES,
         "example_types": ("ExampleValue",),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     {
@@ -276,6 +284,7 @@ PACKS = (
         "citation": "IDTA 02006-3-0-3 template",
         "item_names": DN_ITEM_NAMES,
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": DN_ARBITRARY,
     },
     {
@@ -286,6 +295,7 @@ PACKS = (
         "citation": "IDTA 02023 1.0.3 template",
         "item_names": PCF_ITEM_NAMES,
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": PCF_SKIP,
     },
     # IDTA 02002 Contact Information 1.0.2 repairs the identifiers (#51).
@@ -311,6 +321,7 @@ PACKS = (
         "citation": "IDTA 02002-1-0-4 template",
         "item_names": {},
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     # IDTA 02011 Hierarchical Structures enabling Bills of Material 1.1.4:
@@ -327,6 +338,7 @@ PACKS = (
         "citation": "IDTA 02011-1-1-4 template",
         "item_names": {},
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     # IDTA 02007 Software Nameplate 1.0.3: seventy-three elements -- 34
@@ -352,6 +364,7 @@ PACKS = (
         "citation": "IDTA 02007-1-0-3 template",
         "item_names": {},
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     # IDTA 02035-1 Digital Nameplate 1.0.1, the Digital Battery Passport's
@@ -365,6 +378,7 @@ PACKS = (
         "citation": "IDTA 02035-1 1.0.1 template",
         "item_names": DBP1_ITEM_NAMES,
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     # IDTA 02035-4 Technical Data 1.0.2, the Digital Battery Passport's part
@@ -380,6 +394,7 @@ PACKS = (
         "citation": "IDTA 02035-4 1.0.2 template",
         "item_names": DBP4_ITEM_NAMES,
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     # IDTA 02035-7 Circularity 1.0.2, the Digital Battery Passport's part
@@ -394,6 +409,7 @@ PACKS = (
         "citation": "IDTA 02035-7 1.0.2 template",
         "item_names": DBP7_ITEM_NAMES,
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
     # IDTA 02035-5 Product Condition 1.0.2, the Digital Battery Passport's
@@ -410,6 +426,7 @@ PACKS = (
         "citation": "IDTA 02035-5 1.0.2 template",
         "item_names": DBP5_ITEM_NAMES,
         "example_types": (),
+        "idshort_expressions": True,
         "skip_sids": ARBITRARY,
     },
 )
@@ -468,8 +485,10 @@ def generate(pack) -> str:
                   if "allowed_idshort_unreadable" in row]
     if unreadable:
         raise SystemExit(
-            "%s: AllowedIdShort cannot be read on %s; IDTA's spelling is "
-            "`Name[\\d{2,3}]`, lower bound first"
+            "%s: AllowedIdShort cannot be read on %s; IDTA's numbering "
+            "spelling is `Name[\\d{2,3}]`, lower bound first, and any other "
+            "value is read as an expression, which Python has to run "
+            "without a warning"
             % (pack["output"].name,
                # The value as the template spells it. `%r` doubles the
                # backslash, and whoever reads this is about to look for

@@ -1936,17 +1936,18 @@ def test_an_allowed_idshort_that_is_not_a_regex_does_not_blame_this_tool(tmp_pat
 
 
 def test_an_allowed_idshort_is_read_as_written(tmp_path):
-    """`Doc(1)` is an expression, and is read as the one it is.
+    """`Doc(1)` in a supplied template names an element called `Doc(1)`;
+    in a vendored one it is the expression it is.
 
-    It was once read as the name of an element called `Doc(1)`, because
-    unescaped the qualifier matched `Doc1` and a file carrying the
-    element the template asks for by name was told it does not. That
-    half is now the template's own name, which passes beside any value.
-    The other half is what an expression says, and IDTA writes the
-    qualifier as one (02004 2.0.4, upstream #151): this one asks for
-    `Doc1`. IDTA's older spelling for a numbering suffix is the bracket
-    form, which `_intended_pattern` still translates, and a value Python
-    will not run is still the name it spells."""
+    Unescaped, the parentheses were a regex group and the qualifier
+    matched `Doc1` -- so a file that carries the element the template
+    asks for by name was told it does not. A supplied template's value
+    is the name it spells, as 1.1.0 read it. A vendored template's is
+    read as an expression, because IDTA writes the qualifier as one
+    (02004 2.0.4, upstream #151): there `Doc(1)` asks for `Doc1`, and the
+    template's own name passes beside it. IDTA's older spelling for a
+    numbering suffix is the bracket form, which `_intended_pattern`
+    translates either way."""
     from aas_submodel_validate import tablegen
 
     assert tablegen._intended_pattern("RefersTo[\\d{2,3}]") == \
@@ -1965,11 +1966,13 @@ def test_an_allowed_idshort_is_read_as_written(tmp_path):
     assert re.match(numbered, "Doc(1)") and re.match(numbered, "Doc(1)07"), numbered
     assert not re.match(numbered, "Doc1"), numbered
 
-    expression = tablegen._intended_pattern("Doc(1)")
+    supplied = tablegen._intended_pattern("Doc(1)")
+    assert re.match(supplied, "Doc(1)") and not re.match(supplied, "Doc1"), supplied
+    expression = tablegen._intended_pattern("Doc(1)", expressions=True)
     assert re.match(expression, "Doc1"), expression
     assert not re.match(expression, "Doc(1)"), (
         "%r matched a name the expression does not" % expression)
-    own = tablegen._intended_pattern("Doc(1)", own="Doc(1)")
+    own = tablegen._intended_pattern("Doc(1)", own="Doc(1)", expressions=True)
     assert re.match(own, "Doc(1)") and re.match(own, "Doc1"), (
         "the element the template names does not match its own qualifier: %r"
         % own)
@@ -1979,14 +1982,16 @@ def test_an_allowed_idshort_is_read_as_written(tmp_path):
 
 def _pattern_built_from(tmp_path, value, own):
     """The pattern the generator writes for a one-row template whose
-    element is named `own` and carries `AllowedIdShort` = `value`."""
+    element is named `own` and carries `AllowedIdShort` = `value`, read
+    as a vendored template's pack reads it."""
     from aas_submodel_validate import tablegen
 
     document = json.loads(_template_with_idshort_rule(
         tmp_path, value, own=own).read_text(encoding="utf-8"))
     (row,) = tablegen.build(document, {
         "prefix": "TPL-E", "citation": "c", "skip_sids": frozenset(),
-        "item_names": {}, "example_types": ()})["tree"]
+        "item_names": {}, "example_types": (),
+        "idshort_expressions": True})["tree"]
     return row["allowed_idshort"]
 
 
@@ -2025,12 +2030,81 @@ def test_an_expression_python_runs_only_with_a_warning_is_a_name():
     a table must not: an inline flag past the start of an expression
     warns on 3.9 and is an error from 3.11, and a possible nested set
     warns on both. Read as an expression where it ran, the same template
-    gave two tables. A value that runs only with a warning is the name it
-    spells, as one that does not run is."""
+    gave two tables. In a supplied template such a value is the name it
+    spells, as every value but the bracket spelling is; in a vendored one
+    it cannot be read, and the build stops (below)."""
     from aas_submodel_validate import tablegen
 
     for value in ("A[[a]", "Doc(?i)x"):
         assert tablegen._intended_pattern(value) == "^%s$" % re.escape(value), value
+
+
+#: Values Python cannot build as an expression, each failing outside
+#: `re.error`: a repeat above what the engine counts to, at two sizes,
+#: and groups nested deeper than its parser follows.
+UNBUILDABLE = ("a{99999999999}", "a{4294967295}", "(" * 600 + "a" + ")" * 600)
+UNBUILDABLE_IDS = ("repeat-of-eleven-digits", "repeat-of-2-to-the-32-less-1",
+                   "groups-600-deep")
+
+
+@pytest.mark.parametrize("value", UNBUILDABLE, ids=UNBUILDABLE_IDS)
+def test_a_supplied_value_python_cannot_build_leaves_the_verdict_alone(tmp_path, value):
+    """A supplied table reads the AllowedIdShort it carries and says
+    nothing (README). Read as expressions, the first two values here
+    raised OverflowError out of the run, which left by 1 as a defect in
+    this tool, and the third RecursionError, which the reader took for a
+    template nested too deeply to walk and refused, for a file one
+    string deep. Read as the names they spell, as 1.1.0 read them, each
+    leaves the file judged like any other."""
+    template = _template_with_idshort_rule(tmp_path, value)
+    report = runner.run(_instance_named(tmp_path, "A"), template=template)
+    assert not report.findings, [(f.id, f.violation.message) for f in report.findings]
+    assert not any("AllowedIdShort" in note for note in report.notes), report.notes
+
+
+def test_a_supplied_value_is_read_as_the_name_it_spells(tmp_path):
+    """Only a vendored template's value is read as the expression it is.
+
+    Read so in a supplied one, `(a+)+` -- a repeat inside a repeat --
+    took twice as long for each character of an idShort that almost
+    matched it: once when the table was built, against the template's
+    own name, and again at walk time against every instance element on
+    that row. It bought nothing, because a supplied table registers no
+    lints and no reported rule reads the pattern. The bracket spelling
+    is still read as a numbering suffix (#5)."""
+    from aas_submodel_validate import runner as runner_module
+
+    template = _template_with_idshort_rule(tmp_path, "(a+)+")
+    table = runner_module._supplied_table(template)["table"]
+    pattern = table.BY_LABEL["A"]["allowed_idshort"]
+    assert re.match(pattern, "(a+)+") and re.match(pattern, "A"), pattern
+    assert not re.match(pattern, "aaa"), (
+        "a supplied value was read as a program: %r" % pattern)
+    numbered = runner_module._supplied_table(_template_with_idshort_rule(
+        tmp_path, "Doc[\\d{2,3}]", name="numbered.json", own="Doc"))["table"]
+    assert numbered.BY_LABEL["Doc"]["allowed_idshort"] == "^Doc(?:\\d{2,3})?$"
+
+
+@pytest.mark.parametrize(
+    "value", UNBUILDABLE + ("A[", "A[[a]", "Doc(?i)x"),
+    ids=UNBUILDABLE_IDS + ("not-an-expression", "a-possible-nested-set",
+                           "a-flag-past-the-start"))
+def test_a_vendored_value_python_will_not_run_stops_the_build(tmp_path, value):
+    """A vendored template's value is read as the expression it is, and
+    one Python will not run, or runs only with a warning, is not quietly
+    made a name there. The file is this project's, so the row carries
+    the value as unreadable and the generator stops and names it, as it
+    does for a bracket spelling whose bounds run backwards."""
+    from aas_submodel_validate import tablegen
+
+    document = json.loads(_template_with_idshort_rule(
+        tmp_path, value).read_text(encoding="utf-8"))
+    (row,) = tablegen.build(document, {
+        "prefix": "TPL-E", "citation": "c", "skip_sids": frozenset(),
+        "item_names": {}, "example_types": (),
+        "idshort_expressions": True})["tree"]
+    assert row["allowed_idshort"] is None, row["allowed_idshort"]
+    assert row["allowed_idshort_unreadable"] == value
 
 
 def test_a_numbering_suffix_that_is_not_a_repeat_is_read_as_unreadable():

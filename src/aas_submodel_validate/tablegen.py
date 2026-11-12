@@ -119,10 +119,11 @@ _CARDINALITY_TYPES = ("SMT/Cardinality", "Multiplicity", "Cardinality")
 _ALLOWED = re.compile(r"^(.*)\[(\\d\{\d(?:,\d)?\})\]$")
 
 
-def _intended_pattern(raw, own=None):
-    """`RefersTo[\\d{2,3}]` -> `^RefersTo(?:\\d{2,3})?$`, an expression
-    as written, and anything else the name it spells -- with `own`, the
-    idShort the template itself gives the element, passing beside each.
+def _intended_pattern(raw, own=None, expressions=False):
+    """`RefersTo[\\d{2,3}]` -> `^RefersTo(?:\\d{2,3})?$`, and anything
+    else the expression it is where `expressions` is asked for, the name
+    it spells where it is not -- with `own`, the idShort the template
+    itself gives the element, passing beside each.
 
     IDTA writes the qualifier two ways. The bracket spelling is, as a
     regular expression, a character class matching one character; what
@@ -137,19 +138,27 @@ def _intended_pattern(raw, own=None):
     added only where the value does not already admit it, so a table
     whose names already pass is the table it was.
 
-    A value Python will not run as an expression is a name. One reading
-    `A[` did not compile, so every row of that table raised at walk time
-    and the funnel reported each as "the rule itself could not run",
-    under a remedy saying the defect is this validator's. One that runs
-    only with a warning is a name too, because whether it runs at all
-    differs between interpreters and a table must not.
+    Only a vendored template's pack asks for `expressions`. Reading a
+    value as an expression means running it, and a supplied template's
+    value is a stranger's: a repeat above what the engine counts to
+    raised OverflowError out of the run, groups nested deeper than its
+    parser follows raised RecursionError, `A[` did not compile at all,
+    and a repeat inside a repeat, `(a+)+`, took twice as long for each
+    character of an idShort that almost matched it. A run-time table
+    registers no lints, so nothing reported reads the pattern, and a
+    supplied value that is not the bracket spelling is the name it
+    spells, as 1.1.0 read it. A vendored value is this project's file,
+    so one Python will not run, or runs only with a warning -- whether
+    it runs at all differs between interpreters, and a table must not --
+    is not made a name: it cannot be read.
 
-    Returns `None` where the value cannot be read at all: one that
-    claims the bracket spelling and gets it wrong (`A[\\d{3,2}]` asks for
-    a repeat of at least three and at most two), or one that is not a
-    string (`Qualifier.value` is optional in the metamodel, so a
+    Returns `None` where the value cannot be read at all: that one, one
+    that claims the bracket spelling and gets it wrong (`A[\\d{3,2}]`
+    asks for a repeat of at least three and at most two), or one that is
+    not a string (`Qualifier.value` is optional in the metamodel, so a
     qualifier declaring this type and no value is a legal file). The
-    caller says so and carries on.
+    caller says so: the build stops and names the row, and a run-time
+    caller says it in a note and carries on.
 
     Not refused with the template, which is what the first repair did.
     This value feeds one rule, `info`, whose own remedy reads "Any
@@ -186,19 +195,26 @@ def _intended_pattern(raw, own=None):
         except re.error:
             return None
         return _admitting(inner, own)
-    inner = "(?:%s)" % raw if _runs("^(?:%s)$" % raw) else re.escape(raw)
-    return _admitting(inner, own)
+    if not expressions:
+        return _admitting(re.escape(raw), own)
+    if not _runs("^(?:%s)$" % raw):
+        return None
+    return _admitting("(?:%s)" % raw, own)
 
 
 def _runs(pattern):
-    """Whether `pattern` is an expression Python runs without a word."""
+    """Whether `pattern` is an expression Python runs without a word.
+
+    Any exception, not `re.error` and a warning alone: a repeat above
+    what the engine counts to raises OverflowError, and groups nested
+    deeper than its parser follows raise RecursionError."""
     import warnings
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         try:
             re.compile(pattern)
-        except (re.error, Warning):
+        except Exception:
             return False
     return True
 
@@ -488,7 +504,8 @@ def _rows(element, parent_label, parent_id, counter, pack, in_list=False,
     #: legal file and is a value this cannot read, not an absence.
     declares_idshort = "AllowedIdShort" in qualifiers
     allowed_idshort = (_intended_pattern(qualifiers["AllowedIdShort"],
-                                         element.get("idShort"))
+                                         element.get("idShort"),
+                                         pack.get("idshort_expressions", False))
                        if declares_idshort else None)
     row = {
         "id": row_id,
