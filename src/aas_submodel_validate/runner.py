@@ -78,8 +78,8 @@ RESOURCE_REMEDY = ("This reader ran out of the memory or stack a rule's walk "
                    "multiple of the bytes it holds -- so this is a limit of "
                    "the machine it ran on, not a defect in your file or in "
                    "this tool. Nothing here is a verdict on the document.")
-META_REMEDY = ("Fix the constraint aas-core3.0 names; these are IDTA 01001 "
-               "metamodel rules, upstream of any template.")
+META_REMEDY = ("Fix the constraint aas-core3.0 names; these are rules of the "
+               "IDTA 01001 metamodel 3.0, upstream of any template.")
 
 
 

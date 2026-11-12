@@ -2,7 +2,7 @@
  "findings": [
   {
    "detail": "no DocumentClassification here",
-   "fix": "Add a DocumentClassification whose ClassificationSystem property names VDI 2770 -- 'VDI 2770 Blatt 1:2020' is the spelling to prefer, and the template's own 'VDI2770:2020' is accepted too (docs/divergences.md #9). Pick its ClassId from the twelve VDI 2770 classes (e.g. 03-02, Operation).",
+   "fix": "Add a DocumentClassification whose ClassificationSystem property names VDI 2770 -- 'VDI 2770 Blatt 1:2020' is the spelling to prefer, and 'VDI2770:2020', which the official 2.0 example and the 02035-2 template write, is accepted too (docs/divergences.md #9). Pick its ClassId from the twelve VDI 2770 classes (e.g. 03-02, Operation).",
    "fixability": null,
    "fixabilityWhy": null,
    "kind": "template",

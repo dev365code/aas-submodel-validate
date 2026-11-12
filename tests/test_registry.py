@@ -419,9 +419,10 @@ REMEDIES = {
     "DBP2-D2":
         "Add a DocumentClassification whose ClassificationSystem "
         "property names VDI 2770 -- 'VDI 2770 Blatt 1:2020' is the "
-        "spelling to prefer, and the template's own 'VDI2770:2020' is "
-        "accepted too (docs/divergences.md #9). Pick its ClassId from "
-        "the twelve VDI 2770 classes (e.g. 03-02, Operation).",
+        "spelling to prefer, and 'VDI2770:2020', which the official 2.0 "
+        "example and the 02035-2 template write, is accepted too "
+        "(docs/divergences.md #9). Pick its ClassId from the twelve VDI "
+        "2770 classes (e.g. 03-02, Operation).",
     "DBP2-D3":
         "Replace the ClassId with one of the twelve VDI 2770 Blatt "
         "1:2020 ids: 01-01, 02-01..02-04, 03-01..03-06 or 04-01.",
@@ -457,8 +458,9 @@ REMEDIES = {
     "DBP2L5":
         "Write ClassificationSystem exactly as 'VDI 2770 Blatt 1:2020' "
         "-- the value §2.3 says identifies the mandatory system. "
-        "'VDI2770:2020' is the template's example artefact and other "
-        "tools matching on the specified string will not recognise it.",
+        "'VDI2770:2020' is an example artefact -- the official 2.0 "
+        "example's and the 02035-2 template's -- and other tools matching "
+        "on the specified string will not recognise it.",
     "HD-D10":
         "Add a DigitalFile with contentType application/pdf (a PDF/A "
         "file, per VDI 2770) to this DocumentVersion. A content type "
@@ -467,9 +469,10 @@ REMEDIES = {
     "HD-D2":
         "Add a DocumentClassification whose ClassificationSystem "
         "property names VDI 2770 -- 'VDI 2770 Blatt 1:2020' is the "
-        "spelling to prefer, and the template's own 'VDI2770:2020' is "
-        "accepted too (docs/divergences.md #9). Pick its ClassId from "
-        "the twelve VDI 2770 classes (e.g. 03-02, Operation).",
+        "spelling to prefer, and 'VDI2770:2020', which the official 2.0 "
+        "example and the 02035-2 template write, is accepted too "
+        "(docs/divergences.md #9). Pick its ClassId from the twelve VDI "
+        "2770 classes (e.g. 03-02, Operation).",
     "HD-D3":
         "Replace the ClassId with one of the twelve VDI 2770 Blatt "
         "1:2020 ids: 01-01, 02-01..02-04, 03-01..03-06 or 04-01.",
@@ -516,8 +519,9 @@ REMEDIES = {
     "HDL5":
         "Write ClassificationSystem exactly as 'VDI 2770 Blatt 1:2020' "
         "-- the value §2.3 says identifies the mandatory system. "
-        "'VDI2770:2020' is the template's example artefact and other "
-        "tools matching on the specified string will not recognise it.",
+        "'VDI2770:2020' is an example artefact -- the official 2.0 "
+        "example's and the 02035-2 template's -- and other tools matching "
+        "on the specified string will not recognise it.",
     "SMT-D1":
         "If the submodel means one of the templates this tool has a "
         "table for, give it that template's semanticId: "
@@ -752,8 +756,14 @@ SHIPPED_REMEDIES = {
         "so this is a limit of the machine it ran on, not a defect in your "
         "file or in this tool. Nothing here is a verdict on the document.",
     "runner/the-metamodel-channel":
-        "Fix the constraint aas-core3.0 names; these are IDTA 01001 "
-        "metamodel rules, upstream of any template.",
+        "Fix the constraint aas-core3.0 names; these are rules of the "
+        "IDTA 01001 metamodel 3.0, upstream of any template.",
+    "loader/past-the-root":
+        "Remove what follows the root element's end tag: after the root "
+        "element XML allows only comments, processing instructions and "
+        "whitespace (XML 1.0 \u00a72.1). Two documents written into one file "
+        "are two files. Nothing here is a verdict on the document -- it was "
+        "refused, not judged.",
     "loader/payload-doctype":
         "Remove the DTD and write out whatever it declared: a "
         "nested-entity DTD is a decompression-free way to exhaust a "
@@ -899,6 +909,7 @@ def _sentences_violations_carry() -> dict:
     # exists for did not hold it either.
     built["runner/the-metamodel-channel-stopped"] = runner.RELAY_STOPPED
     built["loader/payload-doctype"] = loader.PAYLOAD_DOCTYPE_REMEDY
+    built["loader/past-the-root"] = loader.PAST_THE_ROOT_REMEDY
     built["loader/directory-bound"] = loader.directory_bound_remedy()
     built["loader/relationship-doctype"] = loader.RELATIONSHIP_DOCTYPE_REMEDY
     # A document of another edition is told which, with a sentence built

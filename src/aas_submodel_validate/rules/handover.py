@@ -51,12 +51,13 @@ from .values import valid_xs_date
 #: The exact spelling IDTA 02004-2-0 §2.3 says identifies the mandatory
 #: classification system.
 VDI2770_SYSTEM = "VDI 2770 Blatt 1:2020"
-#: The template's own ExampleValue -- and therefore the official example --
-#: spells it "VDI2770:2020", contradicting §2.3's identifying value. Both
-#: are recognised as the mandatory system; the non-canonical spelling
-#: draws the L5 lint. docs/divergences.md #9. IDTA 02035-2's template
-#: carries the same ExampleValue, which is one of the three ways its own
-#: bytes say it keeps the VDI 2770 classification (divergences #29).
+#: The 2.0 and 2.0.1 templates' own ExampleValue -- and therefore the
+#: official 2.0 example -- spells it "VDI2770:2020", contradicting §2.3's
+#: identifying value; from 2.0.2 the template writes §2.3's. Both are
+#: recognised as the mandatory system; the non-canonical spelling draws
+#: the L5 lint. docs/divergences.md #9. IDTA 02035-2's template carries
+#: "VDI2770:2020" still, which is one of the three ways its own bytes say
+#: it keeps the VDI 2770 classification (divergences #29).
 VDI2770_SPELLINGS = frozenset((VDI2770_SYSTEM, "VDI2770:2020"))
 #: The twelve document classes of that edition, read from IDTA 02004-2-0
 #: §2.3, Table 1 -- freely published, and the document this validates
@@ -427,8 +428,9 @@ ROSTER = (
     ("-D2", "template", "MUST", "every Document carries a VDI 2770 classification",
      "IDTA 02004-2-0 §2.3",
      "Add a DocumentClassification whose ClassificationSystem property "
-     "names VDI 2770 -- '%s' is the spelling to prefer, and the "
-     "template's own '%s' is accepted too (docs/divergences.md #9). "
+     "names VDI 2770 -- '%s' is the spelling to prefer, and '%s', "
+     "which the official 2.0 example and the 02035-2 template write, is "
+     "accepted too (docs/divergences.md #9). "
      "Pick its ClassId from the twelve VDI 2770 classes "
      "(e.g. 03-02, Operation)." % (VDI2770_SYSTEM, "VDI2770:2020"),
      ("Document", "DocumentClassifications", "DocumentClassification",
@@ -519,8 +521,9 @@ ROSTER = (
      "IDTA 02004-2-0 §2.3",
      "Write ClassificationSystem exactly as 'VDI 2770 Blatt 1:2020' -- "
      "the value §2.3 says identifies the mandatory system. "
-     "'VDI2770:2020' is the template's example artefact and other tools "
-     "matching on the specified string will not recognise it.",
+     "'VDI2770:2020' is an example artefact -- the official 2.0 "
+     "example's and the 02035-2 template's -- and other tools matching on "
+     "the specified string will not recognise it.",
      ("Document", "DocumentClassifications", "DocumentClassification",
       "ClassificationSystem"), _l5),
     ("-D10", "template", "SHOULD", "each DocumentVersion offers a PDF/A rendition",
