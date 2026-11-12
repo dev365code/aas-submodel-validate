@@ -2020,6 +2020,19 @@ def test_the_digits_an_expression_asks_for_are_not_made_optional(tmp_path):
     assert not re.match(pattern, "Name"), pattern
 
 
+def test_an_expression_python_runs_only_with_a_warning_is_a_name():
+    """Whether such a value runs at all differs between interpreters, and
+    a table must not: an inline flag past the start of an expression
+    warns on 3.9 and is an error from 3.11, and a possible nested set
+    warns on both. Read as an expression where it ran, the same template
+    gave two tables. A value that runs only with a warning is the name it
+    spells, as one that does not run is."""
+    from aas_submodel_validate import tablegen
+
+    for value in ("A[[a]", "Doc(?i)x"):
+        assert tablegen._intended_pattern(value) == "^%s$" % re.escape(value), value
+
+
 def test_a_numbering_suffix_that_is_not_a_repeat_is_read_as_unreadable():
     """The bracket branch keeps IDTA's suffix as a program, and one
     spelling of it is a program Python will not build.
