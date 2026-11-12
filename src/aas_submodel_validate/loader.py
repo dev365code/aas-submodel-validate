@@ -70,6 +70,14 @@ PAYLOAD_DOCTYPE_REMEDY = (
     "refuses the declaration rather than try to bound what it expands "
     "to. %s" % REFUSED_NOT_JUDGED)
 
+#: XML 1.0 §2.1: `document ::= prolog element Misc*`, and `Misc` is a
+#: comment, a processing instruction or whitespace.
+PAST_THE_ROOT_REMEDY = (
+    "Remove what follows the root element's end tag: after the root "
+    "element XML allows only comments, processing instructions and "
+    "whitespace (XML 1.0 §2.1). Two documents written into one file are "
+    "two files. %s" % REFUSED_NOT_JUDGED)
+
 
 def encoding_remedy(refusal: EncodingNotRead) -> str:
     """What to do about a document in an encoding this reader does not read:
@@ -611,29 +619,7 @@ def nesting(data, form: str, stop: Optional[int] = None) -> int:
     and the scan stops once it knows the document goes past `stop`.
     """
     if form == "xml":
-        state = {"depth": 0, "deepest": 0}
-
-        def opened(_name, _attributes):
-            state["depth"] += 1
-            if state["depth"] > state["deepest"]:
-                state["deepest"] = state["depth"]
-                if stop is not None and state["deepest"] > stop:
-                    raise _Deeper
-
-        def closed(_name):
-            state["depth"] -= 1
-
-        # UTF-8, whatever the document declares: what reaches this is the
-        # document as the parser will read it, converted already where it
-        # could be. Left to the declaration, expat asks Python's codecs for
-        # an encoding nobody has, and the scan, not the document, raised.
-        parser = expat.ParserCreate(encoding="utf-8")
-        parser.StartElementHandler, parser.EndElementHandler = opened, closed
-        # Past the bound, or malformed: the second is the parser's to
-        # report, in its own words, when the document is built.
-        with contextlib.suppress(_Deeper, expat.ExpatError):
-            parser.Parse(data if isinstance(data, bytes) else data.encode("utf-8"), True)
-        return state["deepest"]
+        return _xml_scan(data, stop)[0]
     if isinstance(data, bytes):
         strings, others, nothing = _JSON_STRING_IN_BYTES, _NOT_A_BRACKET_IN_BYTES, b""
     else:
@@ -654,6 +640,48 @@ def nesting(data, form: str, stop: Optional[int] = None) -> int:
         if stop is not None and deepest > stop:
             break
     return deepest
+
+
+def _xml_scan(data, stop: Optional[int] = None):
+    """How deep an XML document nests, and the error expat raised past its
+    root element's end tag if it raised one there, or None -- one pass,
+    the one `nesting` makes, read for both.
+
+    Before the root element closes, a document that does not parse is the
+    parser's to report, in its own words, when the document is built.
+    After it, the parser never says: aas-core3.0 reads as far as the root
+    element's end tag and stops, so text, an element or a second document
+    after it went unread and the file was judged on what came first.
+    """
+    state = {"depth": 0, "deepest": 0, "closed": False}
+
+    def opened(_name, _attributes):
+        state["depth"] += 1
+        if state["depth"] > state["deepest"]:
+            state["deepest"] = state["depth"]
+            if stop is not None and state["deepest"] > stop:
+                raise _Deeper
+
+    def closed(_name):
+        state["depth"] -= 1
+        if not state["depth"]:
+            state["closed"] = True
+
+    # UTF-8, whatever the document declares: what reaches this is the
+    # document as the parser will read it, converted already where it
+    # could be. Left to the declaration, expat asks Python's codecs for
+    # an encoding nobody has, and the scan, not the document, raised.
+    parser = expat.ParserCreate(encoding="utf-8")
+    parser.StartElementHandler, parser.EndElementHandler = opened, closed
+    past = None
+    try:
+        parser.Parse(data if isinstance(data, bytes) else data.encode("utf-8"), True)
+    except _Deeper:
+        pass
+    except expat.ExpatError as exc:
+        if state["closed"]:
+            past = exc
+    return state["deepest"], past
 
 
 def nesting_remedy() -> str:
@@ -764,11 +792,18 @@ def _xml_as_utf8_or_recorded(loaded: Loaded, raw: bytes, part: Optional[str]):
             subject=part or loaded.path, fix=PAYLOAD_DOCTYPE_REMEDY,
             detail=container.doctype_written(raw)))
         return None
-    depth = nesting(raw, "xml", stop=container.MAX_NESTING)
+    depth, past = _xml_scan(raw, stop=container.MAX_NESTING)
     if depth > container.MAX_NESTING:
         loaded.errors.append(_too_deep(part or loaded.path, depth,
                                        crossing_line(raw, "xml", container.MAX_NESTING),
                                        part=part))
+        return None
+    if past is not None:
+        loaded.errors.append(LoadError(
+            "payload", "the XML goes on after its root element",
+            subject=part or loaded.path, fix=PAST_THE_ROOT_REMEDY,
+            detail="%s, at column %d" % (expat.ErrorString(past.code), past.offset),
+            line=past.lineno, part=part))
         return None
     return raw
 
