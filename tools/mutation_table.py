@@ -4063,6 +4063,106 @@ TABLE.extend([
      'a package declaring its aasx-origin under both paths, the deprecated one first, moved from refused to judged against 1.0.2, and nothing held which of the two is read'),
 ])
 
+TABLE.extend([
+    ('template/an-expression-is-read-as-written',
+     'src/aas_submodel_validate/tablegen.py',
+     '    return _admitting("(?:%s)" % raw, own)\n',
+     '    return _admitting("(?:%s)" % re.sub(r"(\\\\d\\{\\d(?:,\\d)?\\})$", r"(?:\\1)?", raw), own)\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_the_digits_an_expression_asks_for_are_not_made_optional'],
+     "an AllowedIdShort written as an expression had its trailing digits read as optional, the bracket spelling's reading, so a template asking for two digits let a name without them pass, and no test said so"),
+
+    ('template/the-template-s-own-name-passes-its-own-qualifier',
+     'src/aas_submodel_validate/tablegen.py',
+     '    if isinstance(own, str) and own and not re.match(pattern, own):\n',
+     '    if False:\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_an_expression_is_read_as_the_expression_it_is', 'tools/extract_smt_rules.py --check'],
+     "read as the expression 02004 2.0.4 writes, PreviewFile's AllowedIdShort failed the template's own element, so every PreviewFile named as the template names it drew the lint"),
+
+    ('template/a-vendored-value-that-runs-only-with-a-warning-is-unreadable',
+     'src/aas_submodel_validate/tablegen.py',
+     '        warnings.simplefilter("error")\n',
+     '        warnings.simplefilter("ignore")\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_a_vendored_value_python_will_not_run_stops_the_build'],
+     'a vendored value that runs only with a warning was read as an expression, so one template gave one table on 3.9 and another from 3.11'),
+
+    ('template/a-supplied-value-is-the-name-it-spells',
+     'src/aas_submodel_validate/tablegen.py',
+     '    if not expressions:\n        return _admitting(re.escape(raw), own)\n',
+     '    if False:\n        return _admitting(re.escape(raw), own)\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_a_supplied_value_is_read_as_the_name_it_spells', 'tests/test_a_template_a_caller_supplied.py::test_a_supplied_value_python_cannot_build_leaves_the_verdict_alone'],
+     "a supplied template's AllowedIdShort was run as an expression: (a+)+ doubled the time for each character of a name, and one Python could not build ended the run or refused the template"),
+
+    ('template/a-value-python-cannot-build-is-not-a-traceback',
+     'src/aas_submodel_validate/tablegen.py',
+     '        except Exception:\n            return False\n',
+     '        except (re.error, Warning):\n            return False\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_a_vendored_value_python_will_not_run_stops_the_build'],
+     'an AllowedIdShort repeat above what the engine counts to raised OverflowError out of the build, a traceback where the row should have been named'),
+
+    ('template/a-vendored-value-python-will-not-run-is-unreadable',
+     'src/aas_submodel_validate/tablegen.py',
+     '    if not _runs("^(?:%s)$" % raw):\n        return None\n',
+     '    if not _runs("^(?:%s)$" % raw):\n        return _admitting(re.escape(raw), own)\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_a_vendored_value_python_will_not_run_stops_the_build'],
+     'a vendored AllowedIdShort Python would not run was quietly made a name, and the build shipped a table that matched it as written'),
+
+    ('template/a-vendored-pack-reads-expressions',
+     'src/aas_submodel_validate/tablegen.py',
+     '                                         pack.get("idshort_expressions", False))\n',
+     '                                         False)\n',
+     ['tests/test_a_template_a_caller_supplied.py::test_an_expression_is_read_as_the_expression_it_is', 'tools/extract_smt_rules.py --check'],
+     'the vendored packs read PreviewFile\\d{2,3} as a name again, so every PreviewFile with digits drew the lint'),
+
+    ('template/example-values-a-bar-separates-are-several',
+     'src/aas_submodel_validate/tablegen.py',
+     '                if key in pack["example_types"] for part in value.split("|")]\n',
+     '                if key in pack["example_types"] for part in [value]]\n',
+     ['tests/test_td_tables.py::test_example_values_a_bar_separates_are_several_values', 'tools/extract_smt_rules.py --check'],
+     "02003 2.0.3's one SMT/ExampleValue reached the remedy as one value with its bars in, where the four qualifiers before it had been four values"),
+
+    ('container/xml-past-its-root-element-is-refused',
+     'src/aas_submodel_validate/loader.py',
+     '        if state["closed"]:\n            past = exc\n',
+     '        if False:\n            past = exc\n',
+     ['tests/test_what_follows_the_root_element.py::test_anything_else_after_the_root_is_refused_where_it_is'],
+     'XML that went on after its root element -- text, an element, a second document -- was judged on what came first and could pass, exit 0'),
+
+    ('container/a-comment-or-instruction-after-the-root-is-read',
+     'src/aas_submodel_validate/loader.py',
+     '    parser.StartElementHandler, parser.EndElementHandler = opened, closed\n    past = None\n',
+     '    parser.StartElementHandler, parser.EndElementHandler = opened, closed\n    parser.CommentHandler = parser.ProcessingInstructionHandler = (\n        lambda *_: state["closed"] and (_ for _ in ()).throw(expat.ExpatError("after the root")))\n    past = None\n',
+     ['tests/test_what_follows_the_root_element.py::test_comments_instructions_and_whitespace_may_follow_the_root'],
+     'a comment or a processing instruction after the root element, which XML 1.0 §2.1 allows there, was refused as what may not follow it'),
+
+    ('container/the-refusal-names-the-line-the-document-goes-on',
+     'src/aas_submodel_validate/loader.py',
+     '            line=past.lineno, part=part))\n',
+     '            line=None, part=part))\n',
+     ['tests/test_what_follows_the_root_element.py::test_anything_else_after_the_root_is_refused_where_it_is'],
+     'the refusal of XML going on past its root element named no line, so a reader of a long document was left to find the end tag'),
+
+    ('rules/a-footprint-holds-one-pcf-calculation-methods-list',
+     'src/aas_submodel_validate/rules/pcf_tables.py',
+     "'id': 'PCF-E03',\n                        'label': 'PcfCalculationMethods (ProductCarbonFootprint)',\n                        'parent': 'PCF-E02',\n                        'kind': 'SubmodelElementList',\n                        'match': ('https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0',),\n                        'sid': 'https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0',\n                        'sid_type': 'ExternalReference',\n                        'card': (1, 1),",
+     "'id': 'PCF-E03',\n                        'label': 'PcfCalculationMethods (ProductCarbonFootprint)',\n                        'parent': 'PCF-E02',\n                        'kind': 'SubmodelElementList',\n                        'match': ('https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0',),\n                        'sid': 'https://admin-shell.io/idta/CarbonFootprint/PcfCalculationMethods/1/0',\n                        'sid_type': 'ExternalReference',\n                        'card': (1, None),",
+     ['tests/test_editions_published_since_the_pin.py::test_a_carbon_footprint_carries_one_of_each_required_list'],
+     "02023 1.0.3 asks for exactly one PcfCalculationMethods list again (upstream #124); read as 1.0.2's one or more, a second list passed"),
+
+    ('rules/a-required-list-holds-any-number-of-entries',
+     'src/aas_submodel_validate/rules/pcf_tables.py',
+     "'id': 'PCF-E04',\n                                'label': 'PcfCalculationMethod (ProductCarbonFootprint/PcfCalculationMethods)',\n                                'parent': 'PCF-E03',\n                                'kind': 'Property',\n                                'match': ('0173-1#02-ABG854#003',),\n                                'sid': '0173-1#02-ABG854#003',\n                                'sid_type': 'ExternalReference',\n                                'card': (0, None),",
+     "'id': 'PCF-E04',\n                                'label': 'PcfCalculationMethod (ProductCarbonFootprint/PcfCalculationMethods)',\n                                'parent': 'PCF-E03',\n                                'kind': 'Property',\n                                'match': ('0173-1#02-ABG854#003',),\n                                'sid': '0173-1#02-ABG854#003',\n                                'sid_type': 'ExternalReference',\n                                'card': (1, 1),",
+     ['tests/test_editions_published_since_the_pin.py::test_a_required_list_holds_any_number_of_entries'],
+     "02023 1.0.3 takes the cardinality off the entries those lists hold (upstream #124); read as 1.0.2's exactly one, a list holding several entries, or none, failed"),
+
+    ('rules/the-handover-table-expects-the-template-s-reference-type',
+     'src/aas_submodel_validate/rules/hd_tables.py',
+     "TEMPLATE_SUBMODEL_SID_TYPE = 'ExternalReference'\n",
+     "TEMPLATE_SUBMODEL_SID_TYPE = 'ModelReference'\n",
+     ['tests/test_hand_rules.py::test_a_model_reference_where_the_template_says_external_is_information', 'tests/test_spec_accuracy.py::test_the_official_example_is_held_to_the_reference_type_its_template_gives'],
+     '02004 2.0.4 gives its submodel semanticId as an ExternalReference (upstream #224); a table still expecting the ModelReference of 2.0.2 reported the wrong files at info'),
+])
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
