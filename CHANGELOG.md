@@ -2,6 +2,8 @@
 
 ## 1.2.0 — unreleased
 
+Who should take this release: anyone who checks submodels written to IDTA's current template editions, the editions this release reads, and anyone who checks Carbon Footprint submodels or XML documents, for some of which a verdict and an exit code move against 1.1.0, as the 1.2.0 entry in CHANGELOG.md sets out; of the inputs this repository measures on every release, 51 of the 99 that `tools/verdict_diff.py` judges move, as do 5 of the 8 IDTA samples this repository vendors, each by one reference-type lint at info, and none of those moves its exit code.
+
 **The template pin moves to IDTA's current editions, and every verdict that moves with it is named below.**
 
 This release reads the newest published editions at the recorded template pin. A Carbon Footprint holding a second PcfCalculationMethods or LifeCyclePhases list fails again, as it did before 0.12.0, and a list holding several entries, or none, now passes. A submodel whose semanticId is a ModelReference -- as a file written to an earlier edition writes it, the official 02004 example and 02003 samples among them -- now draws the reference-type lint against 02004, 02003 and 02035-2, at info, and one written as an ExternalReference no longer does; no exit code moves on that. An XML document that goes on after its root element is refused.
