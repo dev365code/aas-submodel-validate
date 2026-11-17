@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 — unreleased
+## 1.2.0 — 2026-11-18
 
 Who should take this release: anyone who checks submodels written to IDTA's current template editions, the editions this release reads, and anyone who checks Carbon Footprint submodels or XML documents, for some of which a verdict and an exit code move against 1.1.0, as the 1.2.0 entry in CHANGELOG.md sets out; of the inputs this repository measures on every release, 51 of the 99 that `tools/verdict_diff.py` judges move, as do 5 of the 8 IDTA samples this repository vendors, each by one reference-type lint at info, and none of those moves its exit code.
 
